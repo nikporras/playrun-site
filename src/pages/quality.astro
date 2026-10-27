@@ -25,13 +25,20 @@ const totalTests = suites.reduce((n, s) => n + s.tests.length, 0);
 
 const totalChecks = results.groups.reduce((n, g) => n + g.passed + g.failed, 0);
 const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
-const runDate = new Date(results.generatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+// The run that built this page. GitHub Actions builds only after the suite has passed, so the
+// build time is the time of the run whose checks passed. Local builds carry no date.
+const ci = process.env.GITHUB_RUN_ID
+  ? {
+      date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+      url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+    }
+  : null;
 const panelSpans = [5, 3, 4, 5, 3, 4];
 const panelTones = ['navy', 'light', 'cyan', 'light', 'cyan', 'navy'];
 
 const loop = [
   ['Push', 'Every push and pull request starts the workflow on GitHub Actions.'],
-  ['Install', 'A clean Node 22 install and a fresh Chromium for Playwright.'],
+  ['Install', 'A clean Node 24 install and a fresh Chromium for Playwright.'],
   ['Build and serve', 'The site is built with Astro and served exactly as it will be deployed.'],
   [`${totalTests} tests`, 'Pages, console, links, viewports, forms, the games, and axe-core on every page.'],
   ['Deploy only if green', 'A failing test stops the deploy. The live site is always a build that passed.'],
@@ -66,7 +73,17 @@ const loop = [
     <div class="level__head">
       <h2 id="score-title" class="level__title" data-enter="wipe">The last run</h2>
       <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead">{totalPassed} of {totalChecks} checks passed on {runDate}. The home page runs live checks on itself when you press Test this page.</p>
+        <p class="level__lead">
+          {ci ? (
+            <>
+              {totalPassed} of {totalChecks} checks passed in <a href={ci.url} rel="noopener">the run that deployed this page</a>,
+              on {ci.date}.
+            </>
+          ) : (
+            `${totalPassed} of ${totalChecks} checks pass before every deploy.`
+          )}{' '}
+          The home page runs live checks on itself when you press Test this page.
+        </p>
         <a class="button button--navy" href="/#selftest">Test the home page</a>
       </div>
     </div>

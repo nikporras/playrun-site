@@ -33,7 +33,7 @@ const when = d.status === 'in-development' ? 'In development' : String(d.year);
           {
             d.url && (
               <a class="button" href={d.url} rel="noopener">
-                On Steam
+                {d.store ?? 'On Steam'}
               </a>
             )
           }

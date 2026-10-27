@@ -24,9 +24,9 @@ const services = [
   },
   {
     id: 'vr',
-    title: 'VR',
-    text: 'Three years of VR QA at nDreams and Historic VR: comfort, tracking, play space and interaction checks alongside the functional pass, on headsets I know.',
-    get: ['Comfort and tracking checks', 'Interaction and play space passes', 'Headset test rigs'],
+    title: 'VR and XR',
+    text: 'Five years of VR QA, from Beat Saber and The Climb at Universally Speaking to Fracked, Synapse and Ghostbusters: Rise of the Ghost Lord at nDreams, then Historic VR. Comfort, tracking, play space and interaction checks alongside the functional pass, on Meta Quest 2, 3 and Pro, PS VR2 and PC VR headsets.',
+    get: ['Comfort and tracking checks', 'Interaction and play space passes', 'Meta Quest 2, 3 and Pro, PS VR2, PC VR'],
   },
   {
     id: 'performance',
@@ -66,6 +66,9 @@ const platforms = [
   ['Steam', 'Steam Deck, cloud saves, achievements, Steam Input.'],
   ['Epic Games Store', 'Store requirements, achievements, launcher paths.'],
   ['GOG', 'DRM-free build, Galaxy features, offline play.'],
+  ['Meta Quest 2, 3 and Pro', 'Standalone builds, guardian and comfort settings, Quest Link, the Horizon Store requirements.'],
+  ['PS VR2', 'Sense controllers, eye tracking, headset haptics, the PS5 release flow.'],
+  ['PC VR', 'Steam VR headsets through Steam and Viveport: Index, Vive and Rift S.'],
 ];
 ---
 
@@ -159,7 +162,7 @@ const platforms = [
     <div class="level__head">
       <h2 id="plat-title" class="level__title" data-enter="wipe">Where the build has to work</h2>
       <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead">Four consoles, three PC stores. Each with its own rules, each checked before submission.</p>
+        <p class="level__lead">Four consoles, three PC stores, three kinds of headset. Each with its own rules, each checked before submission.</p>
       </div>
     </div>
     <div class="plat__board">
@@ -183,8 +186,8 @@ const platforms = [
     <div class="ask__grid">
       <div>
         <h2 id="ask-title" class="level__title" data-enter="wipe">
-          <span class="mask__line">Same bugs,</span>
-          <span class="mask__line">different games?</span>
+          <span class="mask__line">Want to talk</span>
+          <span class="mask__line">testing?</span>
         </h2>
         <div class="ask__actions" data-enter style="--enter-delay: 80ms">
           <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
@@ -365,9 +368,10 @@ const platforms = [
     color: var(--muted);
   }
   .plat__photo {
-    grid-column: span 1;
+    grid-column: span 2;
     min-width: 0;
     min-height: 0;
+    aspect-ratio: 16 / 5;
   }
 
   .ask__grid {

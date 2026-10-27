@@ -7,8 +7,9 @@ import { join } from 'node:path';
 const PAGES = [
   { path: '/about', h1: /Nicolás\s*Porras/, must: ['LinkedIn profile', 'via Universally Speaking'] },
   { path: '/skills', h1: /What I test\s*and how/, must: ['Functional testing', 'Bug reporting', 'GOG'] },
-  { path: '/portfolio', h1: /Games I have\s*tested/, must: ["Lou's Lagoon", 'Gang of Frogs', 'All via Universally Speaking, 2021.'] },
+  { path: '/portfolio', h1: /Games I have\s*tested/, must: ["Lou's Lagoon", 'Gang of Frogs', 'Ghostbusters: Rise of the Ghost Lord', 'Cyberpunk 2077 (console)', 'All via Universally Speaking, 2021.'] },
   { path: '/portfolio/lous-lagoon', h1: /Lou's Lagoon/, must: ['Tiny Roar', 'On Steam', 'Back to the portfolio'] },
+  { path: '/portfolio/synapse', h1: /Synapse/, must: ['nDreams', 'On the PlayStation Store', 'Senior QA Technician'] },
   { path: '/quality', h1: /This site is\s*a test subject/, must: ['tests, read from the code', 'Deploy only if green'] },
   { path: '/privacy', h1: /Privacy notice/, must: ['Nicolás Porras (PlayRun)', 'deleted after 24 months', 'ico.org.uk'] },
   { path: '/terms', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales'] },
@@ -75,7 +76,7 @@ for (const p of PAGES) {
 test('every public project has its own page, linked from the portfolio', async ({ page, request }) => {
   await page.goto('/portfolio');
   const links = await page.locator('.stage__link').evaluateAll((as) => (as as HTMLAnchorElement[]).map((a) => a.getAttribute('href')!));
-  expect(links.length).toBeGreaterThanOrEqual(4);
+  expect(links.length).toBeGreaterThanOrEqual(7);
   for (const href of links) {
     expect(href).toMatch(/^\/portfolio\/[a-z0-9-]+$/);
     expect((await request.get(href)).status(), href).toBe(200);
@@ -96,7 +97,7 @@ test('the old services address sends visitors to the skills page', async ({ requ
   expect((await request.get('/skills')).status()).toBe(200);
 });
 
-test('the built site is a portfolio and offers no work', async () => {
+test('the built site is a portfolio, offers no work and carries no stale facts', async () => {
   const dist = join(process.cwd(), 'dist');
   const html: string[] = [];
   const walk = (dir: string) => {
@@ -108,9 +109,10 @@ test('the built site is a portfolio and offers no work', async () => {
   };
   walk(dist);
   expect(html.length).toBeGreaterThan(10);
-  // The words a site that sells work would use. Scripts are skipped: the form still posts the
-  // message in the field the Apps Script calls 'brief', which no visitor sees.
-  const offers = /quote|brief|start a project/i;
+  // The words a site that sells work would use, plus facts that went stale once: the old Node
+  // version, the old span of VR work, the empty score, the phone number. Scripts are skipped: the
+  // form still posts the message in the field the Apps Script calls 'brief', which no visitor sees.
+  const offers = /quote|brief|start a project|Node 22|Three years|0\/0|7830 303383/i;
   for (const file of html) {
     const text = readFileSync(file, 'utf8').replace(/<script[\s\S]*?<\/script>/g, '');
     const hit = text.match(offers);

@@ -12,8 +12,6 @@ export const site = {
 export const contact = {
   name: 'Nicolás Porras',
   email: 'studio@playrunqa.com',
-  phone: '+44 7830 303383',
-  phoneHref: 'tel:+447830303383',
   location: 'London, UK',
 };
 

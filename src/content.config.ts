@@ -15,6 +15,10 @@ const projects = defineCollection({
       summary: z.string(),
       cover: image().optional(),
       url: z.string().url().optional(),
+      // The store the url points at, shown on the link. Steam when left out.
+      store: z.string().optional(),
+      // Set when the title was tested in a studio job rather than as PlayRun; the portfolio groups by it.
+      employer: z.string().optional(),
       // Only projects cleared for public use are shown. Default is hidden.
       public: z.boolean().default(false),
     }),

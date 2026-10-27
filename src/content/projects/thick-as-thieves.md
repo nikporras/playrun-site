@@ -4,7 +4,7 @@ studio: "OtherSide Entertainment, published by Megabit Publishing (Aonic)"
 platforms: ["PC (Steam)"]
 role: "Game quality testing"
 year: 2026
-summary: "A stealth-action heist game, playable solo or in co-op, from the studio behind the immersive sim tradition."
+summary: "A stealth-action heist game, solo or co-op, from OtherSide Entertainment."
 url: "https://store.steampowered.com/app/3341000/Thick_As_Thieves/"
 public: true
 ---
