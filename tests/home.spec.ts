@@ -45,7 +45,7 @@ test.describe('Home', () => {
     expect(response?.status()).toBe(200);
     await expect(page).toHaveTitle(/PlayRun/);
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('h1')).toHaveText(/Game QA,\s*Platform\s*Compliance &\s*Release Testing/);
+    await expect(page.locator('h1')).toHaveText(/I break\s*games\./);
     await page.waitForLoadState('networkidle');
     expect(errors, errors.join('\n')).toEqual([]);
   });

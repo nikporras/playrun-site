@@ -88,18 +88,15 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
       </div>
       <div class="hero__text">
         <h1 id="hero-title" class="hero__title">
-          <span class="hero__mask"><span class="hero__line" style="--i: 0">Game QA,</span></span>
-          <span class="hero__mask"><span class="hero__line" style="--i: 1">Platform</span></span>
-          <span class="hero__mask"><span class="hero__line" style="--i: 2">Compliance &amp;</span></span>
-          <span class="hero__mask"><span class="hero__line" style="--i: 3">Release Testing</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 0">I break</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 1">games.</span></span>
         </h1>
         <div class="hero__statement" data-load style="--d: 440ms">
           <p class="statement hero__intro">I'm Nicolás Porras, founder of PlayRun.</p>
-          <p class="hero__role">Tester, QA lead and QA manager, 2021 to now</p>
+          <p class="hero__role">Game QA, platform compliance &amp; release testing</p>
           <p class="hero__value">
-            I have tested games since 2021, led QA at nDreams and Historic VR, and tested indie titles through to
-            their console and PC releases. I plan the testing, run it on real hardware, and write reports developers
-            can act on.
+            I've led QA at nDreams and Historic VR and tested indie titles through to their console and PC releases.
+            I plan the testing, run it on real hardware, and write reports developers can act on.
           </p>
         </div>
         <div class="hero__actions" data-load style="--d: 560ms">
@@ -370,8 +367,8 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     margin-top: 0.35em;
   }
   .hero__title {
-    font-size: clamp(3rem, 7.8vw, 9rem);
-    font-size: round(clamp(3rem, 7.8vw, 9rem), 16px);
+    font-size: var(--step-hero);
+    font-size: round(var(--step-hero), 16px);
     line-height: 0.9;
     max-width: none;
     text-wrap: initial;
@@ -387,7 +384,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     display: block;
   }
   .hero__statement {
-    margin-top: var(--s-3);
+    margin-top: var(--s-4);
     max-width: 60ch;
   }
   .hero__intro {
@@ -400,7 +397,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     line-height: 1.2;
     color: var(--accent-2);
     max-width: none;
-    margin: var(--s-1) 0 var(--s-2);
+    margin: var(--s-2) 0 var(--s-3);
   }
   .hero__value {
     max-width: 60ch;
@@ -410,7 +407,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     align-items: center;
     flex-wrap: wrap;
     gap: var(--s-3);
-    margin-top: var(--s-3);
+    margin-top: var(--s-4);
   }
   .hero__ready {
     display: inline-flex;
@@ -461,7 +458,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
       width: min(42%, 10rem);
     }
     .hero__title {
-      font-size: round(13.5vw, 8px);
+      font-size: round(19vw, 8px);
     }
     .hero__statement,
     .hero__actions {
