@@ -10,28 +10,30 @@ import photoKeyboard from '../assets/photos/keyboard-unsplash.jpg';
 import photoHandhelds from '../assets/photos/console-portatili.jpg';
 
 // With script, the form posts a JSON string to the Apps Script endpoint. Without script it opens
-// the visitor's mail app with the brief written out, so nothing is lost either way.
+// the visitor's mail app with the message written out, so nothing is lost either way.
 const action = `mailto:${contact.email}`;
 
+const reasons = ['A hello from another tester', 'A question about how I test', 'An opportunity you think fits', 'A game we have both played', 'Feedback on this site'];
+
 const steps = [
-  { title: 'You send the brief', text: 'The build, the platforms and stores, the date you need it by, and anything that worries you.' },
-  { title: 'I reply with a test plan and a quote', text: 'What I will test, on which hardware, in what order, and what it costs. You change it until it fits.' },
-  { title: 'Testing starts on real hardware', text: 'Bugs arrive in your tracker with steps, severity, media and a build number. Reports your developers can act on.' },
+  { title: 'I read it', text: 'Every message lands in my own inbox, and I read all of them.' },
+  { title: 'I reply', text: 'From studio@playrunqa.com, so look out for that address.' },
+  { title: 'We talk', text: 'Email, a call, or a coffee if you are in London.' },
 ];
 ---
 
-<Base title="Contact" description="Start a project with PlayRun: send the build, the platforms and the date, and get a test plan and a quote from Nicolás Porras in London.">
+<Base title="Contact" description="Get in touch with Nicolás Porras of PlayRun in London: networking, opportunities, a question about game QA, or just to say hello.">
   <!-- Level 1: the ask -->
   <section class="level level--navy contact" data-level="1" aria-labelledby="contact-title">
     <p class="flag" data-load style="--d: 0ms"><span>Contact</span></p>
     <div class="contact__grid">
       <div class="contact__text">
         <h1 id="contact-title" class="contact__title">
-          <span class="hero__mask"><span class="hero__line" style="--i: 0">Start a</span></span>
-          <span class="hero__mask"><span class="hero__line" style="--i: 1">project</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 0">Get in</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 1">touch</span></span>
         </h1>
         <p class="contact__lead statement" data-load style="--d: 360ms">
-          Tell me about the build, the platforms and the date. I'll reply with a test plan and a quote.
+          Networking, opportunities, a question about QA, or just hello. I read every message.
         </p>
       </div>
       <div class="contact__side">
@@ -48,7 +50,7 @@ const steps = [
           <a class="contact__big" href={contact.phoneHref}>{contact.phone}</a>
         </li>
         <li>
-          <span class="contact__key">Studio</span>
+          <span class="contact__key">Based in</span>
           <span class="contact__big">{contact.location}</span>
         </li>
       </ul>
@@ -57,20 +59,16 @@ const steps = [
     <Bug id="contact-1" style="right: 8%; top: 14%" />
   </section>
 
-  <!-- Level 2: the brief, a form on a blue field -->
-  <section class="level level--blue brief" data-level="2" aria-labelledby="brief-title">
-    <p class="flag" data-enter><span>Level 2 &middot; The brief</span></p>
-    <div class="brief__grid">
-      <div class="brief__intro">
-        <h2 id="brief-title" class="level__title" data-enter="wipe">What to send</h2>
-        <ul role="list" class="brief__list" data-enter style="--enter-delay: 80ms">
-          <li>The game and its engine</li>
-          <li>Platforms and stores</li>
-          <li>The build, or when it lands</li>
-          <li>The date you ship</li>
-          <li>Your tracker, if you have one</li>
+  <!-- Level 2: the message, a form on a blue field -->
+  <section class="level level--blue msg" data-level="2" aria-labelledby="message-title">
+    <p class="flag" data-enter><span>Level 2 &middot; The message</span></p>
+    <div class="msg__grid">
+      <div class="msg__intro">
+        <h2 id="message-title" class="level__title" data-enter="wipe">Write to me</h2>
+        <ul role="list" class="msg__list" data-enter style="--enter-delay: 80ms">
+          {reasons.map((r) => <li>{r}</li>)}
         </ul>
-        <div class="brief__photo" data-enter="place">
+        <div class="msg__photo" data-enter="place">
           <Photo src={photoStick} alt="An arcade fight stick with a round ball top lever and six buttons" sizes="(max-width: 64rem) 100vw, 40vw" />
         </div>
       </div>
@@ -92,34 +90,30 @@ const steps = [
         <div class="form__row">
           <label class="form__label" for="f-email">Your email</label>
           <input class="form__input" id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="e-email" />
-          <p class="form__error" id="e-email" hidden>I need a working email address to send the plan to.</p>
+          <p class="form__error" id="e-email" hidden>I need a working email address to reply to.</p>
         </div>
         <div class="form__row">
-          <label class="form__label" for="f-studio">Studio <span class="form__optional">optional</span></label>
-          <input class="form__input" id="f-studio" name="studio" type="text" autocomplete="organization" />
-        </div>
-        <div class="form__row">
-          <label class="form__label" for="f-brief">The brief</label>
-          <textarea class="form__input form__input--area" id="f-brief" name="brief" rows="7" required aria-describedby="e-brief"
+          <label class="form__label" for="f-message">Your message</label>
+          <textarea class="form__input form__input--area" id="f-message" name="message" rows="7" required aria-describedby="e-message"
           ></textarea>
-          <p class="form__error" id="e-brief" hidden>A few lines on the build, the platforms and the date is enough.</p>
+          <p class="form__error" id="e-message" hidden>A line or two is enough.</p>
         </div>
         <div class="form__trap" aria-hidden="true">
           <label for="f-website">Website</label>
           <input id="f-website" name="website" type="text" tabindex="-1" autocomplete="off" />
         </div>
         <div class="form__actions">
-          <button class="button" type="submit">Send the brief</button>
+          <button class="button" type="submit">Send the message</button>
           <p class="form__status" id="form-status" role="status" aria-live="polite"></p>
         </div>
         <p class="form__fallback" id="form-fallback" hidden>
-          <a class="textlink" data-fallback-link href={action}>Email the brief instead</a>
+          <a class="textlink" data-fallback-link href={action}>Email me instead</a>
         </p>
         <p class="form__note small" id="form-note" data-note-js="It comes straight to me. I reply from studio@playrunqa.com.">
-          This opens your mail app with the brief written out, addressed to studio@playrunqa.com.
+          This opens your mail app with the message written out, addressed to studio@playrunqa.com.
         </p>
         <p class="form__note small">
-          I'll only use these details to reply to your brief. See the <a href="/privacy">privacy notice</a>.
+          I'll only use these details to reply to your message. See the <a href="/privacy">privacy notice</a>.
         </p>
       </form>
     </div>
@@ -257,14 +251,14 @@ const steps = [
     text-wrap: initial;
     margin-left: -0.03em;
   }
-  .brief__grid {
+  .msg__grid {
     display: grid;
     grid-template-columns: 5fr 7fr;
     gap: var(--s-5);
     align-items: start;
     margin-top: var(--s-5);
   }
-  .brief__intro {
+  .msg__intro {
     position: sticky;
     top: var(--s-4);
     display: flex;
@@ -272,17 +266,17 @@ const steps = [
     gap: var(--s-4);
     color: var(--pr-navy);
   }
-  .brief__list {
+  .msg__list {
     font-family: var(--font-display);
     font-size: 1.75rem;
     line-height: 1.2;
   }
-  .brief__list li {
+  .msg__list li {
     display: flex;
     gap: 0.75rem;
     align-items: baseline;
   }
-  .brief__list li::before {
+  .msg__list li::before {
     content: '';
     flex: none;
     width: 0.75rem;
@@ -290,10 +284,10 @@ const steps = [
     background: var(--pr-navy);
     transform: translateY(-0.1em);
   }
-  .brief__list li + li {
+  .msg__list li + li {
     margin-top: 0.4em;
   }
-  .brief__photo {
+  .msg__photo {
     aspect-ratio: 4 / 3;
   }
   .form {
@@ -475,7 +469,7 @@ const steps = [
       padding-bottom: var(--s-6);
     }
     .contact__grid,
-    .brief__grid {
+    .msg__grid {
       grid-template-columns: 1fr;
       gap: var(--s-5);
       margin-top: var(--s-4);
@@ -489,10 +483,10 @@ const steps = [
     .level__title {
       font-size: round(15vw, 8px);
     }
-    .brief__intro {
+    .msg__intro {
       position: static;
     }
-    .brief__list {
+    .msg__list {
       font-size: 1.5rem;
     }
     .form {
@@ -560,9 +554,8 @@ const steps = [
     const offerMail = () => {
       const link = fallback.querySelector<HTMLAnchorElement>('[data-fallback-link]');
       if (link) {
-        const subject = encodeURIComponent('Project brief');
-        const studio = value('studio') ? ', ' + value('studio') : '';
-        const body = encodeURIComponent(value('name') + ' (' + value('email') + ')' + studio + '\n\n' + value('brief'));
+        const subject = encodeURIComponent('Hello from playrunqa.com');
+        const body = encodeURIComponent(value('name') + ' (' + value('email') + ')\n\n' + value('message'));
         link.href = form.action + '?subject=' + subject + '&body=' + body;
       }
       fallback.hidden = false;
@@ -577,7 +570,7 @@ const steps = [
         return;
       }
       if (!endpoint) {
-        status.textContent = 'Opening your mail app with the brief.';
+        status.textContent = 'Opening your mail app with the message.';
         return; // the browser carries on with the mailto: action
       }
       e.preventDefault();
@@ -592,8 +585,7 @@ const steps = [
           body: JSON.stringify({
             name: value('name'),
             email: value('email'),
-            studio: value('studio'),
-            brief: value('brief'),
+            brief: value('message'),
             page: location.pathname,
             startedAt,
             website: value('website'),
@@ -606,13 +598,14 @@ const steps = [
           return;
         }
         const errors = data.errors ?? ['server'];
-        const fieldErrors = fields.filter((f) => errors.includes(f.name));
+        // The script still calls the message field 'brief'.
+        const fieldErrors = fields.filter((f) => errors.includes(f.name === 'message' ? 'brief' : f.name));
         if (fieldErrors.length) {
           fieldErrors.forEach((f) => mark(f, false));
           status.textContent = fieldErrors.length === 1 ? 'One field needs a look.' : fieldErrors.length + ' fields need a look.';
           fieldErrors[0].focus();
         } else if (errors.includes('rate_limited')) {
-          status.textContent = "You've just sent a brief, give it a minute.";
+          status.textContent = "You've just sent a message, give it a minute.";
         } else {
           throw new Error(errors.join(','));
         }

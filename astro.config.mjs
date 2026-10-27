@@ -7,6 +7,7 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'never',
   build: { format: 'file' },
+  redirects: { '/services': '/skills' },
   integrations: [sitemap()],
   devToolbar: { enabled: false },
 });

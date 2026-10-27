@@ -45,7 +45,7 @@ test.describe('Home', () => {
     expect(response?.status()).toBe(200);
     await expect(page).toHaveTitle(/PlayRun/);
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('h1')).toHaveText(/Game QA\s*for indie\s*studios/);
+    await expect(page.locator('h1')).toHaveText(/Game QA,\s*Platform\s*Compliance &\s*Release Testing/);
     await page.waitForLoadState('networkidle');
     expect(errors, errors.join('\n')).toEqual([]);
   });
@@ -103,7 +103,7 @@ test.describe('Home', () => {
     await expect(toggle).toBeVisible();
     await toggle.click();
     await expect(page.getByRole('button', { name: 'Close' })).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Services' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Skills' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });

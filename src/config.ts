@@ -1,10 +1,10 @@
-// Site-wide constants. Everything the pages need to know about the studio lives here.
+// Site-wide constants. Everything the pages need to know about the site lives here.
 export const site = {
   name: 'PlayRun',
   tagline: 'test experts',
   url: 'https://playrunqa.com',
   description:
-    'PlayRun is the game QA studio of Nicolás Porras, founder and lead QA, in London. Game QA, platform compliance and release testing for indie studios, with reports your developers can act on.',
+    'PlayRun is the game QA portfolio of Nicolás Porras in London: game QA, platform compliance and release testing since 2021, on Nintendo Switch, Xbox, PS5 and the PC stores, with reports developers can act on.',
   locale: 'en_GB',
   themeColor: '#0C152A',
 };
@@ -34,19 +34,19 @@ export const personal = {
 };
 
 export const nav = [
-  { label: 'Services', href: '/services' },
+  { label: 'Skills', href: '/skills' },
   { label: 'Portfolio', href: '/portfolio' },
   { label: 'About', href: '/about' },
   { label: 'Quality', href: '/quality' },
   { label: 'Contact', href: '/contact' },
 ];
 
-export const primaryAction = { label: 'Start a project', href: '/contact' };
+export const primaryAction = { label: 'Get in touch', href: '/contact' };
 
 // Legal pages. Put the business address in `address` when there is one to show; while it is
 // empty the pages fall back to the location in `contact`.
 export const legal = {
-  controller: 'Nicolás Porras, trading as PlayRun',
+  controller: 'Nicolás Porras (PlayRun)',
   address: '',
   updated: '2026-10-27',
 };

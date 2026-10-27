@@ -1,14 +1,16 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 
-/** The inner pages: About, Services, Portfolio and its project pages, Quality. */
+/** The inner pages: About, Skills, Portfolio and its project pages, Quality, and the legal pages. */
 const PAGES = [
   { path: '/about', h1: /Nicolás\s*Porras/, must: ['LinkedIn profile', 'via Universally Speaking'] },
-  { path: '/services', h1: /What I test\s*before you ship/, must: ['Functional testing', 'Bug reporting', 'GOG'] },
+  { path: '/skills', h1: /What I test\s*and how/, must: ['Functional testing', 'Bug reporting', 'GOG'] },
   { path: '/portfolio', h1: /Games I have\s*tested/, must: ["Lou's Lagoon", 'Gang of Frogs', 'All via Universally Speaking, 2021.'] },
   { path: '/portfolio/lous-lagoon', h1: /Lou's Lagoon/, must: ['Tiny Roar', 'On Steam', 'Back to the portfolio'] },
   { path: '/quality', h1: /This site is\s*a test subject/, must: ['tests, read from the code', 'Deploy only if green'] },
-  { path: '/privacy', h1: /Privacy notice/, must: ['Nicolás Porras, trading as PlayRun', 'deleted after 24 months', 'ico.org.uk'] },
+  { path: '/privacy', h1: /Privacy notice/, must: ['Nicolás Porras (PlayRun)', 'deleted after 24 months', 'ico.org.uk'] },
   { path: '/terms', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales'] },
   { path: '/accessibility', h1: /Accessibility/, must: ['WCAG', 'reduced motion', 'Report a problem'] },
 ];
@@ -80,9 +82,38 @@ test('every public project has its own page, linked from the portfolio', async (
   }
 });
 
-test('the services jump list lands on each service', async ({ page }) => {
-  await page.goto('/services');
+test('the skills jump list lands on each skill', async ({ page }) => {
+  await page.goto('/skills');
   const ids = await page.locator('.svc__jump a').evaluateAll((as) => (as as HTMLAnchorElement[]).map((a) => a.getAttribute('href')!.slice(1)));
   expect(ids.length).toBe(6);
   for (const id of ids) await expect(page.locator(`#${id}`)).toHaveCount(1);
+});
+
+test('the old services address sends visitors to the skills page', async ({ request }) => {
+  const res = await request.get('/services');
+  expect(res.status()).toBe(200);
+  expect(await res.text()).toMatch(/http-equiv="refresh"[^>]*url=\/skills/);
+  expect((await request.get('/skills')).status()).toBe(200);
+});
+
+test('the built site is a portfolio and offers no work', async () => {
+  const dist = join(process.cwd(), 'dist');
+  const html: string[] = [];
+  const walk = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walk(full);
+      else if (name.endsWith('.html')) html.push(full);
+    }
+  };
+  walk(dist);
+  expect(html.length).toBeGreaterThan(10);
+  // The words a site that sells work would use. Scripts are skipped: the form still posts the
+  // message in the field the Apps Script calls 'brief', which no visitor sees.
+  const offers = /quote|brief|start a project/i;
+  for (const file of html) {
+    const text = readFileSync(file, 'utf8').replace(/<script[\s\S]*?<\/script>/g, '');
+    const hit = text.match(offers);
+    expect(hit, `${file}: ${hit?.[0]}`).toBeNull();
+  }
 });

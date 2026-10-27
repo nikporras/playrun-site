@@ -13,13 +13,13 @@ const services = [
   {
     id: 'functional',
     title: 'Functional testing',
-    text: 'I play every path a player can take and log what breaks, where, and how to reproduce it. New features get a plan before the build lands; every later build gets a regression pass against it.',
-    get: ['A test plan you can read', 'Regression passes on every build', 'Build acceptance before a milestone'],
+    text: 'I play every path a player can take and log what breaks, where, and how to reproduce it. A new feature gets a test plan before the build lands, and every later build gets a regression pass against it.',
+    get: ['Test plans the team can read', 'Regression passes on every build', 'Build acceptance before a milestone'],
   },
   {
     id: 'platforms',
     title: 'Platforms and stores',
-    text: 'The same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the rules of Steam, Epic Games Store and GOG. I check what each platform and store requires before you submit, so the submission is not the first time anyone looks.',
+    text: 'The same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the rules of Steam, Epic Games Store and GOG. I check what each platform and store requires before submission, so the submission is not the first time anyone looks.',
     get: ['Platform requirement checks', 'Store rule checks', 'One report per SKU'],
   },
   {
@@ -31,7 +31,7 @@ const services = [
   {
     id: 'performance',
     title: 'Performance and stress',
-    text: 'I profile frame rate, memory and load times on low spec and recommended spec rigs with Unreal Engine tools and long sessions, then tell you exactly what gave and where.',
+    text: 'I profile frame rate, memory and load times on low spec and recommended spec rigs with Unreal Engine tools and long sessions, then report exactly what gave and where.',
     get: ['Unreal Engine profiling', 'Low and recommended spec rigs', 'Long session and soak tests'],
   },
   {
@@ -43,19 +43,19 @@ const services = [
   {
     id: 'reporting',
     title: 'Bug reporting',
-    text: 'Every issue arrives with steps, severity, media and a build number, in the tracker you already use. At each milestone you get a quality report: what was tested, what was found, what is left.',
+    text: 'Every issue arrives with steps, severity, media and a build number, in the tracker the team already uses. At each milestone, a quality report: what was tested, what was found, what is left.',
     get: ['Jira, Confluence or TestRail', 'Steps, severity, media, build number', 'Milestone quality reports'],
   },
 ];
 
 const run = [
-  ['Build received', 'You send the build and the brief. I set up the hardware and read the plan back to you.'],
-  ['Test plan', 'What gets tested, on what, in what order. You change it until it fits.'],
+  ['Build received', 'The build lands. I set up the hardware and read the plan back to the team.'],
+  ['Test plan', 'What gets tested, on what, in what order. Agreed with the team before the pass starts.'],
   ['Functional pass', 'Every path, every feature, every build.'],
   ['Platform pass', 'Each SKU against its platform and store rules.'],
   ['Performance pass', 'Frame rate, memory, load times, long sessions.'],
-  ['Report sent', 'Bugs in your tracker as they are found. A quality report at the milestone.'],
-  ['Shipped', 'You submit with the report in hand.'],
+  ['Report sent', 'Bugs in the tracker as they are found. A quality report at the milestone.'],
+  ['Shipped', 'The team submits with the report in hand.'],
 ];
 
 const platforms = [
@@ -69,19 +69,19 @@ const platforms = [
 ];
 ---
 
-<Base title="Services" description="What PlayRun tests before you ship: functional testing, platforms and stores, VR, performance and stress, playtesting and UX, and bug reporting in your tracker.">
+<Base title="Skills" description="What Nicolás Porras tests and how: functional testing, platforms and stores, VR, performance and stress, playtesting and UX, and bug reporting, learned on shipped games since 2021.">
   <!-- Level 1 -->
   <section class="level level--navy svc" data-level="1" aria-labelledby="services-title">
-    <p class="flag" data-load style="--d: 0ms"><span>Services</span></p>
+    <p class="flag" data-load style="--d: 0ms"><span>Skills</span></p>
     <div class="svc__grid">
       <div>
         <h1 id="services-title" class="page__title">
           <span class="mask"><span class="mask__line" style="--i: 0">What I test</span></span>
-          <span class="mask"><span class="mask__line" style="--i: 1">before you ship</span></span>
+          <span class="mask"><span class="mask__line" style="--i: 1">and how</span></span>
         </h1>
         <p class="svc__lead statement" data-load style="--d: 360ms">
-          Six services, one tester. I plan the testing, run it on real hardware, and send reports your developers can
-          act on.
+          Six areas, one tester. Five years of QA on VR, console and PC, from the first test plan to the shipped
+          build.
         </p>
       </div>
       <ol class="svc__jump" data-load style="--d: 440ms">
@@ -102,9 +102,9 @@ const platforms = [
     <p class="flag" data-enter><span>Level 2 &middot; The six</span></p>
     <div class="six__grid">
       <div class="six__intro">
-        <h2 id="six-title" class="level__title" data-enter="wipe">Pick what the build needs</h2>
+        <h2 id="six-title" class="level__title" data-enter="wipe">Six areas</h2>
         <p class="level__lead six__lead" data-enter style="--enter-delay: 80ms">
-          Most projects take two or three. A release takes all six.
+          Each one learned on a shipped game, and used on every build since.
         </p>
         <div class="six__photo" data-enter="place">
           <Photo src={photoStick} alt="An arcade fight stick with a round ball top lever and six buttons" sizes="(max-width: 64rem) 100vw, 40vw" />
@@ -116,7 +116,7 @@ const platforms = [
             <li class="row" id={s.id} data-enter style={`--enter-delay: ${i * 70}ms`}>
               <h3 class="row__title">{s.title}</h3>
               <p class="row__text">{s.text}</p>
-              <p class="six__get">What you get</p>
+              <p class="six__get">In practice</p>
               <ul role="list" class="row__terms">
                 {s.get.map((t) => (
                   <li>{t}</li>
@@ -159,7 +159,7 @@ const platforms = [
     <div class="level__head">
       <h2 id="plat-title" class="level__title" data-enter="wipe">Where the build has to work</h2>
       <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead">Four consoles, three PC stores. Each with its own rules, each checked before you submit.</p>
+        <p class="level__lead">Four consoles, three PC stores. Each with its own rules, each checked before submission.</p>
       </div>
     </div>
     <div class="plat__board">
@@ -183,8 +183,8 @@ const platforms = [
     <div class="ask__grid">
       <div>
         <h2 id="ask-title" class="level__title" data-enter="wipe">
-          <span class="mask__line">Send the build.</span>
-          <span class="mask__line">I'll send the plan.</span>
+          <span class="mask__line">Same bugs,</span>
+          <span class="mask__line">different games?</span>
         </h2>
         <div class="ask__actions" data-enter style="--enter-delay: 80ms">
           <a class="button" href={primaryAction.href}>{primaryAction.label}</a>

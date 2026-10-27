@@ -50,7 +50,7 @@ const services = [
   },
   {
     title: 'Performance and stress',
-    text: 'I profile frame rate, memory and load times on low spec and recommended spec rigs, then tell you exactly what gave.',
+    text: 'I profile frame rate, memory and load times on low spec and recommended spec rigs, then report exactly what gave.',
     terms: ['Unreal Engine profiling', 'Low and recommended spec', 'Long sessions'],
   },
   {
@@ -60,7 +60,7 @@ const services = [
   },
   {
     title: 'Bug reporting',
-    text: 'Every issue arrives with steps, severity, media and a build number, in the tracker you already use.',
+    text: 'Every issue arrives with steps, severity, media and a build number, in the tracker the team already uses.',
     terms: ['Jira and Confluence', 'TestRail', 'Milestone quality reports'],
   },
 ];
@@ -78,7 +78,7 @@ const totalChecks = results.groups.reduce((n, g) => n + g.passed + g.failed, 0);
 const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
 ---
 
-<Base title="Home" fullTitle={`${site.name}, game QA for indie studios, London`}>
+<Base title="Home" fullTitle={`${site.name}, the game QA portfolio of Nicolás Porras, London`}>
   <!-- Level 1: the start screen. The icon is the hero moment, the headline is the game's title. -->
   <section class="level level--navy hero" data-level="1" aria-labelledby="hero-title">
     <p class="flag" data-load style="--d: 0ms"><span>Level 1 &middot; Start</span></p>
@@ -88,16 +88,18 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
       </div>
       <div class="hero__text">
         <h1 id="hero-title" class="hero__title">
-          <span class="hero__mask"><span class="hero__line" style="--i: 0">Game QA</span></span>
-          <span class="hero__mask"><span class="hero__line" style="--i: 1">for indie</span></span>
-          <span class="hero__mask"><span class="hero__line" style="--i: 2">studios</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 0">Game QA,</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 1">Platform</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 2">Compliance &amp;</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 3">Release Testing</span></span>
         </h1>
         <div class="hero__statement" data-load style="--d: 440ms">
           <p class="statement hero__intro">I'm Nicolás Porras, founder of PlayRun.</p>
-          <p class="hero__role">Game QA, Platform Compliance &amp; Release Testing</p>
+          <p class="hero__role">Tester, QA lead and QA manager, 2021 to now</p>
           <p class="hero__value">
-            I have tested games since 2021, led QA at nDreams and Historic VR, and today I test for multiple indie
-            studios at once. I plan the testing, run it on real hardware, and send reports your developers can act on.
+            I have tested games since 2021, led QA at nDreams and Historic VR, and tested indie titles through to
+            their console and PC releases. I plan the testing, run it on real hardware, and write reports developers
+            can act on.
           </p>
         </div>
         <div class="hero__actions" data-load style="--d: 560ms">
@@ -111,7 +113,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
       </div>
       <ul role="list" class="hero__facts" data-load style="--d: 640ms">
         <li>Testing games since <span data-roll>2021</span></li>
-        <li>Multiple indie studios at once</li>
+        <li>Led QA at two VR studios</li>
         <li><span data-roll>30</span>+ SKUs on one release</li>
       </ul>
     </div>
@@ -126,11 +128,11 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     <p class="flag" data-enter><span>Level 2 &middot; What I test</span></p>
     <div class="services__grid">
       <div class="services__intro">
-        <h2 id="services-title" class="services__heading" data-enter="wipe">What I test before you ship</h2>
+        <h2 id="services-title" class="services__heading" data-enter="wipe">What I test</h2>
         <p class="services__lead" data-enter style="--enter-delay: 80ms">
-          Every engagement starts with a test plan you can read and ends with a report your developers can act on.
+          Six things I check on every build, from the first test plan to the report at the milestone.
         </p>
-        <a class="button button--navy" href="/services" data-enter style="--enter-delay: 160ms">See all services</a>
+        <a class="button button--navy" href="/skills" data-enter style="--enter-delay: 160ms">See the skills</a>
       </div>
       <ol class="services__rows">
         {
@@ -295,7 +297,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
       </h2>
       <div class="final__text" data-enter>
         <p class="final__lead">
-          Tell me about the build, the platforms and the date. I'll reply with a test plan and a quote.
+          Networking, opportunities, a question about QA, or just hello. I read every message.
         </p>
         <div class="final__actions">
           <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
@@ -368,8 +370,8 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     margin-top: 0.35em;
   }
   .hero__title {
-    font-size: var(--step-hero);
-    font-size: round(var(--step-hero), 16px);
+    font-size: clamp(3rem, 7.8vw, 9rem);
+    font-size: round(clamp(3rem, 7.8vw, 9rem), 16px);
     line-height: 0.9;
     max-width: none;
     text-wrap: initial;
@@ -459,7 +461,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
       width: min(42%, 10rem);
     }
     .hero__title {
-      font-size: round(19vw, 8px);
+      font-size: round(13.5vw, 8px);
     }
     .hero__statement,
     .hero__actions {

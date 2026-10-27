@@ -10,7 +10,7 @@ const ENDPOINT = '**/script.google.com/**';
 async function fillValid(page: Page) {
   await page.fill('#f-name', 'Ada');
   await page.fill('#f-email', 'ada@example.com');
-  await page.fill('#f-brief', 'Switch 2 build, ships in March.');
+  await page.fill('#f-message', 'Hello from the test suite.');
 }
 
 function answer(page: Page, body: unknown, status = 200) {
@@ -27,7 +27,7 @@ test.describe('Contact', () => {
     const res = await page.goto('/contact');
     expect(res?.status()).toBe(200);
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('h1')).toHaveText(/Start a\s*project/);
+    await expect(page.locator('h1')).toHaveText(/Get in\s*touch/);
     await expect(page.getByRole('link', { name: 'studio@playrunqa.com' }).first()).toHaveAttribute('href', 'mailto:studio@playrunqa.com');
     await expect(page.getByRole('link', { name: '+44 7830 303383' }).first()).toHaveAttribute('href', 'tel:+447830303383');
     await expect(page.locator('.form').getByRole('link', { name: 'privacy notice' })).toHaveAttribute('href', '/privacy');
@@ -36,9 +36,9 @@ test.describe('Contact', () => {
     expect(errors).toEqual([]);
   });
 
-  test('an empty brief is stopped with named errors and focus on the first field', async ({ page }) => {
+  test('an empty form is stopped with named errors and focus on the first field', async ({ page }) => {
     await page.goto('/contact');
-    await page.getByRole('button', { name: 'Send the brief' }).click();
+    await page.getByRole('button', { name: 'Send the message' }).click();
     await expect(page.locator('.form__error:visible')).toHaveCount(3);
     await expect(page.locator('#f-name')).toBeFocused();
     await expect(page.locator('#f-name')).toHaveAttribute('aria-invalid', 'true');
@@ -50,8 +50,8 @@ test.describe('Contact', () => {
     await page.goto('/contact');
     await page.fill('#f-name', 'Ada');
     await page.fill('#f-email', 'not-an-email');
-    await page.fill('#f-brief', 'Switch 2 build, ships in March.');
-    await page.getByRole('button', { name: 'Send the brief' }).click();
+    await page.fill('#f-message', 'Hello from the test suite.');
+    await page.getByRole('button', { name: 'Send the message' }).click();
     await expect(page.locator('#e-email')).toBeVisible();
     await expect(page.locator('#f-email')).toBeFocused();
     await page.fill('#f-email', 'ada@example.com');
@@ -59,7 +59,7 @@ test.describe('Contact', () => {
     await expect(page.locator('#f-email')).toHaveAttribute('aria-invalid', 'false');
   });
 
-  test('a valid brief posts a JSON string as text/plain with every field, and shows Sent', async ({ page }) => {
+  test('a valid message posts a JSON string as text/plain with every field, and shows Sent', async ({ page }) => {
     let sent: { headers: Record<string, string>; body: Record<string, unknown> } | undefined;
     await page.route(ENDPOINT, (route) => {
       const req = route.request();
@@ -68,12 +68,13 @@ test.describe('Contact', () => {
     });
     await page.goto('/contact');
     await fillValid(page);
-    await page.fill('#f-studio', 'Tiny Studio');
-    await page.getByRole('button', { name: 'Send the brief' }).click();
+    await page.getByRole('button', { name: 'Send the message' }).click();
     await expect(page.locator('#form-status')).toHaveText(/^Sent/);
     await expect(page.locator('#f-name')).toBeHidden();
     expect(sent?.headers['content-type']).toBe('text/plain;charset=utf-8');
-    expect(sent?.body).toMatchObject({ name: 'Ada', email: 'ada@example.com', studio: 'Tiny Studio', brief: 'Switch 2 build, ships in March.', page: '/contact', website: '' });
+    // The message travels in the field the script already knows.
+    expect(sent?.body).toMatchObject({ name: 'Ada', email: 'ada@example.com', brief: 'Hello from the test suite.', page: '/contact', website: '' });
+    expect(sent?.body).not.toHaveProperty('studio');
     expect(typeof sent?.body.startedAt).toBe('number');
   });
 
@@ -81,19 +82,28 @@ test.describe('Contact', () => {
     await answer(page, { ok: false, errors: ['email'] });
     await page.goto('/contact');
     await fillValid(page);
-    await page.getByRole('button', { name: 'Send the brief' }).click();
+    await page.getByRole('button', { name: 'Send the message' }).click();
     await expect(page.locator('#e-email')).toBeVisible();
     await expect(page.locator('#f-email')).toHaveAttribute('aria-invalid', 'true');
     await expect(page.locator('#f-email')).toBeFocused();
     await expect(page.locator('#form-status')).toHaveText('One field needs a look.');
   });
 
+  test("the script's error for the message field lands on the message box", async ({ page }) => {
+    await answer(page, { ok: false, errors: ['brief'] });
+    await page.goto('/contact');
+    await fillValid(page);
+    await page.getByRole('button', { name: 'Send the message' }).click();
+    await expect(page.locator('#e-message')).toBeVisible();
+    await expect(page.locator('#f-message')).toBeFocused();
+  });
+
   test('a rate limit asks for a minute', async ({ page }) => {
     await answer(page, { ok: false, errors: ['rate_limited'] });
     await page.goto('/contact');
     await fillValid(page);
-    await page.getByRole('button', { name: 'Send the brief' }).click();
-    await expect(page.locator('#form-status')).toHaveText("You've just sent a brief, give it a minute.");
+    await page.getByRole('button', { name: 'Send the message' }).click();
+    await expect(page.locator('#form-status')).toHaveText("You've just sent a message, give it a minute.");
     await expect(page.locator('#f-name')).toBeVisible();
   });
 
@@ -101,15 +111,15 @@ test.describe('Contact', () => {
     await answer(page, { ok: false, errors: ['server'] });
     await page.goto('/contact');
     await fillValid(page);
-    await page.getByRole('button', { name: 'Send the brief' }).click();
+    await page.getByRole('button', { name: 'Send the message' }).click();
     await expect(page.locator('#form-status')).toContainText('did not send');
-    const mail = page.getByRole('link', { name: 'Email the brief instead' });
+    const mail = page.getByRole('link', { name: 'Email me instead' });
     await expect(mail).toBeVisible();
-    await expect(mail).toHaveAttribute('href', /^mailto:studio@playrunqa\.com\?subject=Project%20brief&body=Ada/);
+    await expect(mail).toHaveAttribute('href', /^mailto:studio@playrunqa\.com\?subject=Hello%20from%20playrunqa\.com&body=Ada/);
 
     await page.unroute(ENDPOINT);
     await page.route(ENDPOINT, (route) => route.abort('failed'));
-    await page.getByRole('button', { name: 'Send the brief' }).click();
+    await page.getByRole('button', { name: 'Send the message' }).click();
     await expect(page.locator('#form-status')).toContainText('did not send');
     await expect(mail).toBeVisible();
   });
