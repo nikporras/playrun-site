@@ -25,6 +25,7 @@ content-source/
 
 # working notes and local editor config, not part of the site
 /*.md
+!/README.md
 /.*.json
 .*/
 !.github/
