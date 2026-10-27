@@ -1,0 +1,1315 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Photo from '../components/Photo.astro';
+import PassMark from '../components/PassMark.astro';
+import CrossMark from '../components/CrossMark.astro';
+import Marquee from '../components/Marquee.astro';
+import Bug from '../components/Bug.astro';
+import IconPrimary from '../assets/logo/icon-primary.svg';
+import Icon from '../assets/logo/icon.svg';
+import results from '../../tests/results/latest.json';
+import { contact, primaryAction, site } from '../config';
+
+import photoGamepad from '../assets/photos/8bitdo-sf30-gamepad-hs-dsc-2710.jpg';
+import photoGamepad2 from '../assets/photos/8bitdo-sn30-gamepad-hs-dsc-2704.jpg';
+import photoVr from '../assets/photos/virtual-reality-headset.jpg';
+import photoStick from '../assets/photos/fightstick.jpg';
+import photoKeyboard from '../assets/photos/keyboard-unsplash.jpg';
+import photoHandhelds from '../assets/photos/console-portatili.jpg';
+
+const allProjects = await getCollection('projects');
+// Released titles first, newest first; titles in development last.
+const projects = (import.meta.env.DEV ? allProjects : allProjects.filter((p) => p.data.public)).sort((a, b) => {
+  const aDev = a.data.status === 'in-development' ? 1 : 0;
+  const bDev = b.data.status === 'in-development' ? 1 : 0;
+  return aDev - bDev || (b.data.year ?? 0) - (a.data.year ?? 0);
+});
+
+// Routes that exist in this build. The self test only checks links to these, so pages that are not
+// built yet never count as failures; new pages join the list the moment they are built.
+const builtRoutes = Object.keys(import.meta.glob('./**/*.astro'))
+  .map((p) => p.replace(/^\.\//, '/').replace(/index\.astro$/, '').replace(/\.astro$/, '').replace(/\/$/, '') || '/')
+  .filter((r) => !r.includes('['));
+
+const services = [
+  {
+    title: 'Functional testing',
+    text: 'I play every path a player can take and log what breaks, where, and how to reproduce it.',
+    terms: ['Test plans', 'Regression passes', 'Build acceptance'],
+  },
+  {
+    title: 'Platforms and stores',
+    text: 'The same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the rules of Steam, Epic Games Store and GOG.',
+    terms: ['Switch and Switch 2', 'Xbox and PS5', 'Steam, Epic, GOG'],
+  },
+  {
+    title: 'VR',
+    text: 'Three years of VR QA at nDreams and Historic VR: comfort and tracking checks alongside the functional pass.',
+    terms: ['nDreams 2022 to 2024', 'Historic VR 2025', 'Headset test rigs'],
+  },
+  {
+    title: 'Performance and stress',
+    text: 'I profile frame rate, memory and load times on low spec and recommended spec rigs, then tell you exactly what gave.',
+    terms: ['Unreal Engine profiling', 'Low and recommended spec', 'Long sessions'],
+  },
+  {
+    title: 'Playtesting and UX',
+    text: 'I play as players do and report where they got lost, bored or stuck.',
+    terms: ['Onboarding', 'Difficulty', 'Readability'],
+  },
+  {
+    title: 'Bug reporting',
+    text: 'Every issue arrives with steps, severity, media and a build number, in the tracker you already use.',
+    terms: ['Jira and Confluence', 'TestRail', 'Milestone quality reports'],
+  },
+];
+
+// The run-sheet ticker names process states, never results or numbers.
+const runSheet = ['Build received', 'Test plan', 'Functional pass', 'Platform pass', 'Performance pass', 'Report sent', 'Shipped'];
+const tickerPlatforms = ['Switch 2', 'Switch', 'PS5', 'Xbox', 'Steam', 'Epic Games Store', 'GOG'];
+
+// The scoreboard: six panels of unequal width in three tones, no two alike side by side.
+const panelSpans = [5, 3, 4, 5, 3, 4];
+const panelTones = ['navy', 'light', 'cyan', 'light', 'cyan', 'navy'];
+
+const runDate = new Date(results.generatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+const totalChecks = results.groups.reduce((n, g) => n + g.passed + g.failed, 0);
+const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
+---
+
+<Base title="Home" fullTitle={`${site.name}, game QA for indie studios, London`}>
+  <!-- Level 1: the start screen. The icon is the hero moment, the headline is the game's title. -->
+  <section class="level level--navy hero" data-level="1" aria-labelledby="hero-title">
+    <p class="flag" data-load style="--d: 0ms"><span>Level 1 &middot; Start</span></p>
+    <div class="hero__grid">
+      <div class="hero__iconwrap" data-boot="wipe">
+        <IconPrimary class="hero__icon" role="img" aria-label="PlayRun icon" />
+      </div>
+      <div class="hero__text">
+        <h1 id="hero-title" class="hero__title">
+          <span class="hero__mask"><span class="hero__line" style="--i: 0">Game QA</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 1">for indie</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 2">studios</span></span>
+        </h1>
+        <div class="hero__statement" data-load style="--d: 440ms">
+          <p class="statement hero__intro">I'm Nicolás Porras, founder of PlayRun.</p>
+          <p class="hero__role">Game QA, Platform Compliance &amp; Release Testing</p>
+          <p class="hero__value">
+            I have tested games since 2021, led QA at nDreams and Historic VR, and today I test for multiple indie
+            studios at once. I plan the testing, run it on real hardware, and send reports your developers can act on.
+          </p>
+        </div>
+        <div class="hero__actions" data-load style="--d: 560ms">
+          <p class="hero__ready" data-boot="pop">
+            <PassMark class="hero__readymark" />
+            <span>Ready</span>
+          </p>
+          <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
+          <a class="textlink hero__secondary" href="/quality">See how I test this site</a>
+        </div>
+      </div>
+      <ul role="list" class="hero__facts" data-load style="--d: 640ms">
+        <li>Testing games since <span data-roll>2021</span></li>
+        <li>Multiple indie studios at once</li>
+        <li><span data-roll>30</span>+ SKUs on one release</li>
+      </ul>
+    </div>
+    <Bug id="hero-1" style="right: 7%; top: 44%" />
+  </section>
+
+  <!-- The run sheet: one band, two lanes -->
+  <Marquee run={runSheet} platforms={tickerPlatforms} />
+
+  <!-- Level 2: what I test, a blue field with the heading sticky and six navy rows -->
+  <section class="level level--blue services" data-level="2" aria-labelledby="services-title">
+    <p class="flag" data-enter><span>Level 2 &middot; What I test</span></p>
+    <div class="services__grid">
+      <div class="services__intro">
+        <h2 id="services-title" class="services__heading" data-enter="wipe">What I test before you ship</h2>
+        <p class="services__lead" data-enter style="--enter-delay: 80ms">
+          Every engagement starts with a test plan you can read and ends with a report your developers can act on.
+        </p>
+        <a class="button button--navy" href="/services" data-enter style="--enter-delay: 160ms">See all services</a>
+      </div>
+      <ol class="services__rows">
+        {
+          services.map((s, i) => (
+            <li class="services__row" data-enter data-achieve="services" style={`--enter-delay: ${i * 70}ms; --row-delay: ${i * 70 + 160}ms`}>
+              <h3 class="services__rowtitle">{s.title}</h3>
+              <ul role="list" class="services__terms">
+                {s.terms.map((t) => (
+                  <li>{t}</li>
+                ))}
+              </ul>
+              <p class="services__rowtext">{s.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+    <Bug id="services-1" style="right: 5%; top: 3%" />
+  </section>
+
+  <!-- Level 3: work as a stage select on a cyan field -->
+  <section class="level level--cyan work" data-level="3" aria-labelledby="work-title">
+    <p class="flag" data-enter><span>Level 3 &middot; Work</span></p>
+    <div class="level__head">
+      <h2 id="work-title" class="level__title" data-enter="wipe">Select stage</h2>
+      <div class="level__aside">
+        <p class="level__lead" data-enter style="--enter-delay: 80ms">
+          Lou's Lagoon shipped with more than 30 SKUs. I tested every one of them.
+        </p>
+        <a class="button button--navy" href="/portfolio" data-enter style="--enter-delay: 160ms">See the portfolio</a>
+      </div>
+    </div>
+    <div class="work__stages">
+      {
+        projects.map((p, i) => (
+          <article class:list={['stage', 'tile--live', { 'stage--big': i === 0 }]} data-enter="place" style={`--enter-delay: ${i * 60}ms`}>
+            <p class="stage__num">Stage {i + 1}</p>
+            <Icon class="stage__mark" role="presentation" aria-hidden="true" />
+            <h3 class="stage__title">{p.data.title}</h3>
+            <p class="stage__meta">
+              {p.data.status === 'in-development' ? 'In development' : p.data.year}. {p.data.platforms.join(', ')}.
+              {!p.data.public && ' Sample entry.'}
+            </p>
+            {p.data.url && (
+              <a class="stage__link" href={p.data.url} rel="noopener">
+                On Steam
+              </a>
+            )}
+          </article>
+        ))
+      }
+      {
+        [0, 1].map((i) => (
+          <article class="stage stage--redacted tile--live" data-enter="place" data-achieve="redacted" style={`--enter-delay: ${(projects.length + i) * 60}ms`}>
+            <p class="stage__num">Stage ?</p>
+            <p class="stage__bars" aria-hidden="true">
+              <span style="width: 62%" />
+              <span style="width: 38%" />
+            </p>
+            <h3 class="stage__title stage__title--small">
+              <span class="stage__tag">[Redacted]</span> Unannounced. Under NDA.
+            </h3>
+            <a class="textlink stage__ask" href="/contact">Ask me</a>
+          </article>
+        ))
+      }
+      <div class="work__photo work__photo--wide" data-enter="place">
+        <Photo
+          src={photoHandhelds}
+          alt="Five handheld consoles from the eighties and nineties on a display shelf"
+          sizes="(max-width: 48rem) 100vw, 50vw"
+        />
+      </div>
+      <div class="work__photo" data-enter="place" style="--enter-delay: 60ms">
+        <Photo
+          src={photoStick}
+          alt="An arcade fight stick with a round ball top lever and six buttons"
+          sizes="(max-width: 48rem) 50vw, 25vw"
+        />
+      </div>
+      <div class="work__photo" data-enter="place" style="--enter-delay: 120ms">
+        <Photo
+          src={photoKeyboard}
+          alt="A mechanical keyboard with pink backlit keys in a dark room"
+          sizes="(max-width: 48rem) 50vw, 25vw"
+        />
+      </div>
+    </div>
+    <Bug id="work-1" style="left: 48%; top: 5%" />
+    <Bug id="work-2" style="right: 4%; bottom: 30%" />
+  </section>
+
+  <!-- Level 4: proof as a scoreboard on a green field -->
+  <section class="level level--green proof" data-level="4" aria-labelledby="proof-title" data-routes={JSON.stringify(builtRoutes)}>
+    <p class="flag" data-enter><span>Level 4 &middot; Proof</span></p>
+    <div class="level__head">
+      <h2 id="proof-title" class="level__title" data-enter="wipe">Tested like my games</h2>
+      <div class="level__aside" data-enter style="--enter-delay: 80ms">
+        <p class="proof__text">
+          This site runs a Playwright suite on every push. The scoreboard shows the latest run, from {runDate}. Press the
+          button to run the same kind of checks on this page, in your browser, right now.
+        </p>
+        <div class="proof__controls">
+          <button class="button button--navy" type="button" id="selftest" aria-describedby="selftest-status">
+            Test this page
+          </button>
+          <p id="selftest-status" class="proof__status" aria-live="polite">{totalPassed} of {totalChecks} checks passed in the last run</p>
+        </div>
+        <p class="proof__score" id="selftest-score" hidden>
+          <span data-score-mark class="proof__scoremark"><PassMark /></span>
+          <span data-score>0/0</span>
+          <span data-score-word>Pass</span>
+        </p>
+      </div>
+    </div>
+    <div class="proof__board">
+      {
+        results.groups.map((g, i) => (
+          <div
+            class:list={['panel', 'is-idle', `panel--${panelTones[i]}`]}
+            style={`--span: ${panelSpans[i]}; --enter-delay: ${i * 60}ms`}
+            data-check={g.id}
+            data-enter="scan"
+          >
+            <div class="panel__mark" aria-hidden="true">
+              <svg class="proof__idle" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M0 0h7v1H0zM0 6h7v1H0zM0 1h1v5H0zM6 1h1v5H6z" fill="currentColor" /></svg>
+              <PassMark class="proof__pass" />
+              <CrossMark class="proof__cross" />
+            </div>
+            <p class="panel__num num">
+              <span data-count>&ndash; &ndash;</span>
+              <span class="panel__of"> of {g.passed + g.failed}</span>
+            </p>
+            <h3 class="panel__title">{g.title}</h3>
+            <p class="panel__detail" data-detail>{g.detail}</p>
+          </div>
+        ))
+      }
+      <div class="panel panel--photo" style="--span: 7" data-enter="place">
+        <Photo
+          src={photoGamepad}
+          alt="A grey retro style gamepad with four coloured face buttons lying on a worktop"
+          sizes="(max-width: 48rem) 100vw, 60vw"
+        />
+      </div>
+      <div class="panel panel--light panel--link" style="--span: 5; --enter-delay: 60ms" data-enter="place">
+        <p class="panel__linktext">Every push runs this suite before the site deploys.</p>
+        <a class="textlink panel__link" href="/quality">How I test this site</a>
+      </div>
+    </div>
+    <Bug id="proof-1" style="right: 8%; top: 6%" />
+  </section>
+
+  <!-- Level 5: the final level, a light field with the one line that matters -->
+  <section class="level level--light final" data-level="5" aria-labelledby="cta-title">
+    <p class="flag" data-enter><span>Level 5 &middot; Final level</span></p>
+    <div class="final__grid">
+      <h2 id="cta-title" class="final__title" data-enter="wipe">
+        <span class="final__line">I find the bugs</span>
+        <span class="final__line">before your</span>
+        <span class="final__line">players do</span>
+      </h2>
+      <div class="final__text" data-enter>
+        <p class="final__lead">
+          Tell me about the build, the platforms and the date. I'll reply with a test plan and a quote.
+        </p>
+        <div class="final__actions">
+          <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
+          <a class="final__mail" href={`mailto:${contact.email}`}>{contact.email}</a>
+        </div>
+      </div>
+      <div class="final__photos">
+        <div class="final__photo" data-enter="place">
+          <Photo
+            src={photoGamepad2}
+            alt="A grey gamepad seen from the side with its sticks and purple buttons"
+            sizes="(max-width: 48rem) 50vw, 40vw"
+            position="60% 50%"
+          />
+        </div>
+        <div class="final__photo" data-enter="place" style="--enter-delay: 60ms">
+          <Photo src={photoVr} alt="The inside of a VR headset, its two lenses lit by the screen" sizes="(max-width: 48rem) 50vw, 40vw" />
+        </div>
+      </div>
+    </div>
+    <Bug id="final-1" style="left: 50%; bottom: 5%" />
+  </section>
+</Base>
+
+<style>
+  /* Level 1: the icon beside the title, both as big as the screen allows */
+  .hero {
+    min-height: calc(100svh - 4.5rem);
+    display: flex;
+    flex-direction: column;
+    padding-top: var(--s-2);
+    padding-bottom: var(--s-5);
+  }
+  :global(.games) .hero {
+    min-height: calc(100svh - 4.5rem - var(--hud-h));
+  }
+  .hero__grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    grid-template-areas:
+      'icon text'
+      'facts text';
+    column-gap: var(--s-5);
+    row-gap: var(--s-4);
+    align-items: end;
+    margin-top: var(--s-4);
+  }
+  .hero__iconwrap {
+    grid-area: icon;
+    align-self: end;
+    width: min(100%, 34rem);
+  }
+  .hero__icon {
+    width: 100%;
+    height: auto;
+  }
+  .hero__text {
+    grid-area: text;
+    min-width: 0;
+  }
+  .hero__facts {
+    grid-area: facts;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1.15;
+    color: var(--accent-2);
+  }
+  .hero__facts li + li {
+    margin-top: 0.35em;
+  }
+  .hero__title {
+    font-size: var(--step-hero);
+    font-size: round(var(--step-hero), 16px);
+    line-height: 0.9;
+    max-width: none;
+    text-wrap: initial;
+    margin-left: -0.03em;
+  }
+  .hero__mask {
+    display: block;
+    overflow: clip;
+    padding-bottom: 0.08em;
+    margin-bottom: -0.08em;
+  }
+  .hero__line {
+    display: block;
+  }
+  .hero__statement {
+    margin-top: var(--s-3);
+    max-width: 60ch;
+  }
+  .hero__intro {
+    margin: 0;
+    max-width: none;
+  }
+  .hero__role {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    line-height: 1.2;
+    color: var(--accent-2);
+    max-width: none;
+    margin: var(--s-1) 0 var(--s-2);
+  }
+  .hero__value {
+    max-width: 60ch;
+  }
+  .hero__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    margin-top: var(--s-3);
+  }
+  .hero__ready {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin: 0;
+    max-width: none;
+  }
+  :global(.hero__readymark) {
+    font-size: 1.25rem;
+  }
+  .hero__secondary {
+    color: var(--ink);
+  }
+
+  @media (max-width: 63.99rem) {
+    .hero__grid {
+      column-gap: var(--s-4);
+    }
+    .hero__iconwrap {
+      width: 100%;
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .hero {
+      min-height: 0;
+      padding-bottom: var(--s-6);
+    }
+    :global(.games) .hero {
+      min-height: 0;
+    }
+    .hero__grid {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        'icon'
+        'text'
+        'facts';
+      row-gap: var(--s-4);
+      margin-top: var(--s-3);
+    }
+    .hero__iconwrap {
+      width: min(42%, 10rem);
+    }
+    .hero__title {
+      font-size: round(19vw, 8px);
+    }
+    .hero__statement,
+    .hero__actions {
+      margin-top: var(--s-4);
+    }
+    .hero__actions .button {
+      width: 100%;
+    }
+    .hero__facts {
+      font-size: 1.25rem;
+    }
+  }
+
+  /* The boot: the one loud moment. Everything is in the HTML on the first frame; the sequence only
+     adds arrival and is over by 1.2s. The lock-up wipes in from the bottom like a load bar, the two
+     headline lines rise from their masks, the tiles follow, the figures roll, READY pops last. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js) [data-boot='wipe'] {
+      clip-path: inset(100% 0 0 0);
+      animation: boot-wipe 700ms var(--ease-in-out) 60ms forwards;
+    }
+    :global(.js) .hero__line {
+      transform: translateY(105%);
+      animation: boot-line var(--dur-reveal) var(--ease-expo) forwards;
+      animation-delay: calc(260ms + var(--i) * 110ms);
+    }
+    :global(.js) .hero [data-load] {
+      animation: load-rise 500ms var(--ease-out) both;
+      animation-delay: var(--d, 0ms);
+    }
+    :global(.js) [data-boot='pop'] {
+      opacity: 0;
+      transform: scale(0.6);
+      animation: boot-pop 320ms var(--ease-out) 1000ms forwards;
+    }
+  }
+  @keyframes boot-wipe {
+    to {
+      clip-path: inset(0);
+    }
+  }
+  @keyframes boot-line {
+    to {
+      transform: none;
+    }
+  }
+  @keyframes load-rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes boot-pop {
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Rolling figures: each digit rolls up to its value once. The real number stays in the text. */
+  :global(.roll__digits) {
+    display: inline-flex;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    vertical-align: bottom;
+  }
+  :global(.roll__col) {
+    display: inline-block;
+    height: 1em;
+    overflow: clip;
+  }
+  :global(.roll__col)::before {
+    content: '0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9';
+    display: block;
+    white-space: pre;
+    line-height: 1;
+    transform: translateY(calc(var(--d) * -1em));
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.roll:not(.is-in) .roll__col)::before {
+      transform: none;
+    }
+    :global(.roll.is-in .roll__col)::before {
+      transition: transform var(--dur-slow) var(--ease-expo) calc(400ms + var(--i) * var(--stagger));
+    }
+  }
+
+  /* Level 2: the heading stays while the six rows pass */
+  .services__grid {
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    gap: var(--s-5);
+    align-items: start;
+    margin-top: var(--s-5);
+  }
+  .services__intro {
+    position: sticky;
+    top: var(--s-4);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-4);
+    min-width: 0;
+  }
+  .services__heading {
+    font-size: var(--step-level);
+    font-size: round(var(--step-level), 16px);
+    line-height: 0.92;
+    color: var(--pr-navy);
+    text-wrap: initial;
+    margin-left: -0.03em;
+  }
+  .services__lead {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    line-height: 1.1;
+    color: var(--pr-navy);
+    max-width: 34ch;
+  }
+  .services__rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .services__row {
+    background: var(--bg);
+    color: var(--ink);
+    padding: var(--s-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+  }
+  .services__rowtext {
+    margin-top: var(--s-1);
+  }
+  .services__rowtitle {
+    font-size: 2rem;
+  }
+  .services__rowtext {
+    font-size: 1rem;
+    max-width: 40ch;
+  }
+  .services__terms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.4em;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--accent-2);
+  }
+  .services__terms li:not(:last-child)::after {
+    content: ',';
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js) .services__row .services__terms {
+      opacity: 0;
+      transition: opacity 400ms var(--ease-out) var(--row-delay, 0ms);
+    }
+    :global(.js) .services__row.is-in .services__terms {
+      opacity: 1;
+    }
+  }
+  @media (max-width: 63.99rem) {
+    .services__grid {
+      grid-template-columns: 1fr;
+      gap: var(--s-5);
+    }
+    .services__intro {
+      position: static;
+    }
+    .services__heading {
+      font-size: round(15vw, 8px);
+    }
+    .services__lead {
+      font-size: 1.5rem;
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .services__row {
+      padding: var(--s-3) var(--s-2);
+    }
+    .services__rowtitle {
+      font-size: 1.75rem;
+    }
+  }
+
+  /* Shared level furniture: the giant title with an aside beside it */
+  .level__head {
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    gap: var(--s-5);
+    align-items: end;
+    margin-top: var(--s-5);
+  }
+  .level__title {
+    font-size: var(--step-level);
+    font-size: round(var(--step-level), 16px);
+    line-height: 0.92;
+    text-wrap: initial;
+    margin-left: -0.03em;
+  }
+  .level__aside {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-3);
+    min-width: 0;
+  }
+  .level__lead {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    line-height: 1.1;
+    max-width: 30ch;
+  }
+  @media (max-width: 63.99rem) {
+    .level__head {
+      grid-template-columns: 1fr;
+      gap: var(--s-4);
+      margin-top: var(--s-4);
+    }
+    .level__title {
+      font-size: round(15vw, 8px);
+    }
+    .level__lead {
+      font-size: 1.5rem;
+    }
+  }
+
+  /* Level 3: the stage select */
+  .work__stages {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: minmax(19rem, auto);
+    gap: var(--gap);
+    margin-top: var(--s-5);
+  }
+  .stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--s-1);
+    padding: 5rem var(--s-3) var(--s-3);
+    background: var(--bg);
+    color: var(--ink);
+    min-width: 0;
+    overflow: hidden;
+  }
+  .stage--big {
+    grid-column: span 2;
+    background: var(--field-light);
+    color: var(--field-light-ink);
+  }
+  .stage__num {
+    position: absolute;
+    top: var(--s-3);
+    left: var(--s-3);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .stage--big .stage__num {
+    color: var(--pr-navy);
+  }
+  .stage__mark {
+    position: absolute;
+    top: var(--s-3);
+    right: var(--s-3);
+    width: 3rem;
+    height: auto;
+    color: var(--field-blue);
+  }
+  .stage--big .stage__mark {
+    width: 5rem;
+    color: var(--pr-navy);
+  }
+  .stage__title {
+    font-size: 2.5rem;
+    padding-right: 1rem;
+  }
+  .stage--big .stage__title {
+    font-size: 3.5rem;
+  }
+  .stage__title--small {
+    font-size: 1.75rem;
+  }
+  .stage__meta {
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: 40ch;
+  }
+  .stage--big .stage__meta {
+    color: var(--field-light-ink);
+    font-size: var(--step-body);
+  }
+  .stage__link {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--accent-2);
+    align-self: flex-start;
+  }
+  .stage--big .stage__link {
+    color: var(--pr-navy);
+  }
+  .stage--redacted {
+    background-color: var(--surface-2);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M0 0h8v1H0zM0 0h1v8H0z' fill='%230C152A'/%3E%3C/svg%3E");
+    background-size: 8px 8px;
+  }
+  .stage__bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: var(--s-2);
+    max-width: none;
+  }
+  .stage__bars span {
+    display: block;
+    height: 1rem;
+    background: var(--ink);
+    opacity: 0.85;
+  }
+  .stage__tag {
+    color: var(--accent-2);
+  }
+  .stage__ask {
+    align-self: flex-start;
+  }
+  .work__photo {
+    min-width: 0;
+    min-height: 0;
+  }
+  .work__photo--wide {
+    grid-column: span 2;
+  }
+  @media (max-width: 63.99rem) {
+    .work__stages {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: auto;
+      gap: 0.375rem;
+    }
+    .stage {
+      min-height: 13rem;
+      padding: 4rem var(--s-2) var(--s-3);
+    }
+    .stage--big {
+      min-height: 17rem;
+    }
+    .stage__num,
+    .stage__mark {
+      top: var(--s-2);
+    }
+    .stage__num {
+      left: var(--s-2);
+    }
+    .stage__mark {
+      right: var(--s-2);
+      width: 2.25rem;
+    }
+    .stage--big .stage__mark {
+      width: 3.5rem;
+    }
+    .stage__title {
+      font-size: 1.75rem;
+    }
+    .stage--big .stage__title {
+      font-size: 2.5rem;
+    }
+    .stage__title--small {
+      font-size: 1.5rem;
+    }
+    .work__photo {
+      aspect-ratio: 1;
+    }
+    .work__photo--wide {
+      aspect-ratio: 16 / 9;
+    }
+  }
+
+  /* Level 4: the scoreboard, panels of unequal width */
+  .proof__text {
+    max-width: 44ch;
+  }
+  .proof__controls {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    flex-wrap: wrap;
+  }
+  .proof__status {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    max-width: none;
+  }
+  .proof__score {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    font-family: var(--font-display);
+    font-size: 3rem;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    max-width: none;
+  }
+  .proof__score[hidden] {
+    display: none;
+  }
+  .proof__scoremark {
+    font-size: 3rem;
+    line-height: 0;
+  }
+  .proof__score.is-fail .proof__scoremark {
+    display: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .proof__score.is-in {
+      animation: boot-pop 360ms var(--ease-out) both;
+    }
+  }
+  .proof__board {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-rows: 14rem;
+    gap: var(--gap);
+    margin-top: var(--s-5);
+  }
+  .panel {
+    grid-column: span var(--span, 4);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+    padding: var(--s-3);
+    min-width: 0;
+    overflow: hidden;
+  }
+  .panel--navy {
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .panel--light {
+    background: var(--field-light);
+    color: var(--field-light-ink);
+  }
+  .panel--cyan {
+    background: var(--field-cyan);
+    color: var(--field-cyan-ink);
+  }
+  .panel--photo {
+    padding: 0;
+  }
+  .panel__mark {
+    font-size: 2.5rem;
+    line-height: 0;
+    color: var(--accent);
+    transition: color var(--dur-base) ease;
+  }
+  .panel--light .panel__mark,
+  .panel--cyan .panel__mark {
+    color: var(--pr-navy);
+  }
+  .panel__mark :global(.proof__cross),
+  .panel__mark .proof__idle {
+    display: none;
+  }
+  .proof__idle {
+    width: 1em;
+    height: 1em;
+  }
+  /* Before the test runs nothing is ticked: an empty box and a blank count in a neutral tone */
+  .panel.is-idle .panel__mark .proof__idle {
+    display: block;
+  }
+  .panel.is-idle .panel__mark :global(.proof__pass),
+  .panel.is-pending .panel__mark :global(.proof__pass) {
+    display: none;
+  }
+  .panel.is-pending .panel__mark .proof__idle {
+    display: block;
+  }
+  .panel.is-idle .panel__mark,
+  .panel.is-pending .panel__mark,
+  .panel.is-idle [data-count] {
+    color: var(--muted);
+  }
+  .panel--light.is-idle .panel__mark,
+  .panel--cyan.is-idle .panel__mark,
+  .panel--light.is-pending .panel__mark,
+  .panel--cyan.is-pending .panel__mark,
+  .panel--light.is-idle [data-count],
+  .panel--cyan.is-idle [data-count] {
+    color: var(--pr-blue);
+  }
+  .panel.is-failed :global(.proof__pass) {
+    display: none;
+  }
+  .panel.is-failed :global(.proof__cross) {
+    display: block;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .panel.is-pass .panel__mark {
+      animation: mark-pop 320ms var(--ease-out);
+    }
+  }
+  @keyframes mark-pop {
+    from {
+      transform: scale(0.6);
+    }
+    to {
+      transform: none;
+    }
+  }
+  .panel__num {
+    margin-top: auto;
+    font-family: var(--font-display);
+    font-size: 4rem;
+    line-height: 0.9;
+    max-width: none;
+  }
+  .panel__of {
+    font-size: 1.25rem;
+    color: var(--muted);
+  }
+  .panel--light .panel__of,
+  .panel--cyan .panel__of {
+    color: inherit;
+  }
+  .panel__title {
+    font-size: 1.75rem;
+  }
+  .panel__detail {
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: none;
+  }
+  .panel--light .panel__detail,
+  .panel--cyan .panel__detail {
+    color: inherit;
+  }
+  .panel--link {
+    justify-content: flex-end;
+    gap: var(--s-2);
+  }
+  .panel__linktext {
+    max-width: 30ch;
+  }
+  .panel__link {
+    font-size: 2rem;
+    color: var(--pr-navy);
+    align-self: flex-start;
+  }
+  .panel__link:hover {
+    color: var(--pr-blue);
+  }
+  @media (max-width: 63.99rem) {
+    .proof__board {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: auto;
+      gap: 0.375rem;
+    }
+    .panel {
+      grid-column: span 1;
+      min-height: 12rem;
+      padding: var(--s-2);
+    }
+    .panel--photo,
+    .panel--link {
+      grid-column: span 2;
+    }
+    .panel--photo {
+      aspect-ratio: 16 / 9;
+      min-height: 0;
+    }
+    .panel__num {
+      font-size: 3rem;
+    }
+    .panel__title {
+      font-size: 1.5rem;
+    }
+    .panel__link {
+      font-size: 1.5rem;
+    }
+  }
+
+  /* Level 5: the last line, with the hardware beside it */
+  .final__grid {
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'title photos'
+      'text photos';
+    column-gap: var(--s-5);
+    row-gap: var(--s-5);
+    margin-top: var(--s-5);
+    min-height: 70svh;
+  }
+  .final__title {
+    grid-area: title;
+    font-size: var(--step-level);
+    font-size: round(var(--step-level), 16px);
+    line-height: 0.92;
+    text-wrap: initial;
+    margin-left: -0.03em;
+  }
+  .final__line {
+    display: block;
+  }
+  .final__text {
+    grid-area: text;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--s-4);
+  }
+  .final__lead {
+    font-size: var(--step-lead);
+    line-height: 1.3;
+    max-width: 32ch;
+  }
+  .final__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    flex-wrap: wrap;
+  }
+  .final__actions .button {
+    font-size: 1.5rem;
+    min-height: 3.5rem;
+    padding-inline: 2rem;
+  }
+  .final__mail {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--pr-navy);
+  }
+  .final__mail:hover {
+    color: var(--pr-blue);
+  }
+  .final__photos {
+    grid-area: photos;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: var(--gap);
+    min-height: 0;
+  }
+  .final__photo {
+    min-width: 0;
+    min-height: 0;
+  }
+  @media (max-width: 63.99rem) {
+    .final__grid {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        'title'
+        'text'
+        'photos';
+      row-gap: var(--s-4);
+      min-height: 0;
+    }
+    .final__title {
+      font-size: round(15vw, 8px);
+    }
+    .final__photos {
+      grid-template-rows: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.375rem;
+      margin-top: var(--s-3);
+    }
+    .final__photo {
+      aspect-ratio: 1;
+    }
+  }
+</style>
+
+<script>
+  // The live thing: real checks on this page, run in the visitor's browser.
+  type Check = { id: string; run: () => Promise<[number, number, string]> };
+
+  const button = document.getElementById('selftest') as HTMLButtonElement | null;
+  const status = document.getElementById('selftest-status');
+  const tiles = new Map<string, HTMLElement>();
+  document.querySelectorAll<HTMLElement>('[data-check]').forEach((t) => tiles.set(t.dataset.check!, t));
+
+  // Only links to routes that exist in this build are checked, so unbuilt pages never fail the test.
+  const builtRoutes: string[] = JSON.parse(document.querySelector('.proof')?.getAttribute('data-routes') ?? '[]');
+  const routeOf = (href: string) => new URL(href).pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
+  const internalLinks = () =>
+    Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]'))
+      .map((a) => a.href)
+      .filter((h) => h.startsWith(location.origin) && !h.includes('#') && builtRoutes.includes(routeOf(h)))
+      .filter((h, i, arr) => arr.indexOf(h) === i);
+
+  const checks: Check[] = [
+    {
+      id: 'pages',
+      run: async () => {
+        const h1 = document.querySelectorAll('h1').length;
+        return [h1 === 1 ? 1 : 0, h1 === 1 ? 0 : 1, h1 === 1 ? 'This page has exactly one h1' : `Found ${h1} h1 elements`];
+      },
+    },
+    {
+      id: 'console',
+      run: async () => {
+        const errors = (window as unknown as { __playrunErrors: string[] }).__playrunErrors ?? [];
+        return [errors.length ? 0 : 1, errors.length ? 1 : 0, errors.length ? `${errors.length} script errors since load` : 'No script errors since this page loaded'];
+      },
+    },
+    {
+      id: 'links',
+      run: async () => {
+        const links = internalLinks();
+        const results = await Promise.all(
+          links.map(async (href) => {
+            try {
+              const r = await fetch(href, { method: 'HEAD', cache: 'no-store' });
+              return r.ok;
+            } catch {
+              return false;
+            }
+          }),
+        );
+        const ok = results.filter(Boolean).length;
+        return [ok, links.length - ok, `${ok} of ${links.length} links to built pages answered 200`];
+      },
+    },
+    {
+      id: 'viewports',
+      run: async () => {
+        const over = document.documentElement.scrollWidth > document.documentElement.clientWidth;
+        return [over ? 0 : 1, over ? 1 : 0, over ? `Sideways overflow at ${innerWidth}px` : `No sideways overflow at ${innerWidth}px wide`];
+      },
+    },
+    {
+      id: 'a11y',
+      run: async () => {
+        const problems: string[] = [];
+        if (!document.documentElement.lang) problems.push('missing lang');
+        if (document.querySelectorAll('main').length !== 1) problems.push('main landmark');
+        document.querySelectorAll('img').forEach((img) => {
+          if (!img.hasAttribute('alt')) problems.push('image without alt');
+        });
+        document.querySelectorAll<HTMLElement>('a, button').forEach((el) => {
+          const name = (el.getAttribute('aria-label') || el.textContent || '').trim();
+          if (!name) problems.push('control without a name');
+        });
+        const n = problems.length;
+        return [n ? 0 : 1, n ? 1 : 0, n ? `${n} problems: ${problems.slice(0, 2).join(', ')}` : 'Language set, one main landmark, every image and control named'];
+      },
+    },
+    {
+      id: 'brand',
+      run: async () => {
+        await document.fonts.ready;
+        const pixel = document.fonts.check('16px "Pixel Operator"');
+        const mont = document.fonts.check('16px Montserrat');
+        const favicon = !!document.querySelector('link[rel="icon"]');
+        const passed = [pixel, mont, favicon].filter(Boolean).length;
+        return [passed, 3 - passed, passed === 3 ? 'Pixel Operator and Montserrat loaded, favicon present' : 'A brand asset did not load'];
+      },
+    },
+  ];
+
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const score = document.getElementById('selftest-score');
+
+  button?.addEventListener('click', async () => {
+    button.disabled = true;
+    if (status) status.textContent = `Running ${checks.length} checks`;
+    if (score) {
+      score.hidden = true;
+      score.classList.remove('is-in', 'is-fail');
+    }
+    for (const t of tiles.values()) {
+      t.classList.remove('is-idle');
+      t.classList.add('is-pending');
+    }
+    let passedAll = 0;
+    let failedAll = 0;
+    let tilesPassed = 0;
+    for (const check of checks) {
+      const tile = tiles.get(check.id);
+      const [passed, failed, detail] = await check.run();
+      if (!reduce) await wait(260);
+      passedAll += passed;
+      failedAll += failed;
+      if (failed === 0) tilesPassed++;
+      if (tile) {
+        tile.classList.remove('is-pending', 'is-pass');
+        tile.classList.toggle('is-failed', failed > 0);
+        if (failed === 0) tile.classList.add('is-pass');
+        const count = tile.querySelector('[data-count]');
+        const of = tile.querySelector('.panel__of');
+        const det = tile.querySelector('[data-detail]');
+        if (count) count.textContent = String(passed);
+        if (of) of.textContent = ` of ${passed + failed}`;
+        if (det) det.textContent = detail;
+      }
+    }
+    if (status) status.textContent = failedAll ? `${passedAll} passed, ${failedAll} failed on your device` : `${passedAll} of ${passedAll} passed on your device`;
+    if (score) {
+      const value = score.querySelector('[data-score]');
+      const word = score.querySelector('[data-score-word]');
+      if (value) value.textContent = `${tilesPassed}/${checks.length}`;
+      if (word) word.textContent = failedAll ? 'Fail' : 'Pass';
+      score.classList.toggle('is-fail', failedAll > 0);
+      score.hidden = false;
+      score.classList.add('is-in');
+    }
+    button.disabled = false;
+    button.textContent = 'Run again';
+    document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'selftest' }));
+  });
+
+  // Rolling figures in the facts tile: digit columns roll up once as part of the boot.
+  (() => {
+    const els = Array.from(document.querySelectorAll<HTMLElement>('[data-roll]'));
+    if (!els.length || reduce) return;
+    els.forEach((el) => {
+      const value = el.textContent?.trim() ?? '';
+      const said = Object.assign(document.createElement('span'), { className: 'visually-hidden', textContent: value });
+      const shown = Object.assign(document.createElement('span'), { className: 'roll__digits' });
+      shown.setAttribute('aria-hidden', 'true');
+      let i = 0;
+      for (const ch of value) {
+        if (!/\d/.test(ch)) {
+          shown.append(ch);
+          continue;
+        }
+        const col = Object.assign(document.createElement('span'), { className: 'roll__col' });
+        col.style.setProperty('--d', ch);
+        col.style.setProperty('--i', String(i++));
+        shown.append(col);
+      }
+      el.classList.add('roll');
+      el.replaceChildren(said, shown);
+    });
+    requestAnimationFrame(() => requestAnimationFrame(() => els.forEach((el) => el.classList.add('is-in'))));
+  })();
+</script>

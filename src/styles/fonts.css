@@ -1,0 +1,26 @@
+/* Pixel Operator, self-hosted (see public/fonts/PixelOperator-LICENSE.txt).
+   The face is drawn on a 16px grid: use it at multiples of 16px (or 8px for small labels). */
+@font-face {
+  font-family: 'Pixel Operator';
+  src: url('/fonts/PixelOperator.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pixel Operator';
+  src: url('/fonts/PixelOperator-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Metric-matched fallback for Montserrat so the swap does not shift the layout. */
+@font-face {
+  font-family: 'Montserrat Fallback';
+  src: local('Arial');
+  size-adjust: 111%;
+  ascent-override: 88%;
+  descent-override: 23%;
+  line-gap-override: 0%;
+}

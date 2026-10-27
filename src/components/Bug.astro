@@ -1,0 +1,19 @@
+---
+/**
+ * A bug to squash: a real button carrying the bug sprite, placed inside a level with inline
+ * position. Hidden until the games script turns the games on, so there is nothing without script.
+ */
+import Sprite from './Sprite.astro';
+
+interface Props {
+  id: string;
+  style: string;
+}
+const { id, style } = Astro.props;
+---
+
+<button type="button" class="bug" data-bug={id} style={style} aria-label="Catch this bug" hidden>
+  <span class="bug__body"><Sprite name="bug" /></span>
+  <span class="bug__net" aria-hidden="true"><Sprite name="net" /></span>
+  <span class="bug__plus" aria-hidden="true">+1</span>
+</button>

@@ -1,0 +1,23 @@
+---
+/** An 8-bit cross on a 7x7 grid, drawn in the current colour. The failed state of a check. */
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+const cells = [0, 1, 2, 3, 4, 5, 6].flatMap((i) => [
+  [i, i],
+  [6 - i, i],
+]);
+---
+
+<svg class:list={['crossmark', className]} viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true">
+  {cells.map(([x, y]) => <rect x={x} y={y} width="1" height="1" fill="currentColor" />)}
+</svg>
+
+<style>
+  .crossmark {
+    display: block;
+    width: 1em;
+    height: 1em;
+  }
+</style>

@@ -1,0 +1,406 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Bug from '../components/Bug.astro';
+import Photo from '../components/Photo.astro';
+import Icon from '../assets/logo/icon.svg';
+import { contact, primaryAction } from '../config';
+import photoHandhelds from '../assets/photos/console-portatili.jpg';
+import photoStick from '../assets/photos/fightstick.jpg';
+import photoGamepad from '../assets/photos/8bitdo-sf30-gamepad-hs-dsc-2710.jpg';
+import photoVr from '../assets/photos/virtual-reality-headset.jpg';
+
+const all = await getCollection('projects');
+const projects = (import.meta.env.DEV ? all : all.filter((p) => p.data.public)).sort((a, b) => {
+  const aDev = a.data.status === 'in-development' ? 1 : 0;
+  const bDev = b.data.status === 'in-development' ? 1 : 0;
+  return aDev - bDev || (b.data.year ?? 0) - (a.data.year ?? 0);
+});
+
+// Titles from 2021 at Universally Speaking, named only here and on About, always with the label.
+const viaUS = ['Beat Saber', 'Walkabout Minigolf', 'A Township Tale', 'Space Pirate Trainer', 'Jurassic World Aftermath', 'The Climb'];
+---
+
+<Base title="Portfolio" description="Games PlayRun has tested: Lou's Lagoon, Thick as Thieves, CLAWPUNK and Gang of Frogs, plus VR titles via Universally Speaking. Some work stays under NDA.">
+  <!-- Level 1 -->
+  <section class="level level--navy work" data-level="1" aria-labelledby="work-title">
+    <p class="flag" data-load style="--d: 0ms"><span>Portfolio</span></p>
+    <div class="work__grid">
+      <div>
+        <h1 id="work-title" class="page__title">
+          <span class="mask"><span class="mask__line" style="--i: 0">Games I have</span></span>
+          <span class="mask"><span class="mask__line" style="--i: 1">tested</span></span>
+        </h1>
+        <p class="work__lead statement" data-load style="--d: 360ms">
+          Four titles I can name, with their stores. Two I cannot, yet. Six more from where I started, in VR.
+        </p>
+      </div>
+      <div class="work__photo" data-load style="--d: 200ms">
+        <Photo src={photoHandhelds} alt="Five handheld consoles from the eighties and nineties on a display shelf" loading="eager" sizes="(max-width: 64rem) 100vw, 40vw" />
+      </div>
+    </div>
+    <Bug id="portfolio-1" style="right: 46%; top: 12%" />
+  </section>
+
+  <!-- Level 2: the stages -->
+  <section class="level level--cyan stages" data-level="2" aria-labelledby="stages-title">
+    <p class="flag" data-enter><span>Level 2 &middot; Select stage</span></p>
+    <div class="level__head">
+      <h2 id="stages-title" class="level__title" data-enter="wipe">Select stage</h2>
+      <div class="level__aside" data-enter style="--enter-delay: 80ms">
+        <p class="level__lead">Each one opens to the platforms, the role and the store page.</p>
+      </div>
+    </div>
+    <div class="stages__grid">
+      {
+        projects.map((p, i) => (
+          <article class:list={['stage', 'tile--live', { 'stage--big': i === 0 }]} data-enter="place" style={`--enter-delay: ${i * 60}ms`}>
+            <p class="stage__num">Stage {i + 1}</p>
+            <Icon class="stage__mark" role="presentation" aria-hidden="true" />
+            <h3 class="stage__title">
+              <a class="stage__link" href={`/portfolio/${p.id}`}>{p.data.title}</a>
+            </h3>
+            <p class="stage__studio">{p.data.studio}</p>
+            <p class="stage__summary">{p.data.summary}</p>
+            <p class="stage__meta">
+              {p.data.status === 'in-development' ? 'In development' : p.data.year}. {p.data.platforms.join(', ')}.
+              {!p.data.public && ' Sample entry.'}
+            </p>
+          </article>
+        ))
+      }
+      <div class="stages__photo" data-enter="place">
+        <Photo src={photoStick} alt="An arcade fight stick with a round ball top lever and six buttons" sizes="(max-width: 64rem) 50vw, 25vw" />
+      </div>
+      <div class="stages__photo" data-enter="place" style="--enter-delay: 60ms">
+        <Photo src={photoGamepad} alt="A grey retro style gamepad with four coloured face buttons lying on a worktop" sizes="(max-width: 64rem) 50vw, 25vw" />
+      </div>
+    </div>
+    <Bug id="portfolio-2" style="left: 52%; top: 6%" />
+  </section>
+
+  <!-- Level 3: under NDA -->
+  <section class="level level--blue nda" data-level="3" aria-labelledby="nda-title">
+    <p class="flag" data-enter><span>Level 3 &middot; Redacted</span></p>
+    <div class="level__head">
+      <h2 id="nda-title" class="level__title" data-enter="wipe">Two more, under NDA</h2>
+      <div class="level__aside" data-enter style="--enter-delay: 80ms">
+        <p class="level__lead nda__lead">Unannounced titles I am testing now. Ask me and I will say what I can.</p>
+        <a class="button button--navy" href="/contact">Ask me</a>
+      </div>
+    </div>
+    <div class="nda__row">
+      {
+        [0, 1].map((i) => (
+          <article class="stage stage--redacted tile--live" data-enter="place" data-achieve="redacted" style={`--enter-delay: ${i * 60}ms`}>
+            <p class="stage__num">Stage ?</p>
+            <p class="stage__bars" aria-hidden="true">
+              <span style="width: 62%" />
+              <span style="width: 38%" />
+            </p>
+            <h3 class="stage__title stage__title--small">
+              <span class="stage__tag">[Redacted]</span> Unannounced. Under NDA.
+            </h3>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- Level 4: via Universally Speaking -->
+  <section class="level level--green via" data-level="4" aria-labelledby="via-title">
+    <p class="flag" data-enter><span>Level 4 &middot; 2021</span></p>
+    <div class="level__head">
+      <h2 id="via-title" class="level__title" data-enter="wipe">Where I started</h2>
+      <div class="level__aside" data-enter style="--enter-delay: 80ms">
+        <p class="level__lead">Six VR titles in my first year, as a QA Technician at Universally Speaking.</p>
+      </div>
+    </div>
+    <div class="via__grid">
+      <ul role="list" class="via__list" data-enter style="--enter-delay: 120ms">
+        {viaUS.map((t) => <li>{t}</li>)}
+      </ul>
+      <p class="via__label" data-enter style="--enter-delay: 160ms">All via Universally Speaking, 2021.</p>
+      <div class="via__photo" data-enter="place">
+        <Photo src={photoVr} alt="The inside of a VR headset, its two lenses lit by the screen" sizes="(max-width: 64rem) 100vw, 40vw" />
+      </div>
+    </div>
+    <Bug id="portfolio-3" style="right: 8%; top: 10%" />
+  </section>
+
+  <!-- Level 5 -->
+  <section class="level level--light ask" data-level="5" aria-labelledby="ask-title">
+    <p class="flag" data-enter><span>Level 5 &middot; Final level</span></p>
+    <h2 id="ask-title" class="level__title" data-enter="wipe">
+      <span class="mask__line">Your game,</span>
+      <span class="mask__line">next on the list</span>
+    </h2>
+    <div class="ask__actions" data-enter style="--enter-delay: 80ms">
+      <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
+      <a class="ask__mail" href={`mailto:${contact.email}`}>{contact.email}</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .work {
+    padding-top: var(--s-2);
+  }
+  .work__grid {
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    gap: var(--s-5);
+    align-items: end;
+    margin-top: var(--s-5);
+  }
+  .work__lead {
+    margin-top: var(--s-4);
+    max-width: 36ch;
+  }
+  .work__photo {
+    min-height: 24rem;
+  }
+
+  .stages__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: minmax(21rem, auto);
+    gap: var(--gap);
+    margin-top: var(--s-5);
+  }
+  .stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--s-1);
+    padding: 5rem var(--s-3) var(--s-3);
+    background: var(--bg);
+    color: var(--ink);
+    min-width: 0;
+    overflow: hidden;
+  }
+  .stage--big {
+    grid-column: span 2;
+    background: var(--field-light);
+    color: var(--field-light-ink);
+  }
+  .stage__num {
+    position: absolute;
+    top: var(--s-3);
+    left: var(--s-3);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .stage--big .stage__num {
+    color: var(--pr-navy);
+  }
+  .stage__mark {
+    position: absolute;
+    top: var(--s-3);
+    right: var(--s-3);
+    width: 3rem;
+    height: auto;
+    color: var(--field-blue);
+  }
+  .stage--big .stage__mark {
+    width: 5rem;
+    color: var(--pr-navy);
+  }
+  .stage__title {
+    font-size: 2.25rem;
+  }
+  .stage--big .stage__title {
+    font-size: 3.5rem;
+  }
+  .stage__title--small {
+    font-size: 1.75rem;
+  }
+  .stage__link {
+    text-decoration-color: var(--accent-2);
+  }
+  .stage--big .stage__link {
+    text-decoration-color: var(--pr-blue);
+  }
+  .stage__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .stage__studio {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .stage--big .stage__studio {
+    color: var(--pr-navy);
+  }
+  .stage__summary {
+    font-size: 1rem;
+    max-width: 44ch;
+  }
+  .stage__meta {
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: 44ch;
+  }
+  .stage--big .stage__meta {
+    color: var(--field-light-ink);
+  }
+  .stage--redacted {
+    background-color: var(--surface-2);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M0 0h8v1H0zM0 0h1v8H0z' fill='%230C152A'/%3E%3C/svg%3E");
+    background-size: 8px 8px;
+    min-height: 16rem;
+  }
+  .stage__bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: var(--s-2);
+    max-width: none;
+  }
+  .stage__bars span {
+    display: block;
+    height: 1rem;
+    background: var(--ink);
+    opacity: 0.85;
+  }
+  .stage__tag {
+    color: var(--accent-2);
+  }
+  .stages__photo {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .nda__lead {
+    color: var(--pr-navy);
+  }
+  .nda__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap);
+    margin-top: var(--s-5);
+  }
+
+  .via__grid {
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    grid-template-areas:
+      'list photo'
+      'label photo';
+    gap: var(--s-3) var(--s-5);
+    margin-top: var(--s-5);
+    align-items: end;
+  }
+  .via__list {
+    grid-area: list;
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-size: round(clamp(2rem, 1rem + 3vw, 3.5rem), 16px);
+    line-height: 1.1;
+  }
+  .via__list li + li {
+    margin-top: 0.2em;
+  }
+  .via__label {
+    grid-area: label;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    max-width: none;
+  }
+  .via__photo {
+    grid-area: photo;
+    min-height: 22rem;
+  }
+
+  .ask__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    flex-wrap: wrap;
+    margin-top: var(--s-5);
+  }
+  .ask__actions .button {
+    font-size: 1.5rem;
+    min-height: 3.5rem;
+    padding-inline: 2rem;
+  }
+  .ask__mail {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--pr-navy);
+  }
+
+  @media (max-width: 63.99rem) {
+    .work__grid,
+    .via__grid {
+      grid-template-columns: 1fr;
+      gap: var(--s-4);
+      margin-top: var(--s-4);
+    }
+    .via__grid {
+      grid-template-areas:
+        'list'
+        'label'
+        'photo';
+    }
+    .work__photo {
+      min-height: 0;
+      aspect-ratio: 4 / 3;
+      order: -1;
+    }
+    .stages__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: auto;
+      gap: 0.375rem;
+    }
+    .stage {
+      min-height: 14rem;
+      padding: 4rem var(--s-2) var(--s-3);
+    }
+    .stage--big {
+      min-height: 18rem;
+    }
+    .stage__num,
+    .stage__mark {
+      top: var(--s-2);
+    }
+    .stage__num {
+      left: var(--s-2);
+    }
+    .stage__mark {
+      right: var(--s-2);
+      width: 2.25rem;
+    }
+    .stage--big .stage__mark {
+      width: 3.5rem;
+    }
+    .stage__title {
+      font-size: 1.75rem;
+    }
+    .stage--big .stage__title {
+      font-size: 2.5rem;
+    }
+    .stage__title--small {
+      font-size: 1.5rem;
+    }
+    .stages__photo {
+      aspect-ratio: 1;
+    }
+    .nda__row {
+      grid-template-columns: 1fr;
+      gap: 0.375rem;
+    }
+    .via__photo {
+      min-height: 0;
+      aspect-ratio: 16 / 9;
+    }
+  }
+</style>

@@ -1,0 +1,59 @@
+---
+/**
+ * A photograph with the site's one treatment: greyscale under a navy multiply,
+ * covering its tile. Found pictures are credited in the footer.
+ */
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  widths?: number[];
+  sizes?: string;
+  loading?: 'eager' | 'lazy';
+  position?: string;
+  class?: string;
+}
+const {
+  src,
+  alt,
+  widths = [480, 768, 1200],
+  sizes = '(max-width: 48rem) 100vw, 50vw',
+  loading = 'lazy',
+  position = 'center',
+  class: className,
+} = Astro.props;
+---
+
+<figure class:list={['photo', className]} style={`--pos: ${position}`}>
+  <Image src={src} alt={alt} widths={widths} sizes={sizes} loading={loading} decoding="async" format="webp" quality={72} />
+</figure>
+
+<style>
+  .photo {
+    position: relative;
+    height: 100%;
+    margin: 0;
+    overflow: clip;
+    background: var(--surface-2);
+    min-width: 0;
+    min-height: 0;
+  }
+  .photo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--pos);
+    filter: grayscale(1) contrast(1.15) brightness(1.05);
+  }
+  .photo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--pr-blue);
+    opacity: 0.45;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+</style>

@@ -1,0 +1,624 @@
+---
+import Base from '../layouts/Base.astro';
+import Bug from '../components/Bug.astro';
+import PassMark from '../components/PassMark.astro';
+import Photo from '../components/Photo.astro';
+import { contact, contactEndpoint } from '../config';
+import photoGamepad2 from '../assets/photos/8bitdo-sn30-gamepad-hs-dsc-2704.jpg';
+import photoStick from '../assets/photos/fightstick.jpg';
+import photoKeyboard from '../assets/photos/keyboard-unsplash.jpg';
+import photoHandhelds from '../assets/photos/console-portatili.jpg';
+
+// With script, the form posts a JSON string to the Apps Script endpoint. Without script it opens
+// the visitor's mail app with the brief written out, so nothing is lost either way.
+const action = `mailto:${contact.email}`;
+
+const steps = [
+  { title: 'You send the brief', text: 'The build, the platforms and stores, the date you need it by, and anything that worries you.' },
+  { title: 'I reply with a test plan and a quote', text: 'What I will test, on which hardware, in what order, and what it costs. You change it until it fits.' },
+  { title: 'Testing starts on real hardware', text: 'Bugs arrive in your tracker with steps, severity, media and a build number. Reports your developers can act on.' },
+];
+---
+
+<Base title="Contact" description="Start a project with PlayRun: send the build, the platforms and the date, and get a test plan and a quote from Nicolás Porras in London.">
+  <!-- Level 1: the ask -->
+  <section class="level level--navy contact" data-level="1" aria-labelledby="contact-title">
+    <p class="flag" data-load style="--d: 0ms"><span>Contact</span></p>
+    <div class="contact__grid">
+      <div class="contact__text">
+        <h1 id="contact-title" class="contact__title">
+          <span class="hero__mask"><span class="hero__line" style="--i: 0">Start a</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 1">project</span></span>
+        </h1>
+        <p class="contact__lead statement" data-load style="--d: 360ms">
+          Tell me about the build, the platforms and the date. I'll reply with a test plan and a quote.
+        </p>
+      </div>
+      <div class="contact__side">
+      <div class="contact__photo" data-load style="--d: 200ms">
+        <Photo src={photoGamepad2} alt="A grey gamepad seen from the side with its sticks and purple buttons" loading="eager" sizes="(max-width: 64rem) 100vw, 40vw" position="60% 50%" />
+      </div>
+      <ul role="list" class="contact__direct" data-load style="--d: 480ms">
+        <li>
+          <span class="contact__key">Email</span>
+          <a class="contact__big" href={`mailto:${contact.email}`}>{contact.email}</a>
+        </li>
+        <li>
+          <span class="contact__key">Phone</span>
+          <a class="contact__big" href={contact.phoneHref}>{contact.phone}</a>
+        </li>
+        <li>
+          <span class="contact__key">Studio</span>
+          <span class="contact__big">{contact.location}</span>
+        </li>
+      </ul>
+      </div>
+    </div>
+    <Bug id="contact-1" style="right: 8%; top: 14%" />
+  </section>
+
+  <!-- Level 2: the brief, a form on a blue field -->
+  <section class="level level--blue brief" data-level="2" aria-labelledby="brief-title">
+    <p class="flag" data-enter><span>Level 2 &middot; The brief</span></p>
+    <div class="brief__grid">
+      <div class="brief__intro">
+        <h2 id="brief-title" class="level__title" data-enter="wipe">What to send</h2>
+        <ul role="list" class="brief__list" data-enter style="--enter-delay: 80ms">
+          <li>The game and its engine</li>
+          <li>Platforms and stores</li>
+          <li>The build, or when it lands</li>
+          <li>The date you ship</li>
+          <li>Your tracker, if you have one</li>
+        </ul>
+        <div class="brief__photo" data-enter="place">
+          <Photo src={photoStick} alt="An arcade fight stick with a round ball top lever and six buttons" sizes="(max-width: 64rem) 100vw, 40vw" />
+        </div>
+      </div>
+      <form
+        class="form"
+        action={action}
+        method="post"
+        enctype="text/plain"
+        novalidate
+        data-endpoint={contactEndpoint}
+        data-enter="place"
+        aria-describedby="form-note"
+      >
+        <div class="form__row">
+          <label class="form__label" for="f-name">Your name</label>
+          <input class="form__input" id="f-name" name="name" type="text" autocomplete="name" required aria-describedby="e-name" />
+          <p class="form__error" id="e-name" hidden>Tell me who to reply to.</p>
+        </div>
+        <div class="form__row">
+          <label class="form__label" for="f-email">Your email</label>
+          <input class="form__input" id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="e-email" />
+          <p class="form__error" id="e-email" hidden>I need a working email address to send the plan to.</p>
+        </div>
+        <div class="form__row">
+          <label class="form__label" for="f-studio">Studio <span class="form__optional">optional</span></label>
+          <input class="form__input" id="f-studio" name="studio" type="text" autocomplete="organization" />
+        </div>
+        <div class="form__row">
+          <label class="form__label" for="f-brief">The brief</label>
+          <textarea class="form__input form__input--area" id="f-brief" name="brief" rows="7" required aria-describedby="e-brief"
+          ></textarea>
+          <p class="form__error" id="e-brief" hidden>A few lines on the build, the platforms and the date is enough.</p>
+        </div>
+        <div class="form__trap" aria-hidden="true">
+          <label for="f-website">Website</label>
+          <input id="f-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+        </div>
+        <div class="form__actions">
+          <button class="button" type="submit">Send the brief</button>
+          <p class="form__status" id="form-status" role="status" aria-live="polite"></p>
+        </div>
+        <p class="form__fallback" id="form-fallback" hidden>
+          <a class="textlink" data-fallback-link href={action}>Email the brief instead</a>
+        </p>
+        <p class="form__note small" id="form-note" data-note-js="It comes straight to me. I reply from studio@playrunqa.com.">
+          This opens your mail app with the brief written out, addressed to studio@playrunqa.com.
+        </p>
+      </form>
+    </div>
+    <Bug id="contact-2" style="left: 36%; bottom: 6%" />
+  </section>
+
+  <!-- Level 3: what happens next, three panels on green -->
+  <section class="level level--green next" data-level="3" aria-labelledby="next-title">
+    <p class="flag" data-enter><span>Level 3 &middot; What happens next</span></p>
+    <h2 id="next-title" class="level__title" data-enter="wipe">Then</h2>
+    <ol class="next__steps">
+      {
+        steps.map((s, i) => (
+          <li class:list={['next__step', i === 1 ? 'next__step--light' : 'next__step--navy']} data-enter="place" style={`--enter-delay: ${i * 70}ms`}>
+            <PassMark class="next__mark" />
+            <h3 class="next__title">{s.title}</h3>
+            <p class="next__text">{s.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <div class="next__photos">
+      <div class="next__photo" data-enter="place">
+        <Photo src={photoHandhelds} alt="Five handheld consoles from the eighties and nineties on a display shelf" sizes="(max-width: 64rem) 100vw, 66vw" />
+      </div>
+      <div class="next__photo" data-enter="place" style="--enter-delay: 60ms">
+        <Photo src={photoKeyboard} alt="A mechanical keyboard with pink backlit keys in a dark room" sizes="(max-width: 64rem) 100vw, 33vw" />
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* Level 1 */
+  .contact {
+    padding-top: var(--s-2);
+    padding-bottom: var(--s-7);
+  }
+  .contact__grid {
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    gap: var(--s-5);
+    align-items: end;
+    margin-top: var(--s-5);
+  }
+  .contact__title {
+    font-size: var(--step-hero);
+    font-size: round(var(--step-hero), 16px);
+    line-height: 0.9;
+    margin-left: -0.03em;
+    text-wrap: initial;
+  }
+  .hero__mask {
+    display: block;
+    overflow: clip;
+    padding-bottom: 0.08em;
+    margin-bottom: -0.08em;
+  }
+  .hero__line {
+    display: block;
+  }
+  .contact__lead {
+    margin-top: var(--s-4);
+    max-width: 36ch;
+  }
+  .contact__side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+    min-width: 0;
+  }
+  .contact__photo {
+    aspect-ratio: 4 / 3;
+  }
+  .contact__direct {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    min-width: 0;
+  }
+  .contact__key {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    margin-bottom: 0.25rem;
+  }
+  .contact__big {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    line-height: 1.1;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+  a.contact__big {
+    text-decoration-color: var(--accent-2);
+  }
+  a.contact__big:hover {
+    color: var(--accent-2);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js) .hero__line {
+      transform: translateY(105%);
+      animation: boot-line var(--dur-reveal) var(--ease-expo) forwards;
+      animation-delay: calc(120ms + var(--i) * 110ms);
+    }
+    :global(.js) .contact [data-load] {
+      animation: load-rise 500ms var(--ease-out) both;
+      animation-delay: var(--d, 0ms);
+    }
+  }
+  @keyframes boot-line {
+    to {
+      transform: none;
+    }
+  }
+  @keyframes load-rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Level 2: the form */
+  .level__title {
+    font-size: var(--step-level);
+    font-size: round(var(--step-level), 16px);
+    line-height: 0.92;
+    text-wrap: initial;
+    margin-left: -0.03em;
+  }
+  .brief__grid {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: var(--s-5);
+    align-items: start;
+    margin-top: var(--s-5);
+  }
+  .brief__intro {
+    position: sticky;
+    top: var(--s-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+    color: var(--pr-navy);
+  }
+  .brief__list {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    line-height: 1.2;
+  }
+  .brief__list li {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+  .brief__list li::before {
+    content: '';
+    flex: none;
+    width: 0.75rem;
+    height: 0.75rem;
+    background: var(--pr-navy);
+    transform: translateY(-0.1em);
+  }
+  .brief__list li + li {
+    margin-top: 0.4em;
+  }
+  .brief__photo {
+    aspect-ratio: 4 / 3;
+  }
+  .form {
+    background: var(--bg);
+    color: var(--ink);
+    padding: var(--s-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+  .form__row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .form__label {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+  .form__optional {
+    color: var(--muted);
+    font-size: 1rem;
+    margin-left: 0.5em;
+  }
+  .form__input {
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface-2);
+    color: var(--ink);
+    border: 2px solid var(--surface-2);
+    font: inherit;
+    font-size: var(--step-body);
+    border-radius: 0;
+    transition: border-color var(--dur-fast) ease;
+  }
+  .form__input:hover {
+    border-color: var(--pr-blue);
+  }
+  .form__input:focus-visible {
+    outline: 3px solid var(--accent-2);
+    outline-offset: 2px;
+    border-color: var(--accent-2);
+  }
+  .form__input[aria-invalid='true'] {
+    border-color: var(--accent-2);
+  }
+  .form__input--area {
+    resize: vertical;
+    min-height: 10rem;
+  }
+  .form__error {
+    font-size: 1rem;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .form__error[hidden] {
+    display: none;
+  }
+  .form__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    flex-wrap: wrap;
+    margin-top: var(--s-1);
+  }
+  .form__actions .button {
+    font-size: 1.5rem;
+    min-height: 3.5rem;
+    padding-inline: 2rem;
+  }
+  .form__status {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    max-width: none;
+  }
+  .form__status:empty {
+    display: none;
+  }
+  .form__note {
+    color: var(--muted);
+    max-width: none;
+  }
+  /* The honeypot: a field no person sees or hears. Hidden by the stylesheet, not inline, so a
+     script that fills every text input still finds it. */
+  .form__trap {
+    display: none;
+  }
+  .form {
+    position: relative;
+  }
+  .form__fallback {
+    max-width: none;
+  }
+  .form__fallback[hidden] {
+    display: none;
+  }
+  .form.is-sent .form__row,
+  .form.is-sent .form__actions .button {
+    display: none;
+  }
+
+  /* Level 3 */
+  .next__steps {
+    list-style: none;
+    margin: var(--s-5) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 3fr 5fr 4fr;
+    gap: var(--gap);
+    counter-reset: step;
+  }
+  .next__step {
+    position: relative;
+    min-height: 18rem;
+    padding: var(--s-3);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--s-1);
+    counter-increment: step;
+  }
+  .next__step--navy {
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .next__step--light {
+    background: var(--field-light);
+    color: var(--field-light-ink);
+  }
+  .next__step::before {
+    content: counter(step);
+    position: absolute;
+    top: var(--s-3);
+    left: var(--s-3);
+    font-family: var(--font-display);
+    font-size: 3rem;
+    line-height: 1;
+    color: var(--accent-2);
+  }
+  .next__step--light::before {
+    color: var(--pr-blue);
+  }
+  .next__step :global(.next__mark) {
+    position: absolute;
+    top: var(--s-3);
+    right: var(--s-3);
+    font-size: 2rem;
+    color: var(--accent);
+  }
+  .next__step--light :global(.next__mark) {
+    color: var(--pr-navy);
+  }
+  .next__title {
+    font-size: 2rem;
+  }
+  .next__text {
+    font-size: 1rem;
+    max-width: 38ch;
+  }
+  .next__step--navy .next__text {
+    color: var(--muted);
+  }
+  .next__photos {
+    display: grid;
+    grid-template-columns: 8fr 4fr;
+    gap: var(--gap);
+    margin-top: var(--gap);
+    height: 18rem;
+  }
+  .next__photo {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  @media (max-width: 63.99rem) {
+    .contact {
+      padding-bottom: var(--s-6);
+    }
+    .contact__grid,
+    .brief__grid {
+      grid-template-columns: 1fr;
+      gap: var(--s-5);
+      margin-top: var(--s-4);
+    }
+    .contact__title {
+      font-size: round(19vw, 8px);
+    }
+    .contact__big {
+      font-size: 1.5rem;
+    }
+    .level__title {
+      font-size: round(15vw, 8px);
+    }
+    .brief__intro {
+      position: static;
+    }
+    .brief__list {
+      font-size: 1.5rem;
+    }
+    .form {
+      padding: var(--s-3) var(--s-2);
+    }
+    .form__actions .button {
+      width: 100%;
+    }
+    .next__steps {
+      grid-template-columns: 1fr;
+      gap: 0.375rem;
+    }
+    .next__photos {
+      grid-template-columns: 1fr 1fr;
+      height: auto;
+      gap: 0.375rem;
+    }
+    .next__photo {
+      aspect-ratio: 1;
+    }
+    .next__step {
+      min-height: 13rem;
+      padding: 4.5rem var(--s-2) var(--s-3);
+    }
+    .next__step::before,
+    .next__step :global(.next__mark) {
+      top: var(--s-2);
+    }
+    .next__step::before {
+      left: var(--s-2);
+      font-size: 2rem;
+    }
+    .next__step :global(.next__mark) {
+      right: var(--s-2);
+    }
+  }
+</style>
+
+<script>
+  // The form: checks each field before anything leaves the page and names what is missing beside
+  // the field. With script it posts a JSON string to the Apps Script endpoint (a text/plain body,
+  // so no preflight) and reads {ok} back. Without script the browser opens the mail app.
+  const form = document.querySelector<HTMLFormElement>('.form');
+  const status = document.getElementById('form-status');
+  const fallback = document.getElementById('form-fallback');
+  const note = document.getElementById('form-note');
+  if (form && status && fallback && note) {
+    const endpoint = form.dataset.endpoint || '';
+    const startedAt = Date.now();
+    note.textContent = note.dataset.noteJs || note.textContent;
+    const fields = Array.from(form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[required]'));
+    const errorOf = (f: HTMLElement) => document.getElementById(f.getAttribute('aria-describedby') || '');
+    const mark = (f: HTMLInputElement | HTMLTextAreaElement, ok: boolean) => {
+      f.setAttribute('aria-invalid', String(!ok));
+      const err = errorOf(f);
+      if (err) err.hidden = ok;
+    };
+    const check = (f: HTMLInputElement | HTMLTextAreaElement) => {
+      const ok = f.checkValidity();
+      mark(f, ok);
+      return ok;
+    };
+    fields.forEach((f) => f.addEventListener('input', () => f.getAttribute('aria-invalid') === 'true' && check(f)));
+    const value = (name: string) => (form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | null)?.value ?? '';
+    const offerMail = () => {
+      const link = fallback.querySelector<HTMLAnchorElement>('[data-fallback-link]');
+      if (link) {
+        const subject = encodeURIComponent('Project brief');
+        const studio = value('studio') ? ', ' + value('studio') : '';
+        const body = encodeURIComponent(value('name') + ' (' + value('email') + ')' + studio + '\n\n' + value('brief'));
+        link.href = form.action + '?subject=' + subject + '&body=' + body;
+      }
+      fallback.hidden = false;
+    };
+
+    form.addEventListener('submit', async (e) => {
+      const bad = fields.filter((f) => !check(f));
+      if (bad.length) {
+        e.preventDefault();
+        status.textContent = bad.length === 1 ? 'One field needs a look.' : bad.length + ' fields need a look.';
+        bad[0].focus();
+        return;
+      }
+      if (!endpoint) {
+        status.textContent = 'Opening your mail app with the brief.';
+        return; // the browser carries on with the mailto: action
+      }
+      e.preventDefault();
+      fallback.hidden = true;
+      status.textContent = 'Sending';
+      const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+      if (button) button.disabled = true;
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            name: value('name'),
+            email: value('email'),
+            studio: value('studio'),
+            brief: value('brief'),
+            page: location.pathname,
+            startedAt,
+            website: value('website'),
+          }),
+        });
+        const data = (await res.json()) as { ok: boolean; errors?: string[] };
+        if (data.ok) {
+          form.classList.add('is-sent');
+          status.textContent = 'Sent. I reply from studio@playrunqa.com.';
+          return;
+        }
+        const errors = data.errors ?? ['server'];
+        const fieldErrors = fields.filter((f) => errors.includes(f.name));
+        if (fieldErrors.length) {
+          fieldErrors.forEach((f) => mark(f, false));
+          status.textContent = fieldErrors.length === 1 ? 'One field needs a look.' : fieldErrors.length + ' fields need a look.';
+          fieldErrors[0].focus();
+        } else if (errors.includes('rate_limited')) {
+          status.textContent = "You've just sent a brief, give it a minute.";
+        } else {
+          throw new Error(errors.join(','));
+        }
+      } catch {
+        status.textContent = 'That did not send. Email me at studio@playrunqa.com and I will pick it up.';
+        offerMail();
+      } finally {
+        if (button) button.disabled = false;
+      }
+    });
+  }
+</script>

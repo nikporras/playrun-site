@@ -1,0 +1,158 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../assets/logo/icon.svg';
+import credits from '../assets/photos/credits.json';
+import Photo from '../components/Photo.astro';
+import type { ImageMetadata } from 'astro';
+
+type Credit = {
+  file: string;
+  title: string;
+  creator?: string;
+  creatorUrl?: string;
+  license: string;
+  licenseUrl?: string;
+  page: string;
+  via?: string;
+};
+const photos = (credits as Credit[]).filter((c) => c.title);
+// The photographs themselves, so the list shows what it credits.
+const photoFiles = import.meta.glob<{ default: ImageMetadata }>('../assets/photos/*.jpg', { eager: true });
+const imageFor = (file: string) => Object.entries(photoFiles).find(([k]) => k.endsWith('/' + file.split('/').pop()))?.[1].default;
+---
+
+<Base title="Credits" description="Who made the photographs, typefaces and tools used on playrunqa.com.">
+  <article class="credits wrap">
+    <div class="credits__head">
+      <div>
+        <h1 class="credits__title">Credits</h1>
+        <p class="lead">
+          Everything on this site that I did not make myself is listed here, with its maker and its licence.
+        </p>
+      </div>
+      <div class="credits__mark" aria-hidden="true">
+        <Icon class="credits__icon" role="presentation" />
+      </div>
+    </div>
+
+    <section class="credits__section credits__section--wide" aria-labelledby="credits-photos">
+      <h2 id="credits-photos">Photographs</h2>
+      <p>
+        The photographs show the world of game testing, not my own hardware or studio. They come from Wikimedia
+        Commons under open licences and are shown in greyscale under a navy tint.
+      </p>
+      <ul role="list" class="credits__list credits__list--photos">
+        {
+          photos.map((c) => (
+            <li class="credits__item credits__item--photo">
+              {imageFor(c.file) && (
+                <div class="credits__thumb">
+                  <Photo src={imageFor(c.file)!} alt={c.title} widths={[480, 768]} sizes="(max-width: 48rem) 50vw, 33vw" />
+                </div>
+              )}
+              <a href={c.page} rel="noopener">{c.title}</a>
+              {c.creator && (
+                <>
+                  {' '}by {c.creatorUrl ? <a href={c.creatorUrl} rel="noopener">{c.creator}</a> : c.creator}
+                </>
+              )}
+              , {c.licenseUrl ? <a href={c.licenseUrl} rel="noopener">{c.license}</a> : c.license}
+              {c.via ? `, via ${c.via}` : ''}.
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="credits__section" aria-labelledby="credits-type">
+      <h2 id="credits-type">Typefaces</h2>
+      <ul role="list" class="credits__list">
+        <li class="credits__item">
+          Pixel Operator by Jayvee Enaguas, under the CC0 licence. The licence text ships with the fonts at{' '}
+          <a href="/fonts/PixelOperator-LICENSE.txt">/fonts/PixelOperator-LICENSE.txt</a>.
+        </li>
+        <li class="credits__item">
+          Montserrat by Julieta Ulanovsky and contributors, under the SIL Open Font License, self-hosted from the
+          Fontsource package.
+        </li>
+      </ul>
+    </section>
+
+    <section class="credits__section" aria-labelledby="credits-tools">
+      <h2 id="credits-tools">Built with</h2>
+      <p>
+        Astro, hosted on GitHub Pages. Tested with Playwright and axe-core on every push. The brand identity is
+        PlayRun's own.
+      </p>
+    </section>
+  </article>
+</Base>
+
+<style>
+  .credits {
+    padding-block: var(--s-5) var(--s-6);
+  }
+  .credits__head {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: var(--s-4);
+    align-items: center;
+    min-height: 60svh;
+  }
+  .credits__title {
+    margin-bottom: var(--s-3);
+  }
+  .credits__mark {
+    display: flex;
+    justify-content: center;
+    color: var(--field-blue);
+  }
+  .credits__icon {
+    width: min(100%, 24rem);
+    height: auto;
+  }
+  .credits__section {
+    margin-top: var(--s-6);
+    max-width: 72ch;
+  }
+  .credits__section--wide {
+    max-width: none;
+  }
+  @media (max-width: 47.99rem) {
+    .credits__head {
+      grid-template-columns: 1fr;
+      min-height: 0;
+    }
+    .credits__icon {
+      width: min(60%, 14rem);
+    }
+  }
+  .credits__section h2 {
+    font-size: 2rem;
+    margin-bottom: var(--s-2);
+  }
+  .credits__list--photos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--s-4) var(--gap);
+    margin-top: var(--s-3);
+  }
+  .credits__item--photo + .credits__item--photo {
+    margin-top: 0;
+  }
+  .credits__thumb {
+    aspect-ratio: 4 / 3;
+    margin-bottom: var(--s-2);
+  }
+  @media (max-width: 47.99rem) {
+    .credits__list--photos {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .credits__list {
+    margin-top: var(--s-2);
+  }
+  .credits__item + .credits__item {
+    margin-top: var(--s-2);
+  }
+</style>

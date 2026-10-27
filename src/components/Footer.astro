@@ -1,0 +1,137 @@
+---
+import Icon from '../assets/logo/icon.svg';
+import { contact, nav, primaryAction, site, social } from '../config';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__mark" aria-hidden="true">
+      <Icon class="footer__icon" role="presentation" />
+    </div>
+
+    <div class="footer__grid">
+      <div class="footer__col">
+        <h2 class="footer__title">Site</h2>
+        <ul role="list" class="footer__links">
+          <li><a href="/">Home</a></li>
+          {nav.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+          <li><a href="/credits">Credits</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h2 class="footer__title">Studio</h2>
+        <p>{site.name}, {site.tagline}</p>
+        <p>{contact.name}</p>
+        <p>Founder &amp; Lead QA, PlayRun</p>
+        <p>{contact.location}</p>
+      </div>
+      <div class="footer__col">
+        <h2 class="footer__title">Contact</h2>
+        <p><a href={`mailto:${contact.email}`}>{contact.email}</a></p>
+        <p><a href={contact.phoneHref}>{contact.phone}</a></p>
+      </div>
+      {
+        social.length > 0 && (
+          <div class="footer__col">
+            <h2 class="footer__title">Elsewhere</h2>
+            <ul role="list" class="footer__links">
+              {social.map((s) => (
+                <li>
+                  <a href={s.href} rel="me noopener">{s.label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+    </div>
+
+    <p class="footer__tested">
+      This site is tested with Playwright on every push. <a href="/quality">See how we test it</a>.
+    </p>
+
+    <div class="footer__bottom">
+      <p class="small muted">
+        © {year} {site.name}. Photographs and typefaces are listed on the <a href="/credits">credits page</a>.
+      </p>
+      <a class="button footer__action" href={primaryAction.href}>{primaryAction.label}</a>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background: var(--surface);
+    padding-block: var(--s-5) var(--s-4);
+  }
+  .footer__mark {
+    height: 34svh;
+    min-height: 12rem;
+    max-height: 22rem;
+    display: flex;
+    justify-content: center;
+    color: var(--field-blue);
+  }
+  .footer__icon {
+    height: 100%;
+    width: auto;
+  }
+  .footer__grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--s-3);
+    margin-top: var(--s-6);
+  }
+  .footer__col {
+    grid-column: span 3;
+  }
+  .footer__col p {
+    max-width: none;
+  }
+  .footer__col p + p {
+    margin-top: 0.35em;
+  }
+  .footer__title {
+    font-size: 1.25rem;
+    margin-bottom: var(--s-2);
+    color: var(--accent-2);
+  }
+  .footer__links li + li {
+    margin-top: 0.35em;
+  }
+  .footer__tested {
+    margin-top: var(--s-5);
+    max-width: none;
+  }
+  .footer__bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--s-3);
+    margin-top: var(--s-5);
+    flex-wrap: wrap;
+  }
+  .footer__bottom p {
+    max-width: 60ch;
+  }
+  .footer__action {
+    font-size: 1rem;
+    min-height: 2.5rem;
+    padding: 0.5rem 1rem;
+  }
+  @media (max-width: 47.99rem) {
+    .footer__mark {
+      height: 22svh;
+      min-height: 8rem;
+    }
+    .footer__col {
+      grid-column: span 6;
+    }
+    .footer__bottom {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>

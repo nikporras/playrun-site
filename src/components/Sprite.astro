@@ -1,0 +1,131 @@
+---
+/**
+ * Pixel sprites drawn from bitmaps in the brand colours only. Nothing is copied from any game.
+ * The ship is the logo icon rasterised at 24 by 18 and banded blue, cyan, green from the top,
+ * the same way the primary icon carries its gradient. The bug is a 10 by 8 original.
+ */
+interface Props {
+  name: 'ship' | 'bug' | 'net';
+  class?: string;
+}
+const { name, class: className } = Astro.props;
+
+const SHIP = [
+  '..........#..#..........',
+  '........###..###........',
+  '......#####..#####......',
+  '.....######..######.....',
+  '...#######....#######...',
+  '.########......########.',
+  '########........########',
+  '..#######......#######..',
+  '....#######..#######....',
+  '.....######..######.....',
+  '.......####..#####......',
+  '........###..#####......',
+  '........###..######.....',
+  '.........##..######.....',
+  '.........##..##..###....',
+  '..........#..##...##....',
+  '..........#..#.....#....',
+  '..........#..#..........',
+];
+// The thruster, two frames behind the tail: cyan, then green.
+const FLAME_A = ['..........####', '...........##.'];
+const FLAME_B = ['..........####', '..........####', '...........##.'];
+
+// The butterfly net: cyan hoop, light mesh, blue handle.
+const NET = [
+  '........cccc....',
+  '......cc....cc..',
+  '.....c..l.l..c..',
+  '.....c.l.l.l.c..',
+  '.....c..l.l..c..',
+  '.....c.l.l.l.c..',
+  '......cc....cc..',
+  '.....bb.cccc....',
+  '....bb..........',
+  '...bb...........',
+  '..bb............',
+  '.bb.............',
+  'bb..............',
+];
+
+const BUG = [
+  '..L..BB..L',
+  '...LBBBB..',
+  '..BBEBBEB.',
+  'L.BBBBBB.L',
+  '.LBBBBBBBL',
+  'L.BBBBBB.L',
+  '..L.BB.L..',
+  '.L......L.',
+];
+
+type Cell = { x: number; y: number; cls: string };
+const cells: Cell[] = [];
+let w = 0;
+let h = 0;
+
+if (name === 'ship') {
+  w = SHIP[0].length;
+  SHIP.forEach((row, y) =>
+    [...row].forEach((ch, x) => {
+      if (ch === '#') cells.push({ x, y, cls: y < 6 ? 'px-blue' : y < 12 ? 'px-cyan' : 'px-green' });
+    }),
+  );
+  const tail = SHIP.length;
+  FLAME_A.forEach((row, y) => [...row].forEach((ch, x) => ch === '#' && cells.push({ x, y: tail + y, cls: 'px-flame px-flame-a' })));
+  FLAME_B.forEach((row, y) => [...row].forEach((ch, x) => ch === '#' && cells.push({ x, y: tail + y, cls: 'px-flame px-flame-b' })));
+  h = tail + 3;
+} else if (name === 'net') {
+  w = NET[0].length;
+  h = NET.length;
+  const map: Record<string, string> = { c: 'px-cyan', l: 'px-light', b: 'px-blue' };
+  NET.forEach((row, y) => [...row].forEach((ch, x) => map[ch] && cells.push({ x, y, cls: map[ch] })));
+} else {
+  w = BUG[0].length;
+  h = BUG.length;
+  const map: Record<string, string> = { B: 'px-body', E: 'px-eye', L: 'px-leg' };
+  BUG.forEach((row, y) => [...row].forEach((ch, x) => map[ch] && cells.push({ x, y, cls: map[ch] })));
+}
+---
+
+<svg class:list={['sprite', `sprite--${name}`, className]} viewBox={`0 0 ${w} ${h}`} shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+  {cells.map((c) => <rect x={c.x} y={c.y} width="1" height="1" class={c.cls} />)}
+</svg>
+
+<style>
+  .sprite {
+    display: block;
+    image-rendering: pixelated;
+  }
+  .px-blue {
+    fill: var(--pr-blue);
+  }
+  .px-cyan {
+    fill: var(--pr-cyan);
+  }
+  .px-green {
+    fill: var(--pr-green);
+  }
+  .px-light {
+    fill: var(--pr-light);
+  }
+  .px-flame-a {
+    fill: var(--pr-cyan);
+  }
+  .px-flame-b {
+    fill: var(--pr-green);
+    display: none;
+  }
+  .px-body {
+    fill: var(--bug-body, var(--pr-green));
+  }
+  .px-eye {
+    fill: var(--bug-eye, var(--pr-navy));
+  }
+  .px-leg {
+    fill: var(--bug-leg, var(--pr-cyan));
+  }
+</style>

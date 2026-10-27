@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-10-27T12:00:00Z",
+  "source": "seed",
+  "note": "Seed results used by the Home proof section until CI results are wired in. Counts mirror the local Playwright suite.",
+  "groups": [
+    { "id": "pages", "title": "Pages load", "detail": "Every route answers 200 and renders one h1. No blank screens.", "passed": 1, "failed": 0 },
+    { "id": "console", "title": "Zero console errors", "detail": "Nothing red in the console, no request left failing.", "passed": 1, "failed": 0 },
+    { "id": "links", "title": "Internal links resolve", "detail": "Every internal link answers 200. No 404s hiding in the footer.", "passed": 1, "failed": 0 },
+    { "id": "viewports", "title": "Three widths", "detail": "No sideways scroll at 375, 768 and 1440 pixels. Phones count.", "passed": 3, "failed": 0 },
+    { "id": "a11y", "title": "Accessibility scan", "detail": "axe-core finds no violations. Keyboard and screen readers get the whole page.", "passed": 1, "failed": 0 },
+    { "id": "brand", "title": "Brand assets", "detail": "Both typefaces load, the logo renders, favicon and Open Graph image present.", "passed": 3, "failed": 0 }
+  ]
+}

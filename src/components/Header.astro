@@ -1,0 +1,162 @@
+---
+import Lockup from '../assets/logo/logo-horizontal.svg';
+import { nav, primaryAction, site } from '../config';
+
+const current = Astro.url.pathname.replace(/\/$/, '') || '/';
+---
+
+<header class="header wrap">
+  <a class="header__brand" href="/" aria-label={`${site.name} home`}>
+    <Lockup class="header__lockup" aria-hidden="true" role="presentation" />
+  </a>
+
+  <button class="header__toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+    <span data-closed>Menu</span><span data-open hidden>Close</span>
+  </button>
+
+  <nav id="site-nav" class="header__nav" aria-label="Site">
+    <ul role="list" class="header__links">
+      {
+        nav.map((item) => (
+          <li>
+            <a href={item.href} aria-current={current === item.href ? 'page' : undefined}>
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <a class="button header__action" href={primaryAction.href}>{primaryAction.label}</a>
+  </nav>
+</header>
+
+<style>
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-3);
+    min-height: 4.5rem;
+    position: relative;
+  }
+  .header__brand {
+    display: block;
+    color: var(--ink);
+    text-decoration: none;
+    flex: none;
+  }
+  .header__brand:hover,
+  .header__brand:focus-visible {
+    color: var(--accent-2);
+  }
+  .header__lockup {
+    height: 2rem;
+    width: auto;
+    transition: color var(--dur-fast) ease;
+  }
+  .header__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+  }
+  .header__links {
+    display: flex;
+    gap: var(--s-3);
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+  .header__links a {
+    display: inline-block;
+    padding: 0.75rem 0.25rem;
+    text-decoration: none;
+    color: var(--ink);
+    position: relative;
+  }
+  .header__links a::after {
+    content: '';
+    position: absolute;
+    left: 0.25rem;
+    right: 0.25rem;
+    bottom: 0.35rem;
+    height: 0.25rem;
+    background: var(--accent-2);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .header__links a:hover::after,
+  .header__links a:focus-visible::after,
+  .header__links a[aria-current='page']::after {
+    transform: scaleX(1);
+  }
+  .header__links a[aria-current='page']::after {
+    background: var(--accent);
+  }
+  .header__toggle {
+    display: none;
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    line-height: 1;
+    min-height: 3rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+  }
+
+  @media (max-width: 59.99rem) {
+    .header__toggle {
+      display: inline-flex;
+      align-items: center;
+    }
+    .header__nav {
+      display: none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      z-index: 50;
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--s-2);
+      padding: var(--s-2) var(--margin) var(--s-4);
+      background: var(--surface);
+    }
+    .header__nav.is-open {
+      display: flex;
+    }
+    .header__links {
+      flex-direction: column;
+      gap: 0;
+      font-size: 1.5rem;
+    }
+    .header__links a {
+      display: block;
+      padding: 0.875rem 0.25rem;
+    }
+    .header__action {
+      width: 100%;
+    }
+  }
+</style>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('.header__toggle');
+  const nav = document.getElementById('site-nav');
+  if (toggle && nav) {
+    const closed = toggle.querySelector<HTMLElement>('[data-closed]')!;
+    const opened = toggle.querySelector<HTMLElement>('[data-open]')!;
+    const set = (open: boolean) => {
+      toggle.setAttribute('aria-expanded', String(open));
+      nav.classList.toggle('is-open', open);
+      closed.hidden = open;
+      opened.hidden = !open;
+    };
+    toggle.addEventListener('click', () => set(toggle.getAttribute('aria-expanded') !== 'true'));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+        set(false);
+        toggle.focus();
+      }
+    });
+  }
+</script>

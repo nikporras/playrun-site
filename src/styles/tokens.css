@@ -1,0 +1,84 @@
+/* PlayRun design tokens. Colours are the official brand values from the visual identity manual. */
+:root {
+  color-scheme: dark;
+
+  /* Brand palette */
+  --pr-navy: #0c152a;
+  --pr-blue: #516cb3;
+  --pr-cyan: #56bdda;
+  --pr-green: #67c18c;
+  --pr-light: #e5e7ea;
+
+  /* Roles */
+  --bg: var(--pr-navy);
+  --surface: #141f38; /* one step up from the ground: tiles */
+  --surface-2: #1c2a48; /* second step: alternating rows */
+  --ink: var(--pr-light);
+  --muted: #aab3c5; /* 7.9:1 on navy */
+  --accent: var(--pr-green); /* the action and the pass marks */
+  --accent-ink: var(--pr-navy);
+  --accent-2: var(--pr-cyan); /* links, hover, focus */
+  --field-blue: var(--pr-blue);
+  --field-blue-ink: var(--pr-light);
+  --field-light: var(--pr-light);
+  --field-light-ink: var(--pr-navy);
+  --field-light-surface: #d6d9de;
+  --field-cyan: var(--pr-cyan);
+  --field-cyan-ink: var(--pr-navy);
+  --field-green: var(--pr-green);
+  --field-green-ink: var(--pr-navy);
+
+  /* Type */
+  --font-display: 'Pixel Operator', 'Lucida Console', 'Courier New', monospace;
+  --font-text: 'Montserrat', 'Montserrat Fallback', Arial, Helvetica, sans-serif;
+
+  /* Five steps. Display and head sizes snap to 16px multiples so Pixel Operator stays crisp. */
+  --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem); /* 13 to 14px */
+  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.125rem); /* 17 to 18px */
+  --step-lead: clamp(1.25rem, 1.05rem + 1vw, 1.75rem); /* 20 to 28px, statements */
+  --step-head: clamp(2rem, 1.2rem + 3.4vw, 4rem); /* 32 to 64px, section headings */
+  --step-display: clamp(4rem, 2rem + 8vw, 8rem); /* 64 to 128px, giant titles */
+  --step-level: clamp(3rem, 1rem + 8vw, 9rem); /* 48 to 144px, the level headings */
+  --step-hero: clamp(4rem, 10vw, 10rem); /* 64 to 160px, the first screen */
+
+  /* Space, on an 8px scale */
+  --s-1: 0.5rem;
+  --s-2: 1rem;
+  --s-3: 1.5rem;
+  --s-4: 2rem;
+  --s-5: 3rem;
+  --s-6: 4rem;
+  --s-7: 6rem;
+  --s-8: 8rem;
+  --section-gap: clamp(4.5rem, 4rem + 6vw, 11rem); /* 72px on a phone to 176px on desktop */
+
+  /* Board */
+  --margin: clamp(1rem, 2.5vw, 3rem); /* 16px on a phone, 32px at 1280, 36px at 1440, 48px at 1920 */
+  --gap: 0.5rem; /* 8px between tiles */
+  --unit: 5.625rem; /* 90px board row unit */
+  --radius: 0;
+
+  /* The HUD bar at the foot of the viewport and the ship that runs on it */
+  --hud-h: 4rem;
+  --floor-h: 1rem;
+  --ship-w: 3rem;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* strong ease-out for UI */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1); /* reveals of 800ms and longer */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* wipes and things that travel */
+  --dur-press: 140ms;
+  --dur-fast: 180ms;
+  --dur-base: 320ms;
+  --dur-reveal: 800ms;
+  --dur-slow: 1100ms;
+  --stagger: 70ms;
+}
+
+@media (max-width: 47.99rem) {
+  :root {
+    --hud-h: 5.5rem; /* a panel row and a floor row */
+    --floor-h: 0.75rem;
+    --ship-w: 2rem;
+  }
+}

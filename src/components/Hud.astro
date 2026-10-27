@@ -1,0 +1,360 @@
+---
+/**
+ * The HUD and the floor: a fixed bar at the foot of the viewport. The ship runs along the floor
+ * as the page scrolls, flags mark where each level starts, the panel keeps the score, and the
+ * achievement toast sits above it. Hidden until script turns it on; removed under reduced motion.
+ */
+import Sprite from './Sprite.astro';
+import PassMark from './PassMark.astro';
+---
+
+<div class="hud" id="hud" hidden>
+  <ol class="hud__levels" aria-hidden="true"></ol>
+  <div class="hud__runner" aria-hidden="true" data-dir="1">
+    <div class="hud__ship"><Sprite name="ship" /></div>
+  </div>
+  <div class="hud__floor" aria-hidden="true"></div>
+  <div class="hud__panel">
+    <p class="hud__stat">
+      <span class="hud__key"><span class="hud__long">Level</span><span class="hud__short">L</span></span>
+      <span><b data-hud-level>1</b><span class="hud__of">/<span data-hud-levels>5</span></span></span>
+    </p>
+    <p class="hud__stat"><span class="hud__key">Bugs</span> <b data-hud-bugs>00</b></p>
+    <p class="hud__stat">
+      <span class="hud__key"><span class="hud__long">Achievements</span><span class="hud__short">Ach</span></span>
+      <b data-hud-ach>0/5</b>
+    </p>
+    <button type="button" class="hud__button" data-hud-toggle aria-pressed="true">Games <b>on</b></button>
+    <button type="button" class="hud__button hud__button--quiet" data-hud-reset>Reset</button>
+  </div>
+  <p class="visually-hidden" aria-live="polite" data-hud-live></p>
+</div>
+
+<div class="toast" role="status" aria-live="polite" data-toast>
+  <div class="toast__icon" aria-hidden="true"><PassMark class="toast__mark" /></div>
+  <p class="toast__text">
+    <small>Achievement unlocked</small>
+    <strong data-toast-title></strong>
+  </p>
+  <button type="button" class="toast__close" aria-label="Dismiss" data-toast-close>
+    <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" width="14" height="14">
+      <path
+        d="M0 0h1v1H0zM6 0h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM2 2h1v1H2zM4 2h1v1H4zM3 3h1v1H3zM2 4h1v1H2zM4 4h1v1H4zM1 5h1v1H1zM5 5h1v1H5zM0 6h1v1H0zM6 6h1v1H6z"
+        fill="currentColor"></path>
+    </svg>
+  </button>
+</div>
+
+<style>
+  .hud {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--hud-h);
+    z-index: 40;
+    background: var(--bg);
+    border-top: 2px solid var(--surface-2);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .hud[hidden] {
+    display: none;
+  }
+  .hud__floor {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--floor-h);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='%2356BDDA'/%3E%3Crect width='8' height='8' fill='%23516CB3'/%3E%3Crect x='8' y='8' width='8' height='8' fill='%23516CB3'/%3E%3C/svg%3E");
+    background-size: var(--floor-h) var(--floor-h);
+  }
+  .hud__levels {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: var(--floor-h);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hud__levels :global(li) {
+    position: absolute;
+    bottom: 0;
+    left: calc(var(--at, 0) * var(--track, 100vw) + var(--ship-w) / 2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: var(--muted);
+    font-size: 1rem;
+    letter-spacing: 0;
+    transform: translateX(-50%);
+  }
+  .hud__levels :global(li)::after {
+    content: '';
+    width: 2px;
+    height: 0.75rem;
+    background: currentColor;
+  }
+  .hud__levels :global(li.is-past) {
+    color: var(--accent);
+  }
+  .hud__runner {
+    position: absolute;
+    left: 0;
+    bottom: var(--floor-h);
+    width: var(--ship-w);
+    height: var(--ship-w);
+    will-change: transform;
+  }
+  .hud__runner {
+    transform: translateX(calc(var(--p, 0) * var(--track, 0px)));
+    transition: transform 120ms linear;
+  }
+  .hud__ship {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    transition: transform 160ms var(--ease-out);
+  }
+  .hud__runner[data-dir='-1'] .hud__ship {
+    transform: scaleX(-1);
+  }
+  .hud__ship :global(.sprite) {
+    width: 100%;
+    height: calc(100% * 21 / 24);
+    transform: rotate(90deg);
+  }
+  .hud__runner {
+    --flicker: 480ms;
+  }
+  .hud__runner.is-moving {
+    --flicker: 160ms;
+  }
+  .hud__runner :global(.px-flame-a) {
+    animation: flicker-a var(--flicker) steps(1) infinite;
+  }
+  .hud__runner :global(.px-flame-b) {
+    display: block;
+    animation: flicker-b var(--flicker) steps(1) infinite;
+  }
+  @keyframes flicker-a {
+    0%,
+    49% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes flicker-b {
+    0%,
+    49% {
+      opacity: 0;
+    }
+    50%,
+    100% {
+      opacity: 1;
+    }
+  }
+  .hud__panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: var(--floor-h);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding-inline: var(--s-2) var(--margin);
+    background: var(--bg);
+  }
+  .hud__stat {
+    display: inline-flex;
+    gap: 0.5em;
+    margin: 0;
+    max-width: none;
+    white-space: nowrap;
+  }
+  .hud__stat[hidden] {
+    display: none;
+  }
+  .hud__key {
+    color: var(--muted);
+  }
+  .hud__stat b {
+    font-weight: 400;
+    color: var(--accent);
+  }
+  .hud__of {
+    color: var(--muted);
+  }
+  .hud__short {
+    display: none;
+  }
+  .hud__button {
+    display: inline-flex;
+    align-items: center;
+    align-self: stretch;
+    padding-inline: 0.75rem;
+    background: var(--surface-2);
+    color: var(--ink);
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    white-space: nowrap;
+    transition:
+      background-color var(--dur-fast) ease,
+      color var(--dur-fast) ease;
+  }
+  .hud__button b {
+    font-weight: 400;
+    color: var(--accent);
+    margin-left: 0.4em;
+  }
+  .hud__button[aria-pressed='false'] b {
+    color: var(--muted);
+  }
+  .hud__button--quiet {
+    background: transparent;
+    color: var(--muted);
+  }
+  .hud__button:hover {
+    background: var(--surface);
+    color: var(--accent-2);
+  }
+  .hud__button:focus-visible {
+    outline-offset: -3px;
+  }
+  /* Games off: the bar folds down to the panel, the floor and the ship go, the page is the page. */
+  .hud--off {
+    left: auto;
+    height: auto;
+    border-top: 0;
+    background: transparent;
+  }
+  .hud--off .hud__floor,
+  .hud--off .hud__runner,
+  .hud--off .hud__levels {
+    display: none;
+  }
+  .hud--off .hud__panel {
+    position: static;
+    height: calc(var(--hud-h) - var(--floor-h));
+    border: 2px solid var(--surface-2);
+  }
+
+  /* The toast, Steam style: slides in from the right above the bar, leaves the same way. */
+  .toast {
+    position: fixed;
+    right: var(--margin);
+    bottom: calc(var(--hud-h) + var(--s-2));
+    z-index: 41;
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    max-width: calc(100vw - 2 * var(--margin));
+    padding: 0.5rem;
+    background: var(--field-light);
+    color: var(--field-light-ink);
+    font-family: var(--font-display);
+    line-height: 1.1;
+    outline: 2px solid var(--pr-navy);
+    opacity: 0;
+    transform: translateX(calc(100% + var(--margin)));
+    visibility: hidden;
+    transition:
+      transform var(--dur-base) var(--ease-out),
+      opacity var(--dur-base) var(--ease-out),
+      visibility 0s linear var(--dur-base);
+  }
+  .toast.is-in {
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .toast__icon {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: grid;
+    place-items: center;
+    background: var(--pr-navy);
+    color: var(--accent);
+  }
+  .toast__icon :global(.toast__mark) {
+    font-size: 1.5rem;
+  }
+  .toast__text {
+    margin: 0;
+    max-width: none;
+  }
+  .toast small {
+    display: block;
+    font-size: 0.8125rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--pr-navy);
+    margin-bottom: 0.2em;
+  }
+  .toast strong {
+    font-weight: 400;
+    font-size: 1.25rem;
+  }
+  .toast__close {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: grid;
+    place-items: center;
+    color: var(--pr-navy);
+  }
+  .toast__close:hover {
+    color: var(--pr-blue);
+  }
+
+  /* Phones: the panel takes its own row above the floor so the ship has the whole width to run. */
+  @media (max-width: 47.99rem) {
+    .hud__panel {
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: auto;
+      height: 2.75rem;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      padding-inline: 0.5rem var(--margin);
+      font-size: 1rem;
+      letter-spacing: 0;
+      border-bottom: 2px solid var(--surface-2);
+    }
+    .hud--off .hud__panel {
+      height: 2.75rem;
+    }
+    .hud__long {
+      display: none;
+    }
+    .hud__short {
+      display: inline;
+    }
+    .hud__button {
+      padding-inline: 0.5rem;
+    }
+    .hud__levels :global(li) {
+      font-size: 1rem;
+    }
+  }
+</style>
+
+<script>
+  import { startGames } from '../scripts/games';
+  startGames();
+</script>

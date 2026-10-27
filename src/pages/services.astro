@@ -1,0 +1,450 @@
+---
+import Base from '../layouts/Base.astro';
+import Bug from '../components/Bug.astro';
+import Photo from '../components/Photo.astro';
+import PassMark from '../components/PassMark.astro';
+import { contact, primaryAction } from '../config';
+import photoStick from '../assets/photos/fightstick.jpg';
+import photoGamepad2 from '../assets/photos/8bitdo-sn30-gamepad-hs-dsc-2704.jpg';
+import photoHandhelds from '../assets/photos/console-portatili.jpg';
+import photoKeyboard from '../assets/photos/keyboard-unsplash.jpg';
+
+const services = [
+  {
+    id: 'functional',
+    title: 'Functional testing',
+    text: 'I play every path a player can take and log what breaks, where, and how to reproduce it. New features get a plan before the build lands; every later build gets a regression pass against it.',
+    get: ['A test plan you can read', 'Regression passes on every build', 'Build acceptance before a milestone'],
+  },
+  {
+    id: 'platforms',
+    title: 'Platforms and stores',
+    text: 'The same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the rules of Steam, Epic Games Store and GOG. I check what each platform and store requires before you submit, so the submission is not the first time anyone looks.',
+    get: ['Platform requirement checks', 'Store rule checks', 'One report per SKU'],
+  },
+  {
+    id: 'vr',
+    title: 'VR',
+    text: 'Three years of VR QA at nDreams and Historic VR: comfort, tracking, play space and interaction checks alongside the functional pass, on headsets I know.',
+    get: ['Comfort and tracking checks', 'Interaction and play space passes', 'Headset test rigs'],
+  },
+  {
+    id: 'performance',
+    title: 'Performance and stress',
+    text: 'I profile frame rate, memory and load times on low spec and recommended spec rigs with Unreal Engine tools and long sessions, then tell you exactly what gave and where.',
+    get: ['Unreal Engine profiling', 'Low and recommended spec rigs', 'Long session and soak tests'],
+  },
+  {
+    id: 'playtesting',
+    title: 'Playtesting and UX',
+    text: 'I play as players do and report where they got lost, bored or stuck: onboarding, difficulty, readability, the first ten minutes.',
+    get: ['Onboarding notes', 'Difficulty and pacing notes', 'Readability on every screen'],
+  },
+  {
+    id: 'reporting',
+    title: 'Bug reporting',
+    text: 'Every issue arrives with steps, severity, media and a build number, in the tracker you already use. At each milestone you get a quality report: what was tested, what was found, what is left.',
+    get: ['Jira, Confluence or TestRail', 'Steps, severity, media, build number', 'Milestone quality reports'],
+  },
+];
+
+const run = [
+  ['Build received', 'You send the build and the brief. I set up the hardware and read the plan back to you.'],
+  ['Test plan', 'What gets tested, on what, in what order. You change it until it fits.'],
+  ['Functional pass', 'Every path, every feature, every build.'],
+  ['Platform pass', 'Each SKU against its platform and store rules.'],
+  ['Performance pass', 'Frame rate, memory, load times, long sessions.'],
+  ['Report sent', 'Bugs in your tracker as they are found. A quality report at the milestone.'],
+  ['Shipped', 'You submit with the report in hand.'],
+];
+
+const platforms = [
+  ['Nintendo Switch', 'Docked and handheld, Joy-Con and Pro Controller, sleep and resume.'],
+  ['Nintendo Switch 2', 'The same, plus the new hardware paths.'],
+  ['Xbox', 'Series X and S, Quick Resume, achievements, the Xbox app on PC.'],
+  ['PS5', 'Trophies, activities, the DualSense, suspend and resume.'],
+  ['Steam', 'Steam Deck, cloud saves, achievements, Steam Input.'],
+  ['Epic Games Store', 'Store requirements, achievements, launcher paths.'],
+  ['GOG', 'DRM-free build, Galaxy features, offline play.'],
+];
+---
+
+<Base title="Services" description="What PlayRun tests before you ship: functional testing, platforms and stores, VR, performance and stress, playtesting and UX, and bug reporting in your tracker.">
+  <!-- Level 1 -->
+  <section class="level level--navy svc" data-level="1" aria-labelledby="services-title">
+    <p class="flag" data-load style="--d: 0ms"><span>Services</span></p>
+    <div class="svc__grid">
+      <div>
+        <h1 id="services-title" class="page__title">
+          <span class="mask"><span class="mask__line" style="--i: 0">What I test</span></span>
+          <span class="mask"><span class="mask__line" style="--i: 1">before you ship</span></span>
+        </h1>
+        <p class="svc__lead statement" data-load style="--d: 360ms">
+          Six services, one tester. I plan the testing, run it on real hardware, and send reports your developers can
+          act on.
+        </p>
+      </div>
+      <ol class="svc__jump" data-load style="--d: 440ms">
+        {
+          services.map((s) => (
+            <li>
+              <a href={`#${s.id}`}>{s.title}</a>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+    <Bug id="services-1" style="right: 10%; top: 10%" />
+  </section>
+
+  <!-- Level 2: the six -->
+  <section class="level level--blue six" data-level="2" aria-labelledby="six-title">
+    <p class="flag" data-enter><span>Level 2 &middot; The six</span></p>
+    <div class="six__grid">
+      <div class="six__intro">
+        <h2 id="six-title" class="level__title" data-enter="wipe">Pick what the build needs</h2>
+        <p class="level__lead six__lead" data-enter style="--enter-delay: 80ms">
+          Most projects take two or three. A release takes all six.
+        </p>
+        <div class="six__photo" data-enter="place">
+          <Photo src={photoStick} alt="An arcade fight stick with a round ball top lever and six buttons" sizes="(max-width: 64rem) 100vw, 40vw" />
+        </div>
+      </div>
+      <ol class="rows">
+        {
+          services.map((s, i) => (
+            <li class="row" id={s.id} data-enter style={`--enter-delay: ${i * 70}ms`}>
+              <h3 class="row__title">{s.title}</h3>
+              <p class="row__text">{s.text}</p>
+              <p class="six__get">What you get</p>
+              <ul role="list" class="row__terms">
+                {s.get.map((t) => (
+                  <li>{t}</li>
+                ))}
+              </ul>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+    <Bug id="services-2" style="left: 40%; bottom: 5%" />
+  </section>
+
+  <!-- Level 3: the run -->
+  <section class="level level--cyan run" data-level="3" aria-labelledby="run-title">
+    <p class="flag" data-enter><span>Level 3 &middot; The run</span></p>
+    <div class="level__head">
+      <h2 id="run-title" class="level__title" data-enter="wipe">A build, start to finish</h2>
+      <div class="level__aside" data-enter style="--enter-delay: 80ms">
+        <p class="level__lead">Seven states. The same ones on the ticker on the home page.</p>
+      </div>
+    </div>
+    <ol class="run__track">
+      {
+        run.map(([state, text], i) => (
+          <li class:list={['run__state', i % 2 ? 'run__state--light' : 'run__state--navy']} data-enter="place" style={`--enter-delay: ${i * 50}ms`}>
+            <PassMark class="run__mark" />
+            <h3 class="run__title">{state}</h3>
+            <p class="run__text">{text}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <Bug id="services-3" style="right: 5%; top: 8%" />
+  </section>
+
+  <!-- Level 4: platforms and stores -->
+  <section class="level level--green plat" data-level="4" aria-labelledby="plat-title">
+    <p class="flag" data-enter><span>Level 4 &middot; Platforms and stores</span></p>
+    <div class="level__head">
+      <h2 id="plat-title" class="level__title" data-enter="wipe">Where the build has to work</h2>
+      <div class="level__aside" data-enter style="--enter-delay: 80ms">
+        <p class="level__lead">Four consoles, three PC stores. Each with its own rules, each checked before you submit.</p>
+      </div>
+    </div>
+    <div class="plat__board">
+      {
+        platforms.map(([name, text], i) => (
+          <div class:list={['plat__panel', i % 3 === 1 ? 'plat__panel--light' : i % 3 === 2 ? 'plat__panel--cyan' : 'plat__panel--navy']} data-enter="place" style={`--enter-delay: ${i * 50}ms`}>
+            <h3 class="plat__title">{name}</h3>
+            <p class="plat__text">{text}</p>
+          </div>
+        ))
+      }
+      <div class="plat__photo" data-enter="place">
+        <Photo src={photoHandhelds} alt="Five handheld consoles from the eighties and nineties on a display shelf" sizes="(max-width: 64rem) 100vw, 50vw" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Level 5: the ask -->
+  <section class="level level--light ask" data-level="5" aria-labelledby="ask-title">
+    <p class="flag" data-enter><span>Level 5 &middot; Final level</span></p>
+    <div class="ask__grid">
+      <div>
+        <h2 id="ask-title" class="level__title" data-enter="wipe">
+          <span class="mask__line">Send the build.</span>
+          <span class="mask__line">I'll send the plan.</span>
+        </h2>
+        <div class="ask__actions" data-enter style="--enter-delay: 80ms">
+          <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
+          <a class="ask__mail" href={`mailto:${contact.email}`}>{contact.email}</a>
+        </div>
+      </div>
+      <div class="ask__photos">
+        <div class="ask__photo" data-enter="place">
+          <Photo src={photoGamepad2} alt="A grey gamepad seen from the side with its sticks and purple buttons" sizes="(max-width: 64rem) 50vw, 25vw" position="60% 50%" />
+        </div>
+        <div class="ask__photo" data-enter="place" style="--enter-delay: 60ms">
+          <Photo src={photoKeyboard} alt="A mechanical keyboard with pink backlit keys in a dark room" sizes="(max-width: 64rem) 50vw, 25vw" />
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .svc {
+    padding-top: var(--s-2);
+  }
+  .svc__grid {
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    gap: var(--s-5);
+    align-items: end;
+    margin-top: var(--s-5);
+  }
+  .svc__lead {
+    margin-top: var(--s-4);
+    max-width: 36ch;
+  }
+  .svc__jump {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1.2;
+  }
+  .svc__jump li + li {
+    margin-top: 0.4em;
+  }
+  .svc__jump a {
+    text-decoration-color: var(--accent-2);
+  }
+
+  .six__grid {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: var(--s-5);
+    align-items: start;
+    margin-top: var(--s-5);
+  }
+  .six__intro {
+    position: sticky;
+    top: var(--s-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+    color: var(--pr-navy);
+  }
+  .six__lead {
+    color: var(--pr-navy);
+  }
+  .six__photo {
+    aspect-ratio: 4 / 3;
+  }
+  .six__get {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: var(--s-2);
+    max-width: none;
+  }
+  .row:target {
+    outline: 3px solid var(--accent-2);
+    outline-offset: -3px;
+  }
+
+  .run__track {
+    list-style: none;
+    margin: var(--s-5) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--gap);
+    counter-reset: state;
+  }
+  .run__state {
+    position: relative;
+    min-height: 18rem;
+    padding: 4.5rem var(--s-2) var(--s-3);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--s-1);
+    counter-increment: state;
+  }
+  .run__state--navy {
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .run__state--light {
+    background: var(--field-light);
+    color: var(--field-light-ink);
+  }
+  .run__state::before {
+    content: counter(state);
+    position: absolute;
+    top: var(--s-2);
+    left: var(--s-2);
+    font-family: var(--font-display);
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--accent-2);
+  }
+  .run__state--light::before {
+    color: var(--pr-blue);
+  }
+  .run__state :global(.run__mark) {
+    position: absolute;
+    top: var(--s-2);
+    right: var(--s-2);
+    font-size: 1.5rem;
+    color: var(--accent);
+  }
+  .run__state--light :global(.run__mark) {
+    color: var(--pr-navy);
+  }
+  .run__title {
+    font-size: 1.5rem;
+  }
+  .run__text {
+    font-size: 1rem;
+  }
+  .run__state--navy .run__text {
+    color: var(--muted);
+  }
+
+  .plat__board {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: minmax(13rem, auto);
+    gap: var(--gap);
+    margin-top: var(--s-5);
+  }
+  .plat__panel {
+    padding: var(--s-3);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--s-1);
+    min-width: 0;
+  }
+  .plat__panel--navy {
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .plat__panel--light {
+    background: var(--field-light);
+    color: var(--field-light-ink);
+  }
+  .plat__panel--cyan {
+    background: var(--field-cyan);
+    color: var(--field-cyan-ink);
+  }
+  .plat__title {
+    font-size: 1.75rem;
+  }
+  .plat__text {
+    font-size: 1rem;
+  }
+  .plat__panel--navy .plat__text {
+    color: var(--muted);
+  }
+  .plat__photo {
+    grid-column: span 1;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .ask__grid {
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    gap: var(--s-5);
+    align-items: end;
+    margin-top: var(--s-5);
+  }
+  .ask__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    flex-wrap: wrap;
+    margin-top: var(--s-5);
+  }
+  .ask__actions .button {
+    font-size: 1.5rem;
+    min-height: 3.5rem;
+    padding-inline: 2rem;
+  }
+  .ask__mail {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--pr-navy);
+  }
+  .ask__photos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap);
+  }
+  .ask__photo {
+    aspect-ratio: 3 / 4;
+    min-width: 0;
+  }
+
+  @media (max-width: 63.99rem) {
+    .svc__grid,
+    .six__grid,
+    .ask__grid {
+      grid-template-columns: 1fr;
+      gap: var(--s-4);
+      margin-top: var(--s-4);
+    }
+    .svc__jump {
+      font-size: 1.25rem;
+    }
+    .six__intro {
+      position: static;
+    }
+    .run__track {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.375rem;
+    }
+    .run__state {
+      min-height: 13rem;
+    }
+    .plat__board {
+      grid-template-columns: 1fr 1fr;
+      grid-auto-rows: auto;
+      gap: 0.375rem;
+    }
+    .plat__panel {
+      min-height: 11rem;
+      padding: var(--s-2);
+    }
+    .plat__photo {
+      grid-column: span 2;
+      aspect-ratio: 16 / 9;
+    }
+    .ask__photo {
+      aspect-ratio: 1;
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .run__track {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

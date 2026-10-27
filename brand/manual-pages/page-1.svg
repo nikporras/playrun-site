@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" version="1.1" width="1080" height="1920" viewBox="0 0 1080 1920">
+<defs>
+<clipPath id="clip_0">
+<path transform="matrix(1,0,0,-1,0,1920)" d="M0 1920H1080V0H0Z"/>
+</clipPath>
+</defs>
+<g>
+<g inkscape:groupmode="layer" inkscape:label="Layer 1">
+<path transform="matrix(1,0,0,-1,0,1920)" d="M0 0H1080V1919.973H0Z" fill="#e6e7e8"/>
+<text fill="#404041" xml:space="preserve" transform="matrix(1 0 -0 1 0 1920)" font-size="80" font-family="Montserrat" font-weight="bold"><tspan y="-1012.2393" x="143.5869 203.6669 230.7869 282.5469 344.2269 407.1069">VISUAL</tspan></text>
+<text fill="#404041" xml:space="preserve" transform="matrix(1 0 -0 1 0 1920)" font-size="80" font-family="Montserrat"><tspan y="-932.2393" x="143.5869 167.7469 233.8269 287.34693 352.38694 398.30696 422.46696 467.98698">IDENTITY</tspan></text>
+<text fill="#404041" xml:space="preserve" transform="matrix(1 0 -0 1 0 1920)" font-size="80" font-family="Montserrat" font-weight="bold"><tspan y="-852.2393" x="143.5869 219.9069 282.7869 347.2669 408.9469 471.8269">MANUAL</tspan></text>
+<text fill="#404041" xml:space="preserve" transform="matrix(0 -1 1 0 0 1920)" font-size="40" font-family="Montserrat"><tspan y="920.0024" x="662.8643 697.9843 716.7443 747.9443 777.62429 801.66427 836.5842 871.66427 890.1442 913.42428 931.90426 955.38027 987.5402 1015.1002 1039.3402 1057.8202 1089.3803 1118.7402 1153.8602 1186.0203 1210.6603 1234.9003">playrun - test experts</tspan></text>
+<g clip-path="url(#clip_0)">
+<path transform="matrix(1,0,0,-1,728.8944,617.4076)" d="M0 0-175.534 617.408H-471.621L-424.559 459.206C-410.821 413.028-458.391 365.458-504.569 379.196L-728.894 445.929V145.485L-48.078-48.078C-20.399-55.947 7.869-27.678 0 0" fill="#0b152a"/>
+</g>
+</g>
+</g>
+</svg>

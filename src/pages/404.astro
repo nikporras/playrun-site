@@ -1,0 +1,123 @@
+---
+import Base from '../layouts/Base.astro';
+import Bug from '../components/Bug.astro';
+---
+
+<Base title="Game over" description="This page is not in the build. Continuing takes you back to the start.">
+  <section class="level level--green gameover" data-level="1" aria-labelledby="gameover-title">
+    <p class="flag"><span>Error 404</span></p>
+    <div class="gameover__body">
+      <h1 id="gameover-title" class="gameover__title">Game over</h1>
+      <p class="gameover__count" aria-live="polite">
+        Continue? <span class="gameover__num num" data-count hidden>10</span>
+      </p>
+      <p class="gameover__text">
+        This page is not in the build. Continuing takes you back to the start.{' '}
+        <span data-count-note hidden>The count goes back on its own at zero. Press any key or Stay here to stop it.</span>
+      </p>
+      <div class="gameover__actions">
+        <a class="button button--navy" href="/" data-continue>Continue to Home</a>
+        <button type="button" class="button button--ink" data-stay hidden>Stay here</button>
+      </div>
+    </div>
+    <Bug id="404" style="right: 10%; top: 12%" />
+  </section>
+</Base>
+
+<style>
+  .gameover {
+    min-height: calc(100svh - 4.5rem);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-6);
+    padding-top: var(--s-4);
+  }
+  :global(.games) .gameover {
+    min-height: calc(100svh - 4.5rem - var(--hud-h));
+  }
+  .gameover__body {
+    margin-block: auto;
+    width: 100%;
+  }
+  .gameover__title {
+    font-size: var(--step-hero);
+    font-size: round(var(--step-hero), 16px);
+    line-height: 0.9;
+    margin-left: -0.03em;
+    text-wrap: initial;
+  }
+  .gameover__count {
+    margin-top: var(--s-4);
+    font-family: var(--font-display);
+    font-size: var(--step-head);
+    font-size: round(var(--step-head), 16px);
+    line-height: 1;
+    max-width: none;
+  }
+  .gameover__num {
+    display: inline-block;
+    min-width: 1.4em;
+  }
+  .gameover__num[hidden] {
+    display: none;
+  }
+  .gameover__text {
+    margin-top: var(--s-3);
+    max-width: 48ch;
+  }
+  .gameover__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    margin-top: var(--s-4);
+  }
+  .gameover__actions .button {
+    font-size: 1.5rem;
+    min-height: 3.5rem;
+    padding-inline: 2rem;
+  }
+  .gameover__actions [hidden] {
+    display: none;
+  }
+  @media (max-width: 47.99rem) {
+    .gameover__title {
+      font-size: round(19vw, 8px);
+    }
+  }
+</style>
+
+<script>
+  // Continue? 10, 9, 8 ... then Home. Any key, any focus, or Stay here stops it. Not started under
+  // reduced motion, and the page is a plain link home without script.
+  const num = document.querySelector<HTMLElement>('[data-count]');
+  const stay = document.querySelector<HTMLButtonElement>('[data-stay]');
+  const note = document.querySelector<HTMLElement>('[data-count-note]');
+  const cont = document.querySelector<HTMLAnchorElement>('[data-continue]');
+  if (num && stay && note && cont && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    let n = 10;
+    let timer = 0;
+    const stop = () => {
+      window.clearInterval(timer);
+      num.hidden = true;
+      stay.hidden = true;
+      note.hidden = true;
+      stay.textContent = 'Stayed';
+    };
+    const tick = () => {
+      n -= 1;
+      num.textContent = String(n);
+      if (n <= 0) {
+        window.clearInterval(timer);
+        location.assign(cont.href);
+      }
+    };
+    num.hidden = false;
+    stay.hidden = false;
+    note.hidden = false;
+    timer = window.setInterval(tick, 1000);
+    stay.addEventListener('click', stop);
+    document.addEventListener('keydown', stop, { once: true });
+    document.addEventListener('focusin', stop, { once: true });
+  }
+</script>
