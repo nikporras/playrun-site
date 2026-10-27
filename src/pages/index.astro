@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import Photo from '../components/Photo.astro';
 import PassMark from '../components/PassMark.astro';
@@ -12,8 +13,7 @@ import results from '../../tests/results/latest.json';
 import { contact, primaryAction, site } from '../config';
 
 import photoGamepad from '../assets/photos/8bitdo-sf30-gamepad-hs-dsc-2710.jpg';
-import photoGamepad2 from '../assets/photos/8bitdo-sn30-gamepad-hs-dsc-2704.jpg';
-import photoVr from '../assets/photos/virtual-reality-headset.jpg';
+import portrait from '../assets/photos/nicolas.png';
 import photoStick from '../assets/photos/fightstick.jpg';
 import photoKeyboard from '../assets/photos/keyboard-unsplash.jpg';
 import photoHandhelds from '../assets/photos/console-portatili.jpg';
@@ -71,6 +71,8 @@ const runSheet = ['Build received', 'Test plan', 'Functional pass', 'Platform pa
 const tickerPlatforms = ['Switch 2', 'Switch', 'PS5', 'Xbox', 'Steam', 'Epic Games Store', 'GOG'];
 
 // The scoreboard: six panels of unequal width in three tones, no two alike side by side.
+const ALT = 'Nicolás Porras wearing a VR headset pushed up on his head';
+
 const panelSpans = [5, 3, 4, 5, 3, 4];
 const panelTones = ['navy', 'light', 'cyan', 'light', 'cyan', 'navy'];
 
@@ -319,19 +321,19 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
           <a class="final__mail" href={`mailto:${contact.email}`}>{contact.email}</a>
         </div>
       </div>
-      <div class="final__photos">
-        <div class="final__photo" data-enter="place">
-          <Photo
-            src={photoGamepad2}
-            alt="A grey gamepad seen from the side with its sticks and purple buttons"
-            sizes="(max-width: 48rem) 50vw, 40vw"
-            position="60% 50%"
-          />
-        </div>
-        <div class="final__photo" data-enter="place" style="--enter-delay: 60ms">
-          <Photo src={photoVr} alt="The inside of a VR headset, its two lenses lit by the screen" sizes="(max-width: 48rem) 50vw, 40vw" />
-        </div>
-      </div>
+    </div>
+    <!-- The player character: a cutout standing on the bottom edge of the level -->
+    <div class="final__figure" data-enter="place">
+      <Picture
+        src={portrait}
+        alt={ALT}
+        widths={[400, 640, 960, 1280]}
+        sizes="(max-width: 63.99rem) 80vw, 40vw"
+        formats={['avif']}
+        fallbackFormat="webp"
+        loading="lazy"
+        decoding="async"
+      />
     </div>
     <Bug id="final-1" style="left: 50%; bottom: 5%" />
   </section>
@@ -1139,38 +1141,58 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
   .final__mail:hover {
     color: var(--pr-blue);
   }
-  .final__photos {
-    grid-area: photos;
-    display: grid;
-    grid-template-rows: 1fr 1fr;
-    gap: var(--gap);
-    min-height: 0;
+  .final {
+    padding-bottom: 0;
   }
-  .final__photo {
-    min-width: 0;
-    min-height: 0;
+  .final__grid {
+    padding-bottom: var(--s-7);
+  }
+  /* The figure stands on the bottom edge of the field, in the column the grid leaves free. */
+  .final__figure {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: min(40vw, 38rem);
+    line-height: 0;
+    z-index: 0;
+  }
+  .final__figure::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 180%;
+    height: 95%;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse 55% 75% at 50% 100%, rgba(86, 189, 218, 0.55), rgba(103, 193, 140, 0.2) 55%, transparent 75%);
+    pointer-events: none;
+  }
+  .final__figure :global(img) {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: auto;
   }
   @media (max-width: 63.99rem) {
+    .final__figure {
+      position: relative;
+      right: auto;
+      width: min(80vw, 24rem);
+      margin: var(--s-4) auto 0;
+    }
+    .final__grid {
+      padding-bottom: 0;
+    }
     .final__grid {
       grid-template-columns: 1fr;
       grid-template-areas:
         'title'
-        'text'
-        'photos';
+        'text';
       row-gap: var(--s-4);
       min-height: 0;
     }
     .final__title {
       font-size: round(15vw, 8px);
-    }
-    .final__photos {
-      grid-template-rows: none;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.375rem;
-      margin-top: var(--s-3);
-    }
-    .final__photo {
-      aspect-ratio: 1;
     }
   }
 </style>

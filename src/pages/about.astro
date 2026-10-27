@@ -1,10 +1,11 @@
 ---
+import { Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
 import Photo from '../components/Photo.astro';
 import PassMark from '../components/PassMark.astro';
 import { contact, personal, primaryAction } from '../config';
-import photoVr from '../assets/photos/virtual-reality-headset.jpg';
+import portrait from '../assets/photos/nicolas.png';
 import photoKeyboard from '../assets/photos/keyboard-unsplash.jpg';
 import photoHandhelds from '../assets/photos/console-portatili.jpg';
 import photoGamepad from '../assets/photos/8bitdo-sf30-gamepad-hs-dsc-2710.jpg';
@@ -71,11 +72,20 @@ const panels = [
           <a class="textlink" href={personal.linkedin} rel="me noopener">LinkedIn profile</a>
         </div>
       </div>
-      <div class="who__photo" data-load style="--d: 200ms">
-        <Photo src={photoVr} alt="The inside of a VR headset, its two lenses lit by the screen" loading="eager" sizes="(max-width: 64rem) 100vw, 40vw" />
+      <div class="who__figure" data-load style="--d: 200ms">
+        <Picture
+          src={portrait}
+          alt="Nicolás Porras wearing a VR headset pushed up on his head"
+          widths={[400, 640, 960, 1280]}
+          sizes="(max-width: 63.99rem) 80vw, 40vw"
+          formats={['avif']}
+          fallbackFormat="webp"
+          loading="eager"
+          decoding="async"
+        />
       </div>
     </div>
-    <Bug id="about-1" style="right: 44%; top: 10%" />
+    <Bug id="about-1" style="right: 6%; top: 8%" />
   </section>
 
   <!-- Level 2: where I have tested -->
@@ -191,8 +201,39 @@ const panels = [
     flex-wrap: wrap;
     margin-top: var(--s-4);
   }
-  .who__photo {
-    min-height: 26rem;
+  /* The figure stands on the bottom edge of the navy field, beside the name. */
+  .who {
+    padding-bottom: 0;
+  }
+  .who__grid {
+    align-items: end;
+  }
+  .who__text {
+    padding-bottom: var(--s-7);
+  }
+  .who__figure {
+    position: relative;
+    align-self: end;
+    width: min(100%, 34rem);
+    justify-self: end;
+    line-height: 0;
+  }
+  .who__figure::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 180%;
+    height: 95%;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse 55% 75% at 50% 100%, rgba(86, 189, 218, 0.4), rgba(81, 108, 179, 0.2) 55%, transparent 75%);
+    pointer-events: none;
+  }
+  .who__figure :global(img) {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: auto;
   }
 
   .posts__grid {
@@ -313,10 +354,13 @@ const panels = [
       gap: var(--s-4);
       margin-top: var(--s-4);
     }
-    .who__photo {
-      min-height: 0;
-      aspect-ratio: 4 / 3;
-      order: -1;
+    .who__text {
+      padding-bottom: 0;
+    }
+    .who__figure {
+      width: min(80vw, 24rem);
+      justify-self: center;
+      margin-top: var(--s-2);
     }
     .posts__intro {
       position: static;
