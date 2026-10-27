@@ -30,6 +30,8 @@ test.describe('Contact', () => {
     await expect(page.locator('h1')).toHaveText(/Start a\s*project/);
     await expect(page.getByRole('link', { name: 'studio@playrunqa.com' }).first()).toHaveAttribute('href', 'mailto:studio@playrunqa.com');
     await expect(page.getByRole('link', { name: '+44 7830 303383' }).first()).toHaveAttribute('href', 'tel:+447830303383');
+    await expect(page.locator('.form').getByRole('link', { name: 'privacy notice' })).toHaveAttribute('href', '/privacy');
+    for (const name of ['Privacy', 'Terms', 'Accessibility']) await expect(page.locator('footer').getByRole('link', { name, exact: true })).toBeVisible();
     await page.waitForLoadState('networkidle');
     expect(errors).toEqual([]);
   });

@@ -1,6 +1,6 @@
 ---
 import Icon from '../assets/logo/icon.svg';
-import { contact, nav, primaryAction, site, social } from '../config';
+import { contact, legalNav, nav, primaryAction, site, social } from '../config';
 
 const year = new Date().getFullYear();
 ---
@@ -31,6 +31,12 @@ const year = new Date().getFullYear();
         <h2 class="footer__title">Contact</h2>
         <p><a href={`mailto:${contact.email}`}>{contact.email}</a></p>
         <p><a href={contact.phoneHref}>{contact.phone}</a></p>
+      </div>
+      <div class="footer__col">
+        <h2 class="footer__title">Legal</h2>
+        <ul role="list" class="footer__links">
+          {legalNav.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+        </ul>
       </div>
       {
         social.length > 0 && (
@@ -80,15 +86,19 @@ const year = new Date().getFullYear();
   }
   .footer__grid {
     display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: var(--s-3);
     margin-top: var(--s-6);
   }
   .footer__col {
-    grid-column: span 3;
+    min-width: 0;
   }
   .footer__col p {
     max-width: none;
+  }
+  .footer__col a,
+  .footer__col p {
+    overflow-wrap: anywhere;
   }
   .footer__col p + p {
     margin-top: 0.35em;
@@ -126,8 +136,8 @@ const year = new Date().getFullYear();
       height: 22svh;
       min-height: 8rem;
     }
-    .footer__col {
-      grid-column: span 6;
+    .footer__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .footer__bottom {
       flex-direction: column;

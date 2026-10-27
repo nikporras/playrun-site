@@ -42,3 +42,17 @@ export const nav = [
 ];
 
 export const primaryAction = { label: 'Start a project', href: '/contact' };
+
+// Legal pages. Put the business address in `address` when there is one to show; while it is
+// empty the pages fall back to the location in `contact`.
+export const legal = {
+  controller: 'Nicolás Porras, trading as PlayRun',
+  address: '',
+  updated: '2026-10-27',
+};
+
+export const legalNav = [
+  { label: 'Privacy', href: '/privacy' },
+  { label: 'Terms', href: '/terms' },
+  { label: 'Accessibility', href: '/accessibility' },
+];

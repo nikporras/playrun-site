@@ -1,0 +1,72 @@
+---
+import LegalPage from '../components/LegalPage.astro';
+import { contact, legal } from '../config';
+---
+
+<LegalPage
+  title="Privacy notice"
+  kicker="Privacy"
+  description="How PlayRun handles the details you send through the contact form, what the site stores in your browser, and your rights under UK GDPR."
+  lead="This site collects very little. Here is exactly what, why, where it goes, and how long I keep it."
+>
+  <section class="row">
+    <h2>Who is responsible</h2>
+    <p>
+      The controller is {legal.controller}{legal.address ? `, ${legal.address}` : `, ${contact.location}`}. Email{' '}
+      <a href={`mailto:${contact.email}`}>{contact.email}</a> for anything in this notice.
+    </p>
+  </section>
+
+  <section class="row">
+    <h2>The contact form</h2>
+    <p>
+      When you send a brief I receive your name, your email address, your studio if you gave one, the brief itself, the
+      address of the page you sent it from and the time you sent it. I use these only to reply to you and to quote for
+      the work.
+    </p>
+    <p>
+      The lawful basis is taking steps at your request before entering a contract, and my legitimate interest in
+      answering people who write to me about work.
+    </p>
+    <p>
+      The form delivers the brief into my Google Workspace account: Gmail, a Google Sheet and the Apps Script that
+      connects them. Google processes that data on my behalf under its Workspace terms.
+    </p>
+  </section>
+
+  <section class="row">
+    <h2>Hosting</h2>
+    <p>
+      The site is hosted on GitHub Pages. GitHub may log the IP address of each request for security, under its own
+      privacy statement. The fonts are served from this site, there are no third-party requests, no analytics and no
+      cookies.
+    </p>
+  </section>
+
+  <section class="row">
+    <h2>What the site stores in your browser</h2>
+    <p>
+      The games on the site keep their progress in your browser's local storage: the bugs you have caught, the
+      achievements you have unlocked and whether the games are on or off. This never leaves your browser and is never
+      sent to me. The Reset button in the HUD clears it.
+    </p>
+  </section>
+
+  <section class="row">
+    <h2>How long I keep it</h2>
+    <ul>
+      <li>Briefs that do not lead to work are deleted after 24 months.</li>
+      <li>Correspondence with clients is kept for as long as the work and my accounting need it.</li>
+    </ul>
+  </section>
+
+  <section class="row">
+    <h2>Your rights</h2>
+    <p>
+      You can ask for a copy of the personal data I hold about you, ask me to correct or delete it, and object to how I
+      use it. Email <a href={`mailto:${contact.email}`}>{contact.email}</a> and I will answer. If you are not happy with
+      my answer you can complain to the Information Commissioner's Office at{' '}
+      <a href="https://ico.org.uk/" rel="noopener">ico.org.uk</a>.
+    </p>
+  </section>
+</LegalPage>

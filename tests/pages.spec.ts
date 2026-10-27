@@ -8,6 +8,9 @@ const PAGES = [
   { path: '/portfolio', h1: /Games I have\s*tested/, must: ["Lou's Lagoon", 'Gang of Frogs', 'All via Universally Speaking, 2021.'] },
   { path: '/portfolio/lous-lagoon', h1: /Lou's Lagoon/, must: ['Tiny Roar', 'On Steam', 'Back to the portfolio'] },
   { path: '/quality', h1: /This site is\s*a test subject/, must: ['tests, read from the code', 'Deploy only if green'] },
+  { path: '/privacy', h1: /Privacy notice/, must: ['Nicolás Porras, trading as PlayRun', 'deleted after 24 months', 'ico.org.uk'] },
+  { path: '/terms', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales'] },
+  { path: '/accessibility', h1: /Accessibility/, must: ['WCAG', 'reduced motion', 'Report a problem'] },
 ];
 
 async function settle(page: Page) {

@@ -1,0 +1,65 @@
+---
+import LegalPage from '../components/LegalPage.astro';
+import { contact } from '../config';
+---
+
+<LegalPage
+  title="Accessibility"
+  kicker="Accessibility"
+  description="PlayRun's accessibility statement: the site aims at WCAG 2.1 AA, is tested with axe and Playwright on every push, and how to report a problem."
+  lead="I want everyone to be able to read this site and get in touch, whatever they use to browse it."
+>
+  <section class="row">
+    <h2>What I aim for</h2>
+    <p>
+      The site aims to meet the Web Content Accessibility Guidelines (WCAG) 2.1 at level AA. Text contrast meets AA on
+      every field of colour, every image has a text alternative, every control has a name, and the whole site works
+      with a keyboard alone.
+    </p>
+  </section>
+
+  <section class="row">
+    <h2>How I test it</h2>
+    <p>
+      A Playwright suite runs against every push before the site can deploy. It includes an axe-core scan of every page
+      at WCAG 2.1 A and AA, a check that each page has one main heading in the right order, that images carry
+      alternative text, that keyboard focus is visible, and that nothing scrolls sideways on a phone. A failing check
+      stops the deploy. The Quality page lists every test by name.
+    </p>
+  </section>
+
+  <section class="row">
+    <h2>Motion and the games</h2>
+    <p>
+      The runner, the bug hunt and the achievement pop-ups are optional. If your system asks for reduced motion they
+      are off and nothing on the site moves on its own. You can also switch them off with the Games button in the HUD
+      bar. The page underneath never depends on them: the bugs are real buttons, and every pop-up is announced politely
+      and never blocks what you are reading.
+    </p>
+  </section>
+
+  <section class="row">
+    <h2>Pixel type</h2>
+    <p>
+      Headings, labels and figures are set in Pixel Operator, a pixel typeface, at sizes where it stays crisp. Running
+      text is set in Montserrat at 16 pixels or more. If you zoom the page to 200% everything reflows without sideways
+      scrolling.
+    </p>
+  </section>
+
+  <section class="row">
+    <h2>What might still be wrong</h2>
+    <p>
+      Automated checks catch a lot but not everything. I have not yet had the site reviewed by people who use screen
+      readers or switch access every day. If something does not work for you, I would like to know.
+    </p>
+  </section>
+
+  <section class="row">
+    <h2>Report a problem</h2>
+    <p>
+      Email <a href={`mailto:${contact.email}`}>{contact.email}</a> with the page, what you were trying to do and what
+      you use to browse. I read every message and fix what I can.
+    </p>
+  </section>
+</LegalPage>

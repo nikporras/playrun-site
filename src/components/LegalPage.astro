@@ -1,0 +1,122 @@
+---
+/**
+ * A legal page in the Level Select style: the title level in navy, the sections as navy rows on
+ * a blue field, and the ways to reach me on green. Sections come in through the slot as
+ * <section class="row"> blocks so each page keeps its own words.
+ */
+import Base from '../layouts/Base.astro';
+import { contact, legal, primaryAction } from '../config';
+
+interface Props {
+  title: string;
+  description: string;
+  kicker: string;
+  lead: string;
+  updated?: string;
+}
+const { title, description, kicker, lead, updated = legal.updated } = Astro.props;
+const updatedText = new Date(updated).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+
+<Base title={title} description={description}>
+  <section class="level level--navy legal" data-level="1" aria-labelledby="legal-title">
+    <p class="flag" data-load style="--d: 0ms"><span>{kicker}</span></p>
+    <div class="legal__head">
+      <h1 id="legal-title" class="page__title legal__title">
+        <span class="mask"><span class="mask__line" style="--i: 0">{title}</span></span>
+      </h1>
+      <div class="legal__aside" data-load style="--d: 300ms">
+        <p class="legal__lead statement">{lead}</p>
+        <p class="legal__updated">Last updated {updatedText}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="level level--blue legal__body" data-level="2" aria-label={`${title}, the details`}>
+    <p class="flag" data-enter><span>Level 2 &middot; The details</span></p>
+    <div class="legal__rows rows">
+      <slot />
+    </div>
+  </section>
+
+  <section class="level level--green legal__ask" data-level="3" aria-labelledby="legal-ask-title">
+    <p class="flag" data-enter><span>Level 3 &middot; Questions</span></p>
+    <div class="level__head">
+      <h2 id="legal-ask-title" class="level__title" data-enter="wipe">Ask me anything about this</h2>
+      <div class="level__aside" data-enter style="--enter-delay: 80ms">
+        <p class="level__lead">
+          {legal.controller}{legal.address ? `, ${legal.address}` : `, ${contact.location}`}.
+        </p>
+        <a class="legal__mail" href={`mailto:${contact.email}`}>{contact.email}</a>
+        <a class="button button--navy" href={primaryAction.href}>{primaryAction.label}</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .legal {
+    padding-top: var(--s-2);
+  }
+  .legal__head {
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    gap: var(--s-5);
+    align-items: end;
+    margin-top: var(--s-5);
+  }
+  .legal__title {
+    font-size: round(clamp(3rem, 1rem + 7vw, 9rem), 16px);
+  }
+  .legal__aside {
+    min-width: 0;
+  }
+  .legal__lead {
+    max-width: 36ch;
+  }
+  .legal__updated {
+    margin-top: var(--s-3);
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .legal__rows {
+    margin-top: var(--s-5);
+    max-width: 64rem;
+  }
+  .legal__rows :global(.row h2) {
+    font-size: 2rem;
+  }
+  .legal__rows :global(.row p),
+  .legal__rows :global(.row li) {
+    max-width: 62ch;
+  }
+  .legal__rows :global(.row ul) {
+    list-style: square;
+    padding-left: 1.25rem;
+    margin-top: var(--s-1);
+  }
+  .legal__rows :global(.row li + li) {
+    margin-top: 0.4em;
+  }
+  .legal__rows :global(.row a) {
+    color: var(--accent-2);
+  }
+  .legal__mail {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--pr-navy);
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 63.99rem) {
+    .legal__head {
+      grid-template-columns: 1fr;
+      gap: var(--s-4);
+      margin-top: var(--s-4);
+    }
+    .legal__title {
+      font-size: round(15vw, 8px);
+    }
+  }
+</style>
