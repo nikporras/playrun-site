@@ -77,8 +77,8 @@
 
 @media (max-width: 47.99rem) {
   :root {
-    --hud-h: 5.5rem; /* a panel row and a floor row */
-    --floor-h: 0.75rem;
-    --ship-w: 2rem;
+    --hud-h: 2.75rem; /* one slim row: the floor, the ship and the Games button */
+    --floor-h: 0.5rem;
+    --ship-w: 1.5rem;
   }
 }

@@ -53,6 +53,8 @@ export function startGames() {
   const achOut = pick('[data-hud-ach]');
   const levelOut = pick('[data-hud-level]');
   const levelsOut = pick('[data-hud-levels]');
+  // On phones some bugs are left out, so they do not count towards catching every bug.
+  if (matchMedia('(max-width: 47.99rem)').matches) document.querySelectorAll('[data-bug][data-phone="none"]').forEach((b) => b.remove());
   const bugs = () => Array.from(document.querySelectorAll<HTMLButtonElement>('[data-bug]'));
   const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-level]'));
   const total = Object.keys(ACHIEVEMENTS).length;
@@ -148,10 +150,11 @@ export function startGames() {
   // through one custom property. Level flags mark where each section starts along the same track.
   const docRange = () => Math.max(1, html.scrollHeight - innerHeight);
   const panel = pick('.hud__panel');
+  const more = pick('.hud__more');
   const stacked = matchMedia('(max-width: 47.99rem)');
   const layout = () => {
-    // The ship runs the width the panel leaves free; on a phone the panel has its own row.
-    const free = stacked.matches ? hud.clientWidth : hud.clientWidth - panel.offsetWidth;
+    // The ship runs the width the panel leaves free; on a phone that is the Games button.
+    const free = hud.clientWidth - (stacked.matches ? more.offsetWidth : panel.offsetWidth);
     hud.style.setProperty('--track', `${Math.max(0, free - runner.offsetWidth)}px`);
     levelsList.replaceChildren(
       ...sections.slice(1).map((s, i) => {
@@ -192,7 +195,19 @@ export function startGames() {
   addEventListener('scroll', onScroll, { passive: true });
   addEventListener('resize', layout);
 
-  // Controls
+  // Controls. On phones the panel opens from the Games button and closes with it, or when
+  // anything outside it is tapped.
+  more.addEventListener('click', () => {
+    const open = !hud.classList.contains('is-open');
+    hud.classList.toggle('is-open', open);
+    more.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', (e) => {
+    if (hud.classList.contains('is-open') && !hud.contains(e.target as Node)) {
+      hud.classList.remove('is-open');
+      more.setAttribute('aria-expanded', 'false');
+    }
+  });
   toggle.addEventListener('click', () => {
     state.on = !state.on;
     write(state);

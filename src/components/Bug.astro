@@ -7,13 +7,52 @@ import Sprite from './Sprite.astro';
 
 interface Props {
   id: string;
+  /** Where it sits on a desktop, as CSS declarations: "right: 7%; top: 44%". */
   style: string;
+  /** Where it sits on a phone, the same way, or "none" to leave it out there. Phones default to
+   *  the top right corner of the level, which is empty on every page. */
+  phone?: string;
 }
-const { id, style } = Astro.props;
+const { id, style, phone } = Astro.props;
+
+// The positions become custom properties, so the phone ones can override in CSS without !important.
+const vars = (decl: string, prefix: string) =>
+  decl
+    .split(';')
+    .map((d) => d.trim())
+    .filter(Boolean)
+    .map((d) => {
+      const [k, v] = d.split(':').map((x) => x.trim());
+      return `--${prefix}${k[0]}: ${v}`;
+    })
+    .join('; ');
+const placed = [vars(style, 'd'), phone && phone !== 'none' ? vars(phone, 'p') : ''].filter(Boolean).join('; ');
 ---
 
-<button type="button" class="bug" data-bug={id} style={style} aria-label="Catch this bug" hidden>
+<button type="button" class="bug" data-bug={id} data-phone={phone === 'none' ? 'none' : undefined} style={placed} aria-label="Catch this bug" hidden>
   <span class="bug__body"><Sprite name="bug" /></span>
   <span class="bug__net" aria-hidden="true"><Sprite name="net" /></span>
   <span class="bug__plus" aria-hidden="true">+1</span>
 </button>
+
+<style>
+  .bug {
+    left: var(--dl, auto);
+    right: var(--dr, auto);
+    top: var(--dt, auto);
+    bottom: var(--db, auto);
+  }
+  @media (max-width: 47.99rem) {
+    .bug {
+      width: 2.75rem;
+      height: 2.75rem;
+      left: var(--pl, auto);
+      right: var(--pr, 0.75rem);
+      top: var(--pt, 0.75rem);
+      bottom: var(--pb, auto);
+    }
+    .bug[data-phone='none'] {
+      display: none;
+    }
+  }
+</style>

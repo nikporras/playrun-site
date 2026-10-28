@@ -1,0 +1,260 @@
+---
+/**
+ * Generic 16 by 16 pixel icons for the game cards, drawn for this site in the brand colours.
+ * None is a logo or a character from a game: a skyline, a ball, a seaplane, a frog, a mask, a cat,
+ * two sabres, a golf flag, a dinosaur, a ghost, a brain, a mountain with a ski track.
+ */
+interface Props {
+  name: 'city' | 'basketball' | 'seaplane' | 'frog' | 'mask' | 'cat' | 'sabres' | 'golf' | 'dino' | 'ghost' | 'brain' | 'mountain';
+  class?: string;
+}
+const { name, class: className } = Astro.props;
+
+const ART: Record<string, string[]> = {
+  city: [
+    '................',
+    '.......c........',
+    '..b....c....l...',
+    '..b...ccc...l...',
+    '.bbb..ccc..bbb..',
+    '.bbb..ccc..bbb..',
+    '.bnb.ccccc.bnb..',
+    '.bbb.ccccc.bbbbb',
+    'bbbbbccnccbbbnbb',
+    'bnbbbccccc.bbbbb',
+    'bbbbbcnccc.bnbbb',
+    'bnbnbcccccbbbbbb',
+    'bbbbbccnccbnbnbb',
+    'gggggggggggggggg',
+    '................',
+    '................',
+  ],
+  basketball: [
+    '................',
+    '....cccnnccc....',
+    '...cnccnnccnc...',
+    '..ccnccnnccncc..',
+    '.ccncccnncccncc.',
+    '.ccncccnncccncc.',
+    '.ccncccnncccncc.',
+    '.nnnnnnnnnnnnnn.',
+    '.nnnnnnnnnnnnnn.',
+    '.ccncccnncccncc.',
+    '.ccncccnncccncc.',
+    '.ccncccnncccncc.',
+    '..ccnccnnccncc..',
+    '...cnccnnccnc...',
+    '....cccnnccc....',
+    '................',
+  ],
+  seaplane: [
+    '................',
+    '...........bb...',
+    '..........bbb...',
+    '.........bbbb...',
+    '....bbbbbbbbbbb.',
+    '..bbbbbbbbbbbbbb',
+    '.bbbbbbbbbbbbbbb',
+    '..bbbbbbbbbbbb..',
+    '.....bbbbbbb....',
+    '....b.......b...',
+    '...cc.......cc..',
+    '..cccccccccccc..',
+    '..cc........cc..',
+    '................',
+    '...lllllllllll..',
+    '....lllllllll...',
+  ],
+  frog: [
+    '................',
+    '..gggg....gggg..',
+    '.gnnng....gnnng.',
+    '.gnlng....gnlng.',
+    '.gggggggggggggg.',
+    'gggggggggggggggg',
+    'gggggggggggggggg',
+    'gggggggggggggggg',
+    'ggnnnnnnnnnnnngg',
+    'gggggggggggggggg',
+    '.gggggggggggggg.',
+    '..gggggggggggg..',
+    '.gg.gg....gg.gg.',
+    'gg..gg....gg..gg',
+    '................',
+    '................',
+  ],
+  mask: [
+    '................',
+    '................',
+    '.bbbbbbb.bbbbbb.',
+    'bbbbbbbbbbbbbbbb',
+    'bbbnnnnbbbnnnnbb',
+    'bbnnnnnnbnnnnnnb',
+    'bbnnnnnnbnnnnnnb',
+    'bbbnnnnbbbnnnnbb',
+    '.bbbbbbbbbbbbbb.',
+    '..bbbbbb.bbbbb..',
+    '....bbb...bbb...',
+    '................',
+    '.....l.....l....',
+    '.....l.....l....',
+    '................',
+    '................',
+  ],
+  cat: [
+    '................',
+    '.cc..........cc.',
+    '.ccc........ccc.',
+    '.cccc......cccc.',
+    '.cccccccccccccc.',
+    '.cccccccccccccc.',
+    '.ccnnccccccnncc.',
+    '.ccnlccccccnlcc.',
+    '.cccccccccccccc.',
+    'l.ccccccnccccc.l',
+    '.lcccccnnnccccl.',
+    'l.cccccccccccc.l',
+    '..cccccccccccc..',
+    '...cccccccccc...',
+    '................',
+    '................',
+  ],
+  sabres: [
+    'c.............g.',
+    '.c...........g..',
+    '..c.........g...',
+    '...c.......g....',
+    '....c.....g.....',
+    '.....c...g......',
+    '......c.g.......',
+    '.......n........',
+    '......g.c.......',
+    '.....g...c......',
+    '....g.....c.....',
+    '...l.......l....',
+    '..ll.......ll...',
+    '.ll.........ll..',
+    '................',
+    '................',
+  ],
+  golf: [
+    '................',
+    '......l.........',
+    '......lgggg.....',
+    '......lgggggg...',
+    '......lgggggggg.',
+    '......lgggggg...',
+    '......lgggg.....',
+    '......l.........',
+    '......l.........',
+    '......l.........',
+    '......l.........',
+    '......l.........',
+    '....nnlnn.......',
+    '..nnnnnnnnn.....',
+    'ccccccccccccccc.',
+    '................',
+  ],
+  dino: [
+    '................',
+    '..........gggg..',
+    '.........gggggg.',
+    '.........gnggggg',
+    '.........gggggg.',
+    '.........ggg....',
+    '........gggg....',
+    '....gggggggg....',
+    '...ggggggggg....',
+    'gg.gggggggg.....',
+    '.ggggggggg......',
+    '..ggggggg.......',
+    '....gg.gg.......',
+    '....gg..gg......',
+    '....gg..gg......',
+    '...ggg..ggg.....',
+  ],
+  ghost: [
+    '................',
+    '.....llllll.....',
+    '....llllllll....',
+    '...llllllllll...',
+    '...llnnllnnll...',
+    '...llnnllnnll...',
+    '...llllllllll...',
+    '...llllllllll...',
+    '...llllllllll...',
+    '...llllllllll...',
+    '...llllllllll...',
+    '...llllllllll...',
+    '...ll.ll.ll.ll..',
+    '...l..l..l..l...',
+    '................',
+    '................',
+  ],
+  brain: [
+    '................',
+    '................',
+    '...cccc..cccc...',
+    '..ccnnc..cnncc..',
+    '.cccccc..cccccc.',
+    '.cnnccc..cccnnc.',
+    'cccccnn..nnccccc',
+    'ccccccc..ccccccc',
+    '.ccnncc..ccnncc.',
+    '.cnccnn..nnccnc.',
+    '..cnccc..cccnc..',
+    '...cccccccccc...',
+    '......cccc......',
+    '.......cc.......',
+    '.......cc.......',
+    '................',
+  ],
+  mountain: [
+    '................',
+    '.......l........',
+    '......lll.......',
+    '.....lblbl......',
+    '....bbbbbbb.....',
+    '...bbbbbbbbb....',
+    '..bbbbbbbbbbb...',
+    '.bbbbbbbbbbbbb..',
+    'bbbbbbbbbbbbbbb.',
+    'bbbbbbbbbbbbbbbb',
+    '................',
+    'c...............',
+    '.cc.............',
+    '...ccc..........',
+    '......cccc......',
+    '..........cccccc',
+  ],
+};
+const map: Record<string, string> = { b: 'px-blue', c: 'px-cyan', g: 'px-green', l: 'px-light', n: 'px-navy' };
+const cells: { x: number; y: number; cls: string }[] = [];
+(ART[name] ?? []).forEach((row, y) => [...row].forEach((ch, x) => map[ch] && cells.push({ x, y, cls: map[ch] })));
+---
+
+<svg class:list={['gameicon', className]} viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+  {cells.map((c) => <rect x={c.x} y={c.y} width="1" height="1" class={c.cls} />)}
+</svg>
+
+<style>
+  .gameicon {
+    display: block;
+    image-rendering: pixelated;
+  }
+  .px-blue {
+    fill: var(--pr-blue);
+  }
+  .px-cyan {
+    fill: var(--pr-cyan);
+  }
+  .px-green {
+    fill: var(--pr-green);
+  }
+  .px-light {
+    fill: var(--pr-light);
+  }
+  .px-navy {
+    fill: var(--pr-navy);
+  }
+</style>

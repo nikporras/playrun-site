@@ -78,20 +78,43 @@ const ogUrl = new URL(ogImage, Astro.site);
       if (reduce || !('IntersectionObserver' in window)) {
         items.forEach((el) => el.classList.add('is-in'));
       } else {
+        const show = (el: Element) => el.classList.add('is-in');
         const io = new IntersectionObserver(
           (entries) => {
             for (const e of entries) {
               if (e.isIntersecting) {
-                e.target.classList.add('is-in');
+                show(e.target);
                 io.unobserve(e.target);
               }
             }
           },
-          { rootMargin: '0px 0px -10% 0px', threshold: 0.05 },
+          { rootMargin: '0px 0px -5% 0px', threshold: 0 },
         );
         items.forEach((el) => io.observe(el));
-        // Anything already on screen at load should not wait for a scroll.
-        setTimeout(() => items.forEach((el) => el.getBoundingClientRect().top < innerHeight && el.classList.add('is-in')), 50);
+        // Belt and braces: whatever is on screen shows on the next frame of every scroll, and
+        // everything shows after a few seconds regardless, so no heading can stay clipped.
+        const sweep = () => {
+          for (const el of items) {
+            if (el.classList.contains('is-in')) continue;
+            const r = el.getBoundingClientRect();
+            if (r.top < innerHeight && r.bottom > 0) show(el);
+          }
+        };
+        setTimeout(sweep, 50);
+        let queued = false;
+        addEventListener(
+          'scroll',
+          () => {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(() => {
+              queued = false;
+              sweep();
+            });
+          },
+          { passive: true },
+        );
+        setTimeout(() => items.forEach(show), 4000);
       }
     </script>
   </body>
