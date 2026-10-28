@@ -150,6 +150,8 @@ test.describe('Home', () => {
     await expect(page.locator('.hero__statement')).toBeVisible();
     await expect(page.locator('.marquee__list').first()).toBeVisible();
     await expect(page.locator('.services__row').first()).toBeVisible();
+    await expect(page.locator('.stage__via')).toHaveCount(5);
+    await expect(page.locator('.hero__badge')).toHaveCount(3);
     await context.close();
   });
 

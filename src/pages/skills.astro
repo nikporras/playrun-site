@@ -1,13 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
-import Photo from '../components/Photo.astro';
+import PixelTile from '../components/PixelTile.astro';
 import PassMark from '../components/PassMark.astro';
 import { contact, primaryAction } from '../config';
-import photoStick from '../assets/photos/fightstick.jpg';
-import photoGamepad2 from '../assets/photos/8bitdo-sn30-gamepad-hs-dsc-2704.jpg';
-import photoHandhelds from '../assets/photos/console-portatili.jpg';
-import photoKeyboard from '../assets/photos/keyboard-unsplash.jpg';
 
 const services = [
   {
@@ -20,13 +16,7 @@ const services = [
     id: 'platforms',
     title: 'Platforms and stores',
     text: 'The same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the rules of Steam, Epic Games Store and GOG. I check what each platform and store requires before submission, so the submission is not the first time anyone looks.',
-    get: ['Platform requirement checks', 'Store rule checks', 'One report per SKU'],
-  },
-  {
-    id: 'vr',
-    title: 'VR and XR',
-    text: 'Five years of VR QA, from Beat Saber and The Climb at Universally Speaking to Fracked, Synapse and Ghostbusters: Rise of the Ghost Lord at nDreams, then Historic VR. Comfort, tracking, play space and interaction checks alongside the functional pass, on Meta Quest 2, 3 and Pro, PS VR2 and PC VR headsets.',
-    get: ['Comfort and tracking checks', 'Interaction and play space passes', 'Meta Quest 2, 3 and Pro, PS VR2, PC VR'],
+    get: ['Platform requirement checks', 'Store rule checks', 'One report per platform build'],
   },
   {
     id: 'performance',
@@ -52,7 +42,7 @@ const run = [
   ['Build received', 'The build lands. I set up the hardware and read the plan back to the team.'],
   ['Test plan', 'What gets tested, on what, in what order. Agreed with the team before the pass starts.'],
   ['Functional pass', 'Every path, every feature, every build.'],
-  ['Platform pass', 'Each SKU against its platform and store rules.'],
+  ['Platform pass', 'Each platform build against its platform and store rules.'],
   ['Performance pass', 'Frame rate, memory, load times, long sessions.'],
   ['Report sent', 'Bugs in the tracker as they are found. A quality report at the milestone.'],
   ['Shipped', 'The team submits with the report in hand.'],
@@ -66,13 +56,10 @@ const platforms = [
   ['Steam', 'Steam Deck, cloud saves, achievements, Steam Input.'],
   ['Epic Games Store', 'Store requirements, achievements, launcher paths.'],
   ['GOG', 'DRM-free build, Galaxy features, offline play.'],
-  ['Meta Quest 2, 3 and Pro', 'Standalone builds, guardian and comfort settings, Quest Link, the Horizon Store requirements.'],
-  ['PS VR2', 'Sense controllers, eye tracking, headset haptics, the PS5 release flow.'],
-  ['PC VR', 'Steam VR headsets through Steam and Viveport: Index, Vive and Rift S.'],
 ];
 ---
 
-<Base title="Skills" description="What Nicolás Porras tests and how: functional testing, platforms and stores, VR, performance and stress, playtesting and UX, and bug reporting, learned on shipped games since 2021.">
+<Base title="Skills" description="What Nicolás Porras tests and how: functional testing, platforms and stores, performance and stress, playtesting and UX, and bug reporting, learned on shipped games since 2021.">
   <!-- Level 1 -->
   <section class="level level--navy svc" data-level="1" aria-labelledby="services-title">
     <p class="flag" data-load style="--d: 0ms"><span>Skills</span></p>
@@ -83,7 +70,7 @@ const platforms = [
           <span class="mask"><span class="mask__line" style="--i: 1">and how</span></span>
         </h1>
         <p class="svc__lead statement" data-load style="--d: 360ms">
-          Six areas, one tester. Five years of QA on VR, console and PC, from the first test plan to the shipped
+          Five areas, one tester. Five years of QA on console and PC, from the first test plan to the shipped
           build.
         </p>
       </div>
@@ -102,15 +89,15 @@ const platforms = [
 
   <!-- Level 2: the six -->
   <section class="level level--blue six" data-level="2" aria-labelledby="six-title">
-    <p class="flag" data-enter><span>Level 2 &middot; The six</span></p>
+    <p class="flag" data-enter><span>Level 2 &middot; The five</span></p>
     <div class="six__grid">
       <div class="six__intro">
-        <h2 id="six-title" class="level__title" data-enter="wipe">Six areas</h2>
+        <h2 id="six-title" class="level__title" data-enter="wipe">Five areas</h2>
         <p class="level__lead six__lead" data-enter style="--enter-delay: 80ms">
           Each one learned on a shipped game, and used on every build since.
         </p>
         <div class="six__photo" data-enter="place">
-          <Photo src={photoStick} alt="An arcade fight stick with a round ball top lever and six buttons" sizes="(max-width: 64rem) 100vw, 40vw" />
+          <PixelTile name="ship" tone="navy" />
         </div>
       </div>
       <ol class="rows">
@@ -139,7 +126,7 @@ const platforms = [
     <div class="level__head">
       <h2 id="run-title" class="level__title" data-enter="wipe">A build, start to finish</h2>
       <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead">Seven states. The same ones on the ticker on the home page.</p>
+        <p class="level__lead">Seven states, condensed from the ticker on the home page.</p>
       </div>
     </div>
     <ol class="run__track">
@@ -162,7 +149,7 @@ const platforms = [
     <div class="level__head">
       <h2 id="plat-title" class="level__title" data-enter="wipe">Where the build has to work</h2>
       <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead">Four consoles, three PC stores, three kinds of headset. Each with its own rules, each checked before submission.</p>
+        <p class="level__lead">Four consoles, three PC stores. Each with its own rules, each checked before submission.</p>
       </div>
     </div>
     <div class="plat__board">
@@ -175,7 +162,7 @@ const platforms = [
         ))
       }
       <div class="plat__photo" data-enter="place">
-        <Photo src={photoHandhelds} alt="Five handheld consoles from the eighties and nineties on a display shelf" sizes="(max-width: 64rem) 100vw, 50vw" />
+        <PixelTile name="controller" tone="navy" />
       </div>
     </div>
   </section>
@@ -196,10 +183,7 @@ const platforms = [
       </div>
       <div class="ask__photos">
         <div class="ask__photo" data-enter="place">
-          <Photo src={photoGamepad2} alt="A grey gamepad seen from the side with its sticks and purple buttons" sizes="(max-width: 64rem) 50vw, 25vw" position="60% 50%" />
-        </div>
-        <div class="ask__photo" data-enter="place" style="--enter-delay: 60ms">
-          <Photo src={photoKeyboard} alt="A mechanical keyboard with pink backlit keys in a dark room" sizes="(max-width: 64rem) 50vw, 25vw" />
+          <PixelTile name="check" tone="navy" />
         </div>
       </div>
     </div>
@@ -368,10 +352,9 @@ const platforms = [
     color: var(--muted);
   }
   .plat__photo {
-    grid-column: span 2;
+    grid-column: span 1;
     min-width: 0;
     min-height: 0;
-    aspect-ratio: 16 / 5;
   }
 
   .ask__grid {

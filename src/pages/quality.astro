@@ -1,14 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
-import Photo from '../components/Photo.astro';
+import PixelTile from '../components/PixelTile.astro';
 import PassMark from '../components/PassMark.astro';
 import { contact, primaryAction } from '../config';
 import results from '../../tests/results/latest.json';
-import photoKeyboard from '../assets/photos/keyboard-unsplash.jpg';
-import photoGamepad from '../assets/photos/8bitdo-sf30-gamepad-hs-dsc-2710.jpg';
-import photoVr from '../assets/photos/virtual-reality-headset.jpg';
-import photoHandhelds from '../assets/photos/console-portatili.jpg';
 
 // The suite itself, read at build time: every spec file and the name of every test in it.
 const specs = import.meta.glob<string>('../../tests/*.spec.ts', { query: '?raw', import: 'default', eager: true });
@@ -61,7 +57,7 @@ const loop = [
         </p>
       </div>
       <div class="qa__photo" data-load style="--d: 200ms">
-        <Photo src={photoKeyboard} alt="A mechanical keyboard with pink backlit keys in a dark room" loading="eager" sizes="(max-width: 64rem) 100vw, 40vw" />
+        <PixelTile name="check" tone="blue" />
       </div>
     </div>
     <Bug id="quality-1" style="right: 44%; top: 10%" />
@@ -99,9 +95,6 @@ const loop = [
           </div>
         ))
       }
-      <div class="panel panel--photo" style="--span: 12" data-enter="place">
-        <Photo src={photoHandhelds} alt="Five handheld consoles from the eighties and nineties on a display shelf" sizes="100vw" />
-      </div>
     </div>
   </section>
 
@@ -115,7 +108,7 @@ const loop = [
           This list is built from the test files at build time, so it cannot drift from what runs.
         </p>
         <div class="suite__photo" data-enter="place">
-          <Photo src={photoVr} alt="The inside of a VR headset, its two lenses lit by the screen" sizes="(max-width: 64rem) 100vw, 40vw" />
+          <PixelTile name="bug" tone="navy" />
         </div>
       </div>
       <ul role="list" class="rows">
@@ -159,9 +152,6 @@ const loop = [
         ))
       }
     </ol>
-    <div class="loop__photo" data-enter="place">
-      <Photo src={photoGamepad} alt="A grey retro style gamepad with four coloured face buttons lying on a worktop" sizes="100vw" />
-    </div>
     <Bug id="quality-3" style="right: 6%; top: 10%" />
   </section>
 

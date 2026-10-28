@@ -34,7 +34,7 @@ test.describe('Games', () => {
     await expect(page.locator('[data-hud-bugs]')).toHaveText('01');
     await expect(page.locator('[data-toast]')).toContainText('Caught your first bug');
     await expect(page.locator('[data-toast]')).toHaveClass(/is-in/);
-    await expect(page.locator('[data-hud-ach]')).toHaveText('1/5');
+    await expect(page.locator('[data-hud-ach]')).toHaveText('1/4');
     await expect(page.locator(`[data-bug="${id}"]`)).toBeHidden();
     await page.reload();
     await expect(page.locator('[data-hud-bugs]')).toHaveText('01');

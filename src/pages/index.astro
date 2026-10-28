@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import { Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import Photo from '../components/Photo.astro';
+import PixelTile from '../components/PixelTile.astro';
 import PassMark from '../components/PassMark.astro';
 import CrossMark from '../components/CrossMark.astro';
 import Marquee from '../components/Marquee.astro';
@@ -12,20 +12,13 @@ import Icon from '../assets/logo/icon.svg';
 import results from '../../tests/results/latest.json';
 import { contact, primaryAction, site } from '../config';
 
-import photoGamepad from '../assets/photos/8bitdo-sf30-gamepad-hs-dsc-2710.jpg';
 import portrait from '../assets/photos/nicolas.png';
-import photoStick from '../assets/photos/fightstick.jpg';
-import photoKeyboard from '../assets/photos/keyboard-unsplash.jpg';
-import photoHandhelds from '../assets/photos/console-portatili.jpg';
 
 const allProjects = await getCollection('projects');
 // Released titles first, newest first; titles in development last.
-// The four PlayRun titles; the nDreams years are on the portfolio page.
-const projects = (import.meta.env.DEV ? allProjects : allProjects.filter((p) => p.data.public && !p.data.employer)).sort((a, b) => {
-  const aDev = a.data.status === 'in-development' ? 1 : 0;
-  const bDev = b.data.status === 'in-development' ? 1 : 0;
-  return aDev - bDev || (b.data.year ?? 0) - (a.data.year ?? 0);
-});
+// The biggest titles, in this order. The rest are on the portfolio page.
+const featured = ['cyberpunk-2077', 'nba-2k21', 'lous-lagoon', 'gang-of-frogs', 'beat-saber', 'walkabout-mini-golf', 'jurassic-world-aftermath'];
+const projects = featured.map((id) => allProjects.find((p) => p.id === id)).filter((p) => p !== undefined && (import.meta.env.DEV || p.data.public));
 
 // Routes that exist in this build. The self test only checks links to these, so pages that are not
 // built yet never count as failures; new pages join the list the moment they are built.
@@ -45,11 +38,6 @@ const services = [
     terms: ['Switch and Switch 2', 'Xbox and PS5', 'Steam, Epic, GOG'],
   },
   {
-    title: 'VR and XR',
-    text: 'Five years of VR QA, from Beat Saber and The Climb at Universally Speaking to nDreams and Historic VR, on Meta Quest 2, 3 and Pro, PS VR2 and PC VR headsets.',
-    terms: ['Meta Quest 2, 3 and Pro', 'PS VR2', 'PC VR'],
-  },
-  {
     title: 'Performance and stress',
     text: 'I profile frame rate, memory and load times on low spec and recommended spec rigs, then report exactly what gave.',
     terms: ['Unreal Engine profiling', 'Low and recommended spec', 'Long sessions'],
@@ -66,11 +54,27 @@ const services = [
   },
 ];
 
-// The run-sheet ticker names process states, never results or numbers.
-const runSheet = ['Build received', 'Test plan', 'Functional pass', 'Platform pass', 'Performance pass', 'Report sent', 'Shipped'];
-const tickerPlatforms = ['Switch 2', 'Switch', 'PS5', 'Xbox', 'Steam', 'Epic Games Store', 'GOG'];
+// The run-sheet ticker: a build's journey, named as process states, never results or numbers.
+const runSheet = [
+  'Build received',
+  'Smoke test',
+  'Test plan',
+  'Functional pass',
+  'Regression',
+  'Compatibility',
+  'Performance',
+  'Localisation',
+  'Accessibility',
+  'CQA',
+  'TRC · XR · Lotcheck',
+  'Release candidate',
+  'Certified',
+  'Shipped',
+];
 
 // The scoreboard: six panels of unequal width in three tones, no two alike side by side.
+const badges = ['Testing games since 2021', 'Led QA teams since 2022', 'Multi-platform releases'];
+
 const ALT = 'Nicolás Porras wearing a VR headset pushed up on his head';
 
 const panelSpans = [5, 3, 4, 5, 3, 4];
@@ -117,18 +121,21 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
           <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
           <a class="textlink hero__secondary" href="/quality">See how I test this site</a>
         </div>
+        <ul role="list" class="hero__badges" data-load style="--d: 640ms">
+          {badges.map((b) => (
+            <li class="hero__badge">
+              <PassMark class="hero__badgemark" />
+              <span>{b}</span>
+            </li>
+          ))}
+        </ul>
       </div>
-      <ul role="list" class="hero__facts" data-load style="--d: 640ms">
-        <li>Testing games since <span data-roll>2021</span></li>
-        <li>Led QA at two VR studios</li>
-        <li><span data-roll>30</span>+ SKUs on one release</li>
-      </ul>
     </div>
     <Bug id="hero-1" style="right: 7%; top: 44%" />
   </section>
 
   <!-- The run sheet: one band, two lanes -->
-  <Marquee run={runSheet} platforms={tickerPlatforms} />
+  <Marquee run={runSheet} />
 
   <!-- Level 2: what I test, a blue field with the heading sticky and six navy rows -->
   <section class="level level--blue services" data-level="2" aria-labelledby="services-title">
@@ -137,7 +144,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
       <div class="services__intro">
         <h2 id="services-title" class="services__heading" data-enter="wipe">What I test</h2>
         <p class="services__lead" data-enter style="--enter-delay: 80ms">
-          Six things I check on every build, from the first test plan to the report at the milestone.
+          Five things I check on every build, from the first test plan to the report at the milestone.
         </p>
         <a class="button button--navy" href="/skills" data-enter style="--enter-delay: 160ms">See the skills</a>
       </div>
@@ -167,7 +174,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
       <h2 id="work-title" class="level__title" data-enter="wipe">Select stage</h2>
       <div class="level__aside">
         <p class="level__lead" data-enter style="--enter-delay: 80ms">
-          Lou's Lagoon shipped with more than 30 SKUs. I tested every one of them.
+          Recent work: indie releases across Switch, Xbox, PS5 and PC stores.
         </p>
         <a class="button button--navy" href="/portfolio" data-enter style="--enter-delay: 160ms">See the portfolio</a>
       </div>
@@ -178,10 +185,12 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
           <article class:list={['stage', 'tile--live', { 'stage--big': i === 0 }]} data-enter="place" style={`--enter-delay: ${i * 60}ms`}>
             <p class="stage__num">Stage {i + 1}</p>
             <Icon class="stage__mark" role="presentation" aria-hidden="true" />
-            <h3 class="stage__title">{p.data.title}</h3>
+            <h3 class="stage__title">
+              <a class="stage__name" href={`/portfolio/${p.id}`}>{p.data.title}</a>
+            </h3>
+            {p.data.employer === 'Universally Speaking' && <p class="stage__via">via Universally Speaking</p>}
             <p class="stage__meta">
               {p.data.status === 'in-development' ? 'In development' : p.data.year}. {p.data.platforms.join(', ')}.
-              {!p.data.public && ' Sample entry.'}
             </p>
             {p.data.url && (
               <a class="stage__link" href={p.data.url} rel="noopener">
@@ -191,45 +200,9 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
           </article>
         ))
       }
-      {
-        [0, 1].map((i) => (
-          <article class="stage stage--redacted tile--live" data-enter="place" data-achieve="redacted" style={`--enter-delay: ${(projects.length + i) * 60}ms`}>
-            <p class="stage__num">Stage ?</p>
-            <p class="stage__bars" aria-hidden="true">
-              <span style="width: 62%" />
-              <span style="width: 38%" />
-            </p>
-            <h3 class="stage__title stage__title--small">
-              <span class="stage__tag">[Redacted]</span> Unannounced. Under NDA.
-            </h3>
-            <a class="textlink stage__ask" href="/contact">Ask me</a>
-          </article>
-        ))
-      }
-      <div class="work__photo work__photo--wide" data-enter="place">
-        <Photo
-          src={photoHandhelds}
-          alt="Five handheld consoles from the eighties and nineties on a display shelf"
-          sizes="(max-width: 48rem) 100vw, 50vw"
-        />
-      </div>
-      <div class="work__photo" data-enter="place" style="--enter-delay: 60ms">
-        <Photo
-          src={photoStick}
-          alt="An arcade fight stick with a round ball top lever and six buttons"
-          sizes="(max-width: 48rem) 50vw, 25vw"
-        />
-      </div>
-      <div class="work__photo" data-enter="place" style="--enter-delay: 120ms">
-        <Photo
-          src={photoKeyboard}
-          alt="A mechanical keyboard with pink backlit keys in a dark room"
-          sizes="(max-width: 48rem) 50vw, 25vw"
-        />
-      </div>
     </div>
     <p class="work__also" data-enter>
-      <a class="textlink" href="/portfolio">Also: Cyberpunk 2077, NBA 2K21, Ghostbusters: Rise of the Ghost Lord, Synapse and more</a>
+      <a class="textlink" href="/portfolio">Also: Thick as Thieves, CLAWPUNK, Ghostbusters: Rise of the Ghost Lord, Synapse, Fracked and more</a>
     </p>
     <Bug id="work-1" style="left: 48%; top: 5%" />
     <Bug id="work-2" style="right: 4%; bottom: 30%" />
@@ -289,11 +262,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
         ))
       }
       <div class="panel panel--photo" style="--span: 7" data-enter="place">
-        <Photo
-          src={photoGamepad}
-          alt="A grey retro style gamepad with four coloured face buttons lying on a worktop"
-          sizes="(max-width: 48rem) 100vw, 60vw"
-        />
+        <PixelTile name="controller" tone="navy" />
       </div>
       <div class="panel panel--light panel--link" style="--span: 5; --enter-delay: 60ms" data-enter="place">
         <p class="panel__linktext">Every push runs this suite before the site deploys.</p>
@@ -354,10 +323,8 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
   .hero__grid {
     flex: 1;
     display: grid;
-    grid-template-columns: 5fr 7fr;
-    grid-template-areas:
-      'icon text'
-      'facts text';
+    grid-template-columns: 4fr 8fr;
+    grid-template-areas: 'icon text';
     column-gap: var(--s-5);
     row-gap: var(--s-4);
     align-items: end;
@@ -365,8 +332,9 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
   }
   .hero__iconwrap {
     grid-area: icon;
-    align-self: end;
-    width: min(100%, 34rem);
+    align-self: center;
+    justify-self: center;
+    width: min(100%, 17rem);
   }
   .hero__icon {
     width: 100%;
@@ -376,15 +344,27 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     grid-area: text;
     min-width: 0;
   }
-  .hero__facts {
-    grid-area: facts;
+  .hero__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    margin-top: var(--s-4);
+  }
+  .hero__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid var(--accent-2);
     font-family: var(--font-display);
-    font-size: 1.5rem;
-    line-height: 1.15;
+    font-size: 1rem;
+    line-height: 1;
+    letter-spacing: 0.04em;
     color: var(--accent-2);
   }
-  .hero__facts li + li {
-    margin-top: 0.35em;
+  :global(.hero__badgemark) {
+    font-size: 1rem;
+    color: var(--accent);
   }
   .hero__title {
     font-size: var(--step-hero);
@@ -469,13 +449,13 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
       grid-template-columns: 1fr;
       grid-template-areas:
         'icon'
-        'text'
-        'facts';
+        'text';
       row-gap: var(--s-4);
       margin-top: var(--s-3);
     }
     .hero__iconwrap {
-      width: min(42%, 10rem);
+      width: min(30%, 7rem);
+      justify-self: start;
     }
     .hero__title {
       font-size: round(19vw, 8px);
@@ -486,9 +466,6 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     }
     .hero__actions .button {
       width: 100%;
-    }
-    .hero__facts {
-      font-size: 1.25rem;
     }
   }
 
@@ -795,6 +772,25 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
   .stage--big .stage__meta {
     color: var(--field-light-ink);
     font-size: var(--step-body);
+  }
+  .stage__name {
+    color: inherit;
+    text-decoration-color: var(--accent-2);
+  }
+  .stage__name:hover,
+  .stage__name:focus-visible {
+    color: var(--accent-2);
+  }
+  .stage__via {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .stage--big .stage__via {
+    color: var(--pr-blue);
   }
   .stage__link {
     font-family: var(--font-display);

@@ -59,7 +59,7 @@ const year = new Date().getFullYear();
 
     <div class="footer__bottom">
       <p class="small muted">
-        © {year} {site.name}. Photographs and typefaces are listed on the <a href="/credits">credits page</a>.
+        © {year} {site.name}. Typefaces and artwork are listed on the <a href="/credits">credits page</a>.
       </p>
       <a class="button footer__action" href={primaryAction.href}>{primaryAction.label}</a>
     </div>
@@ -72,12 +72,11 @@ const year = new Date().getFullYear();
     padding-block: var(--s-5) var(--s-4);
   }
   .footer__mark {
-    height: 34svh;
-    min-height: 12rem;
-    max-height: 22rem;
+    height: 3rem;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     color: var(--field-blue);
+    margin-bottom: var(--s-4);
   }
   .footer__icon {
     height: 100%;
@@ -132,8 +131,7 @@ const year = new Date().getFullYear();
   }
   @media (max-width: 47.99rem) {
     .footer__mark {
-      height: 22svh;
-      min-height: 8rem;
+      height: 2.5rem;
     }
     .footer__grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -2,12 +2,8 @@
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
 import PassMark from '../components/PassMark.astro';
-import Photo from '../components/Photo.astro';
+import PixelTile from '../components/PixelTile.astro';
 import { contact, contactEndpoint } from '../config';
-import photoGamepad2 from '../assets/photos/8bitdo-sn30-gamepad-hs-dsc-2704.jpg';
-import photoStick from '../assets/photos/fightstick.jpg';
-import photoKeyboard from '../assets/photos/keyboard-unsplash.jpg';
-import photoHandhelds from '../assets/photos/console-portatili.jpg';
 
 // With script, the form posts a JSON string to the Apps Script endpoint. Without script it opens
 // the visitor's mail app with the message written out, so nothing is lost either way.
@@ -38,7 +34,7 @@ const steps = [
       </div>
       <div class="contact__side">
       <div class="contact__photo" data-load style="--d: 200ms">
-        <Photo src={photoGamepad2} alt="A grey gamepad seen from the side with its sticks and purple buttons" loading="eager" sizes="(max-width: 64rem) 100vw, 40vw" position="60% 50%" />
+        <PixelTile name="ship" tone="blue" />
       </div>
       <ul role="list" class="contact__direct" data-load style="--d: 480ms">
         <li>
@@ -65,7 +61,7 @@ const steps = [
           {reasons.map((r) => <li>{r}</li>)}
         </ul>
         <div class="msg__photo" data-enter="place">
-          <Photo src={photoStick} alt="An arcade fight stick with a round ball top lever and six buttons" sizes="(max-width: 64rem) 100vw, 40vw" />
+          <PixelTile name="bug" tone="navy" />
         </div>
       </div>
       <form
@@ -131,14 +127,6 @@ const steps = [
         ))
       }
     </ol>
-    <div class="next__photos">
-      <div class="next__photo" data-enter="place">
-        <Photo src={photoHandhelds} alt="Five handheld consoles from the eighties and nineties on a display shelf" sizes="(max-width: 64rem) 100vw, 66vw" />
-      </div>
-      <div class="next__photo" data-enter="place" style="--enter-delay: 60ms">
-        <Photo src={photoKeyboard} alt="A mechanical keyboard with pink backlit keys in a dark room" sizes="(max-width: 64rem) 100vw, 33vw" />
-      </div>
-    </div>
   </section>
 </Base>
 

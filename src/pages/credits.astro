@@ -1,27 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
 import Icon from '../assets/logo/icon.svg';
-import credits from '../assets/photos/credits.json';
-import Photo from '../components/Photo.astro';
-import type { ImageMetadata } from 'astro';
-
-type Credit = {
-  file: string;
-  title: string;
-  creator?: string;
-  creatorUrl?: string;
-  license: string;
-  licenseUrl?: string;
-  page: string;
-  via?: string;
-};
-const photos = (credits as Credit[]).filter((c) => c.title);
-// The photographs themselves, so the list shows what it credits.
-const photoFiles = import.meta.glob<{ default: ImageMetadata }>('../assets/photos/*.jpg', { eager: true });
-const imageFor = (file: string) => Object.entries(photoFiles).find(([k]) => k.endsWith('/' + file.split('/').pop()))?.[1].default;
+import Sprite from '../components/Sprite.astro';
 ---
 
-<Base title="Credits" description="Who made the photographs, typefaces and tools used on playrunqa.com.">
+<Base title="Credits" description="Who made the typefaces, tools and artwork used on playrunqa.com.">
   <article class="credits wrap">
     <div class="credits__head">
       <div>
@@ -35,32 +18,14 @@ const imageFor = (file: string) => Object.entries(photoFiles).find(([k]) => k.en
       </div>
     </div>
 
-    <section class="credits__section credits__section--wide" aria-labelledby="credits-photos">
-      <h2 id="credits-photos">Photographs</h2>
+    <section class="credits__section" aria-labelledby="credits-pixels">
+      <h2 id="credits-pixels">Pixel art</h2>
       <p>
-        The photographs of hardware show the world of game testing, not my own kit. They come from Wikimedia Commons
-        under open licences and are shown in greyscale under a navy tint. The portrait of me is my own.
+        The ship, the bugs, the net, the controller and the headset are drawn for this site as bitmaps in the brand
+        colours. Nothing is copied from any game. The portrait on the home and about pages is my own.
       </p>
-      <ul role="list" class="credits__list credits__list--photos">
-        {
-          photos.map((c) => (
-            <li class="credits__item credits__item--photo">
-              {imageFor(c.file) && (
-                <div class="credits__thumb">
-                  <Photo src={imageFor(c.file)!} alt={c.title} widths={[480, 768]} sizes="(max-width: 48rem) 50vw, 33vw" />
-                </div>
-              )}
-              <a href={c.page} rel="noopener">{c.title}</a>
-              {c.creator && (
-                <>
-                  {' '}by {c.creatorUrl ? <a href={c.creatorUrl} rel="noopener">{c.creator}</a> : c.creator}
-                </>
-              )}
-              , {c.licenseUrl ? <a href={c.licenseUrl} rel="noopener">{c.license}</a> : c.license}
-              {c.via ? `, via ${c.via}` : ''}.
-            </li>
-          ))
-        }
+      <ul role="list" class="credits__sprites" aria-hidden="true">
+        {(['ship', 'bug', 'net', 'controller', 'headset'] as const).map((n) => <li><Sprite name={n} class="credits__sprite" /></li>)}
       </ul>
     </section>
 
@@ -126,6 +91,24 @@ const imageFor = (file: string) => Object.entries(photoFiles).find(([k]) => k.en
     .credits__icon {
       width: min(60%, 14rem);
     }
+  }
+  .credits__sprites {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    margin-top: var(--s-3);
+    --bug-body: var(--pr-green);
+    --bug-eye: var(--pr-navy);
+    --bug-leg: var(--pr-cyan);
+  }
+  .credits__sprites li {
+    width: 5rem;
+    display: grid;
+    place-items: center;
+  }
+  .credits__sprites :global(.credits__sprite) {
+    width: 100%;
+    height: auto;
   }
   .credits__section h2 {
     font-size: 2rem;

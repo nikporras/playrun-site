@@ -54,6 +54,18 @@ const when = d.status === 'in-development' ? 'In development' : String(d.year);
           <dt>My role</dt>
           <dd>{d.role}</dd>
         </div>
+        {d.employer && (
+          <div>
+            <dt>Where I tested it</dt>
+            <dd>{d.employer === 'Universally Speaking' ? 'Universally Speaking, 2021' : 'nDreams, 2022 to 2024'}</dd>
+          </div>
+        )}
+        {d.employer && (
+          <div>
+            <dt>Where I tested it</dt>
+            <dd>{d.employer === 'Universally Speaking' ? 'Universally Speaking, 2021' : 'nDreams, 2022 to 2024'}</dd>
+          </div>
+        )}
         <div>
           <dt>Status</dt>
           <dd>{when}</dd>

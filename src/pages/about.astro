@@ -2,13 +2,10 @@
 import { Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
-import Photo from '../components/Photo.astro';
+import PixelTile from '../components/PixelTile.astro';
 import PassMark from '../components/PassMark.astro';
 import { contact, personal, primaryAction } from '../config';
 import portrait from '../assets/photos/nicolas.png';
-import photoKeyboard from '../assets/photos/keyboard-unsplash.jpg';
-import photoHandhelds from '../assets/photos/console-portatili.jpg';
-import photoGamepad from '../assets/photos/8bitdo-sf30-gamepad-hs-dsc-2710.jpg';
 
 // From the CV in content-source, in the first person, with PlayRun's positioning.
 const posts = [
@@ -139,10 +136,10 @@ const panels = [
         ))
       }
       <div class="how__photo" data-enter="place">
-        <Photo src={photoKeyboard} alt="A mechanical keyboard with pink backlit keys in a dark room" sizes="(max-width: 64rem) 50vw, 33vw" />
+        <PixelTile name="headset" tone="navy" />
       </div>
       <div class="how__photo" data-enter="place" style="--enter-delay: 60ms">
-        <Photo src={photoHandhelds} alt="Five handheld consoles from the eighties and nineties on a display shelf" sizes="(max-width: 64rem) 50vw, 33vw" />
+        <PixelTile name="controller" tone="light" />
       </div>
     </div>
     <Bug id="about-3" style="right: 6%; top: 12%" />
@@ -165,7 +162,7 @@ const panels = [
         </div>
       </div>
       <div class="off__photo" data-enter="place">
-        <Photo src={photoGamepad} alt="A grey retro style gamepad with four coloured face buttons lying on a worktop" sizes="(max-width: 64rem) 100vw, 40vw" />
+        <PixelTile name="ship" tone="navy" />
       </div>
     </div>
   </section>

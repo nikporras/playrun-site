@@ -1,0 +1,60 @@
+---
+/**
+ * A tile with one pixel sprite on a flat field, in the brand colours. These stand where found
+ * photographs used to: sparingly, one or two a page, drawn for this site and credited to no one.
+ */
+import Sprite from './Sprite.astro';
+import PassMark from './PassMark.astro';
+
+interface Props {
+  name: 'ship' | 'bug' | 'controller' | 'headset' | 'check';
+  tone?: 'navy' | 'light' | 'blue' | 'cyan' | 'green';
+  class?: string;
+}
+const { name, tone = 'navy', class: className } = Astro.props;
+---
+
+<div class:list={['pixtile', `pixtile--${tone}`, className]} aria-hidden="true">
+  {name === 'check' ? <PassMark class="pixtile__art pixtile__art--check" /> : <Sprite name={name} class="pixtile__art" />}
+</div>
+
+<style>
+  .pixtile {
+    position: relative;
+    height: 100%;
+    min-height: 12rem;
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    overflow: clip;
+    --bug-body: var(--pr-green);
+    --bug-eye: var(--pr-navy);
+    --bug-leg: var(--pr-cyan);
+  }
+  .pixtile--navy {
+    background: var(--bg);
+  }
+  .pixtile--light {
+    background: var(--field-light);
+  }
+  .pixtile--blue {
+    background: var(--pr-blue);
+  }
+  .pixtile--cyan {
+    background: var(--pr-cyan);
+  }
+  .pixtile--green {
+    background: var(--pr-green);
+  }
+  .pixtile :global(.pixtile__art) {
+    width: min(48%, 14rem);
+    height: auto;
+  }
+  .pixtile :global(.pixtile__art--check) {
+    width: min(32%, 8rem);
+    color: var(--pr-green);
+  }
+  .pixtile--green :global(.pixtile__art--check) {
+    color: var(--pr-navy);
+  }
+</style>

@@ -1,16 +1,15 @@
 ---
 /**
- * The run-sheet ticker: one band, two lanes. Lane one is a build going through the test run,
- * lane two runs the other way with the platforms. Pauses on hover, focus, with the button, and
- * when off screen. Static and wrapping under prefers-reduced-motion. Needs no script to move.
+ * The run-sheet ticker: one band, one lane, a build going through the test run with a pass mark
+ * between the states. Pauses with the button and when off screen, never on hover. Static and
+ * wrapping under prefers-reduced-motion. Needs no script to move.
  */
 import PassMark from './PassMark.astro';
 
 interface Props {
   run: string[];
-  platforms: string[];
 }
-const { run, platforms } = Astro.props;
+const { run } = Astro.props;
 ---
 
 <aside class="marquee" aria-label="Test run ticker">
@@ -23,20 +22,6 @@ const { run, platforms } = Astro.props;
             <li class="marquee__item">
               <span>{item}</span>
               <PassMark class="marquee__mark" />
-            </li>
-          ))}
-        </ul>
-      ))
-    }
-  </div>
-  <div class="marquee__lane marquee__lane--reverse">
-    {
-      [false, true].map((copy) => (
-        <ul role="list" class:list={['marquee__list', { 'marquee__copy': copy }]} aria-hidden={copy ? 'true' : undefined}>
-          {platforms.map((item) => (
-            <li class="marquee__item">
-              <span>{item}</span>
-              <span class="marquee__dot" aria-hidden="true" />
             </li>
           ))}
         </ul>
@@ -70,13 +55,8 @@ const { run, platforms } = Astro.props;
     display: flex;
     width: max-content;
     white-space: nowrap;
-    animation: marquee 34s linear infinite;
+    animation: marquee 70s linear infinite;
     will-change: transform;
-  }
-  .marquee__lane--reverse {
-    animation-direction: reverse;
-    animation-duration: 42s;
-    color: var(--accent-2);
   }
   .marquee__list {
     display: flex;
@@ -96,14 +76,6 @@ const { run, platforms } = Astro.props;
     color: var(--accent);
     font-size: 1.5rem;
   }
-  .marquee__dot {
-    display: inline-block;
-    width: 0.5rem;
-    height: 0.5rem;
-    background: currentColor;
-  }
-  .marquee:hover .marquee__lane,
-  .marquee:focus-within .marquee__lane,
   .marquee[data-paused] .marquee__lane {
     animation-play-state: paused;
   }

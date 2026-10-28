@@ -9,7 +9,6 @@ const KEY = 'playrun.games';
 const ACHIEVEMENTS: Record<string, string> = {
   'first-bug': 'Caught your first bug',
   'all-bugs': 'Caught every bug',
-  redacted: 'Found the redacted files',
   services: 'Read every skill',
   selftest: 'Tested the page',
 };
