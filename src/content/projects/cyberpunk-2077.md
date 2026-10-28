@@ -8,6 +8,7 @@ summary: "An open-world RPG set in Night City. I tested the console versions in 
 url: "https://www.playstation.com/en-gb/games/cyberpunk-2077/"
 store: "On PlayStation"
 employer: "Universally Speaking"
+icon: "city"
 public: true
 ---
 

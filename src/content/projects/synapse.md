@@ -8,6 +8,7 @@ summary: "A telekinetic VR action shooter, exclusive to PlayStation VR2, with ey
 url: "https://store.playstation.com/en-gb/concept/10006846"
 store: "On the PlayStation Store"
 employer: "nDreams"
+icon: "brain"
 public: true
 ---
 

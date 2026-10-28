@@ -6,6 +6,7 @@ role: "Game quality testing"
 year: 2026
 summary: "A cosy seaplane exploration and crafting adventure, released on PS5, Xbox, Nintendo Switch and the PC stores."
 url: "https://store.steampowered.com/app/2100020/Lous_Lagoon/"
+icon: "seaplane"
 public: true
 ---
 

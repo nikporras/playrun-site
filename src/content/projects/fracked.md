@@ -8,6 +8,7 @@ summary: "A run-and-cover VR shooter with skiing and climbing. First on PlayStat
 url: "https://www.meta.com/en-gb/experiences/fracked/8074885222534394/"
 store: "On the Meta Quest Store"
 employer: "nDreams"
+icon: "mountain"
 public: true
 ---
 

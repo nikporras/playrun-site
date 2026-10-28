@@ -8,6 +8,7 @@ summary: "Multiplayer VR mini golf with courses that keep arriving. I tested it 
 url: "https://www.meta.com/en-gb/experiences/walkabout-mini-golf/2462678267173943/"
 store: "On the Meta Quest Store"
 employer: "Universally Speaking"
+icon: "golf"
 public: true
 ---
 

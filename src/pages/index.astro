@@ -8,7 +8,7 @@ import CrossMark from '../components/CrossMark.astro';
 import Marquee from '../components/Marquee.astro';
 import Bug from '../components/Bug.astro';
 import IconPrimary from '../assets/logo/icon-primary.svg';
-import Icon from '../assets/logo/icon.svg';
+import GameIcon from '../components/GameIcon.astro';
 import results from '../../tests/results/latest.json';
 import { contact, primaryAction, site } from '../config';
 
@@ -184,7 +184,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
         projects.map((p, i) => (
           <article class:list={['stage', 'tile--live', { 'stage--big': i === 0 }]} data-enter="place" style={`--enter-delay: ${i * 60}ms`}>
             <p class="stage__num">Stage {i + 1}</p>
-            <Icon class="stage__mark" role="presentation" aria-hidden="true" />
+            <span class="stage__mark"><GameIcon name={p.data.icon} /></span>
             <h3 class="stage__title">
               <a class="stage__name" href={`/portfolio/${p.id}`}>{p.data.title}</a>
             </h3>
@@ -767,12 +767,14 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     top: var(--s-3);
     right: var(--s-3);
     width: 3rem;
-    height: auto;
-    color: var(--field-blue);
+    height: 3rem;
+  }
+  .stage__mark :global(.gameicon) {
+    width: 100%;
+    height: 100%;
   }
   .stage--big .stage__mark {
-    width: 5rem;
-    color: var(--pr-navy);
+    width: 3rem;
   }
   .stage__title {
     font-size: 2.5rem;

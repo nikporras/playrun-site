@@ -8,6 +8,7 @@ summary: "A VR survival adventure on Isla Nublar, stalked by Velociraptors. I te
 url: "https://www.meta.com/en-gb/experiences/jurassic-world-aftermath-collection/2708465082504733/"
 store: "On the Meta Quest Store"
 employer: "Universally Speaking"
+icon: "dino"
 public: true
 ---
 

@@ -8,6 +8,7 @@ summary: "A co-op VR Ghostbusters game for one to four players, set in San Franc
 url: "https://www.meta.com/en-gb/experiences/ghostbusters-rise-of-the-ghost-lord/4746232908818706/"
 store: "On the Meta Quest Store"
 employer: "nDreams"
+icon: "ghost"
 public: true
 ---
 

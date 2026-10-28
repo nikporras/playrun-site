@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Icon from '../assets/logo/icon.svg';
 import Sprite from '../components/Sprite.astro';
+import GameIcon from '../components/GameIcon.astro';
 ---
 
 <Base title="Credits" description="Who made the typefaces, tools and artwork used on playrunqa.com.">
@@ -26,6 +27,20 @@ import Sprite from '../components/Sprite.astro';
       </p>
       <ul role="list" class="credits__sprites" aria-hidden="true">
         {(['ship', 'bug', 'net', 'controller', 'headset'] as const).map((n) => <li><Sprite name={n} class="credits__sprite" /></li>)}
+      </ul>
+      <p>
+        Each game card carries a generic icon drawn the same way, so no logo or character from any game appears on
+        this site: a skyline, a ball, a seaplane, a frog, a mask, a cat, two sabres, a golf flag, a dinosaur, a
+        ghost, a brain and a mountain with a ski track.
+      </p>
+      <ul role="list" class="credits__sprites credits__icons" aria-hidden="true">
+        {
+          (['city', 'basketball', 'seaplane', 'frog', 'mask', 'cat', 'sabres', 'golf', 'dino', 'ghost', 'brain', 'mountain'] as const).map((n) => (
+            <li>
+              <GameIcon name={n} class="credits__sprite" />
+            </li>
+          ))
+        }
       </ul>
     </section>
 
@@ -100,6 +115,9 @@ import Sprite from '../components/Sprite.astro';
     --bug-body: var(--pr-green);
     --bug-eye: var(--pr-navy);
     --bug-leg: var(--pr-cyan);
+  }
+  .credits__icons li {
+    width: 3.5rem;
   }
   .credits__sprites li {
     width: 5rem;

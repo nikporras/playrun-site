@@ -8,6 +8,7 @@ summary: "The 2020 edition of the NBA 2K basketball series. I tested the console
 url: "https://nba.2k.com/2k21/"
 store: "Official site"
 employer: "Universally Speaking"
+icon: "basketball"
 public: true
 ---
 

@@ -8,6 +8,7 @@ summary: "The VR rhythm game: slice the blocks to the beat. I tested it in 2021 
 url: "https://www.meta.com/en-gb/experiences/beat-saber/2448060205267927/"
 store: "On the Meta Quest Store"
 employer: "Universally Speaking"
+icon: "sabres"
 public: true
 ---
 

@@ -77,6 +77,8 @@ for (const p of PAGES) {
 test('every public project has its own page, linked from the portfolio', async ({ page, request }) => {
   await page.goto('/portfolio');
   const links = await page.locator('.stage__link').evaluateAll((as) => (as as HTMLAnchorElement[]).map((a) => a.getAttribute('href')!));
+  // every card carries its own game icon
+  expect(await page.locator('.stage .gameicon').count()).toBe(links.length);
   expect(links.length).toBeGreaterThanOrEqual(12);
   for (const href of links) {
     expect(href).toMatch(/^\/portfolio\/[a-z0-9-]+$/);
