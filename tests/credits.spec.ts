@@ -10,7 +10,7 @@ test.describe('Credits', () => {
     await expect(page.getByText('Pixel Operator by Jayvee Enaguas')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Pixel art' })).toBeVisible();
     expect(await page.locator('.credits__sprites:not(.credits__icons) li').count()).toBe(5);
-    expect(await page.locator('.credits__icons li').count()).toBe(19);
+    expect(await page.locator('.credits__icons li').count()).toBe(20);
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
   });

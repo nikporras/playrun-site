@@ -20,7 +20,7 @@ const projects = defineCollection({
       // Set when the title was tested in a studio job rather than as PlayRun; the portfolio groups by it.
       employer: z.string().optional(),
       // The generic pixel icon on the card, one of the names GameIcon.astro draws.
-      icon: z.enum(['city', 'basketball', 'seaplane', 'frog', 'mask', 'cat', 'sabres', 'golf', 'dino', 'ghost', 'brain', 'mountain', 'sun', 'wolf', 'castle', 'helmet', 'hut', 'drone', 'hand']),
+      icon: z.enum(['city', 'basketball', 'seaplane', 'frog', 'mask', 'cat', 'sabres', 'golf', 'dino', 'ghost', 'brain', 'mountain', 'sun', 'wolf', 'castle', 'helmet', 'hut', 'drone', 'hand', 'vault']),
       // Only projects cleared for public use are shown. Default is hidden.
       public: z.boolean().default(false),
     }),

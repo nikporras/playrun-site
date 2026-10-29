@@ -3,12 +3,12 @@
  * Generic 16 by 16 pixel icons for the game cards, drawn for this site in the brand colours.
  * None is a logo or a character from a game: a skyline, a ball, a seaplane, a frog, a mask, a cat,
  * two sabres, a golf flag, a dinosaur, a ghost, a brain, a mountain with a ski track, a sun, a wolf,
- * a castle, a Roman helmet, a thatched hut, a drone and a hand on a ledge.
+ * a castle, a Roman helmet, a thatched hut, a drone, a hand on a ledge and a barred vault gate.
  */
 interface Props {
   name:
     | 'city' | 'basketball' | 'seaplane' | 'frog' | 'mask' | 'cat' | 'sabres' | 'golf' | 'dino' | 'ghost' | 'brain' | 'mountain'
-    | 'sun' | 'wolf' | 'castle' | 'helmet' | 'hut' | 'drone' | 'hand';
+    | 'sun' | 'wolf' | 'castle' | 'helmet' | 'hut' | 'drone' | 'hand' | 'vault';
   class?: string;
 }
 const { name, class: className } = Astro.props;
@@ -354,6 +354,24 @@ const ART: Record<string, string[]> = {
     '.....llllll.....',
     '.....llllll.....',
     '.....llllll.....',
+    '................',
+  ],
+  vault: [
+    '................',
+    '.....llllll.....',
+    '....llllllll....',
+    '...lll....lll...',
+    '..ll..nnnn..ll..',
+    '..ll.nnnnnn.ll..',
+    '.ll.nncnncnn.ll.',
+    '.ll.nncnncnn.ll.',
+    '.ll.nncnncnn.ll.',
+    '.ll.nncnncnn.ll.',
+    '.ll.nncnncnn.ll.',
+    '.ll.nnnnnnnn.ll.',
+    '.ll.nnnnnnnn.ll.',
+    'gggggggggggggggg',
+    '................',
     '................',
   ],
 };
