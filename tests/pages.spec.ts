@@ -7,14 +7,7 @@ import { join } from 'node:path';
 const PAGES = [
   { path: '/about', h1: /Nicolás\s*Porras/, must: ['LinkedIn profile', 'via Universally Speaking', 'Senior QA Tester', 'Helldivers, The Witcher and God of War'] },
   { path: '/skills', h1: /What I test\s*and how/, must: ['Functional testing', 'Bug reporting', 'GOG'] },
-  { path: '/portfolio', h1: /Games I have\s*tested/, must: ['Select title', "Lou's Lagoon", 'Hello Sunshine', 'Vaewolf', 'Pathfinder: Abomination Vaults', 'Guildford Castle VR', 'Londinium: AD 215', 'Ghostbusters: Rise of the Ghost Lord', 'Lead QA Technician on one cancelled project.', 'Cyberpunk 2077', 'A Township Tale', 'The Climb'] },
-  { path: '/portfolio/lous-lagoon', h1: /Lou's Lagoon/, must: ['Tiny Roar', 'On Steam', 'Back to the portfolio'] },
-  { path: '/portfolio/synapse', h1: /Synapse/, must: ['nDreams', 'On the PlayStation Store', 'Senior QA Technician'] },
-  { path: '/portfolio/cyberpunk-2077', h1: /Cyberpunk 2077/, must: ['CD PROJEKT RED', 'Universally Speaking, 2021', 'On PlayStation'] },
-  { path: '/portfolio/guildford-castle-vr', h1: /Guildford Castle VR/, must: ['Historic VR, 2025 to 2026', 'QA Manager'] },
-  { path: '/portfolio/thick-as-thieves', h1: /Thick as Thieves/, must: ['Aonic, July 2026 to now', 'Senior QA Tester'] },
-  { path: '/portfolio/clawpunk', h1: /CLAWPUNK/, must: ['Kittens in Timespace', 'PC (Steam and Epic Games Store), PS5, Xbox, Nintendo Switch', 'On Steam'] },
-  { path: '/portfolio/pathfinder-abomination-vaults', h1: /Pathfinder: Abomination Vaults/, must: ['BKOM Studios', 'Epic Games Store', 'Aonic, July 2026 to now', 'In development', 'On Steam'] },
+  { path: '/portfolio', h1: /Games I have\s*tested/, must: ['Select title', "Lou's Lagoon", 'Hello Sunshine', 'Vaewolf', 'Pathfinder: Abomination Vaults', 'Guildford Castle VR', 'Londinium: AD 215', 'Ghostbusters: Rise of the Ghost Lord', 'Lead QA Technician on one cancelled project.', 'Cyberpunk 2077', 'A Township Tale', 'The Climb 2'] },
   { path: '/quality', h1: /This site is\s*a test subject/, must: ['tests, read from the code', 'Deploy only if green'] },
   { path: '/privacy', h1: /Privacy notice/, must: ['Nicolás Porras (PlayRun)', 'deleted after 24 months', 'ico.org.uk'] },
   { path: '/terms', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales'] },
@@ -78,20 +71,38 @@ for (const p of PAGES) {
   });
 }
 
-test('every public project has its own page, linked from the portfolio', async ({ page, request }) => {
+test('every card links to its store page in a new tab, and the old project addresses go to the portfolio', async ({ page, request }) => {
   await page.goto('/portfolio');
-  // four companies, newest first, each with its role and years
+  // four companies, newest first, each with its role and years and its own accent
   await expect(page.locator('.group__name')).toHaveText(['Aonic', 'Historic VR', 'nDreams', 'Universally Speaking']);
   await expect(page.locator('.group__role')).toContainText(['Senior QA Tester', 'QA Manager', 'Senior QA Technician', 'QA Technician']);
+  const accents = await page.locator('.group').evaluateAll((gs) => gs.map((g) => getComputedStyle(g).getPropertyValue('--g-accent').trim()));
+  expect(new Set(accents).size).toBe(4);
   await expect(page.locator('.group').last().locator('.stage__via')).toHaveCount(8);
-  const links = await page.locator('.stage__link').evaluateAll((as) => (as as HTMLAnchorElement[]).map((a) => a.getAttribute('href')!));
-  // every card carries its own game icon
-  expect(await page.locator('.stage .gameicon').count()).toBe(links.length);
-  expect(links.length).toBeGreaterThanOrEqual(20);
-  for (const href of links) {
-    expect(href).toMatch(/^\/portfolio\/[a-z0-9-]+$/);
-    expect((await request.get(href)).status(), href).toBe(200);
+  const cards = await page.locator('.stage').evaluateAll((els) =>
+    els.map((el) => {
+      const links = el.querySelectorAll('a');
+      const a = links[0] as HTMLAnchorElement | undefined;
+      return { links: links.length, href: a?.getAttribute('href') ?? '', target: a?.getAttribute('target'), rel: a?.getAttribute('rel') ?? '', icon: el.querySelectorAll('.gameicon').length };
+    }),
+  );
+  expect(cards.length).toBeGreaterThanOrEqual(20);
+  for (const c of cards) {
+    expect(c.links, 'one link per card').toBe(1);
+    expect(c.href).toMatch(/^https:\/\/(store\.steampowered\.com|www\.meta\.com|store\.playstation\.com|nba\.2k\.com)\//);
+    expect(c.target).toBe('_blank');
+    expect(c.rel.split(' ')).toEqual(expect.arrayContaining(['noopener', 'noreferrer']));
+    expect(c.icon).toBe(1);
   }
+  // the old pages are gone from the build and the sitemap; their addresses send visitors to the portfolio
+  for (const slug of ['lous-lagoon', 'synapse', 'cyberpunk-2077', 'the-climb', 'pathfinder-abomination-vaults']) {
+    const res = await request.get(`/portfolio/${slug}`);
+    expect(res.status(), slug).toBe(200);
+    expect(await res.text(), slug).toMatch(/http-equiv="refresh"[^>]*url=\/portfolio"?/);
+  }
+  const sitemap = await (await request.get('/sitemap-0.xml')).text();
+  expect(sitemap).toContain('/portfolio<');
+  expect(sitemap).not.toContain('/portfolio/');
 });
 
 test('the skills jump list lands on each skill', async ({ page }) => {

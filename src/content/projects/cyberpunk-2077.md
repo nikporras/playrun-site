@@ -5,8 +5,7 @@ platforms: ["PS4 and PS5", "Xbox One and Xbox Series X|S"]
 role: "QA Technician, via Universally Speaking"
 year: 2020
 summary: "An open-world RPG set in Night City. I tested the console versions in 2021 as part of the Universally Speaking QA team."
-url: "https://www.playstation.com/en-gb/games/cyberpunk-2077/"
-store: "On PlayStation"
+url: "https://store.steampowered.com/app/1091500/Cyberpunk_2077/"
 employer: "Universally Speaking"
 icon: "city"
 public: true

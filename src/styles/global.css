@@ -324,6 +324,25 @@ p + p {
   --sel-ink: var(--accent-ink);
 }
 
+/* Company accents: one per employer, on the Portfolio groups and the About rows. --g-accent is
+   the brand colour for edges and icons; --g-ink is the one for small text on navy. */
+.accent--green {
+  --g-accent: var(--pr-green);
+  --g-ink: var(--pr-green);
+}
+.accent--cyan {
+  --g-accent: var(--pr-cyan);
+  --g-ink: var(--pr-cyan);
+}
+.accent--blue {
+  --g-accent: var(--pr-blue);
+  --g-ink: var(--pr-blue-ink);
+}
+.accent--light {
+  --g-accent: var(--pr-light);
+  --g-ink: var(--pr-light);
+}
+
 /* Levels: every section is a full-bleed field with its own ink. The flag names the level. */
 .level {
   position: relative;

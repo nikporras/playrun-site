@@ -132,7 +132,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
         </ul>
       </div>
     </div>
-    <Bug id="hero-1" style="right: 7%; top: 44%" />
+    <Bug id="hero-1" style="right: 10%; top: 0" />
   </section>
 
   <!-- The run sheet: one band, two lanes -->
@@ -165,7 +165,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
         }
       </ol>
     </div>
-    <Bug id="services-1" style="right: 5%; top: 3%" />
+    <Bug id="services-1" style="right: 8%; top: 0.5rem" />
   </section>
 
   <!-- Level 3: work as a stage select on a cyan field -->
@@ -187,17 +187,12 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
             <p class="stage__num">Stage {i + 1}</p>
             <span class="stage__mark"><GameIcon name={p.data.icon} /></span>
             <h3 class="stage__title">
-              <a class="stage__name" href={`/portfolio/${p.id}`}>{p.data.title}</a>
+              {p.data.url ? <ExternalLink class="stage__name" href={p.data.url}>{p.data.title}</ExternalLink> : <span>{p.data.title}</span>}
             </h3>
             {p.data.employer === 'Universally Speaking' && <p class="stage__via">via Universally Speaking</p>}
             <p class="stage__meta">
               {p.data.status === 'in-development' ? 'In development' : p.data.year}. {p.data.platforms.join(', ')}.
             </p>
-            {p.data.url && (
-              <ExternalLink class="stage__link" href={p.data.url}>
-                {p.data.store ?? 'On Steam'}
-              </ExternalLink>
-            )}
           </article>
         ))
       }
@@ -205,8 +200,8 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     <p class="work__also" data-enter>
       <a class="textlink" href="/portfolio">Also: Thick as Thieves, CLAWPUNK, Ghostbusters: Rise of the Ghost Lord, Synapse, Fracked and more</a>
     </p>
-    <Bug id="work-1" style="left: 48%; top: 5%" />
-    <Bug id="work-2" style="right: 4%; bottom: 30%" phone="none" />
+    <Bug id="work-1" style="right: 30%; top: 0.5rem" />
+    <Bug id="work-2" style="right: 8%; top: 0.5rem" phone="none" />
   </section>
 
   <!-- Level 4: proof as a scoreboard on a green field -->
@@ -270,7 +265,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
         <a class="textlink panel__link" href="/quality">How I test this site</a>
       </div>
     </div>
-    <Bug id="proof-1" style="right: 8%; top: 6%" />
+    <Bug id="proof-1" style="right: 8%; top: 0.5rem" />
   </section>
 
   <!-- Level 5: the final level, a light field with the one line that matters -->
@@ -305,7 +300,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
         decoding="async"
       />
     </div>
-    <Bug id="final-1" style="left: 50%; bottom: 5%" phone="none" />
+    <Bug id="final-1" style="right: 8%; top: 0.5rem" phone="none" />
   </section>
 </Base>
 
@@ -317,6 +312,10 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     flex-direction: column;
     padding-top: var(--s-2);
     padding-bottom: var(--s-5);
+  }
+  /* The flag is a flex item here; keep its box to its text so nothing sits "over" it. */
+  .hero .flag {
+    align-self: flex-start;
   }
   :global(.games) .hero {
     min-height: calc(100svh - 4.5rem - var(--hud-h));

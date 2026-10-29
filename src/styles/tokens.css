@@ -8,6 +8,7 @@
   --pr-cyan: #56bdda;
   --pr-green: #67c18c;
   --pr-light: #e5e7ea;
+  --pr-blue-ink: #9fb2e4; /* brand blue lifted for small text on navy, 8:1; the brand blue itself is 3.5:1 */
 
   /* Roles */
   --bg: var(--pr-navy);

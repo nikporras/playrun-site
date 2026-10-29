@@ -5,8 +5,7 @@ platforms: ["Meta Quest", "PC VR"]
 role: "QA Technician, via Universally Speaking"
 year: 2020
 summary: "Multiplayer VR mini golf with courses that keep arriving. I tested it in 2021 as part of the Universally Speaking QA team."
-url: "https://www.meta.com/en-gb/experiences/walkabout-mini-golf/2462678267173943/"
-store: "On the Meta Quest Store"
+url: "https://store.steampowered.com/app/1408230/Walkabout_Mini_Golf_VR/"
 employer: "Universally Speaking"
 icon: "golf"
 public: true

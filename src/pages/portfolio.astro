@@ -19,9 +19,8 @@ const groups = employers
   .map((e) => ({ ...e, projects: shown.filter((p) => p.data.employer === e.id) }))
   .filter((g) => g.projects.length > 0)
   .map((g) => ({ ...g, from: (number += g.projects.length) - g.projects.length + 1 }));
-const fillers = ['controller', 'check', 'headset', 'ship'] as const;
 const count = shown.length;
-const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty'];
+const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty', 'Twenty-one', 'Twenty-two', 'Twenty-three', 'Twenty-four'];
 ---
 
 <Base title="Portfolio" description="Games Nicolás Porras has tested, by company: the Megabit Publishing titles at Aonic, Guildford Castle VR and Londinium at Historic VR, the nDreams VR titles, and Cyberpunk 2077, NBA 2K21 and the VR titles via Universally Speaking.">
@@ -42,7 +41,7 @@ const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight
         <PixelTile name="ship" tone="blue" />
       </div>
     </div>
-    <Bug id="portfolio-1" style="right: 46%; top: 12%" />
+    <Bug id="portfolio-1" style="right: 10%; top: 0" />
   </section>
 
   <!-- Level 2: every title, by company -->
@@ -52,13 +51,13 @@ const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight
       <h2 id="titles-title" class="level__title" data-enter="wipe">Select title</h2>
       <div class="level__aside" data-enter style="--enter-delay: 80ms">
         <p class="level__lead">
-          {words[count] ?? count} titles by company, newest first. Each one opens to the platforms, the role and the store page.
+          {words[count] ?? count} titles by company, newest first. Each one opens its store page in a new tab.
         </p>
       </div>
     </div>
     {
       groups.map((g, gi) => (
-        <div class:list={['group', gi % 2 ? 'group--light' : 'group--navy']} aria-labelledby={`group-${gi}`}>
+        <div class:list={['group', `accent--${g.accent}`]} aria-labelledby={`group-${gi}`}>
           <div class="group__head" data-enter>
             <h3 id={`group-${gi}`} class="group__name">{g.id}</h3>
             <p class="group__role">
@@ -69,20 +68,13 @@ const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight
           </div>
           <div class="group__grid">
             {g.projects.map((p, i) => (
-              <StageCard project={p} number={g.from + i} via={g.via} tone={gi % 2 ? 'light' : 'navy'} delay={i * 60} />
+              <StageCard project={p} number={g.from + i} via={g.via} delay={i * 60} />
             ))}
-            {g.projects.length % 3 !== 0 && (
-              <div class="group__photo" data-enter="place" style={`--enter-delay: ${g.projects.length * 60}ms`}>
-                <PixelTile name={fillers[gi % fillers.length]} tone={gi % 2 ? 'light' : 'navy'} />
-              </div>
-            )}
           </div>
         </div>
       ))
     }
-    <Bug id="portfolio-2" style="left: 52%; top: 4%" />
-    <Bug id="portfolio-3" style="right: 8%; top: 38%" phone="none" />
-    <Bug id="portfolio-4" style="left: 36%; top: 72%" phone="none" />
+    <Bug id="portfolio-2" style="right: 8%; top: 0.5rem" />
   </section>
 
   <!-- Level 3 -->
@@ -96,6 +88,7 @@ const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight
       <a class="button button--navy" href={primaryAction.href}>{primaryAction.label}</a>
       <a class="ask__mail" href={`mailto:${contact.email}`}>{contact.email}</a>
     </div>
+    <Bug id="portfolio-3" style="right: 30%; top: 0.5rem" phone="none" />
   </section>
 </Base>
 
@@ -118,8 +111,8 @@ const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight
     min-height: 24rem;
   }
 
-  /* Each company: a header band, then its tiles. The band and the tiles share a tone and the
-     groups alternate, so the page reads as four boards on one field. */
+  /* Each company: a navy header band, then its navy tiles, with the company's accent on the
+     band's edge, the roles and years, the stage numbers, the studios and the icons. */
   .group {
     margin-top: var(--s-6);
   }
@@ -134,18 +127,11 @@ const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight
     row-gap: var(--s-1);
     align-items: start;
     padding: var(--s-3);
-  }
-  .group--navy .group__head {
     background: var(--bg);
     color: var(--ink);
+    border-left: 0.5rem solid var(--g-accent, var(--accent-2));
     --sel-bg: var(--accent);
     --sel-ink: var(--accent-ink);
-  }
-  .group--light .group__head {
-    background: var(--field-light);
-    color: var(--field-light-ink);
-    --sel-bg: var(--pr-navy);
-    --sel-ink: var(--pr-light);
   }
   .group__name {
     grid-area: name;
@@ -159,11 +145,8 @@ const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight
     font-family: var(--font-display);
     font-size: 1.25rem;
     line-height: 1.2;
-    color: var(--accent-2);
+    color: var(--g-ink, var(--accent-2));
     max-width: none;
-  }
-  .group--light .group__role {
-    color: var(--pr-navy);
   }
   .group__dot {
     margin-inline: 0.2em;
@@ -179,22 +162,27 @@ const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight
     font-size: 1rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--accent-2);
+    color: var(--g-ink, var(--accent-2));
     max-width: none;
   }
-  .group--light .group__note {
-    color: var(--pr-navy);
-  }
+  /* Three tiles a row on a six-column grid, so the last row always fills: a lone last tile
+     spans the row, a pair splits it. */
   .group__grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     grid-auto-rows: minmax(21rem, auto);
     gap: var(--gap);
     margin-top: var(--gap);
   }
-  .group__photo {
-    min-width: 0;
-    min-height: 0;
+  .group__grid > :global(.stage) {
+    grid-column: span 2;
+  }
+  .group__grid > :global(.stage:last-child:nth-child(3n + 1)) {
+    grid-column: span 6;
+  }
+  .group__grid > :global(.stage:nth-last-child(2):nth-child(3n + 1)),
+  .group__grid > :global(.stage:last-child:nth-child(3n + 2)) {
+    grid-column: span 3;
   }
 
   .ask__actions {
@@ -243,8 +231,11 @@ const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight
       grid-auto-rows: auto;
       gap: 0.375rem;
     }
-    .group__photo {
-      display: none;
+    .group__grid > :global(.stage),
+    .group__grid > :global(.stage:last-child:nth-child(3n + 1)),
+    .group__grid > :global(.stage:nth-last-child(2):nth-child(3n + 1)),
+    .group__grid > :global(.stage:last-child:nth-child(3n + 2)) {
+      grid-column: 1 / -1;
     }
   }
 </style>

@@ -5,8 +5,7 @@ platforms: ["Meta Quest 2, 3 and Pro"]
 role: "Senior QA Technician at nDreams, the Meta Quest release"
 year: 2024
 summary: "A run-and-cover VR shooter with skiing and climbing. First on PlayStation VR in 2021 and PC VR in 2022; the Meta Quest release of 2024 is the one I tested."
-url: "https://www.meta.com/en-gb/experiences/fracked/8074885222534394/"
-store: "On the Meta Quest Store"
+url: "https://store.steampowered.com/app/1873920/Fracked/"
 employer: "nDreams"
 icon: "mountain"
 public: true

@@ -1,30 +1,31 @@
 ---
 /**
- * One title on the portfolio page: a tile with the stage number, the game's generic pixel icon,
- * the title as a link, the studio, a short description and the platforms. The whole tile is the
- * link, through the title's ::after, while the text sits above that layer so it can still be
- * selected with the mouse.
+ * One title on the portfolio page: a navy tile with the stage number, the game's generic pixel
+ * icon, the title as a link to the game's store page (a new tab), the studio, a short description
+ * and the platforms. The company's accent colours the details through --g-accent and --g-ink,
+ * set on the group around the card. The whole tile is the link, through the title's ::after,
+ * while the text sits above that layer so it can still be selected with the mouse.
  */
 import type { CollectionEntry } from 'astro:content';
 import GameIcon from './GameIcon.astro';
+import ExternalLink from './ExternalLink.astro';
 
 interface Props {
   project: CollectionEntry<'projects'>;
   number: number;
   /** A tag under the title, such as "via Universally Speaking". */
   via?: string;
-  tone?: 'navy' | 'light';
   delay?: number;
 }
-const { project: p, number, via, tone = 'navy', delay = 0 } = Astro.props;
+const { project: p, number, via, delay = 0 } = Astro.props;
 const when = p.data.status === 'in-development' ? 'In development' : p.data.year;
 ---
 
-<article class:list={['stage', 'tile--live', `stage--${tone}`]} data-enter="place" style={`--enter-delay: ${delay}ms`}>
+<article class="stage tile--live" data-enter="place" style={`--enter-delay: ${delay}ms`}>
   <p class="stage__num">Stage {number}</p>
   <span class="stage__mark"><GameIcon name={p.data.icon} /></span>
   <h4 class="stage__title">
-    <a class="stage__link" href={`/portfolio/${p.id}`}>{p.data.title}</a>
+    {p.data.url ? <ExternalLink class="stage__link" href={p.data.url}>{p.data.title}</ExternalLink> : <span>{p.data.title}</span>}
   </h4>
   {via && <p class="stage__via">{via}</p>}
   <p class="stage__studio">{p.data.studio}</p>
@@ -45,18 +46,11 @@ const when = p.data.status === 'in-development' ? 'In development' : p.data.year
     padding: 5rem var(--s-3) var(--s-3);
     min-width: 0;
     overflow: hidden;
-  }
-  .stage--navy {
     background: var(--bg);
     color: var(--ink);
+    border-top: 0.25rem solid var(--g-accent, var(--accent-2));
     --sel-bg: var(--accent);
     --sel-ink: var(--accent-ink);
-  }
-  .stage--light {
-    background: var(--field-light);
-    color: var(--field-light-ink);
-    --sel-bg: var(--pr-navy);
-    --sel-ink: var(--pr-light);
   }
   .stage__num {
     position: absolute;
@@ -66,11 +60,8 @@ const when = p.data.status === 'in-development' ? 'In development' : p.data.year
     font-size: 1rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--accent-2);
+    color: var(--g-ink, var(--accent-2));
     max-width: none;
-  }
-  .stage--light .stage__num {
-    color: var(--pr-navy);
   }
   .stage__mark {
     position: absolute;
@@ -83,14 +74,15 @@ const when = p.data.status === 'in-development' ? 'In development' : p.data.year
     width: 100%;
     height: 100%;
   }
+  /* The icon takes the company's accent; its navy pixels stay navy. */
+  .stage__mark :global(.gameicon rect:not(.px-navy)) {
+    fill: var(--g-accent, var(--accent-2));
+  }
   .stage__title {
     font-size: 2.25rem;
   }
   .stage__link {
-    text-decoration-color: var(--accent-2);
-  }
-  .stage--light .stage__link {
-    text-decoration-color: var(--pr-blue);
+    text-decoration-color: var(--g-ink, var(--accent-2));
   }
   /* The whole tile opens the title. */
   .stage__link::after {
@@ -111,20 +103,14 @@ const when = p.data.status === 'in-development' ? 'In development' : p.data.year
     font-size: 0.875rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--accent-2);
+    color: var(--g-ink, var(--accent-2));
     max-width: none;
-  }
-  .stage--light .stage__via {
-    color: var(--pr-navy);
   }
   .stage__studio {
     font-family: var(--font-display);
     font-size: 1rem;
-    color: var(--accent-2);
+    color: var(--g-ink, var(--accent-2));
     max-width: none;
-  }
-  .stage--light .stage__studio {
-    color: var(--pr-navy);
   }
   .stage__summary {
     font-size: 1rem;
@@ -134,9 +120,6 @@ const when = p.data.status === 'in-development' ? 'In development' : p.data.year
     font-size: 1rem;
     color: var(--muted);
     max-width: 44ch;
-  }
-  .stage--light .stage__meta {
-    color: var(--field-light-ink);
   }
   @media (max-width: 63.99rem) {
     .stage {
