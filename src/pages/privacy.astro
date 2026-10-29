@@ -1,4 +1,5 @@
 ---
+import ExternalLink from '../components/ExternalLink.astro';
 import LegalPage from '../components/LegalPage.astro';
 import { contact, legal } from '../config';
 ---
@@ -62,7 +63,7 @@ import { contact, legal } from '../config';
       You can ask for a copy of the personal data I hold about you, ask me to correct or delete it, and object to how I
       use it. Email <a href={`mailto:${contact.email}`}>{contact.email}</a> and I will answer. If you are not happy with
       my answer you can complain to the Information Commissioner's Office at{' '}
-      <a href="https://ico.org.uk/" rel="noopener">ico.org.uk</a>.
+      <ExternalLink href="https://ico.org.uk/">ico.org.uk</ExternalLink>.
     </p>
   </section>
 </LegalPage>

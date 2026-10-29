@@ -4,16 +4,24 @@ import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
 import PixelTile from '../components/PixelTile.astro';
 import PassMark from '../components/PassMark.astro';
+import ExternalLink from '../components/ExternalLink.astro';
 import { contact, personal, primaryAction } from '../config';
 import portrait from '../assets/photos/nicolas.png';
 
 // From the CV in content-source, in the first person, with PlayRun's positioning.
 const posts = [
   {
+    where: 'Aonic',
+    when: 'July 2026 to now',
+    role: 'Senior QA Tester',
+    text: 'Game quality testing on the titles Megabit Publishing, part of Aonic, brings to console and PC: test plans, functional and regression passes on real hardware, platform checks before each submission, and bug reports the studios can act on.',
+    terms: ["Lou's Lagoon", 'Thick as Thieves', 'CLAWPUNK', 'Gang of Frogs', 'Hello Sunshine', 'Vaewolf'],
+  },
+  {
     where: 'PlayRun, London',
     when: 'October 2025 to now',
     role: 'Founder & Lead QA',
-    text: 'PlayRun is my name for my work in game QA: this site, my portfolio and how I test. A test plan first, every pass on real hardware, every bug with steps, severity, media and a build number.',
+    text: 'PlayRun is my personal brand for game QA: this site, my portfolio and how I test.',
     terms: ['Test plans', 'Real hardware', 'Milestone quality reports'],
   },
   {
@@ -21,13 +29,13 @@ const posts = [
     when: 'February 2025 to February 2026',
     role: 'QA Manager',
     text: 'I ran the testing environments and the QA hardware across every project, kept the low spec and recommended spec rigs honest, and profiled with Unreal Engine to find what gave. I planned the schedules with development, production and external QA, and grew the outsourced team to ten testers.',
-    terms: ['Unreal Engine profiling', 'Low and recommended spec', 'Ten outsourced testers'],
+    terms: ['Guildford Castle VR', 'Londinium: AD 215', 'Unreal Engine profiling', 'Low and recommended spec', 'Ten outsourced testers'],
   },
   {
     where: 'nDreams, Farnborough',
     when: '2022 to 2024',
     role: 'Senior QA Technician, then Lead QA Technician',
-    text: 'Senior QA Technician on Fracked, Synapse and Ghostbusters: Rise of the Ghost Lord, and Lead QA Technician on an unannounced project. I started as the sole tester on a project: test plans, feature feedback, investigative testing, the bug lifecycle in Jira, the record in Confluence. Then I led the team, mentored the juniors, brought QA into sprint planning and retrospectives, and managed the external QA vendor day to day.',
+    text: 'Senior QA Technician on Fracked, Synapse and Ghostbusters: Rise of the Ghost Lord, and Lead QA Technician on one cancelled project. I started as the sole tester on a project: test plans, feature feedback, investigative testing, the bug lifecycle in Jira, the record in Confluence. Then I led the team, mentored the juniors, brought QA into sprint planning and retrospectives, and managed the external QA vendor day to day.',
     terms: ['Ghostbusters: Rise of the Ghost Lord', 'Synapse', 'Fracked', 'Jira and Confluence', 'Vendor management'],
   },
   {
@@ -48,7 +56,7 @@ const panels = [
 ];
 ---
 
-<Base title="About" description="Nicolás Porras, founder and lead QA of PlayRun in London: testing games since 2021, at Universally Speaking, nDreams, Historic VR and PlayRun.">
+<Base title="About" description="Nicolás Porras, founder and lead QA of PlayRun in London: testing games since 2021, at Universally Speaking, nDreams, Historic VR and Aonic.">
   <!-- Level 1: who -->
   <section class="level level--navy who" data-level="1" aria-labelledby="about-title">
     <p class="flag" data-load style="--d: 0ms"><span>About</span></p>
@@ -61,12 +69,12 @@ const panels = [
         <p class="who__role" data-load style="--d: 300ms">Founder &amp; Lead QA, PlayRun. {contact.location}.</p>
         <p class="who__intro statement" data-load style="--d: 380ms">
           I have tested games since 2021: a year on VR titles at Universally Speaking, two years at nDreams where I
-          ended up leading QA, a year as QA Manager at Historic VR, and since October 2025 PlayRun, my name for my work
-          in game QA.
+          ended up leading QA, a year as QA Manager at Historic VR, and since July 2026 Senior QA Tester at Aonic.
+          PlayRun is my personal brand for the work.
         </p>
         <div class="who__actions" data-load style="--d: 460ms">
           <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
-          <a class="textlink" href={personal.linkedin} rel="me noopener">LinkedIn profile</a>
+          <ExternalLink class="textlink" href={personal.linkedin} rel="me">LinkedIn profile</ExternalLink>
         </div>
       </div>
       <div class="who__figure" data-load style="--d: 200ms">
@@ -92,7 +100,7 @@ const panels = [
       <div class="posts__intro">
         <h2 id="posts-title" class="level__title" data-enter="wipe">Five years, four studios</h2>
         <p class="level__lead posts__lead" data-enter style="--enter-delay: 80ms">
-          Each post added a layer: VR, leading a team, running the hardware, my own studio.
+          Each post added a layer: VR, leading a team, running the hardware, console and PC releases.
         </p>
       </div>
       <ol class="rows">
@@ -152,7 +160,7 @@ const panels = [
       <div>
         <h2 id="off-title" class="level__title" data-enter="wipe">After hours</h2>
         <p class="off__text" data-enter style="--enter-delay: 80ms">
-          I play and pull apart indie games for the mechanics and the design choices, Peak, Schedule 1 and Megabonk
+          I play and pull apart games for the mechanics and the design choices, Helldivers, The Witcher and God of War
           lately. I play instruments and dance, music is a big part of my culture, and I am learning the drums. I watch
           and play most sports.
         </p>
@@ -281,11 +289,15 @@ const panels = [
   }
   .how__panel--navy {
     background: var(--bg);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
     color: var(--ink);
   }
   .how__panel--light {
     background: var(--field-light);
     color: var(--field-light-ink);
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
   }
   .how__panel :global(.how__mark) {
     position: absolute;

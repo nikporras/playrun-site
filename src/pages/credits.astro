@@ -31,11 +31,12 @@ import GameIcon from '../components/GameIcon.astro';
       <p>
         Each game card carries a generic icon drawn the same way, so no logo or character from any game appears on
         this site: a skyline, a ball, a seaplane, a frog, a mask, a cat, two sabres, a golf flag, a dinosaur, a
-        ghost, a brain and a mountain with a ski track.
+        ghost, a brain, a mountain with a ski track, a sun, a wolf, a castle, a Roman helmet, a thatched hut, a
+        drone and a hand on a ledge.
       </p>
       <ul role="list" class="credits__sprites credits__icons" aria-hidden="true">
         {
-          (['city', 'basketball', 'seaplane', 'frog', 'mask', 'cat', 'sabres', 'golf', 'dino', 'ghost', 'brain', 'mountain'] as const).map((n) => (
+          (['city', 'basketball', 'seaplane', 'frog', 'mask', 'cat', 'sabres', 'golf', 'dino', 'ghost', 'brain', 'mountain', 'sun', 'wolf', 'castle', 'helmet', 'hut', 'drone', 'hand'] as const).map((n) => (
             <li>
               <GameIcon name={n} class="credits__sprite" />
             </li>

@@ -397,11 +397,15 @@ const steps = [
   }
   .next__step--navy {
     background: var(--bg);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
     color: var(--ink);
   }
   .next__step--light {
     background: var(--field-light);
     color: var(--field-light-ink);
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
   }
   .next__step::before {
     content: counter(step);

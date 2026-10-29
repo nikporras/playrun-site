@@ -126,7 +126,7 @@ const platforms = [
     <div class="level__head">
       <h2 id="run-title" class="level__title" data-enter="wipe">A build, start to finish</h2>
       <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead">Seven states, condensed from the ticker on the home page.</p>
+        <p class="level__lead">One run, from the build landing to the submission.</p>
       </div>
     </div>
     <ol class="run__track">
@@ -149,7 +149,7 @@ const platforms = [
     <div class="level__head">
       <h2 id="plat-title" class="level__title" data-enter="wipe">Where the build has to work</h2>
       <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead">Four consoles, three PC stores. Each with its own rules, each checked before submission.</p>
+        <p class="level__lead">Four consoles, multiple PC stores. Each with its own rules, each checked before submission.</p>
       </div>
     </div>
     <div class="plat__board">
@@ -276,11 +276,15 @@ const platforms = [
   }
   .run__state--navy {
     background: var(--bg);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
     color: var(--ink);
   }
   .run__state--light {
     background: var(--field-light);
     color: var(--field-light-ink);
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
   }
   .run__state::before {
     content: counter(state);
@@ -332,6 +336,8 @@ const platforms = [
   }
   .plat__panel--navy {
     background: var(--bg);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
     color: var(--ink);
   }
   .plat__panel--light {
@@ -341,6 +347,11 @@ const platforms = [
   .plat__panel--cyan {
     background: var(--field-cyan);
     color: var(--field-cyan-ink);
+  }
+  .plat__panel--light,
+  .plat__panel--cyan {
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
   }
   .plat__title {
     font-size: 1.75rem;

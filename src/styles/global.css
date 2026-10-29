@@ -64,8 +64,8 @@ a:hover {
   color: var(--accent-2);
 }
 ::selection {
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: var(--sel-bg, var(--accent));
+  color: var(--sel-ink, var(--accent-ink));
 }
 :focus-visible {
   outline: 3px solid var(--accent-2);
@@ -295,6 +295,33 @@ p + p {
 }
 .section--flush {
   margin-top: 0;
+}
+
+/* Selection: green on the navy and blue fields, navy on the light, cyan and green ones, where the
+   green highlight would vanish. Tiles that are navy again inside those fields go back to green. */
+:root,
+.level--navy,
+.level--blue,
+.tile--ground,
+.tile--blue,
+.row,
+.footer {
+  --sel-bg: var(--accent);
+  --sel-ink: var(--accent-ink);
+}
+.level--cyan,
+.level--green,
+.level--light,
+.tile--light,
+.tile--accent,
+.button,
+.flag span {
+  --sel-bg: var(--pr-navy);
+  --sel-ink: var(--pr-light);
+}
+.button.button--navy {
+  --sel-bg: var(--accent);
+  --sel-ink: var(--accent-ink);
 }
 
 /* Levels: every section is a full-bleed field with its own ink. The flag names the level. */

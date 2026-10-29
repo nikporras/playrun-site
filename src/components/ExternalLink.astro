@@ -1,0 +1,32 @@
+---
+/**
+ * A link that leaves the site. It opens in a new tab, never hands the opener or the referrer to the
+ * other site, says so to assistive tech, and shows a small pixel arrow. Internal links never use it.
+ */
+interface Props {
+  href: string;
+  class?: string;
+  /** Extra rel tokens, such as "me" on a profile. noopener and noreferrer are always set. */
+  rel?: string;
+}
+const { href, class: className, rel, ...rest } = Astro.props;
+const relList = [...new Set(['noopener', 'noreferrer', ...(rel ? rel.split(/\s+/) : [])])].join(' ');
+---
+
+<a href={href} class={className} target="_blank" rel={relList} data-external {...rest}>
+  <slot />
+  <span class="visually-hidden"> (opens in a new tab)</span>
+  <svg class="extlink__mark" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+    <path d="M3 0h4v1H3zM6 1h1v3h-1zM5 1h1v1H5zM4 2h1v1H4zM3 3h1v1H3zM2 4h1v1H2zM1 5h1v1H1zM0 6h1v1H0z" fill="currentColor"></path>
+  </svg>
+</a>
+
+<style>
+  .extlink__mark {
+    display: inline-block;
+    width: 0.5em;
+    height: 0.5em;
+    margin-left: 0.35em;
+    vertical-align: 0.3em;
+  }
+</style>

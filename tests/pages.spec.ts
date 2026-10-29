@@ -5,12 +5,14 @@ import { join } from 'node:path';
 
 /** The inner pages: About, Skills, Portfolio and its project pages, Quality, and the legal pages. */
 const PAGES = [
-  { path: '/about', h1: /Nicolás\s*Porras/, must: ['LinkedIn profile', 'via Universally Speaking'] },
+  { path: '/about', h1: /Nicolás\s*Porras/, must: ['LinkedIn profile', 'via Universally Speaking', 'Senior QA Tester', 'Helldivers, The Witcher and God of War'] },
   { path: '/skills', h1: /What I test\s*and how/, must: ['Functional testing', 'Bug reporting', 'GOG'] },
-  { path: '/portfolio', h1: /Games I have\s*tested/, must: ["Lou's Lagoon", 'Gang of Frogs', 'Ghostbusters: Rise of the Ghost Lord', 'Cyberpunk 2077', 'All via Universally Speaking, 2021.'] },
+  { path: '/portfolio', h1: /Games I have\s*tested/, must: ['Select title', "Lou's Lagoon", 'Hello Sunshine', 'Vaewolf', 'Guildford Castle VR', 'Londinium: AD 215', 'Ghostbusters: Rise of the Ghost Lord', 'Lead QA Technician on one cancelled project.', 'Cyberpunk 2077', 'A Township Tale', 'The Climb'] },
   { path: '/portfolio/lous-lagoon', h1: /Lou's Lagoon/, must: ['Tiny Roar', 'On Steam', 'Back to the portfolio'] },
   { path: '/portfolio/synapse', h1: /Synapse/, must: ['nDreams', 'On the PlayStation Store', 'Senior QA Technician'] },
   { path: '/portfolio/cyberpunk-2077', h1: /Cyberpunk 2077/, must: ['CD PROJEKT RED', 'Universally Speaking, 2021', 'On PlayStation'] },
+  { path: '/portfolio/guildford-castle-vr', h1: /Guildford Castle VR/, must: ['Historic VR, 2025 to 2026', 'QA Manager'] },
+  { path: '/portfolio/thick-as-thieves', h1: /Thick as Thieves/, must: ['Aonic, July 2026 to now', 'Senior QA Tester'] },
   { path: '/quality', h1: /This site is\s*a test subject/, must: ['tests, read from the code', 'Deploy only if green'] },
   { path: '/privacy', h1: /Privacy notice/, must: ['Nicolás Porras (PlayRun)', 'deleted after 24 months', 'ico.org.uk'] },
   { path: '/terms', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales'] },
@@ -76,10 +78,14 @@ for (const p of PAGES) {
 
 test('every public project has its own page, linked from the portfolio', async ({ page, request }) => {
   await page.goto('/portfolio');
+  // four companies, newest first, each with its role and years
+  await expect(page.locator('.group__name')).toHaveText(['Aonic', 'Historic VR', 'nDreams', 'Universally Speaking']);
+  await expect(page.locator('.group__role')).toContainText(['Senior QA Tester', 'QA Manager', 'Senior QA Technician', 'QA Technician']);
+  await expect(page.locator('.group').last().locator('.stage__via')).toHaveCount(8);
   const links = await page.locator('.stage__link').evaluateAll((as) => (as as HTMLAnchorElement[]).map((a) => a.getAttribute('href')!));
   // every card carries its own game icon
   expect(await page.locator('.stage .gameicon').count()).toBe(links.length);
-  expect(links.length).toBeGreaterThanOrEqual(12);
+  expect(links.length).toBeGreaterThanOrEqual(19);
   for (const href of links) {
     expect(href).toMatch(/^\/portfolio\/[a-z0-9-]+$/);
     expect((await request.get(href)).status(), href).toBe(200);

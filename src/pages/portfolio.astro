@@ -3,24 +3,28 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
 import PixelTile from '../components/PixelTile.astro';
-import GameIcon from '../components/GameIcon.astro';
-import { contact, primaryAction } from '../config';
+import StageCard from '../components/StageCard.astro';
+import { contact, employers, primaryAction } from '../config';
 
 const all = await getCollection('projects');
+// Released titles newest first, titles in development last.
 const shown = (import.meta.env.DEV ? all : all.filter((p) => p.data.public)).sort((a, b) => {
   const aDev = a.data.status === 'in-development' ? 1 : 0;
   const bDev = b.data.status === 'in-development' ? 1 : 0;
   return aDev - bDev || (b.data.year ?? 0) - (a.data.year ?? 0);
 });
-// The titles tested as PlayRun, then the nDreams years, then where I started.
-const projects = shown.filter((p) => !p.data.employer);
-const ndreams = shown.filter((p) => p.data.employer === 'nDreams');
-const started = shown.filter((p) => p.data.employer === 'Universally Speaking');
-// The 2021 titles without a page of their own, always with the label.
-const alsoUS = ['A Township Tale', 'Space Pirate Trainer', 'The Climb'];
+// One group per company, newest first, as on About. Stage numbers run on through the groups.
+let number = 0;
+const groups = employers
+  .map((e) => ({ ...e, projects: shown.filter((p) => p.data.employer === e.id) }))
+  .filter((g) => g.projects.length > 0)
+  .map((g) => ({ ...g, from: (number += g.projects.length) - g.projects.length + 1 }));
+const fillers = ['controller', 'check', 'headset', 'ship'] as const;
+const count = shown.length;
+const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty'];
 ---
 
-<Base title="Portfolio" description="Games Nicolás Porras has tested: Lou's Lagoon, Thick as Thieves, CLAWPUNK and Gang of Frogs, the nDreams VR titles, and Cyberpunk 2077, NBA 2K21 and the VR titles via Universally Speaking.">
+<Base title="Portfolio" description="Games Nicolás Porras has tested, by company: the Megabit Publishing titles at Aonic, Guildford Castle VR and Londinium at Historic VR, the nDreams VR titles, and Cyberpunk 2077, NBA 2K21 and the VR titles via Universally Speaking.">
   <!-- Level 1 -->
   <section class="level level--navy work" data-level="1" aria-labelledby="work-title">
     <p class="flag" data-load style="--d: 0ms"><span>Portfolio</span></p>
@@ -31,7 +35,7 @@ const alsoUS = ['A Township Tale', 'Space Pirate Trainer', 'The Climb'];
           <span class="mask"><span class="mask__line" style="--i: 1">tested</span></span>
         </h1>
         <p class="work__lead statement" data-load style="--d: 360ms">
-          Twelve titles with their own pages, from where I started in 2021 to the latest indie releases. Three more by name.
+          Titles with their own pages, from where I started in 2021 to the latest indie releases.
         </p>
       </div>
       <div class="work__photo" data-load style="--d: 200ms">
@@ -41,121 +45,55 @@ const alsoUS = ['A Township Tale', 'Space Pirate Trainer', 'The Climb'];
     <Bug id="portfolio-1" style="right: 46%; top: 12%" />
   </section>
 
-  <!-- Level 2: the stages -->
-  <section class="level level--cyan stages" data-level="2" aria-labelledby="stages-title">
-    <p class="flag" data-enter><span>Level 2 &middot; Select stage</span></p>
+  <!-- Level 2: every title, by company -->
+  <section class="level level--cyan titles" data-level="2" aria-labelledby="titles-title">
+    <p class="flag" data-enter><span>Level 2 &middot; Select title</span></p>
     <div class="level__head">
-      <h2 id="stages-title" class="level__title" data-enter="wipe">Select stage</h2>
+      <h2 id="titles-title" class="level__title" data-enter="wipe">Select title</h2>
       <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead">Each one opens to the platforms, the role and the store page.</p>
-      </div>
-    </div>
-    <div class="stages__grid">
-      {
-        projects.map((p, i) => (
-          <article class:list={['stage', 'tile--live', { 'stage--big': i === 0 }]} data-enter="place" style={`--enter-delay: ${i * 60}ms`}>
-            <p class="stage__num">Stage {i + 1}</p>
-            <span class="stage__mark"><GameIcon name={p.data.icon} /></span>
-            <h3 class="stage__title">
-              <a class="stage__link" href={`/portfolio/${p.id}`}>{p.data.title}</a>
-            </h3>
-            <p class="stage__studio">{p.data.studio}</p>
-            <p class="stage__summary">{p.data.summary}</p>
-            <p class="stage__meta">
-              {p.data.status === 'in-development' ? 'In development' : p.data.year}. {p.data.platforms.join(', ')}.
-              {!p.data.public && ' Sample entry.'}
-            </p>
-          </article>
-        ))
-      }
-      <div class="stages__photo stages__photo--wide" data-enter="place">
-        <PixelTile name="controller" tone="navy" />
-      </div>
-      <div class="stages__photo" data-enter="place" style="--enter-delay: 60ms">
-        <PixelTile name="check" tone="navy" />
-      </div>
-    </div>
-    <Bug id="portfolio-2" style="left: 52%; top: 6%" />
-  </section>
-
-  <!-- Level 3: the nDreams years -->
-  <section class="level level--green ndreams" data-level="3" aria-labelledby="ndreams-title">
-    <p class="flag" data-enter><span>Level 3 &middot; nDreams</span></p>
-    <div class="level__head">
-      <h2 id="ndreams-title" class="level__title" data-enter="wipe">At nDreams</h2>
-      <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead ndreams__lead">
-          Three VR titles as Senior QA Technician, 2022 to 2024, and the lead role on one I cannot name yet.
+        <p class="level__lead">
+          {words[count] ?? count} titles by company, newest first. Each one opens to the platforms, the role and the store page.
         </p>
       </div>
     </div>
-    <div class="ndreams__row">
-      {
-        ndreams.map((p, i) => (
-          <article class="stage tile--live" data-enter="place" style={`--enter-delay: ${i * 60}ms`}>
-            <p class="stage__num">Stage {projects.length + i + 1}</p>
-            <span class="stage__mark"><GameIcon name={p.data.icon} /></span>
-            <h3 class="stage__title">
-              <a class="stage__link" href={`/portfolio/${p.id}`}>{p.data.title}</a>
-            </h3>
-            <p class="stage__studio">{p.data.studio}</p>
-            <p class="stage__summary">{p.data.summary}</p>
-            <p class="stage__meta">
-              {p.data.year}. {p.data.platforms.join(', ')}.
+    {
+      groups.map((g, gi) => (
+        <div class:list={['group', gi % 2 ? 'group--light' : 'group--navy']} aria-labelledby={`group-${gi}`}>
+          <div class="group__head" data-enter>
+            <h3 id={`group-${gi}`} class="group__name">{g.id}</h3>
+            <p class="group__role">
+              {g.role} <span class="group__dot" aria-hidden="true">&middot;</span> {g.when}
             </p>
-          </article>
-        ))
-      }
-    </div>
-    <Bug id="portfolio-4" style="right: 40%; top: 8%" />
+            <p class="group__lead">{g.lead}</p>
+            {g.note && <p class="group__note">{g.note}</p>}
+          </div>
+          <div class="group__grid">
+            {g.projects.map((p, i) => (
+              <StageCard project={p} number={g.from + i} via={g.via} tone={gi % 2 ? 'light' : 'navy'} delay={i * 60} />
+            ))}
+            {g.projects.length % 3 !== 0 && (
+              <div class="group__photo" data-enter="place" style={`--enter-delay: ${g.projects.length * 60}ms`}>
+                <PixelTile name={fillers[gi % fillers.length]} tone={gi % 2 ? 'light' : 'navy'} />
+              </div>
+            )}
+          </div>
+        </div>
+      ))
+    }
+    <Bug id="portfolio-2" style="left: 52%; top: 4%" />
+    <Bug id="portfolio-3" style="right: 8%; top: 38%" phone="none" />
+    <Bug id="portfolio-4" style="left: 36%; top: 72%" phone="none" />
   </section>
 
-  <!-- Level 4: via Universally Speaking -->
-  <section class="level level--blue started" data-level="4" aria-labelledby="via-title">
-    <p class="flag" data-enter><span>Level 4 &middot; 2021</span></p>
-    <div class="level__head">
-      <h2 id="via-title" class="level__title" data-enter="wipe">Where I started</h2>
-      <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead">Eight titles in my first year as a QA Technician at Universally Speaking: six in VR, two on console.</p>
-      </div>
-    </div>
-    <div class="started__row">
-      {
-        started.map((p, i) => (
-          <article class="stage tile--live" data-enter="place" style={`--enter-delay: ${i * 60}ms`}>
-            <p class="stage__num">Stage {projects.length + ndreams.length + i + 1}</p>
-            <span class="stage__mark"><GameIcon name={p.data.icon} /></span>
-            <h3 class="stage__title">
-              <a class="stage__link" href={`/portfolio/${p.id}`}>{p.data.title}</a>
-            </h3>
-            <p class="stage__studio">{p.data.studio}</p>
-            <p class="stage__summary">{p.data.summary}</p>
-            <p class="stage__meta">
-              {p.data.year}. {p.data.platforms.join(', ')}.
-            </p>
-          </article>
-        ))
-      }
-      <div class="started__also" data-enter="place" style={`--enter-delay: ${started.length * 60}ms`}>
-        <p class="started__alsotitle">Also that year</p>
-        <ul role="list" class="started__alsolist">
-          {alsoUS.map((t) => <li>{t}</li>)}
-        </ul>
-        <p class="started__label">All via Universally Speaking, 2021.</p>
-      </div>
-    </div>
-    <Bug id="portfolio-3" style="right: 8%; top: 10%" />
-  </section>
-
-  <!-- Level 5 -->
-  <section class="level level--light ask" data-level="5" aria-labelledby="ask-title">
-    <p class="flag" data-enter><span>Level 5 &middot; Final level</span></p>
+  <!-- Level 3 -->
+  <section class="level level--green ask" data-level="3" aria-labelledby="ask-title">
+    <p class="flag" data-enter><span>Level 3 &middot; Final level</span></p>
     <h2 id="ask-title" class="level__title" data-enter="wipe">
       <span class="mask__line">The list</span>
       <span class="mask__line">keeps growing</span>
     </h2>
     <div class="ask__actions" data-enter style="--enter-delay: 80ms">
-      <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
+      <a class="button button--navy" href={primaryAction.href}>{primaryAction.label}</a>
       <a class="ask__mail" href={`mailto:${contact.email}`}>{contact.email}</a>
     </div>
   </section>
@@ -180,213 +118,83 @@ const alsoUS = ['A Township Tale', 'Space Pirate Trainer', 'The Climb'];
     min-height: 24rem;
   }
 
-  .stages__grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-auto-rows: minmax(21rem, auto);
-    gap: var(--gap);
-    margin-top: var(--s-5);
+  /* Each company: a header band, then its tiles. The band and the tiles share a tone and the
+     groups alternate, so the page reads as four boards on one field. */
+  .group {
+    margin-top: var(--s-6);
   }
-  .stage {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    gap: var(--s-1);
-    padding: 5rem var(--s-3) var(--s-3);
-    background: var(--bg);
-    color: var(--ink);
-    min-width: 0;
-    overflow: hidden;
-  }
-  .stage--big {
-    grid-column: span 2;
-    background: var(--field-light);
-    color: var(--field-light-ink);
-  }
-  .stage__num {
-    position: absolute;
-    top: var(--s-3);
-    left: var(--s-3);
-    font-family: var(--font-display);
-    font-size: 1rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent-2);
-    max-width: none;
-  }
-  .stage--big .stage__num {
-    color: var(--pr-navy);
-  }
-  .stage__mark {
-    position: absolute;
-    top: var(--s-3);
-    right: var(--s-3);
-    width: 3rem;
-    height: 3rem;
-  }
-  .stage__mark :global(.gameicon) {
-    width: 100%;
-    height: 100%;
-  }
-  .stage--big .stage__mark {
-    width: 3rem;
-  }
-  .stage__title {
-    font-size: 2.25rem;
-  }
-  .stage--big .stage__title {
-    font-size: 3.5rem;
-  }
-  .stage__title--small {
-    font-size: 1.75rem;
-  }
-  .stage__link {
-    text-decoration-color: var(--accent-2);
-  }
-  .stage--big .stage__link {
-    text-decoration-color: var(--pr-blue);
-  }
-  .stage__link::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-  }
-  .stage__studio {
-    font-family: var(--font-display);
-    font-size: 1rem;
-    color: var(--accent-2);
-    max-width: none;
-  }
-  .stage--big .stage__studio {
-    color: var(--pr-navy);
-  }
-  .stage__summary {
-    font-size: 1rem;
-    max-width: 44ch;
-  }
-  .stage__meta {
-    font-size: 1rem;
-    color: var(--muted);
-    max-width: 44ch;
-  }
-  .stage--big .stage__meta {
-    color: var(--field-light-ink);
-  }
-  .stage--redacted {
-    background-color: var(--surface-2);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M0 0h8v1H0zM0 0h1v8H0z' fill='%230C152A'/%3E%3C/svg%3E");
-    background-size: 8px 8px;
-    min-height: 16rem;
-  }
-  .stage__bars {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: var(--s-2);
-    max-width: none;
-  }
-  .stage__bars span {
-    display: block;
-    height: 1rem;
-    background: var(--ink);
-    opacity: 0.85;
-  }
-  .stage__tag {
-    color: var(--accent-2);
-  }
-  .stages__photo {
-    min-width: 0;
-    min-height: 0;
-  }
-  .stages__photo--wide {
-    grid-column: span 2;
-  }
-  .started__row {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-auto-rows: minmax(21rem, auto);
-    gap: var(--gap);
-    margin-top: var(--s-5);
-  }
-  .started__also {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    gap: var(--s-2);
-    padding: var(--s-3);
-    background: var(--field-light);
-    color: var(--field-light-ink);
-  }
-  .started__alsotitle {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    line-height: 1.1;
-    max-width: none;
-  }
-  .started__alsolist {
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    line-height: 1.2;
-  }
-  .started__label {
-    font-family: var(--font-display);
-    font-size: 1rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--pr-navy);
-    max-width: none;
-  }
-
-  .ndreams__lead {
-    color: var(--pr-navy);
-  }
-  .ndreams__row {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-auto-rows: minmax(21rem, auto);
-    gap: var(--gap);
-    margin-top: var(--s-5);
-  }
-  .nda__lead {
-    color: var(--pr-navy);
-  }
-  .nda__row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--gap);
-    margin-top: var(--s-5);
-  }
-
-  .via__grid {
+  .group__head {
     display: grid;
     grid-template-columns: 7fr 5fr;
     grid-template-areas:
-      'list photo'
-      'label photo';
-    gap: var(--s-3) var(--s-5);
-    margin-top: var(--s-5);
-    align-items: end;
+      'name role'
+      'name lead'
+      'name note';
+    column-gap: var(--s-5);
+    row-gap: var(--s-1);
+    align-items: start;
+    padding: var(--s-3);
   }
-  .via__list {
-    grid-area: list;
+  .group--navy .group__head {
+    background: var(--bg);
+    color: var(--ink);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
+  }
+  .group--light .group__head {
+    background: var(--field-light);
+    color: var(--field-light-ink);
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
+  }
+  .group__name {
+    grid-area: name;
+    font-size: var(--step-head);
+    font-size: round(var(--step-head), 16px);
+    line-height: 0.95;
+    margin-left: -0.03em;
+  }
+  .group__role {
+    grid-area: role;
     font-family: var(--font-display);
-    font-size: 3rem;
-    font-size: round(clamp(2rem, 1rem + 3vw, 3.5rem), 16px);
-    line-height: 1.1;
-  }
-  .via__list li + li {
-    margin-top: 0.2em;
-  }
-  .via__label {
-    grid-area: label;
-    font-family: var(--font-display);
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    line-height: 1.2;
+    color: var(--accent-2);
     max-width: none;
   }
-  .via__photo {
-    grid-area: photo;
-    min-height: 22rem;
+  .group--light .group__role {
+    color: var(--pr-navy);
+  }
+  .group__dot {
+    margin-inline: 0.2em;
+  }
+  .group__lead {
+    grid-area: lead;
+    font-size: var(--step-body);
+    max-width: 40ch;
+  }
+  .group__note {
+    grid-area: note;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .group--light .group__note {
+    color: var(--pr-navy);
+  }
+  .group__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: minmax(21rem, auto);
+    gap: var(--gap);
+    margin-top: var(--gap);
+  }
+  .group__photo {
+    min-width: 0;
+    min-height: 0;
   }
 
   .ask__actions {
@@ -408,71 +216,35 @@ const alsoUS = ['A Township Tale', 'Space Pirate Trainer', 'The Climb'];
   }
 
   @media (max-width: 63.99rem) {
-    .work__grid,
-    .via__grid {
+    .work__grid {
       grid-template-columns: 1fr;
       gap: var(--s-4);
       margin-top: var(--s-4);
-    }
-    .via__grid {
-      grid-template-areas:
-        'list'
-        'label'
-        'photo';
     }
     .work__photo {
       min-height: 0;
       aspect-ratio: 4 / 3;
       order: -1;
     }
-    .stages__grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-auto-rows: auto;
-      gap: 0.375rem;
+    .group {
+      margin-top: var(--s-5);
     }
-    .stage {
-      min-height: 14rem;
-      padding: 4rem var(--s-2) var(--s-3);
+    .group__head {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        'name'
+        'role'
+        'lead'
+        'note';
+      padding: var(--s-3) var(--s-2);
     }
-    .stage--big {
-      min-height: 18rem;
-    }
-    .stage__num,
-    .stage__mark {
-      top: var(--s-2);
-    }
-    .stage__num {
-      left: var(--s-2);
-    }
-    .stage__mark {
-      right: var(--s-2);
-      width: 2.25rem;
-    }
-    .stage--big .stage__mark {
-      width: 3.5rem;
-    }
-    .stage__title {
-      font-size: 1.75rem;
-    }
-    .stage--big .stage__title {
-      font-size: 2.5rem;
-    }
-    .stage__title--small {
-      font-size: 1.5rem;
-    }
-    .stages__photo {
-      aspect-ratio: 1;
-    }
-    .nda__row,
-    .ndreams__row,
-    .started__row {
+    .group__grid {
       grid-template-columns: 1fr;
       grid-auto-rows: auto;
       gap: 0.375rem;
     }
-    .via__photo {
-      min-height: 0;
-      aspect-ratio: 16 / 9;
+    .group__photo {
+      display: none;
     }
   }
 </style>

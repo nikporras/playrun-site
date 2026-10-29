@@ -3,7 +3,8 @@ import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Bug from '../../components/Bug.astro';
 import GameIcon from '../../components/GameIcon.astro';
-import { contact, primaryAction } from '../../config';
+import ExternalLink from '../../components/ExternalLink.astro';
+import { contact, employers, primaryAction } from '../../config';
 
 export async function getStaticPaths() {
   const all = await getCollection('projects');
@@ -15,6 +16,7 @@ const { project } = Astro.props;
 const { Content } = await render(project);
 const d = project.data;
 const when = d.status === 'in-development' ? 'In development' : String(d.year);
+const employer = employers.find((e) => e.id === d.employer);
 ---
 
 <Base title={d.title} description={`${d.title}: ${d.summary} Tested by PlayRun.`}>
@@ -32,9 +34,9 @@ const when = d.status === 'in-development' ? 'In development' : String(d.year);
         <div class="proj__actions" data-load style="--d: 460ms">
           {
             d.url && (
-              <a class="button" href={d.url} rel="noopener">
+              <ExternalLink class="button" href={d.url}>
                 {d.store ?? 'On Steam'}
-              </a>
+              </ExternalLink>
             )
           }
           <a class="textlink" href="/portfolio">Back to the portfolio</a>
@@ -55,10 +57,10 @@ const when = d.status === 'in-development' ? 'In development' : String(d.year);
           <dt>My role</dt>
           <dd>{d.role}</dd>
         </div>
-        {d.employer && (
+        {employer && (
           <div>
             <dt>Where I tested it</dt>
-            <dd>{d.employer === 'Universally Speaking' ? 'Universally Speaking, 2021' : 'nDreams, 2022 to 2024'}</dd>
+            <dd>{employer.id}, {employer.when}</dd>
           </div>
         )}
         <div>

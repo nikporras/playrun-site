@@ -1,0 +1,161 @@
+---
+/**
+ * One title on the portfolio page: a tile with the stage number, the game's generic pixel icon,
+ * the title as a link, the studio, a short description and the platforms. The whole tile is the
+ * link, through the title's ::after, while the text sits above that layer so it can still be
+ * selected with the mouse.
+ */
+import type { CollectionEntry } from 'astro:content';
+import GameIcon from './GameIcon.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  number: number;
+  /** A tag under the title, such as "via Universally Speaking". */
+  via?: string;
+  tone?: 'navy' | 'light';
+  delay?: number;
+}
+const { project: p, number, via, tone = 'navy', delay = 0 } = Astro.props;
+const when = p.data.status === 'in-development' ? 'In development' : p.data.year;
+---
+
+<article class:list={['stage', 'tile--live', `stage--${tone}`]} data-enter="place" style={`--enter-delay: ${delay}ms`}>
+  <p class="stage__num">Stage {number}</p>
+  <span class="stage__mark"><GameIcon name={p.data.icon} /></span>
+  <h4 class="stage__title">
+    <a class="stage__link" href={`/portfolio/${p.id}`}>{p.data.title}</a>
+  </h4>
+  {via && <p class="stage__via">{via}</p>}
+  <p class="stage__studio">{p.data.studio}</p>
+  <p class="stage__summary">{p.data.summary}</p>
+  <p class="stage__meta">
+    {when}. {p.data.platforms.join(', ')}.
+    {!p.data.public && ' Sample entry.'}
+  </p>
+</article>
+
+<style>
+  .stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--s-1);
+    padding: 5rem var(--s-3) var(--s-3);
+    min-width: 0;
+    overflow: hidden;
+  }
+  .stage--navy {
+    background: var(--bg);
+    color: var(--ink);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
+  }
+  .stage--light {
+    background: var(--field-light);
+    color: var(--field-light-ink);
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
+  }
+  .stage__num {
+    position: absolute;
+    top: var(--s-3);
+    left: var(--s-3);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .stage--light .stage__num {
+    color: var(--pr-navy);
+  }
+  .stage__mark {
+    position: absolute;
+    top: var(--s-3);
+    right: var(--s-3);
+    width: 3rem;
+    height: 3rem;
+  }
+  .stage__mark :global(.gameicon) {
+    width: 100%;
+    height: 100%;
+  }
+  .stage__title {
+    font-size: 2.25rem;
+  }
+  .stage__link {
+    text-decoration-color: var(--accent-2);
+  }
+  .stage--light .stage__link {
+    text-decoration-color: var(--pr-blue);
+  }
+  /* The whole tile opens the title. */
+  .stage__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  /* The text lives above that layer, so a drag selects it instead of dragging the link. */
+  .stage__via,
+  .stage__studio,
+  .stage__summary,
+  .stage__meta {
+    position: relative;
+    z-index: 1;
+  }
+  .stage__via {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .stage--light .stage__via {
+    color: var(--pr-navy);
+  }
+  .stage__studio {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .stage--light .stage__studio {
+    color: var(--pr-navy);
+  }
+  .stage__summary {
+    font-size: 1rem;
+    max-width: 44ch;
+  }
+  .stage__meta {
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: 44ch;
+  }
+  .stage--light .stage__meta {
+    color: var(--field-light-ink);
+  }
+  @media (max-width: 63.99rem) {
+    .stage {
+      min-height: 14rem;
+      padding: 4rem var(--s-2) var(--s-3);
+    }
+    .stage__num,
+    .stage__mark {
+      top: var(--s-2);
+    }
+    .stage__num {
+      left: var(--s-2);
+    }
+    .stage__mark {
+      right: var(--s-2);
+      width: 2.25rem;
+    }
+    .stage__title {
+      font-size: 1.75rem;
+    }
+  }
+</style>

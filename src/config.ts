@@ -31,6 +31,37 @@ export const personal = {
   linkedin: 'https://www.linkedin.com/in/nicolas-porras-918774116/',
 };
 
+// Where I have tested, newest first. The portfolio groups its cards by these, the project pages name
+// them, and About tells the longer story. PlayRun is a brand, not a post, so it is not here.
+export const employers = [
+  {
+    id: 'Aonic',
+    role: 'Senior QA Tester',
+    when: 'July 2026 to now',
+    lead: 'The titles Megabit Publishing, part of Aonic, brings to console and PC.',
+  },
+  {
+    id: 'Historic VR',
+    role: 'QA Manager',
+    when: '2025 to 2026',
+    lead: 'Two VR reconstructions of real places, made in Guildford.',
+  },
+  {
+    id: 'nDreams',
+    role: 'Senior QA Technician',
+    when: '2022 to 2024',
+    lead: 'Three VR titles on Meta Quest and PS VR2.',
+    note: 'Lead QA Technician on one cancelled project.',
+  },
+  {
+    id: 'Universally Speaking',
+    role: 'QA Technician',
+    when: '2021',
+    lead: 'Eight titles in my first year: six in VR, two on console.',
+    via: 'via Universally Speaking',
+  },
+];
+
 export const nav = [
   { label: 'Skills', href: '/skills' },
   { label: 'Portfolio', href: '/portfolio' },

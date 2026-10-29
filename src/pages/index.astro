@@ -9,6 +9,7 @@ import Marquee from '../components/Marquee.astro';
 import Bug from '../components/Bug.astro';
 import IconPrimary from '../assets/logo/icon-primary.svg';
 import GameIcon from '../components/GameIcon.astro';
+import ExternalLink from '../components/ExternalLink.astro';
 import results from '../../tests/results/latest.json';
 import { contact, primaryAction, site } from '../config';
 
@@ -193,9 +194,9 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
               {p.data.status === 'in-development' ? 'In development' : p.data.year}. {p.data.platforms.join(', ')}.
             </p>
             {p.data.url && (
-              <a class="stage__link" href={p.data.url} rel="noopener">
+              <ExternalLink class="stage__link" href={p.data.url}>
                 {p.data.store ?? 'On Steam'}
-              </a>
+              </ExternalLink>
             )}
           </article>
         ))
@@ -218,7 +219,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
           This site runs a Playwright suite on every push.{' '}
           {ci ? (
             <>
-              The scoreboard shows <a href={ci.url} rel="noopener">the run that deployed this page</a>, on {ci.date}.
+              The scoreboard shows <ExternalLink href={ci.url}>the run that deployed this page</ExternalLink>, on {ci.date}.
             </>
           ) : (
             'The scoreboard shows the checks every push runs.'
@@ -603,6 +604,8 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
   }
   .services__row {
     background: var(--bg);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
     color: var(--ink);
     padding: var(--s-3);
     display: flex;
@@ -739,6 +742,8 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     gap: var(--s-1);
     padding: 5rem var(--s-3) var(--s-3);
     background: var(--bg);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
     color: var(--ink);
     min-width: 0;
     overflow: hidden;
@@ -747,6 +752,8 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     grid-column: span 2;
     background: var(--field-light);
     color: var(--field-light-ink);
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
   }
   .stage__num {
     position: absolute;
@@ -958,6 +965,8 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
   }
   .panel--navy {
     background: var(--bg);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
     color: var(--ink);
   }
   .panel--light {
@@ -967,6 +976,11 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
   .panel--cyan {
     background: var(--field-cyan);
     color: var(--field-cyan-ink);
+  }
+  .panel--light,
+  .panel--cyan {
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
   }
   .panel--photo {
     padding: 0;

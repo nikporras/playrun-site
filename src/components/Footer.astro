@@ -1,5 +1,6 @@
 ---
 import Icon from '../assets/logo/icon.svg';
+import ExternalLink from './ExternalLink.astro';
 import { contact, legalNav, nav, primaryAction, site, social } from '../config';
 
 const year = new Date().getFullYear();
@@ -44,7 +45,7 @@ const year = new Date().getFullYear();
             <ul role="list" class="footer__links">
               {social.map((s) => (
                 <li>
-                  <a href={s.href} rel="me noopener">{s.label}</a>
+                  <ExternalLink href={s.href} rel="me">{s.label}</ExternalLink>
                 </li>
               ))}
             </ul>

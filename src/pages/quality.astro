@@ -1,4 +1,5 @@
 ---
+import ExternalLink from '../components/ExternalLink.astro';
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
 import PixelTile from '../components/PixelTile.astro';
@@ -72,7 +73,7 @@ const loop = [
         <p class="level__lead">
           {ci ? (
             <>
-              {totalPassed} of {totalChecks} checks passed in <a href={ci.url} rel="noopener">the run that deployed this page</a>,
+              {totalPassed} of {totalChecks} checks passed in <ExternalLink href={ci.url}>the run that deployed this page</ExternalLink>,
               on {ci.date}.
             </>
           ) : (
@@ -207,6 +208,8 @@ const loop = [
   }
   .panel--navy {
     background: var(--bg);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
     color: var(--ink);
   }
   .panel--light {
@@ -216,6 +219,11 @@ const loop = [
   .panel--cyan {
     background: var(--field-cyan);
     color: var(--field-cyan-ink);
+  }
+  .panel--light,
+  .panel--cyan {
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
   }
   .panel--photo {
     padding: 0;
@@ -316,11 +324,15 @@ const loop = [
   }
   .loop__step--navy {
     background: var(--bg);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
     color: var(--ink);
   }
   .loop__step--light {
     background: var(--field-light);
     color: var(--field-light-ink);
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
   }
   .loop__step::before {
     content: counter(step);

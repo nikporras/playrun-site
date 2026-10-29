@@ -2,7 +2,8 @@
 title: "Lou's Lagoon"
 studio: "Tiny Roar, published by Megabit Publishing (Aonic) and rokaplay"
 platforms: ["PS5", "Xbox Series X|S", "Nintendo Switch", "PC (Steam, Epic Games Store and the Xbox app on PC)"]
-role: "Game quality testing"
+role: "Senior QA Tester at Aonic"
+employer: "Aonic"
 year: 2026
 summary: "A cosy seaplane exploration and crafting adventure, released on PS5, Xbox, Nintendo Switch and the PC stores."
 url: "https://store.steampowered.com/app/2100020/Lous_Lagoon/"
