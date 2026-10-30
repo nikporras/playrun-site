@@ -4,12 +4,14 @@ import { test, expect, type Page } from '@playwright/test';
  * Text can be selected with the mouse on every page: nothing sits over it (link overlays, bugs,
  * the HUD, entrance layers), and the highlight is visible on every field.
  */
-const PAGES = ['/', '/skills', '/portfolio', '/contact', '/quality', '/credits', '/privacy', '/terms', '/accessibility'];
+const PAGES = ['/', '/skills', '/portfolio', '/contact', '/quality', '/privacy', '/terms', '/accessibility'];
 
 async function settle(page: Page) {
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
   await page.evaluate(() => {
     document.querySelectorAll('[data-enter], [data-land]').forEach((e) => e.classList.add('is-in', 'is-landed'));
+    // the Skills deck is scrubbed by the scroll; the plain rows are what a drag can reach
+    document.querySelectorAll('[data-deck]').forEach((e) => e.classList.remove('is-deck'));
     return Promise.all(
       document
         .getAnimations()

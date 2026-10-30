@@ -104,25 +104,31 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
       if (reduce || !('IntersectionObserver' in window)) {
         items.forEach(show);
       } else {
-        const io = new IntersectionObserver(
-          (entries) => {
-            for (const e of entries) {
-              if (e.isIntersecting) {
-                show(e.target);
-                io.unobserve(e.target);
-              }
+        const onShow = (entries: IntersectionObserverEntry[], io: IntersectionObserver) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              show(e.target);
+              io.unobserve(e.target);
             }
-          },
-          { rootMargin: '0px 0px -8% 0px', threshold: 0 },
-        );
-        items.forEach((el) => io.observe(el));
+          }
+        };
+        // Entrances show as they come up from the bottom; landings wait until the header or card
+        // reaches the middle of the screen, so the shot and the landing are in full view.
+        const enter = new IntersectionObserver(onShow, { rootMargin: '0px 0px -8% 0px', threshold: 0 });
+        const landing = new IntersectionObserver(onShow, { rootMargin: '0px 0px -45% 0px', threshold: 0 });
+        items.forEach((el) => (el.hasAttribute('data-land') ? landing : enter).observe(el));
+        const isLand = (el: Element) => el.hasAttribute('data-land');
+        const landed = (el: Element) => el.classList.contains('is-landed') || el.hasAttribute('data-landing');
         // Belt and braces: whatever is on screen shows on the next frame of every scroll, and
-        // everything shows after a few seconds regardless, so no heading can stay clipped.
+        // every entrance shows after a few seconds regardless, so no heading can stay clipped.
+        // Landings keep waiting for the middle of the screen; at the foot of the page, where the
+        // last ones can go no higher, everything lands.
         const sweep = () => {
+          const atEnd = scrollY + innerHeight >= document.documentElement.scrollHeight - 2;
           for (const el of items) {
-            if (el.classList.contains('is-in')) continue;
+            if (isLand(el) ? landed(el) : el.classList.contains('is-in')) continue;
             const r = el.getBoundingClientRect();
-            if (r.top < innerHeight && r.bottom > 0) show(el);
+            if (isLand(el) ? atEnd || (r.top < innerHeight * 0.55 && r.bottom > 0) : r.top < innerHeight && r.bottom > 0) show(el);
           }
         };
         setTimeout(sweep, 50);
@@ -139,7 +145,7 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
           },
           { passive: true },
         );
-        setTimeout(() => items.forEach(show), 4000);
+        setTimeout(() => items.forEach((el) => !isLand(el) && show(el)), 4000);
       }
     </script>
   </body>

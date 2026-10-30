@@ -1,7 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
-import PixelTile from '../components/PixelTile.astro';
 import PassMark from '../components/PassMark.astro';
 
 const services = [
@@ -91,17 +90,20 @@ const platforms = [
     <Bug id="services-1" style="right: 12%; top: 9rem" tablet="left: 55%; bottom: 0.75rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 2: the five areas, each a full-width row -->
-  <section class="level level--blue six" data-level="2" aria-labelledby="six-title">
-    <div class="level__head">
-      <p class="flag" data-enter><span>Level 2 &middot; The five</span></p>
-      <h2 id="six-title" class="level__title" data-enter="wipe">Five areas</h2>
-      <p class="level__lead" data-enter style="--enter-delay: 80ms">Each one learned on a shipped game, and used on every build since.</p>
-    </div>
-    <ol class="rows level__body">
+  <!-- Level 2: the five areas. Plain full-width rows; on a desktop with motion the level pins
+       and the five are dealt as a deck of cards, each rising from below, tilting and stacking on
+       the last, scrubbed by the scroll (the script adds is-deck). -->
+  <section class="level level--blue six" data-level="2" aria-labelledby="six-title" data-deck>
+    <div class="six__pin">
+      <div class="level__head">
+        <p class="flag" data-enter><span>Level 2 &middot; The five</span></p>
+        <h2 id="six-title" class="level__title" data-enter="wipe">Five areas</h2>
+        <p class="level__lead" data-enter style="--enter-delay: 80ms">Each one learned on a shipped game, and used on every build since.</p>
+      </div>
+      <ol class="rows level__body six__stage">
       {
         services.map((s, i) => (
-          <li class="row six__row" id={s.id} data-enter data-achieve="services" style={`--enter-delay: ${i * 70}ms`}>
+          <li class="row six__row six__card" id={s.id} data-enter data-achieve="services" style={`--enter-delay: ${i * 70}ms; --i: ${i}; --tilt: ${[-2.5, 2, -1.5, 2.5, -2][i]}deg`}>
             <div class="six__name">
               <h3 class="row__title">{s.title}</h3>
               <p class="six__get">In practice</p>
@@ -115,7 +117,8 @@ const platforms = [
           </li>
         ))
       }
-    </ol>
+      </ol>
+    </div>
     <Bug id="services-2" style="right: 10%; top: 9rem" tablet="right: 8%; top: 8rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
@@ -181,9 +184,6 @@ const platforms = [
           </div>
         ))
       }
-      <div class="plat__photo" data-enter="place">
-        <PixelTile name="controller" tone="navy" />
-      </div>
     </div>
     <Bug id="services-5" style="right: 10%; bottom: 1rem" tablet="right: 30%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
@@ -256,6 +256,59 @@ const platforms = [
   .row:target {
     outline: 3px solid var(--accent-2);
     outline-offset: -3px;
+  }
+
+  /* The deck (desktop, motion allowed, script on): the level is three screens tall and its
+     content pins for the middle two; the five rows become navy cards on one stage. Card 0 lies
+     in place; each next card rises from below the screen as --e goes 0 to 1 with the scroll,
+     landing a little lower than the last and tilted its own few degrees. Transform only. */
+  .six.is-deck {
+    height: calc(100vh * 3);
+    padding-block: 0;
+    overflow: clip;
+  }
+  .six.is-deck .six__pin {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: var(--s-4);
+  }
+  .six.is-deck .six__stage {
+    position: relative;
+    height: var(--stage-h, 28rem);
+    margin-top: var(--s-4);
+  }
+  .six.is-deck .six__card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: min(100%, 60rem);
+    margin-inline: auto;
+    padding: var(--s-4);
+    background: var(--bg);
+    color: var(--pr-light);
+    --muted-2: var(--muted);
+    --ink-2: var(--accent-2);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
+    border: 2px solid var(--surface-2);
+    border-top: 0.25rem solid var(--accent);
+    transform-origin: 50% 100%;
+    /* the scroll drives the transform; the row's own entrance (opacity, a transition) is off */
+    opacity: 1;
+    transition: none;
+    transform: translate3d(0, calc((1 - var(--e, 0)) * 110vh + var(--i, 0) * 0.75rem), 0) rotate(calc(var(--tilt, 0deg) * var(--e, 0)));
+    will-change: transform;
+  }
+  .six.is-deck .six__card:first-child {
+    --e: 1;
+  }
+  .six.is-deck .six__row {
+    column-gap: var(--s-4);
   }
 
   /* Level 3: four columns on the field, a rule above each */
@@ -356,12 +409,6 @@ const platforms = [
   .plat__text {
     font-size: 1rem;
   }
-  .plat__photo {
-    grid-column: span 1;
-    min-width: 0;
-    min-height: 0;
-    margin-top: var(--s-3);
-  }
 
   @media (max-width: 63.99rem) {
     .svc__jump {
@@ -400,9 +447,77 @@ const platforms = [
       grid-template-columns: 1fr 1fr;
       gap: 0 var(--s-3);
     }
-    .plat__photo {
-      grid-column: span 2;
-      aspect-ratio: 16 / 9;
-    }
   }
 </style>
+
+<script>
+  // The dealt deck on Level 2: on a desktop with motion the level pins and the scroll scrubs the
+  // five cards in, one after the other. Off on phones, under reduced motion and without script,
+  // where the five stay plain rows. A jump to a card's id scrolls to the point where it is dealt.
+  const deck = document.querySelector<HTMLElement>('[data-deck]');
+  if (deck) {
+    const cards = Array.from(deck.querySelectorAll<HTMLElement>('.six__card'));
+    const stage = deck.querySelector<HTMLElement>('.six__stage')!;
+    const wide = matchMedia('(min-width: 64rem)');
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    const ease = (k: number) => 1 - Math.pow(1 - k, 3);
+    const steps = Math.max(1, cards.length - 1);
+    let on = false;
+    const top = () => deck.getBoundingClientRect().top + scrollY;
+    const range = () => Math.max(1, deck.offsetHeight - innerHeight);
+    const measure = () => {
+      if (!on) return;
+      stage.style.setProperty('--stage-h', `${Math.max(...cards.map((c) => c.offsetHeight)) + cards.length * 12}px`);
+    };
+    const scrub = () => {
+      if (!on) return;
+      const p = Math.min(1, Math.max(0, (scrollY - top()) / range()));
+      cards.forEach((c, i) => {
+        if (i === 0) return;
+        const e = Math.min(1, Math.max(0, (p - (i - 1) / steps) * steps));
+        c.style.setProperty('--e', String(ease(e)));
+      });
+    };
+    const apply = () => {
+      on = wide.matches && !reduce.matches;
+      deck.classList.toggle('is-deck', on);
+      if (!on) cards.forEach((c) => c.style.removeProperty('--e'));
+      measure();
+      scrub();
+    };
+    let queued = false;
+    addEventListener(
+      'scroll',
+      () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(() => {
+          queued = false;
+          scrub();
+        });
+      },
+      { passive: true },
+    );
+    addEventListener('resize', () => {
+      measure();
+      scrub();
+    });
+    wide.addEventListener('change', apply);
+    reduce.addEventListener('change', apply);
+    document.fonts?.ready.then(() => {
+      measure();
+      scrub();
+    });
+    // The jump list: land on the scroll position where the card has been dealt.
+    const jump = () => {
+      if (!on || !location.hash) return;
+      const i = cards.findIndex((c) => `#${c.id}` === location.hash);
+      if (i < 0) return;
+      const y = top() + (i === 0 ? 0 : (range() * i) / steps);
+      requestAnimationFrame(() => scrollTo({ top: y, behavior: 'auto' }));
+    };
+    addEventListener('hashchange', jump);
+    apply();
+    jump();
+  }
+</script>

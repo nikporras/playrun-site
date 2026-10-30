@@ -5,7 +5,7 @@
  * the same way the primary icon carries its gradient. The bug is a 10 by 8 original.
  */
 interface Props {
-  name: 'ship' | 'bug' | 'net' | 'controller' | 'headset';
+  name: 'ship' | 'bug' | 'net';
   class?: string;
 }
 const { name, class: className } = Astro.props;
@@ -51,37 +51,6 @@ const NET = [
   'bb..............',
 ];
 
-// A gamepad, 20 by 12: blue body, light d-pad, cyan and green face buttons.
-const CONTROLLER = [
-  '....bbbbbbbbbbbb....',
-  '..bbbbbbbbbbbbbbbb..',
-  '.bbbbbbbbbbbbbbbbbb.',
-  '.bbb.l.bbbbbbb.c.bb.',
-  '.bblllbbbbbbbbgbgbb.',
-  '.bbb.l.bbbbbbb.c.bb.',
-  '.bbbbbbbbbbbbbbbbbb.',
-  '.bbbbbbb.bbbb.bbbbb.',
-  '.bbbbbb..bbbb..bbbb.',
-  '.bbbbb...bbbb...bbb.',
-  '..bbb.....bb.....b..',
-  '...b................',
-];
-// A VR headset seen from the front, 20 by 12: blue shell, cyan lenses, light strap.
-const HEADSET = [
-  '.....bbbbbbbbbb.....',
-  '...bbbbbbbbbbbbbb...',
-  'l.bbbbbbbbbbbbbbbb.l',
-  'lbbccccbbbbbbccccbbl',
-  'lbccccccbbbbccccccbl',
-  'lbccccccbbbbccccccbl',
-  'lbbccccbbbbbbccccbbl',
-  'l.bbbbbbbbbbbbbbbb.l',
-  '..bbbbbbbbbbbbbbbb..',
-  '...bbbbbb..bbbbbb...',
-  '....bbbb....bbbb....',
-  '....................',
-];
-
 const BUG = [
   '..L..BB..L',
   '...LBBBB..',
@@ -114,12 +83,6 @@ if (name === 'ship') {
   h = NET.length;
   const map: Record<string, string> = { c: 'px-cyan', l: 'px-light', b: 'px-blue' };
   NET.forEach((row, y) => [...row].forEach((ch, x) => map[ch] && cells.push({ x, y, cls: map[ch] })));
-} else if (name === 'controller' || name === 'headset') {
-  const art = name === 'controller' ? CONTROLLER : HEADSET;
-  w = art[0].length;
-  h = art.length;
-  const map: Record<string, string> = { b: 'px-blue', c: 'px-cyan', g: 'px-green', l: 'px-light' };
-  art.forEach((row, y) => [...row].forEach((ch, x) => map[ch] && cells.push({ x, y, cls: map[ch] })));
 } else {
   w = BUG[0].length;
   h = BUG.length;

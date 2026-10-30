@@ -47,9 +47,9 @@ test.describe('Home', () => {
     await expect(page.locator('h1')).toHaveCount(1);
     await expect(page.locator('h1')).toHaveText(/Nicolás\s*Porras/);
     await expect(page.locator('.hero__post')).toHaveText('Founder & Lead QA, PlayRun');
-    await expect(page.locator('.hero__role')).toHaveText('Game QA, platform compliance & release testing');
-    // the post sits between the name and the line on the work
-    const tops = await page.locator('h1, .hero__post, .hero__role, .hero__value').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+    await expect(page.locator('.hero__role'), 'the role line is gone').toHaveCount(0);
+    // the post sits between the name and the paragraph
+    const tops = await page.locator('h1, .hero__post, .hero__value').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
     expect(tops).toEqual([...tops].sort((a, b) => a - b));
     await expect(page.locator('.hero__value')).toContainText('testing games since 2021 and leading QA teams since 2022');
     await page.waitForLoadState('networkidle');
@@ -102,7 +102,7 @@ test.describe('Home', () => {
     expect(outline).not.toBe('none');
   });
 
-  test('menu toggle works on a phone, and the nav holds only the three pages and the button', async ({ page }) => {
+  test('menu toggle works on a phone, and the nav holds Home, the three pages and the button', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
     const toggle = page.getByRole('button', { name: 'Menu' });
@@ -110,7 +110,8 @@ test.describe('Home', () => {
     await toggle.click();
     await expect(page.getByRole('button', { name: 'Close' })).toHaveAttribute('aria-expanded', 'true');
     const nav = page.getByRole('navigation', { name: 'Site' });
-    await expect(nav.getByRole('link')).toHaveText(['Skills', 'Portfolio', 'Quality', 'Get in touch']);
+    await expect(nav.getByRole('link')).toHaveText(['Home', 'Skills', 'Portfolio', 'Quality', 'Get in touch']);
+    await expect(nav.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
     await page.keyboard.press('Escape');
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });
@@ -124,6 +125,29 @@ test.describe('Home', () => {
     const figure = page.locator('.hero__figure img');
     await expect(figure).toBeVisible();
     expect(await page.locator('main img:not([alt=""])').count(), 'the photo appears once on the site').toBe(1);
+    // the photo is centred on the text block, at 1280, 1440 and 1920
+    for (const width of [1280, 1440, 1920]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(150);
+      const m = await page.evaluate(() => {
+        const head = document.querySelector('.hero__head')!.getBoundingClientRect();
+        const fig = document.querySelector('.hero__figure')!.getBoundingClientRect();
+        // the text's own right edge, not the block's: the lines are shorter than the column
+        const textRight = Math.max(
+          ...[...document.querySelectorAll('.hero__head h1, .hero__head p, .hero__head a')].map((el) => {
+            const r = document.createRange();
+            r.selectNodeContents(el);
+            return r.getBoundingClientRect().right;
+          }),
+        );
+        return { head: (head.top + head.bottom) / 2, fig: (fig.top + fig.bottom) / 2, figRight: fig.right, headRight: textRight, figLeft: fig.left };
+      });
+      expect(Math.abs(m.head - m.fig), `${width}: the photo's middle sits on the text block's middle`).toBeLessThanOrEqual(24);
+      expect(m.figLeft, `${width}: the photo stays clear of the text`).toBeGreaterThanOrEqual(m.headRight - 8);
+    }
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.evaluate(() => window.scrollTo(0, 600));
     await page.waitForTimeout(100);
     const after = await page.evaluate(() => {
@@ -217,6 +241,10 @@ test.describe('Home', () => {
     expect(new Set(names).size).toBe(19);
     for (const href of await links.evaluateAll((as) => as.map((a) => a.getAttribute('href')))) expect(href).toBe('/portfolio');
     expect(await seq.locator('.wall__logo').count(), 'official logos').toBeGreaterThanOrEqual(16);
+    // no boxes: the logos float on the field
+    expect(await page.locator('.ticker__view').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+    expect(await links.first().evaluate((el) => [getComputedStyle(el.parentElement!).borderLeftWidth, getComputedStyle(el.parentElement!).backgroundColor])).toEqual(['0px', 'rgba(0, 0, 0, 0)']);
+    expect((await page.locator('.ticker__view').boundingBox())!.height, 'a short row').toBeLessThanOrEqual(96);
     // the copy that makes the loop seamless is out of the accessibility tree and the tab order
     const copy = page.locator('.ticker__copy');
     await expect(copy).toHaveAttribute('aria-hidden', 'true');
@@ -273,6 +301,26 @@ test.describe('Home', () => {
     await expect(nums).toHaveCount(4);
     const labels = await page.locator('.stat__label').allTextContents();
     expect(labels).toEqual(['years in QA', 'companies', 'games', 'platforms']);
+    // one row, thin lines between, no boxes; the label under its number
+    const row = await page.locator('.stat').evaluateAll((els) =>
+      els.map((el) => {
+        const cs = getComputedStyle(el);
+        const num = el.querySelector('.stat__num')!.getBoundingClientRect();
+        const label = el.querySelector('.stat__label')!.getBoundingClientRect();
+        return { top: Math.round(el.getBoundingClientRect().top), bg: cs.backgroundColor, left: cs.borderLeftWidth, under: label.top >= num.bottom - 2, numSize: parseFloat(getComputedStyle(el.querySelector('.stat__num')!).fontSize) };
+      }),
+    );
+    expect(new Set(row.map((r) => r.top)).size, 'one row').toBe(1);
+    expect(row.map((r) => r.left)).toEqual(['0px', '1px', '1px', '1px']);
+    for (const r of row) {
+      expect(r.bg).toBe('rgba(0, 0, 0, 0)');
+      expect(r.under).toBe(true);
+      expect(r.numSize).toBeGreaterThanOrEqual(64);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    const tops = await page.locator('.stat').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+    expect(new Set(tops).size, 'two per row on a phone').toBe(2);
+    await page.setViewportSize({ width: 1280, height: 720 });
     await page.locator('.stats').scrollIntoViewIfNeeded();
     await expect(nums.nth(0)).toHaveText('5+', { timeout: 5000 });
     await expect(nums.nth(1)).toHaveText('6');
@@ -306,7 +354,7 @@ test.describe('Home', () => {
     await expect(page.locator('.hero').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
     await expect(page.locator('.final').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
     await expect(page.locator('footer').getByRole('link', { name: 'Get in touch' })).toHaveCount(0);
-    for (const path of ['/skills', '/portfolio', '/quality', '/contact', '/credits', '/privacy']) {
+    for (const path of ['/skills', '/portfolio', '/quality', '/contact', '/terms', '/privacy']) {
       await page.goto(path);
       await expect(page.locator('main').getByRole('link', { name: 'Get in touch' }), path).toHaveCount(0);
     }

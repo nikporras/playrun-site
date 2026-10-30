@@ -17,11 +17,12 @@ export default defineConfig({
   trailingSlash: 'never',
   build: { format: 'file' },
   // The About page was folded into Home, the Portfolio and Skills; its address goes home.
-  redirects: { '/services': '/skills', '/about': '/', ...projectRedirects },
+  // The Credits page was folded into the Terms page.
+  redirects: { '/services': '/skills', '/about': '/', '/credits': '/terms#credits', ...projectRedirects },
   integrations: [
     sitemap({
       // Redirect pages are not pages.
-      filter: (page) => !page.includes('/portfolio/') && !page.endsWith('/services') && !page.endsWith('/about'),
+      filter: (page) => !page.includes('/portfolio/') && !page.endsWith('/services') && !page.endsWith('/about') && !page.endsWith('/credits'),
     }),
   ],
   devToolbar: { enabled: false },

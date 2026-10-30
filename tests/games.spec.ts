@@ -111,6 +111,13 @@ test.describe('Games', () => {
       expect(box.width, `${path}: slim`).toBeLessThanOrEqual(32);
       expect(box.height, `${path}: full height`).toBeGreaterThanOrEqual(880);
       await expect(page.locator('.hud__floor'), `${path}: a rail, not a strip of squares`).toHaveCSS('background-image', 'none');
+      // the ship paints over the rail, and the rail is light with a navy edge so it reads on every field
+      const z = await page.evaluate(() => [parseInt(getComputedStyle(document.querySelector('.hud__runner')!).zIndex) || 0, parseInt(getComputedStyle(document.querySelector('.hud__floor')!).zIndex) || 0]);
+      expect(z[0], `${path}: the ship on top of the line`).toBeGreaterThan(z[1]);
+      const rail = await page.locator('.hud__floor').evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, shadow: getComputedStyle(el).boxShadow }));
+      expect(rail.bg).not.toBe('rgb(28, 42, 72)');
+      expect(rail.shadow).toContain('rgb(12, 21, 42)');
+      expect(await page.locator('.hud__levels li span').first().evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid');
       // one marker per level after the first, or one per year where the page carries years,
       // each beside the rail and wholly on screen
       const levels = await page.locator('[data-level]').count();

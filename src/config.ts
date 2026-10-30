@@ -103,6 +103,7 @@ export const employers: Employer[] = [
 export const since = 2021;
 
 export const nav = [
+  { label: 'Home', href: '/' },
   { label: 'Skills', href: '/skills' },
   { label: 'Portfolio', href: '/portfolio' },
   { label: 'Quality', href: '/quality' },

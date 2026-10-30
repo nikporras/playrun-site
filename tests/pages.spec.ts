@@ -31,7 +31,7 @@ const PAGES = [
   },
   { path: '/quality', h1: /Let's test this\s*page together/, must: ['Smoke test', 'Responsive', 'Accessibility', 'Links', 'Performance', 'Bug report template', 'Playwright 1.'] },
   { path: '/privacy', h1: /Privacy notice/, must: ['Nicolás Porras (PlayRun)', 'deleted after 24 months', 'ico.org.uk'] },
-  { path: '/terms', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales'] },
+  { path: '/terms', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales', 'Credits and trademarks', 'Pixel Operator by Jayvee Enaguas (CC0)', 'Montserrat by Julieta Ulanovsky and contributors (SIL Open Font License)', 'Game names and logos are trademarks of their respective owners'] },
   { path: '/accessibility', h1: /Accessibility/, must: ['WCAG', 'reduced motion', 'Report a problem'] },
 ];
 
@@ -177,6 +177,17 @@ test('every card has a logo or its icon, the labels and one store button in a ne
   await page.goto('/portfolio');
   // seven posts, newest first, in LinkedIn's words, each with its own accent
   await expect(page.locator('.group__name')).toHaveText(['Aonic', 'HCLTech', 'Nexus Studios', 'Universally Speaking', 'Historic VR', 'nDreams', 'Universally Speaking']);
+  // a header or card lands when it reaches the middle of the screen, not as it enters at the foot
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.reload();
+  await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+  const second = page.locator('.group').nth(1).locator('[data-land]').first();
+  const y = await second.evaluate((el) => el.getBoundingClientRect().top + scrollY);
+  await page.evaluate((y) => window.scrollTo(0, y - innerHeight * 0.8), y);
+  await page.waitForTimeout(700);
+  await expect(second, 'in the lower fifth of the screen: not landed yet').not.toHaveClass(/is-landed/);
+  await page.evaluate((y) => window.scrollTo(0, y - innerHeight * 0.45), y);
+  await expect(second, 'at the middle: shot and landed').toHaveClass(/is-landed/, { timeout: 3000 });
   // the dates, large and in the accent, right under the name; a post with several roles keeps
   // each role's own dates on its line
   await expect(page.locator('.group__when')).toHaveText(['Jul 2026 to present', 'Apr 2026 to Jul 2026', 'Oct 2025 to Dec 2025', 'Jun 2025 to Aug 2025', 'Feb 2025 to Feb 2026', 'Mar 2022 to Oct 2024', '2021 to 2022']);
@@ -280,13 +291,31 @@ test('the skills jump list lands on each skill', async ({ page }) => {
   for (const id of ids) await expect(page.locator(`#${id}`)).toHaveCount(1);
 });
 
-test('the old services and about addresses send visitors on', async ({ request }) => {
+test('the old services, about and credits addresses send visitors on', async ({ request, page }) => {
   const services = await request.get('/services');
   expect(services.status()).toBe(200);
   expect(await services.text()).toMatch(/http-equiv="refresh"[^>]*url=\/skills/);
   const about = await request.get('/about');
   expect(about.status()).toBe(200);
   expect(await about.text()).toMatch(/http-equiv="refresh"[^>]*url=\/"?/);
+  const credits = await request.get('/credits');
+  expect(credits.status()).toBe(200);
+  expect(await credits.text()).toMatch(/http-equiv="refresh"[^>]*url=\/terms#credits/);
+  const sitemap = await (await request.get('/sitemap-0.xml')).text();
+  expect(sitemap).not.toContain('/credits');
+  await page.goto('/');
+  await expect(page.locator('footer').getByRole('link', { name: 'Credits' })).toHaveCount(0);
+  await expect(page.locator('footer').getByRole('link')).toContainText(['Home', 'Skills', 'Portfolio', 'Quality', 'Contact']);
+  expect(await page.locator('footer').getByRole('link', { name: 'Home' }).count(), 'Home once in the footer').toBe(1);
+});
+
+test('no controller or headset sprite anywhere, and nothing stands in their place', async ({ page }) => {
+  for (const path of ['/', '/skills', '/portfolio', '/contact', '/quality', '/terms']) {
+    await page.goto(path);
+    await expect(page.locator('.sprite--controller, .sprite--headset'), path).toHaveCount(0);
+    await expect(page.locator('.plat__photo'), path).toHaveCount(0);
+  }
+  await expect(page.locator('.sprite--ship')).toHaveCount(1);
 });
 
 test('the built site is a portfolio, offers no work, links to no repository and carries no stale facts', async () => {

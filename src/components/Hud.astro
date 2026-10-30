@@ -153,6 +153,7 @@ import PassMark from './PassMark.astro';
     position: absolute;
     left: 0;
     bottom: var(--floor-h);
+    z-index: 2;
     width: var(--ship-w);
     height: var(--ship-w);
     will-change: transform;
@@ -526,6 +527,8 @@ import PassMark from './PassMark.astro';
       height: auto;
       border-top: 0;
     }
+    /* The rail: a light line with a navy edge either side, so it reads on the navy strip and
+       wherever the strip meets a light field. */
     .hud__floor {
       left: calc(50% - 1px);
       right: auto;
@@ -533,7 +536,10 @@ import PassMark from './PassMark.astro';
       bottom: 0;
       width: 2px;
       height: auto;
-      background: var(--surface-2);
+      background: color-mix(in srgb, var(--pr-light) 55%, var(--pr-navy));
+      box-shadow:
+        -1px 0 0 var(--pr-navy),
+        1px 0 0 var(--pr-navy);
     }
     .hud__levels {
       left: 100%;
@@ -559,6 +565,12 @@ import PassMark from './PassMark.astro';
     .hud__levels :global(li span) {
       padding: 2px 3px;
       background: var(--bg);
+      outline: 1px solid color-mix(in srgb, var(--pr-light) 35%, var(--pr-navy));
+    }
+    .hud__levels :global(li)::after {
+      box-shadow:
+        0 -1px 0 var(--pr-navy),
+        0 1px 0 var(--pr-navy);
     }
     .hud__runner {
       left: 0;

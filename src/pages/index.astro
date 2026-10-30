@@ -78,7 +78,6 @@ const checks = [
         </aside>
       </div>
       <p class="hero__post" data-load style="--d: 400ms">{playrun.role}, {site.name}</p>
-      <p class="hero__role" data-load style="--d: 440ms">Game QA, platform compliance &amp; release testing</p>
       <p class="hero__value" data-load style="--d: 500ms">
         I've been testing games since 2021 and leading QA teams since 2022, at nDreams and Historic VR, and on indie
         titles through to their multi-platform console and PC releases. I plan the testing, run it on real hardware,
@@ -102,11 +101,11 @@ const checks = [
         decoding="async"
       />
     </div>
-    <Bug id="hero-1" style="right: 42%; top: 8rem" tablet="right: 6%; top: 8rem" walk="x -2rem" />
+    <Bug id="hero-1" style="left: 40%; top: 2rem" tablet="right: 6%; top: 8rem" walk="x 2rem" />
   </section>
 
   <!-- Level 2: the ticker of titles, their official logos in one colour, rolling slowly left -->
-  <section class="level level--blue wall" data-level="2" aria-labelledby="wall-title">
+  <section class="level level--blue level--tight wall" data-level="2" aria-labelledby="wall-title">
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; Portfolio</span></p>
       <h2 id="wall-title" class="level__title" data-enter="wipe">Games I've tested</h2>
@@ -365,20 +364,12 @@ const checks = [
   .hero__ticket[data-status='fixed'] .ticket__status::before {
     content: '✓ ';
   }
-  /* The post, then the line on the work: one block, tighter than the rest of the head. */
+  /* The post, right under the name. */
   .hero__post {
     font-family: var(--font-display);
     font-size: 1.5rem;
     line-height: 1.2;
     letter-spacing: 0.04em;
-    color: var(--ink);
-    max-width: none;
-    margin-bottom: calc(var(--s-1) - var(--s-4));
-  }
-  .hero__role {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    line-height: 1.2;
     color: var(--accent-2);
     max-width: none;
   }
@@ -392,11 +383,15 @@ const checks = [
   .hero__secondary {
     color: var(--ink);
   }
-  /* The figure stands on the bottom edge of the level, in the space the text leaves free. */
+  /* The figure floats in the space the text leaves free, centred on the text block (the head is
+     centred in the level, so the level's middle is the block's middle). `translate` keeps clear
+     of the load animation's transform. */
   .hero__figure {
     position: absolute;
     right: var(--gutter);
-    bottom: 0;
+    /* the middle of the content box (the level's top and bottom padding differ) */
+    top: calc(var(--s-4) + (100% - var(--s-4) - var(--s-6)) / 2);
+    translate: 0 -50%;
     width: min(36vw, 34rem);
     line-height: 0;
     z-index: 0;
@@ -444,12 +439,8 @@ const checks = [
     .hero__title {
       font-size: round(17vw, 8px);
     }
-    .hero__post,
-    .hero__role {
-      font-size: 1.25rem;
-    }
     .hero__post {
-      margin-bottom: calc(var(--s-1) - var(--s-3));
+      font-size: 1.25rem;
     }
     .hero__value {
       font-size: 1rem;
@@ -470,10 +461,12 @@ const checks = [
       transform: translateY(-0.5rem) scale(0.96);
       transform-origin: top center;
     }
-    /* On a phone the photo comes under the text, still on the bottom edge. */
+    /* On a phone the photo comes under the text, on the bottom edge. */
     .hero__figure {
       position: relative;
       right: auto;
+      top: auto;
+      translate: none;
       width: min(70vw, 20rem);
       margin: var(--s-4) 0 0 auto;
     }
@@ -508,23 +501,24 @@ const checks = [
     }
   }
 
-  /* Level 2: the ticker. A navy board on the blue field, the logos in equal cells divided by
-     hairlines of the field, rolling slowly to the left in a loop: the sequence twice, the copy
-     hidden from assistive tech, the track sliding half its width then starting over. It pauses
-     under the pointer, while a logo has focus, and with the button; a focused logo is brought
-     into view by the script. Under reduced motion it is a still row that scrolls by hand. */
+  /* Level 2: the ticker. The logos float on the blue field in equal cells, no boxes, rolling
+     slowly to the left in a loop: the sequence twice, the copy hidden from assistive tech, the
+     track sliding half its width then starting over. It pauses under the pointer, while a logo
+     has focus, and with the button; a focused logo is brought into view by the script. Under
+     reduced motion it is a still row that scrolls by hand. */
   .wall {
     z-index: 1;
   }
+  .wall .level__body {
+    margin-top: var(--s-4);
+  }
   .ticker {
-    --cell: 15rem;
-    --cell-h: 8rem;
+    --cell: 13rem;
+    --cell-h: 5rem;
   }
   .ticker__view {
     container-type: inline-size;
     overflow: hidden;
-    background: var(--bg);
-    border: 2px solid var(--bg);
   }
   .ticker__track {
     display: flex;
@@ -553,43 +547,37 @@ const checks = [
   .wall__item {
     flex: none;
     width: var(--cell);
-    background: var(--bg);
-    border-left: 2px solid var(--field-blue);
-  }
-  .ticker__seq:first-child .wall__item:first-child {
-    border-left: 0;
   }
   .wall__link {
     display: flex;
     align-items: center;
     justify-content: center;
     height: var(--cell-h);
-    padding: var(--s-3);
+    padding: 0 var(--s-3);
     color: var(--ink);
     text-decoration: none;
-    transition: background-color var(--dur-fast) ease;
+    transition: opacity var(--dur-fast) ease;
   }
-  .wall__link:hover,
-  .wall__link:focus-visible {
-    background: var(--surface-2);
+  .wall__link:hover {
+    opacity: 0.7;
     color: var(--ink);
   }
   .wall__link:focus-visible {
-    outline-offset: -4px;
+    outline-offset: 2px;
   }
   .wall__link :global(.wall__logo) {
     width: auto;
     height: auto;
-    max-height: 4rem;
+    max-height: 3.25rem;
     max-width: 100%;
     object-fit: contain;
   }
-  /* The pause button, small, under the board on its right. */
+  /* The pause button, small, under the row. */
   .ticker__pause {
     display: inline-flex;
     align-items: center;
     gap: 0.5em;
-    margin: var(--s-2) 0 0 auto;
+    margin: var(--s-3) 0 0;
     min-height: 2.25rem;
     padding: 0.4rem 0.75rem;
     border: 2px solid var(--pr-navy);
@@ -637,7 +625,7 @@ const checks = [
   /* A title with no clean official logo: its name set in Pixel Operator at the logos' height. */
   .wall__word {
     font-family: var(--font-display);
-    font-size: 3rem;
+    font-size: 2.5rem;
     line-height: 1;
   }
   /* Or its pixel icon and its name. */
@@ -661,14 +649,14 @@ const checks = [
   }
   @media (max-width: 63.99rem) {
     .ticker {
-      --cell: 11rem;
-      --cell-h: 6.5rem;
+      --cell: 10rem;
+      --cell-h: 4.5rem;
     }
     .wall__link {
-      padding: var(--s-2);
+      padding: 0 var(--s-2);
     }
     .wall__link :global(.wall__logo) {
-      max-height: 3.25rem;
+      max-height: 2.75rem;
     }
     .wall__name {
       font-size: 1.25rem;
@@ -679,11 +667,11 @@ const checks = [
   }
   @media (max-width: 47.99rem) {
     .ticker {
-      --cell: 7.5rem;
-      --cell-h: 5rem;
+      --cell: 7rem;
+      --cell-h: 3.5rem;
     }
     .wall__link :global(.wall__logo) {
-      max-height: 2.5rem;
+      max-height: 2.25rem;
     }
     .wall__name {
       font-size: 1rem;
@@ -698,13 +686,14 @@ const checks = [
     }
   }
 
-  /* Level 3: four big pixel numbers on the field, divided by thin rules, counted up into view. */
+  /* Level 3: one row of big pixel numbers on the field, a short label in the text face under
+     each, thin vertical lines between them, no boxes; counted up into view. */
   .stats__board {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .stat {
-    padding: var(--s-2) var(--s-3) var(--s-2) var(--s-3);
+    padding: var(--s-3) var(--s-4);
     border-left: 1px solid var(--rule);
     min-width: 0;
     display: flex;
@@ -717,28 +706,36 @@ const checks = [
   }
   .stat__num {
     font-family: var(--font-display);
-    font-size: clamp(4rem, 2rem + 5vw, 7rem);
-    font-size: round(clamp(4rem, 2rem + 5vw, 7rem), 16px);
-    line-height: 0.9;
+    font-size: clamp(4.5rem, 2.5rem + 5vw, 7.5rem);
+    font-size: round(clamp(4.5rem, 2.5rem + 5vw, 7.5rem), 16px);
+    line-height: 0.85;
     max-width: none;
   }
   .stat__label {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    line-height: 1.1;
+    font-family: var(--font-text);
+    font-size: 1.125rem;
+    line-height: 1.3;
     max-width: none;
   }
   @media (max-width: 63.99rem) {
     .stats__board {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      row-gap: var(--s-4);
+    }
+    .stat {
+      padding: var(--s-3) var(--s-3);
     }
     .stat:nth-child(odd) {
       border-left: 0;
       padding-left: 0;
     }
+    .stat:nth-child(n + 3) {
+      border-top: 1px solid var(--rule);
+    }
+    .stat:nth-child(-n + 2) {
+      padding-top: 0;
+    }
     .stat__label {
-      font-size: 1.25rem;
+      font-size: 1rem;
     }
   }
 

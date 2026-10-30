@@ -30,10 +30,8 @@ const year = new Date().getFullYear();
       </div>
       <nav class="footer__site" aria-label="Footer">
         <ul role="list" class="footer__links">
-          <li><a href="/">Home</a></li>
           {nav.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
           <li><a href="/contact">Contact</a></li>
-          <li><a href="/credits">Credits</a></li>
         </ul>
       </nav>
     </div>

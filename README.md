@@ -59,7 +59,7 @@ PLAYWRIGHT_BASE_URL=http://127.0.0.1:4321 npx playwright test tests/bugs.spec.ts
 
 ## Credits
 
-Pixel Operator typeface by Jayvee Enaguas (CC0). Montserrat by Julieta Ulanovsky (SIL Open Font License). The game logos are the trademarks of their owners, taken from each game's official press kit or page and shown in one colour to name the games I have tested; every source is listed on the site's [credits page](https://playrunqa.com/credits), with the tools and the pixel art. `scripts/logos.mjs` makes the one-colour files from the originals, which are not part of this repository.
+Pixel Operator typeface by Jayvee Enaguas (CC0). Montserrat by Julieta Ulanovsky and contributors (SIL Open Font License). The game logos are the trademarks of their owners, taken from each game's official press kit or page (the `logoSource` in each project file) and shown in one colour to identify the games I have worked on; no endorsement is implied. The site says the same under [Credits and trademarks](https://playrunqa.com/terms#credits) on the Terms page. `scripts/logos.mjs` makes the one-colour files from the originals, which are not part of this repository.
 
 ## Rights
 
