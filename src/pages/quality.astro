@@ -13,14 +13,14 @@ const runDate = suite.run ? suite.run.startedAt.toLocaleDateString('en-GB', { da
 // same thing yourself. On a computer: numbered steps, one action each, with the shortcut or menu
 // for Chrome and Edge, Firefox and Safari on a Mac where they differ, a mark on the steps only
 // Chrome and Edge can do, and what you should see when all is well. On a phone: what the phone
-// itself can show, and a pointer to Pocket DevTools for the rest.
-type How = { do: string; chromeEdge?: string; firefox?: string; safari?: string; only?: string; see: string };
+// itself can show, the computer steps folded under a toggle, and Pocket DevTools for the rest.
+type How = { do: string; chromeEdge?: string; firefox?: string; safari?: string; only?: string; see: string; note?: string };
 const openTools: How = {
   do: 'Open the developer tools.',
   chromeEdge: 'Press F12, or Ctrl+Shift+I (Cmd+Option+I on a Mac).',
   firefox: 'Press F12, or Ctrl+Shift+I (Cmd+Option+I on a Mac).',
-  safari: 'First turn the Develop menu on once: Safari menu, Settings, Advanced, tick Show features for web developers. Then press Cmd+Option+I.',
-  see: 'A panel opens at the side or the foot of the window.',
+  safari: 'First turn the Develop menu on, once: Safari menu, Settings, Advanced, tick Show features for web developers. Then press Cmd+Option+I.',
+  see: 'A panel opens at the side or the foot of the window, with a row of tabs along its top.',
 };
 const steps = [
   {
@@ -30,7 +30,7 @@ const steps = [
     checks: ['pages', 'console'],
     desktop: [
       openTools,
-      { do: 'Click the Console tab, then reload the page with Ctrl+R (Cmd+R on a Mac).', see: 'No red error lines in the Console.' },
+      { do: 'Click the Console tab in that row, then reload the page with Ctrl+R (Cmd+R on a Mac).', see: 'No red lines in the Console. Grey or blue lines are only information.' },
     ],
     phone: ['Pocket DevTools, further down, lists the console errors this page has caught since it loaded. It should say none.'],
   },
@@ -40,15 +40,16 @@ const steps = [
     ask: 'Does it fit the screen?',
     checks: ['viewports'],
     desktop: [
-      { do: 'Open the developer tools, as in Step 1.', see: 'The panel is open.' },
+      { do: 'Open the developer tools, as in Step 1 of the Smoke test.', see: 'The panel is open.' },
       {
         do: 'Turn on the phone-sized view.',
         chromeEdge: 'Press Ctrl+Shift+M (Cmd+Shift+M on a Mac).',
         firefox: 'Press Ctrl+Shift+M (Cmd+Option+M on a Mac).',
         safari: 'Develop menu, Enter Responsive Design Mode.',
-        see: 'The page sits in a phone-sized frame with a width box above it.',
+        see: 'The page sits in a phone-sized frame, with a width box in the bar above it.',
+        note: "The page switches to its phone layout. That's expected, it's what you're testing.",
       },
-      { do: 'Type 375 into the width box, then 768.', see: 'No sideways scrollbar, nothing cut off, the menu button in the corner.' },
+      { do: 'Click the width box, type 375 and press Enter. Then do the same with 768.', see: 'No sideways scrollbar, nothing cut off, and a Menu button in the top right corner.' },
     ],
     phone: ['Rotate the phone: the page should reflow with no sideways scroll.', 'Pinch to zoom: the text should scale and nothing should stop you.'],
   },
@@ -58,12 +59,17 @@ const steps = [
     ask: 'Can everyone use it?',
     checks: ['a11y', 'focus'],
     desktop: [
-      { do: 'Click in the address bar, then press Tab.', see: 'An outline on Skip to content. Keep pressing Tab: it moves through every link and button, in reading order.' },
+      { do: 'Reload the page, then press the Tab key once (above Caps Lock).', see: 'A Skip to content link appears at the top left, with an outline.' },
+      {
+        do: 'Keep pressing Tab.',
+        safari: 'Hold Option while pressing Tab, or turn on Settings, Advanced, Press Tab to highlight each item on a webpage.',
+        see: 'The outline moves through every link and button in reading order.',
+      },
       {
         do: 'Run the accessibility audit.',
         only: 'Chrome and Edge only. Firefox and Safari have no Lighthouse; the Tab check above is the one to trust there.',
-        chromeEdge: 'In the developer tools open the Lighthouse tab, tick Accessibility, then click Analyze page load.',
-        see: 'A score of 100.',
+        chromeEdge: 'In the developer tools click the Lighthouse tab (behind the \u00bb arrow if the panel is narrow), tick Accessibility and untick the rest, then click Analyze page load.',
+        see: 'A score of 100 in the Accessibility circle.',
       },
     ],
     phone: [
@@ -77,8 +83,8 @@ const steps = [
     ask: 'Does every link go somewhere?',
     checks: ['links'],
     desktop: [
-      { do: 'Open the developer tools, as in Step 1, and click the Network tab.', see: 'An empty list, waiting for requests.' },
-      { do: 'Reload the page with Ctrl+R (Cmd+R on a Mac).', see: 'A row per file, each with status 200, or 304 from the cache. No red rows.' },
+      { do: 'Open the developer tools, as in Step 1 of the Smoke test, and click the Network tab in the row along its top.', see: 'An empty list, or a note that it will record the next page load.' },
+      { do: 'Reload the page with Ctrl+R (Cmd+R on a Mac).', see: 'A row for every file. The Status column reads 200, or 304 for a file from the cache. No red rows.' },
     ],
     phone: ['Pocket DevTools lists every request this page made, with its status and size.'],
   },
@@ -90,15 +96,15 @@ const steps = [
     desktop: [
       {
         do: 'Run the performance audit.',
-        only: 'Chrome and Edge only. In Firefox or Safari, open the Network tab, reload, and read the load time in the bar at the foot of the panel: under two seconds is the target here.',
-        chromeEdge: 'In the developer tools open the Lighthouse tab, tick Performance, then click Analyze page load.',
-        see: 'A score of 95 or more.',
+        only: 'Chrome and Edge only. In Firefox or Safari, open the Network tab, reload, and read the load time shown at the foot of the panel once the page has loaded: under two seconds is the target here.',
+        chromeEdge: 'In the developer tools click the Lighthouse tab, tick Performance and untick the rest, then click Analyze page load.',
+        see: 'A score of 95 or more in the Performance circle.',
       },
     ],
     phone: ['Pocket DevTools shows the load timings from this phone: time to first byte, first paint, loaded.'],
   },
 ];
-const computerNote = 'The computer steps need a keyboard and the developer tools. On this phone, Pocket DevTools below shows the same records.';
+const computerNote = 'The computer steps are folded under Checking on a computer?, below. Pocket DevTools, further down, shows what the developer tools would.';
 ---
 
 <Base title="Quality" description="Let's test this page together: five steps, each run live on this page in your browser, then how to check it yourself. The same rigour I bring to the games I test.">
@@ -126,14 +132,15 @@ const computerNote = 'The computer steps need a keyboard and the developer tools
        (src/scripts/deck.ts adds is-deck). On phones they slide in one at a time; under reduced
        motion and without script they stand still. -->
   <section class="level level--blue plan" data-level="2" aria-labelledby="plan-title">
-    <div class="deck" data-deck>
+    <div class="level__head">
+      <p class="flag" data-enter><span>Level 2 &middot; The test plan</span></p>
+      <h2 id="plan-title" class="level__title" data-enter="wipe">Five steps</h2>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">Smoke, responsive, accessibility, links, performance. Pass or fail, live, on your device.</p>
+    </div>
+    <!-- The head stays above: the deck pins the stage alone, so a card has the whole screen -->
+    <div class="deck level__body" data-deck>
       <div class="deck__pin">
-        <div class="level__head">
-          <p class="flag" data-enter><span>Level 2 &middot; The test plan</span></p>
-          <h2 id="plan-title" class="level__title" data-enter="wipe">Five steps</h2>
-          <p class="level__lead" data-enter style="--enter-delay: 80ms">Smoke, responsive, accessibility, links, performance. Pass or fail, live, on your device.</p>
-        </div>
-        <ol class="steps level__body deck__stage">
+        <ol class="steps deck__stage">
       {
         steps.map((s, i) => (
           <li class="step is-idle deck__card" id={`step-${s.id}`} data-step={s.id} data-checks={JSON.stringify(s.checks)} data-enter style={`--enter-delay: ${i * 60}ms; --i: ${i}; --tilt: ${[-2.5, 2, -1.5, 2.5, -2][i]}deg`}>
@@ -154,7 +161,22 @@ const computerNote = 'The computer steps need a keyboard and the developer tools
               <p class="step__result" data-step-result>This step runs in your browser, with script on. The checks below work either way.</p>
             </div>
             <div class="step__how">
-              <div class="step__desktop">
+              <div class="step__phone">
+                <h4 class="step__howtitle">Check it yourself on this phone</h4>
+                <ol class="step__list">
+                  {s.phone.map((line) => (
+                    <li>{line}</li>
+                  ))}
+                </ol>
+                <p class="step__note">{computerNote}</p>
+              </div>
+              <!-- On a phone the computer steps fold under this button, so a visitor who has just
+                   switched the browser to its phone view still has them. Open on a desktop. -->
+              <button type="button" class="step__fold" data-fold aria-expanded="false" aria-controls={`how-${s.id}`}>
+                Checking on a computer?
+                <svg class="step__foldglyph" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M0 2h1v1H0zM1 3h1v1H1zM2 4h1v1H2zM3 5h1v1H3zM4 4h1v1H4zM5 3h1v1H5zM6 2h1v1H6z" fill="currentColor" /></svg>
+              </button>
+              <div class="step__desktop" id={`how-${s.id}`}>
                 <h4 class="step__howtitle">Check it yourself on a computer</h4>
                 <ol class="step__list">
                   {s.desktop.map((h) => (
@@ -186,18 +208,10 @@ const computerNote = 'The computer steps need a keyboard and the developer tools
                       <p class="how__see">
                         <span class="how__seekey">You should see</span> {h.see}
                       </p>
+                      {h.note && <p class="how__note">{h.note}</p>}
                     </li>
                   ))}
                 </ol>
-              </div>
-              <div class="step__phone">
-                <h4 class="step__howtitle">Check it yourself on this phone</h4>
-                <ol class="step__list">
-                  {s.phone.map((line) => (
-                    <li>{line}</li>
-                  ))}
-                </ol>
-                <p class="step__note">{computerNote}</p>
               </div>
             </div>
           </li>
@@ -443,50 +457,112 @@ Attachments: [screenshot or video]</pre>
   .how__do {
     max-width: none;
   }
-  .how__only {
-    margin-top: 0.3em;
-    font-family: var(--font-display);
-    font-size: 0.9375rem;
-    letter-spacing: 0.03em;
-    color: var(--accent-2);
+  /* In the deck the card must fit one screen with the level head above it, so it lays out in two
+     rows: the name and the live result side by side, then the how-to steps across the full width,
+     three abreast, so the card is only as tall as its longest step. */
+  :global(.deck.is-deck) .step {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    grid-template-areas:
+      'head run'
+      'how how';
+    row-gap: var(--s-3);
+    padding: var(--s-3) var(--s-4);
+  }
+  :global(.deck.is-deck) .step__head {
+    grid-area: head;
+  }
+  :global(.deck.is-deck) .step__run {
+    grid-area: run;
+  }
+  :global(.deck.is-deck) .step__how {
+    grid-area: how;
+    border-top: 1px solid var(--surface-2);
+    padding-top: var(--s-2);
+  }
+  :global(.deck.is-deck) .step__desktop .step__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: var(--s-2) var(--s-4);
     max-width: none;
+    padding-left: 1.25rem;
+  }
+  :global(.deck.is-deck) .how + .how {
+    margin-top: 0;
+  }
+  /* The notes read at body size in the text face; the pixel face keeps only the short labels. */
+  .how__only {
+    margin-top: 0.4em;
+    font-size: 1rem;
+    color: var(--pr-light);
+    max-width: 48ch;
   }
   .how__browsers {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    gap: 0.25em 0.75em;
-    margin: 0.4em 0 0;
-    font-size: 0.9375rem;
+    gap: 0.3em 0.75em;
+    margin: 0.5em 0 0;
+    font-size: 1rem;
   }
   .how__browsers dt {
     font-family: var(--font-display);
-    font-size: 0.875rem;
+    font-size: 1rem;
     letter-spacing: 0.04em;
-    color: var(--muted);
+    color: var(--accent-2);
     white-space: nowrap;
+    padding-top: 0.1em;
   }
   .how__browsers dd {
     margin: 0;
   }
   .how__see {
-    margin-top: 0.4em;
-    font-size: 0.9375rem;
+    margin-top: 0.5em;
+    font-size: 1rem;
     color: var(--muted);
-    max-width: none;
+    max-width: 48ch;
   }
   .how__seekey {
     font-family: var(--font-display);
-    font-size: 0.875rem;
+    font-size: 1rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--accent);
     margin-right: 0.3em;
   }
+  .how__note {
+    margin-top: 0.5em;
+    font-size: 1rem;
+    color: var(--accent-2);
+    max-width: 48ch;
+  }
   .step__note {
     margin-top: var(--s-2);
-    font-size: 0.9375rem;
+    font-size: 1rem;
     color: var(--muted);
     max-width: 48ch;
+  }
+  /* The fold: a phone-only disclosure for the computer steps. */
+  .step__fold {
+    display: none;
+    align-items: center;
+    gap: 0.6em;
+    margin-top: var(--s-3);
+    padding: 0.6rem 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--pr-light) 45%, transparent);
+    background: transparent;
+    color: var(--pr-light);
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    letter-spacing: 0.04em;
+    text-align: left;
+  }
+  .step__foldglyph {
+    width: 0.875rem;
+    height: 0.875rem;
+    flex: none;
+    transition: transform var(--dur-fast) ease;
+  }
+  .step__fold[aria-expanded='true'] .step__foldglyph {
+    transform: scaleY(-1);
   }
   .step__phone {
     display: none;
@@ -675,8 +751,22 @@ Attachments: [screenshot or video]</pre>
     }
   }
   @media (max-width: 47.99rem) {
+    .step__fold {
+      display: inline-flex;
+    }
     .step__desktop {
       display: none;
+      margin-top: var(--s-3);
+    }
+    .step__desktop.is-open {
+      display: block;
+    }
+    /* without script there is no toggle, so the computer steps simply show */
+    :global(html:not(.js)) .step__fold {
+      display: none;
+    }
+    :global(html:not(.js)) .step__desktop {
+      display: block;
     }
     .step__phone,
     .devtools {
@@ -708,6 +798,16 @@ Attachments: [screenshot or video]</pre>
   import { checks, errorsSinceLoad, kb, timings, type Result } from '../scripts/checks';
   import { startDeck } from '../scripts/deck';
   startDeck();
+
+  // The fold on phones: each step's computer instructions open and close from their button.
+  document.querySelectorAll<HTMLButtonElement>('[data-fold]').forEach((button) => {
+    const panel = document.getElementById(button.getAttribute('aria-controls') ?? '');
+    button.addEventListener('click', () => {
+      const open = button.getAttribute('aria-expanded') !== 'true';
+      button.setAttribute('aria-expanded', String(open));
+      panel?.classList.toggle('is-open', open);
+    });
+  });
 
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const steps = Array.from(document.querySelectorAll<HTMLElement>('.step'));

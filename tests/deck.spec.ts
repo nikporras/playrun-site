@@ -57,13 +57,15 @@ test.describe('The Quality deck', () => {
     // clear of the track on the left and the scoreboard pill in the corner; no sideways scroll
     const track = (await page.locator('#hud').boundingBox())!;
     const pill = (await page.locator('.score__pill').boundingBox())!;
-    for (const c of s) {
+    const right = await cards.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().right));
+    for (const [i, c] of s.entries()) {
       expect(c.left, 'clear of the track').toBeGreaterThan(track.x + track.width + 8);
-      expect(c.bottom, 'clear of the scoreboard').toBeLessThan(pill.y - 4);
+      expect(c.bottom, 'the whole card is on screen').toBeLessThanOrEqual(900);
+      expect(c.bottom < pill.y - 4 || right[i] < pill.x - 4, 'clear of the scoreboard').toBe(true);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     // the top card's text is readable and selectable
-    const line = cards.last().locator('.step__list li').first();
+    const line = cards.last().locator('.step__desktop .step__list li').first();
     await expect(line).toBeVisible();
     const r = (await line.boundingBox())!;
     await page.mouse.move(r.x + 2, r.y + 10);
@@ -102,6 +104,16 @@ test.describe('The Quality deck', () => {
     expect(dev).toBeGreaterThanOrEqual(boxes[4].bottom);
     expect(await p1.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     await phone.close();
+
+    const tablet = await browser.newContext({ viewport: { width: 768, height: 1024 } });
+    const p4 = await tablet.newPage();
+    await p4.goto('/quality');
+    await expect(p4.locator('[data-deck]')).not.toHaveClass(/is-deck/);
+    await expect(p4.locator('.step__fold').first()).toBeHidden();
+    await expect(p4.locator('.step__desktop').first()).toBeVisible();
+    await expect(p4.locator('.devtools')).toBeHidden();
+    expect(await p4.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+    await tablet.close();
 
     const quiet = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
     const p2 = await quiet.newPage();

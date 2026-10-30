@@ -40,12 +40,12 @@ test.describe('Quality, the guided test run', () => {
     await expect(page.locator('.report__suite')).toContainText(/Playwright 1\./);
   });
 
-  test('the computer steps are one action each, name every browser where they differ, mark the Chrome and Edge only ones, and say what to expect', async ({ page }) => {
+  test('the computer steps are one action each, name every browser where they differ, mark the Chrome and Edge only ones, and say what to expect; Tab really lands on Skip to content', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/quality');
     await page.mouse.move(640, 300);
     const hows = page.locator('.step__desktop .how');
-    expect(await hows.count()).toBeGreaterThanOrEqual(9);
+    expect(await hows.count()).toBeGreaterThanOrEqual(10);
     for (const how of await hows.all()) {
       await expect(how.locator('.how__do')).toHaveText(/\S/);
       await expect(how.locator('.how__see')).toContainText(/You should see\s*\S/);
@@ -61,7 +61,42 @@ test.describe('Quality, the guided test run', () => {
     await expect(page.locator('#step-a11y .how__only')).toContainText(/Firefox and Safari/);
     await expect(page.locator('#step-performance .how__only')).toContainText(/Firefox or Safari/);
     await expect(page.locator('#step-responsive')).toContainText('Enter Responsive Design Mode');
+    await expect(page.locator('#step-responsive .how__note')).toHaveText("The page switches to its phone layout. That's expected, it's what you're testing.");
+    // the keyboard check, as written
+    const a11y = page.locator('#step-a11y .how');
+    await expect(a11y.nth(0).locator('.how__do')).toHaveText('Reload the page, then press the Tab key once (above Caps Lock).');
+    await expect(a11y.nth(0).locator('.how__see')).toContainText('A Skip to content link appears at the top left, with an outline.');
+    await expect(a11y.nth(1).locator('.how__do')).toHaveText('Keep pressing Tab.');
+    await expect(a11y.nth(1).locator('.how__see')).toContainText('The outline moves through every link and button in reading order.');
+    await expect(a11y.nth(1).locator('.how__browsers')).toContainText('Press Tab to highlight each item on a webpage');
+    // the notes read at body size in the text face; the short labels keep the pixel face at 16px
+    const note = await page.locator('.how__only').first().evaluate((el) => ({ size: parseFloat(getComputedStyle(el).fontSize), family: getComputedStyle(el).fontFamily }));
+    expect(note.size).toBeGreaterThanOrEqual(16);
+    expect(note.family).toMatch(/Montserrat/);
+    const dd = await page.locator('.how__browsers dd').first().evaluate((el) => ({ size: parseFloat(getComputedStyle(el).fontSize), family: getComputedStyle(el).fontFamily }));
+    expect(dd.size).toBeGreaterThanOrEqual(16);
+    expect(dd.family).toMatch(/Montserrat/);
+    for (const sel of ['.how__browsers dt', '.how__seekey']) {
+      const label = await page.locator(sel).first().evaluate((el) => ({ size: parseFloat(getComputedStyle(el).fontSize), family: getComputedStyle(el).fontFamily, color: getComputedStyle(el).color }));
+      expect(label.size, `${sel} is not tiny`).toBeGreaterThanOrEqual(16);
+      expect(label.family).toMatch(/Pixel Operator/);
+      expect(['rgb(86, 189, 218)', 'rgb(103, 193, 140)'], `${sel} reads on navy`).toContain(label.color);
+    }
+    // the fold is a phone thing: not shown on a desktop
+    await expect(page.locator('.step__fold').first()).toBeHidden();
     await expect(page.locator('.step__note').first()).toBeHidden();
+    // and the claim holds: after a reload, one Tab lands on Skip to content, visible, outlined
+    await page.reload();
+    await page.keyboard.press('Tab');
+    const skip = page.locator('.skip');
+    await expect(skip).toBeFocused();
+    await expect(skip).toBeVisible();
+    const sk = (await skip.boundingBox())!;
+    expect(sk.x).toBeLessThan(200);
+    expect(sk.y).toBeLessThan(120);
+    expect(await skip.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => document.activeElement?.tagName)).toMatch(/A|BUTTON/);
     // UK spelling in the copy, apart from the names of buttons quoted as the browsers spell them
     const text = (await page.locator('.step__desktop').allTextContents()).join(' ');
     expect(text).not.toMatch(/\u2014/);
@@ -107,7 +142,8 @@ test.describe('Quality, the guided test run', () => {
     // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
     await page.mouse.move(640, 300);
     await expect(page.locator('.step')).toHaveCount(5);
-    await expect(page.locator('.step__list').first()).toBeVisible();
+    await expect(page.locator('.step__desktop .step__list').first()).toBeVisible();
+    await expect(page.locator('.step__fold').first()).toBeHidden();
     await expect(page.locator('[data-step-result]').first()).toContainText('script');
     await expect(page.locator('[data-template]')).toBeVisible();
     await context.close();

@@ -16,6 +16,7 @@ const PAGES = [
       'TestRail',
       'Swinburne University of Technology',
       'I test the same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the requirements of Steam, Epic Games Store and GOG. Each platform and store has its own rules, so I check them before submission, not after a rejection.',
+      'Then I report exactly what broke down, and where.',
     ],
   },
   {

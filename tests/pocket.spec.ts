@@ -10,13 +10,32 @@ test.use({ ...devices['Pixel 7'], viewport: { width: 390, height: 844 } });
 test('the phone steps replace the computer ones, and the panel shows the console, the requests and the timings', async ({ page }) => {
   await page.goto('/quality');
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
-  await expect(page.getByText('on a computer').first()).toBeHidden();
+  await expect(page.locator('.step__desktop .step__howtitle').first()).toBeHidden();
   await expect(page.locator('.step__desktop').first()).toBeHidden();
   await expect(page.locator('.step__phone').first()).toBeVisible();
   for (const text of ['Rotate the phone', 'Pinch to zoom', 'VoiceOver', 'TalkBack', 'Reduce motion']) await expect(page.getByText(text).first()).toBeVisible();
   await expect(page.locator('.step__note').first()).toBeVisible();
-  await expect(page.locator('.step__note').first()).toContainText('need a keyboard and the developer tools');
+  await expect(page.locator('.step__note').first()).toContainText('Checking on a computer?');
   await expect(page.locator('.step__note').first()).toContainText('Pocket DevTools');
+  // the computer steps are folded under a button, closed by default, and open on a tap
+  const fold = page.locator('#step-responsive .step__fold');
+  await expect(fold).toBeVisible();
+  await expect(fold).toHaveText(/Checking on a computer\?/);
+  await expect(fold).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('#how-responsive')).toBeHidden();
+  await fold.tap();
+  await expect(fold).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#how-responsive')).toBeVisible();
+  await expect(page.locator('#how-responsive')).toContainText("The page switches to its phone layout. That's expected, it's what you're testing.");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), 'no sideways scroll with a fold open').toBeLessThanOrEqual(0);
+  await fold.tap();
+  await expect(page.locator('#how-responsive')).toBeHidden();
+  // the keyboard works it too
+  await fold.focus();
+  await page.keyboard.press('Enter');
+  await expect(fold).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('Enter');
+  await expect(fold).toHaveAttribute('aria-expanded', 'false');
   const dev = page.locator('.devtools');
   await dev.scrollIntoViewIfNeeded();
   await expect(dev).toBeVisible();

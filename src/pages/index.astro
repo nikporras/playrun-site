@@ -129,20 +129,18 @@ const checks = [
               <ul role="list" class:list={['ticker__seq', copy && 'ticker__copy']} aria-hidden={copy ? 'true' : undefined}>
                 {wall.map((p) => (
                   <li class="wall__item">
-                    <a class="wall__link" href="/portfolio" aria-label={p.data.title} tabindex={copy ? -1 : undefined} style={size(p.id)}>
+                    <span class="wall__mark" style={size(p.id)}>
                       {logos[p.id] ? (
-                        <Image class="wall__logo" src={logos[p.id]} alt="" height={120} densities={[1, 2]} loading="lazy" decoding="async" />
+                        <Image class="wall__logo" src={logos[p.id]} alt={copy ? '' : p.data.title} height={120} densities={[1, 2]} loading="lazy" decoding="async" />
                       ) : p.data.wordmark ? (
-                        <span class="wall__word" aria-hidden="true">
-                          {p.data.title}
-                        </span>
+                        <span class="wall__word">{p.data.title}</span>
                       ) : (
-                        <span class="wall__name" aria-hidden="true">
+                        <span class="wall__name">
                           <GameIcon name={p.data.icon} />
                           <span>{p.data.title}</span>
                         </span>
                       )}
-                    </a>
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -406,8 +404,17 @@ const checks = [
      figure, so the glow behind it is not cut at the figure's edges. */
   .hero__figure :global(picture) {
     display: block;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 7%, #000 74%, transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, #000 7%, #000 74%, transparent 100%);
+    /* two masks meet (intersect): the vertical fade, eased so the last 30% thins like fog, and an
+       ellipse that takes the lower sides and the bottom corners, so the cutout ends in a soft
+       rounded shape and never a straight edge. The face, headset and arms sit inside both. */
+    -webkit-mask-image:
+      linear-gradient(to bottom, transparent 0%, #000 7%, #000 68%, rgba(0, 0, 0, 0.9) 75%, rgba(0, 0, 0, 0.68) 82%, rgba(0, 0, 0, 0.4) 89%, rgba(0, 0, 0, 0.15) 95%, transparent 100%),
+      radial-gradient(ellipse 76% 84% at 50% 36%, #000 60%, rgba(0, 0, 0, 0.7) 76%, rgba(0, 0, 0, 0.3) 90%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(to bottom, transparent 0%, #000 7%, #000 68%, rgba(0, 0, 0, 0.9) 75%, rgba(0, 0, 0, 0.68) 82%, rgba(0, 0, 0, 0.4) 89%, rgba(0, 0, 0, 0.15) 95%, transparent 100%),
+      radial-gradient(ellipse 76% 84% at 50% 36%, #000 60%, rgba(0, 0, 0, 0.7) 76%, rgba(0, 0, 0, 0.3) 90%, transparent 100%);
+    mask-composite: intersect;
   }
   /* The glow: an ellipse that reaches transparent well inside its own box, so it has no edge. */
   .hero__figure::before {
@@ -509,11 +516,11 @@ const checks = [
     }
   }
 
-  /* Level 2: the ticker. The logos float on the blue field in equal cells, no boxes, rolling
-     slowly to the left in a loop: the sequence twice, the copy hidden from assistive tech, the
-     track sliding half its width then starting over. It pauses under the pointer, while a logo
-     has focus, and with the button; a focused logo is brought into view by the script. Under
-     reduced motion it is a still row that scrolls by hand. */
+  /* Level 2: the ticker. The logos are plain images (named by their alt text, not links) floating
+     on the blue field, no boxes, rolling slowly to the left in a loop: the sequence twice, the
+     copy hidden from assistive tech, the track sliding half its width then starting over. It
+     pauses under the pointer and with the button. Under reduced motion it is a still row that
+     scrolls by hand. */
   .wall {
     z-index: 1;
   }
@@ -542,8 +549,7 @@ const checks = [
     will-change: transform;
     animation: ticker calc(var(--n, 20) * 7s) linear infinite;
   }
-  .ticker.is-paused .ticker__track,
-  .ticker__view:focus-within .ticker__track {
+  .ticker.is-paused .ticker__track {
     animation-play-state: paused;
   }
   @media (hover: hover) {
@@ -563,24 +569,15 @@ const checks = [
   .wall__item {
     flex: none;
   }
-  .wall__link {
+  .wall__mark {
     display: flex;
     align-items: center;
     justify-content: center;
     height: var(--cell-h);
     padding: 0 calc(var(--s-4) * var(--k));
     color: var(--ink);
-    text-decoration: none;
-    transition: opacity var(--dur-fast) ease;
   }
-  .wall__link:hover {
-    opacity: 0.7;
-    color: var(--ink);
-  }
-  .wall__link:focus-visible {
-    outline-offset: 2px;
-  }
-  .wall__link :global(.wall__logo) {
+  .wall__mark :global(.wall__logo) {
     width: calc(var(--lw) * var(--k));
     height: calc(var(--lh) * var(--k));
     object-fit: contain;
@@ -939,31 +936,15 @@ const checks = [
     document.fonts?.ready.then(pin);
   }
 
-  // The ticker: the button pauses and plays it; a logo that gets keyboard focus is brought into
-  // view by jumping the animation to the moment it passes the middle of the board (the animation
-  // itself pauses while anything inside has focus). Static under reduced motion, so nothing to do.
+  // The ticker: the button pauses and plays it. Static under reduced motion, so nothing to do.
   const tick = document.querySelector<HTMLElement>('[data-ticker]');
   if (tick && !reduce) {
-    const view = tick.querySelector<HTMLElement>('.ticker__view')!;
-    // Focus scrolls the hidden overflow itself; the transform does that job, so the scroll stays 0.
-    view.addEventListener('scroll', () => (view.scrollLeft = 0));
-    const track = tick.querySelector<HTMLElement>('.ticker__track')!;
     const pause = tick.querySelector<HTMLButtonElement>('[data-ticker-pause]')!;
     const word = pause.querySelector<HTMLElement>('[data-ticker-word]')!;
     pause.addEventListener('click', () => {
       const paused = tick.classList.toggle('is-paused');
       word.textContent = paused ? 'Play' : 'Pause';
       pause.setAttribute('aria-label', paused ? 'Play the logos' : 'Pause the logos');
-    });
-    tick.addEventListener('focusin', (e) => {
-      const item = (e.target as HTMLElement).closest<HTMLElement>('.wall__item');
-      const anim = track.getAnimations()[0];
-      view.scrollLeft = 0;
-      if (!item || !anim) return;
-      const half = track.scrollWidth / 2;
-      const want = Math.max(0, item.offsetLeft + item.offsetWidth / 2 - view.clientWidth / 2);
-      const duration = Number(anim.effect?.getComputedTiming().duration ?? 0);
-      if (duration) anim.currentTime = Math.min(0.999, want / half) * duration;
     });
   }
 

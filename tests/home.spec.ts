@@ -126,16 +126,21 @@ test.describe('Home', () => {
     expect(await hero.evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
     const figure = page.locator('.hero__figure img');
     await expect(figure).toBeVisible();
-    expect(await page.locator('main img:not([alt=""])').count(), 'the photo appears once on the site').toBe(1);
+    expect(await page.locator('main img:not([alt=""]):not(.wall__logo)').count(), 'the photo appears once on the site').toBe(1);
     // the cutout fades at the top (a short fade) and the bottom (a long one); the glow behind it is
     // an ellipse that ends inside its own box, so neither has a hard edge
     const mask = await page.locator('.hero__figure').evaluate((el) => {
       const pic = el.querySelector('picture')!;
       const cs = getComputedStyle(pic) as CSSStyleDeclaration & { webkitMaskImage?: string };
       const glow = getComputedStyle(el, '::before');
-      return { mask: cs.maskImage || cs.webkitMaskImage || '', figMask: getComputedStyle(el).maskImage, glow: glow.backgroundImage, glowW: parseFloat(glow.width), figW: el.getBoundingClientRect().width };
+      return { mask: cs.maskImage || cs.webkitMaskImage || '', composite: (cs as CSSStyleDeclaration & { maskComposite?: string }).maskComposite || '', figMask: getComputedStyle(el).maskImage, glow: glow.backgroundImage, glowW: parseFloat(glow.width), figW: el.getBoundingClientRect().width };
     });
-    expect(mask.mask).toMatch(/linear-gradient\((to bottom, )?rgba\(0, 0, 0, 0\) 0%, rgb\(0, 0, 0\) 7%, rgb\(0, 0, 0\) 74%, rgba\(0, 0, 0, 0\) 100%\)/);
+    // the vertical fade (short at the top, eased over the last third) meets an ellipse, so the
+    // lower sides and the bottom corners fade too and no straight edge is left
+    expect(mask.mask).toMatch(/linear-gradient\((to bottom, )?rgba\(0, 0, 0, 0\) 0%, rgb\(0, 0, 0\) 7%, rgb\(0, 0, 0\) 68%, rgba\(0, 0, 0, 0\.9\) 75%/);
+    expect(mask.mask).toContain('radial-gradient(');
+    expect(mask.mask.match(/gradient\(/g)?.length).toBe(2);
+    expect(mask.composite, 'the two masks intersect').toMatch(/^intersect/);
     expect(mask.figMask, 'the figure itself is not masked, so the glow is not cut at its edges').toBe('none');
     expect(mask.glow).toContain('radial-gradient');
     expect(mask.glow, 'the glow reaches transparent inside its box').toMatch(/rgba\(0, 0, 0, 0\) 72%/);
@@ -257,22 +262,26 @@ test.describe('Home', () => {
     await context.close();
   });
 
-  test('the ticker rolls every title left as a logo or its icon, the biggest names first, each linking to the portfolio; it pauses with the button and on focus', async ({ page }) => {
+  test('the ticker rolls every title left as a plain image or its icon, named for a screen reader, the biggest names first; it pauses with the button', async ({ page }) => {
     await page.goto('/');
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
     const seq = page.locator('.ticker__seq').first();
-    const links = seq.locator('.wall__link');
-    expect(await links.count()).toBe(19);
-    const names = await links.evaluateAll((as) => as.map((a) => a.getAttribute('aria-label') ?? ''));
+    const marks = seq.locator('.wall__mark');
+    expect(await marks.count()).toBe(19);
+    // no links, nothing focusable, no pointer: the logos are pictures named by their alt text
+    expect(await page.locator('.ticker a, .ticker [tabindex]:not([tabindex="-1"]), .ticker button:not([data-ticker-pause])').count()).toBe(0);
+    const names = await marks.evaluateAll((els) => els.map((el) => el.querySelector('img')?.getAttribute('alt') || el.textContent?.replace(/\s+/g, ' ').trim() || ''));
     expect(names.slice(0, 5)).toEqual(['Beat Saber', 'NBA 2K21', 'Cyberpunk 2077', 'Ghostbusters: Rise of the Ghost Lord', "Lou's Lagoon"]);
     expect(names).toContain('The Climb 2');
+    expect(names).toContain('Fracked');
     expect(names, 'Londinium shares the Historic VR logo, so it is not on the ticker').not.toContain('Londinium: AD 215');
     expect(new Set(names).size).toBe(19);
-    for (const href of await links.evaluateAll((as) => as.map((a) => a.getAttribute('href')))) expect(href).toBe('/portfolio');
+    expect(names.every((n) => n.length > 0), 'every mark is named').toBe(true);
+    expect(await marks.first().evaluate((el) => getComputedStyle(el).cursor)).toBe('auto');
     expect(await seq.locator('.wall__logo').count(), 'official logos').toBeGreaterThanOrEqual(16);
     // no boxes: the logos float on the field
     expect(await page.locator('.ticker__view').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
-    expect(await links.first().evaluate((el) => [getComputedStyle(el.parentElement!).borderLeftWidth, getComputedStyle(el.parentElement!).backgroundColor])).toEqual(['0px', 'rgba(0, 0, 0, 0)']);
+    expect(await marks.first().evaluate((el) => [getComputedStyle(el.parentElement!).borderLeftWidth, getComputedStyle(el.parentElement!).backgroundColor])).toEqual(['0px', 'rgba(0, 0, 0, 0)']);
     const viewBox = (await page.locator('.ticker__view').boundingBox())!;
     expect(viewBox.height, 'the logos are the content of the section').toBeGreaterThanOrEqual(120);
     expect(viewBox.height).toBeLessThanOrEqual(200);
@@ -280,7 +289,7 @@ test.describe('Home', () => {
     const sizes = await page.evaluate(() => [parseFloat(getComputedStyle(document.querySelector('#wall-title')!).fontSize), parseFloat(getComputedStyle(document.querySelector('#stats-title')!).fontSize)]);
     expect(sizes[0]).toBeLessThan(sizes[1]);
     // logos sized by eye: a tall stacked mark is taller and narrower than a wide wordmark
-    const dims = await seq.locator('.wall__logo').evaluateAll((imgs) => imgs.map((img) => ({ name: img.closest('a')!.getAttribute('aria-label'), w: img.getBoundingClientRect().width, h: img.getBoundingClientRect().height })));
+    const dims = await seq.locator('.wall__logo').evaluateAll((imgs) => imgs.map((img) => ({ name: img.getAttribute('alt'), w: img.getBoundingClientRect().width, h: img.getBoundingClientRect().height })));
     const by = Object.fromEntries(dims.map((d) => [d.name, d]));
     expect(by["Lou's Lagoon"].h).toBeGreaterThan(by['NBA 2K21'].h * 1.5);
     expect(by["Lou's Lagoon"].w).toBeLessThan(by['NBA 2K21'].w);
@@ -294,10 +303,10 @@ test.describe('Home', () => {
     expect(pauseStyle.h).toBeLessThanOrEqual(36);
     await page.getByRole('button', { name: 'Pause the logos' }).focus();
     expect(await page.getByRole('button', { name: 'Pause the logos' }).evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
-    // the copy that makes the loop seamless is out of the accessibility tree and the tab order
+    // the copy that makes the loop seamless is out of the accessibility tree
     const copy = page.locator('.ticker__copy');
     await expect(copy).toHaveAttribute('aria-hidden', 'true');
-    expect(await copy.locator('a:not([tabindex="-1"])').count()).toBe(0);
+    expect(await copy.locator('img:not([alt=""])').count(), 'the copy names nothing twice').toBe(0);
     await expect(page.locator('.ticker')).not.toContainText(/stage|view on/i);
     // it moves left
     const x = () => page.locator('.ticker__track').evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m41);
@@ -319,16 +328,10 @@ test.describe('Home', () => {
     await page.mouse.move(10, 10);
     await page.waitForTimeout(500);
     expect(await x(), 'rolling again').toBeLessThan(c - 5);
-    // a logo that takes keyboard focus is brought on screen and the ticker holds still
-    const last = links.last();
-    await last.focus();
-    const r = (await last.boundingBox())!;
-    const v = (await page.locator('.ticker__view').boundingBox())!;
-    expect(r.x).toBeGreaterThanOrEqual(v.x - 1);
-    expect(r.x + r.width).toBeLessThanOrEqual(v.x + v.width + 1);
-    const d = await x();
-    await page.waitForTimeout(400);
-    expect(Math.abs((await x()) - d), 'still while focused').toBeLessThan(1);
+    // Tab from the pause button leaves the ticker: no logo takes focus
+    await page.getByRole('button', { name: 'Pause the logos' }).focus();
+    await page.keyboard.press('Shift+Tab');
+    expect(await page.evaluate(() => !!document.activeElement?.closest('.ticker__view'))).toBe(false);
   });
 
   test('under reduced motion the ticker is a still row', async ({ browser }) => {
@@ -416,7 +419,7 @@ test.describe('Home', () => {
     await page.goto('/');
     await expect(page.locator('h1')).toBeVisible();
     await expect(page.locator('.hero__value')).toBeVisible();
-    await expect(page.locator('.ticker__seq').first().locator('.wall__link')).toHaveCount(19);
+    await expect(page.locator('.ticker__seq').first().locator('.wall__mark')).toHaveCount(19);
     await expect(page.getByRole('button', { name: /the logos/ })).toBeHidden();
     await expect(page.locator('.stat__num').first()).toHaveText('5+');
     await expect(page.locator('.final__text')).toContainText('Helldivers, The Witcher and God of War');
