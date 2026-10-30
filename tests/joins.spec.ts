@@ -17,8 +17,8 @@ const TEXT = 'main :is(p, li, dt, dd, h1, h2, h3, h4, a, button:not(.bug), img, 
 const CLEAR = 'rgba(0, 0, 0, 0)';
 
 for (const path of PAGES) {
-  for (const width of [1440, 375]) {
-    test(`${path} at ${width}px: every colour change is a pixel join, decorative, seamless, see-through, covering nothing`, async ({ page }) => {
+  for (const width of [1920, 1440, 768, 375]) {
+    test(`${path} at ${width}px: every colour change is a pixel join, decorative, seamless, see-through, covering nothing, the front edge bumps all along`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto(path);
@@ -46,7 +46,21 @@ for (const path of PAGES) {
                 return b.width > 0 && b.height > 0 && b.left < r.right && b.right > r.left && b.top < r.bottom - 0.5 && b.bottom > r.top + 0.5;
               })
               .map((t) => `${t.tagName}: ${(t.textContent ?? '').trim().slice(0, 30)}`);
+            // the front layer's top edge, column by column, from its own path (M0 144 V.. H.. V.. H.. Z)
+            const d = el.querySelector('.join__layer--front .join__fill')!.getAttribute('d') ?? '';
+            const cols = Array.from(d.matchAll(/V(\d+)H(\d+)/g), (m) => 144 - Number(m[1]));
+            let flat = 0;
+            let run = 0;
+            for (let c = 0; c < cols.length * 2; c++) {
+              run = cols[c % cols.length] === cols[(c - 1 + cols.length) % cols.length] ? run + 1 : 1;
+              flat = Math.max(flat, Math.min(run, cols.length));
+            }
+            const scale = Number(getComputedStyle(el.querySelector('.join__layer--front')!).scale) || 1;
             return {
+              frontFlatPx: flat * 8 * scale,
+              frontRisePx: (Math.max(...cols) - Math.min(...cols)) * scale,
+              frontCols: cols.length,
+              scale,
               kind: el.className.match(/join--(clouds|terrain)/)?.[1],
               hidden: el.getAttribute('aria-hidden'),
               pointer: cs.pointerEvents,
@@ -74,7 +88,7 @@ for (const path of PAGES) {
         expect(j.position).toBe('absolute');
         expect(j.left, 'full bleed').toBe(0);
         expect(j.width).toBe(width);
-        expect(j.height).toBeGreaterThanOrEqual(width < 768 ? 64 : 128);
+        expect(j.height).toBeGreaterThanOrEqual(width < 768 ? 64 : width < 1024 ? 100 : 128);
         expect(j.layers, 'two or three layers').toBeGreaterThanOrEqual(2);
         expect(j.layers).toBeLessThanOrEqual(3);
         expect(j.crisp, 'crisp pixels, hidden from assistive tech').toBe(true);
@@ -85,6 +99,12 @@ for (const path of PAGES) {
         if (j.kind === 'clouds') expect(j.highlights, 'lighter pixels on the cloud tops').toBeGreaterThan(0);
         expect(j.room, 'the level made room for the band').toBeGreaterThanOrEqual(j.height);
         expect(j.covered, 'covers no text or control').toEqual([]);
+        // the edge between the two colours is the front layer's own silhouette: no flat run longer
+        // than 64px on a desktop (scaled down with the art on tablets and phones), and bumps at
+        // least a third of the band tall
+        expect(j.frontCols, 'a stepped front edge').toBeGreaterThan(60);
+        expect(j.frontFlatPx, `no straight run along the front edge (${j.kind})`).toBeLessThanOrEqual(64 * j.scale);
+        expect(j.frontRisePx, 'bumps at least a third of the band').toBeGreaterThanOrEqual(48 * j.scale);
       }
       const kinds = new Set(info.map((j) => j.kind));
       if (path !== '/this-page-is-not-in-the-build/') expect(kinds.has('clouds'), 'clouds out of the sky').toBe(true);

@@ -40,40 +40,82 @@ const P = 8; // one pixel of the art, in CSS px at desktop
 const TH = 144; // the tile (and the band at desktop), in px
 const id = `join-${kind}-${seed}`.replace(/[^a-z0-9-]/gi, '-').toLowerCase();
 
+// The longest flat run along a profile (the tile repeats, so a run may wrap round the end).
+const longestFlat = (h: number[]) => {
+  let best = 0;
+  let run = 0;
+  for (let c = 0; c < h.length * 2; c++) {
+    run = h[c % h.length] === h[(c - 1 + h.length) % h.length] ? run + 1 : 1;
+    best = Math.max(best, Math.min(run, h.length));
+  }
+  return best;
+};
+const span = (h: number[]) => Math.max(...h) - Math.min(...h);
+
 // Terrain: the ground of a platformer, as column heights in pixels of the art: a plateau of a
 // few columns, then a ramp of one pixel a column up or down to the next, bent back to its start
-// over the last columns so the tile repeats without a jump.
-const terrain = (cols: number, lo: number, hi: number) => {
-  const h: number[] = [];
-  let cur = pick(lo, hi);
-  const start = cur;
-  while (h.length < cols) {
-    for (let k = pick(3, 9); k > 0 && h.length < cols; k--) h.push(cur);
-    const target = Math.max(lo, Math.min(hi, cur + (rand() < 0.5 ? -1 : 1) * pick(1, 4)));
-    while (cur !== target && h.length < cols) {
-      cur += Math.sign(target - cur);
-      h.push(cur);
+// over the last columns so the tile repeats without a jump. No plateau runs longer than `flat`
+// columns, and the ground rises and falls at least `rise` pixels.
+const terrain = (cols: number, lo: number, hi: number, flat: number, rise: number) => {
+  const clamp = (v: number) => Math.max(lo, Math.min(hi, v));
+  let best: number[] = [];
+  let bestFlat = Infinity;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const h: number[] = [];
+    let cur = pick(lo, hi);
+    const start = cur;
+    while (h.length < cols) {
+      for (let k = pick(3, flat); k > 0 && h.length < cols; k--) h.push(cur);
+      // the next plateau is always a different height: at the top or the foot the walk turns round
+      const dir = rand() < 0.5 ? -1 : 1;
+      const step = pick(2, 5);
+      let target = clamp(cur + dir * step);
+      if (target === cur) target = clamp(cur - dir * step);
+      while (cur !== target && h.length < cols) {
+        cur += Math.sign(target - cur);
+        h.push(cur);
+      }
+    }
+    // the last columns step back toward the start, one pixel a column
+    for (let c = cols - Math.abs(h[cols - 1] - start) - 1; c < cols - 1; c++) h[c + 1] = h[c] + Math.sign(start - h[c]);
+    h[cols - 1] = start;
+    const f = longestFlat(h);
+    if (f <= flat && span(h) >= rise) return h;
+    if (f < bestFlat) {
+      bestFlat = f;
+      best = h;
     }
   }
-  // the last columns step back toward the start, one pixel a column
-  for (let c = cols - Math.abs(h[cols - 1] - start) - 1; c < cols - 1; c++) h[c + 1] = h[c] + Math.sign(start - h[c]);
-  h[cols - 1] = start;
-  return h;
+  return best; // the flattest-free attempt (the test on the front edge would say if it fell short)
 };
 
 // Clouds: domes rising from the foot of the tile (a stepped quarter-circle profile each), their
 // union a bank; a dome that crosses the tile's edge wraps round, so the bank repeats cleanly.
-const clouds = (cols: number, lo: number, hi: number, count: number) => {
+// Wherever the bank still runs flat for longer than `flat` columns another dome goes in, so the
+// top edge is bumps all the way along, and the bank rises and falls at least `rise` pixels.
+const clouds = (cols: number, lo: number, hi: number, count: number, flat: number, rise: number) => {
   const h = new Array<number>(cols).fill(2); // a base two pixels deep, so the bank is never broken
-  for (let k = 0; k < count; k++) {
-    const cx = pick(0, cols - 1);
-    const half = pick(5, 11);
-    const top = pick(lo, hi);
+  const dome = (cx: number, half: number, top: number) => {
     for (let dx = -half; dx <= half; dx++) {
       const c = (((cx + dx) % cols) + cols) % cols;
-      const rise = Math.round(top * Math.sqrt(Math.max(0, 1 - (dx / (half + 0.5)) ** 2)));
-      h[c] = Math.max(h[c], rise);
+      const r = Math.round(top * Math.sqrt(Math.max(0, 1 - (dx / (half + 0.5)) ** 2)));
+      h[c] = Math.max(h[c], r);
     }
+  };
+  for (let k = 0; k < count; k++) dome(pick(0, cols - 1), pick(5, 11), pick(lo, hi));
+  for (let guard = 0; guard < 80 && (longestFlat(h) > flat || span(h) < rise); guard++) {
+    // the middle of the longest flat run gets a dome of its own
+    let bestStart = 0;
+    let bestLen = 0;
+    let run = 0;
+    for (let c = 0; c < cols * 2; c++) {
+      run = h[c % cols] === h[(c - 1 + cols) % cols] ? run + 1 : 1;
+      if (run > bestLen) {
+        bestLen = run;
+        bestStart = c - run + 1;
+      }
+    }
+    dome((bestStart + Math.floor(bestLen / 2)) % cols, pick(3, 7), pick(Math.max(lo, 7), hi));
   }
   return h;
 };
@@ -98,16 +140,19 @@ const highlights = (h: number[], every: number) => {
   return d;
 };
 
-// three layers, back to front: wider and taller behind, the front low so the lower level's colour
-// carries straight on; each with its own tile width so the composite hardly ever repeats
+// three layers, back to front, each with its own tile width so the composite hardly ever repeats.
+// The front layer is the edge between the two colours, so it is bumps all along: its silhouette
+// rises and falls at least six pixels of the art (a third of the band) and never runs flat for
+// more than seven columns (56px on a desktop, 28px on a phone); the taller layers stand behind and
+// between its bumps.
 const spec = [
-  { name: 'back', tile: 1152, lo: 9, hi: 15, count: 9, every: 7 },
-  { name: 'mid', tile: 896, lo: 5, hi: 10, count: 7, every: 5 },
-  { name: 'front', tile: 1024, lo: 2, hi: 6, count: 6, every: 4 },
+  { name: 'back', tile: 1152, lo: 11, hi: 16, count: 9, every: 7, flat: 12, rise: 3 },
+  { name: 'mid', tile: 896, lo: 8, hi: 13, count: 8, every: 5, flat: 10, rise: 3 },
+  { name: 'front', tile: 1024, lo: 5, hi: 12, count: 14, every: 4, flat: 7, rise: 6 },
 ];
 const layers = spec.map((s) => {
   const cols = s.tile / P;
-  const h = kind === 'terrain' ? terrain(cols, s.lo, s.hi) : clouds(cols, s.lo, s.hi, s.count);
+  const h = kind === 'terrain' ? terrain(cols, s.lo, s.hi, s.flat, s.rise) : clouds(cols, s.lo, s.hi, s.count, s.flat, s.rise);
   return { ...s, path: silhouette(h), light: kind === 'clouds' ? highlights(h, s.every) : '' };
 });
 ---
