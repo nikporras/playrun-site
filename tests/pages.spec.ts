@@ -62,7 +62,7 @@ async function settle(page: Page) {
 
 for (const p of PAGES) {
   test.describe(p.path, () => {
-    test('loads with one h1, its content and no console errors', async ({ page }) => {
+    test('loads with one h1, its content and no console errors', { tag: ['@pages', '@console'] }, async ({ page }) => {
       const errors: string[] = [];
       page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
       page.on('pageerror', (e) => errors.push(e.message));
@@ -76,7 +76,7 @@ for (const p of PAGES) {
       expect(errors, errors.join('\n')).toEqual([]);
     });
 
-    test('headings are in order, images have alt text, internal links resolve', async ({ page, request }) => {
+    test('headings are in order, images have alt text, internal links resolve', { tag: ['@a11y', '@links'] }, async ({ page, request }) => {
       await page.goto(p.path);
       const levels = await page.locator('h1, h2, h3').evaluateAll((els) => els.map((e) => Number(e.tagName[1])));
       expect(levels[0]).toBe(1);
@@ -86,7 +86,7 @@ for (const p of PAGES) {
       for (const href of hrefs) expect((await request.get(href)).status(), href).toBe(200);
     });
 
-    test('the canonical link and the share address are the clean page address', async ({ page }) => {
+    test('the canonical link and the share address are the clean page address', { tag: ['@pages'] }, async ({ page }) => {
       await page.goto(p.path);
       const expected = `https://playrunqa.com${p.path}`;
       await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', expected);
@@ -95,7 +95,7 @@ for (const p of PAGES) {
       await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute('content', /logo/);
     });
 
-    test('every level header is one stacked block: label, title, lead, then the button', async ({ page }) => {
+    test('every level header is one stacked block: label, title, lead, then the button', { tag: ['@pages'] }, async ({ page }) => {
       await page.goto(p.path);
       await settle(page);
       const heads = await page.locator('[data-level] .level__head').evaluateAll((els) =>
@@ -119,7 +119,7 @@ for (const p of PAGES) {
       }
     });
 
-    test('the level label is a short line and small text that reads on its field (WCAG AA)', async ({ page }) => {
+    test('the level label is a short line and small text that reads on its field (WCAG AA)', { tag: ['@a11y'] }, async ({ page }) => {
       await page.goto(p.path);
       const flags = await page.locator('.level .flag').evaluateAll((els) =>
         els.map((el) => {
@@ -153,7 +153,7 @@ for (const p of PAGES) {
       }
     });
 
-    test('has no accessibility violations (axe)', async ({ page }) => {
+    test('has no accessibility violations (axe)', { tag: ['@a11y'] }, async ({ page }) => {
       await page.goto(p.path);
       await settle(page);
       const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
@@ -161,7 +161,7 @@ for (const p of PAGES) {
     });
 
     for (const width of [375, 1440]) {
-      test(`renders without sideways overflow at ${width}px`, async ({ page }) => {
+      test(`renders without sideways overflow at ${width}px`, { tag: ['@viewports'] }, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(p.path);
         await settle(page);
@@ -172,7 +172,7 @@ for (const p of PAGES) {
   });
 }
 
-test('the content sits in a centred column of at most 1280px with wide margins, at every width', async ({ page }) => {
+test('the content sits in a centred column of at most 1280px with wide margins, at every width', { tag: ['@viewports'] }, async ({ page }) => {
   for (const width of [390, 1280, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/skills/');
@@ -358,7 +358,7 @@ test('the skills jump list lands on each skill', async ({ page }) => {
   for (const id of ids) await expect(page.locator(`#${id}`)).toHaveCount(1);
 });
 
-test('the trailing-slash address is the one official form: every internal link answers 200 with no redirect, the canonical and og:url match it, the sitemap lists it, and a missing page is still the 404', async ({ request, page }) => {
+test('the trailing-slash address is the one official form: every internal link answers 200 with no redirect, the canonical and og:url match it, the sitemap lists it, and a missing page is still the 404', { tag: ['@pages', '@links'] }, async ({ request, page }) => {
   const routes = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/'];
   const seen = new Set<string>();
   for (const route of routes) {
@@ -398,7 +398,7 @@ test('the trailing-slash address is the one official form: every internal link a
   await expect(page.locator('header').getByRole('link', { name: 'Portfolio' })).toHaveAttribute('aria-current', 'page');
 });
 
-test('the old services, about and credits addresses send visitors on', async ({ request, page }) => {
+test('the old services, about and credits addresses send visitors on', { tag: ['@pages', '@links'] }, async ({ request, page }) => {
   const services = await request.get('/services/');
   expect(services.status()).toBe(200);
   expect(await services.text()).toMatch(/http-equiv="refresh"[^>]*url=\/skills\//);
@@ -425,7 +425,7 @@ test('no controller or headset sprite anywhere, and nothing stands in their plac
   await expect(page.locator('.sprite--ship')).toHaveCount(1);
 });
 
-test('the built site is a portfolio, offers no work, links to no repository and carries no stale facts', async () => {
+test('the built site is a portfolio, offers no work, links to no repository and carries no stale facts', { tag: ['@brand'] }, async () => {
   const dist = join(process.cwd(), 'dist');
   const html: string[] = [];
   const walk = (dir: string) => {

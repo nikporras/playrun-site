@@ -40,7 +40,7 @@ const order = (page: Page) =>
   }, EXCEPT);
 
 for (const path of PAGES) {
-  test(`${path}: the phone shows every section, heading and piece of content the desktop shows, in the same order`, async ({ page }) => {
+  test(`${path}: the phone shows every section, heading and piece of content the desktop shows, in the same order`, { tag: ['@viewports'] }, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(path);

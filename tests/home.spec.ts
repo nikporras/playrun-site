@@ -1,7 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import path, { join } from 'node:path';
+
+const require = createRequire(import.meta.url);
 
 /**
  * Routes that are planned but not built yet. Links to them are reported, not failed,
@@ -41,7 +45,7 @@ async function collectErrors(page: Page) {
 }
 
 test.describe('Home', () => {
-  test('loads with one h1 and no console errors or failed requests', async ({ page }) => {
+  test('loads with one h1 and no console errors or failed requests', { tag: ['@pages', '@console'] }, async ({ page }) => {
     const errors = await collectErrors(page);
     const response = await page.goto('/');
     expect(response?.status()).toBe(200);
@@ -60,7 +64,7 @@ test.describe('Home', () => {
     expect(errors, errors.join('\n')).toEqual([]);
   });
 
-  test('every internal link resolves', async ({ page, request }) => {
+  test('every internal link resolves', { tag: ['@links'] }, async ({ page, request }) => {
     await page.goto('/');
     const hrefs = await page.locator('a[href]').evaluateAll((as) =>
       (as as HTMLAnchorElement[]).map((a) => a.getAttribute('href') ?? '').filter((h) => h.startsWith('/')),
@@ -79,14 +83,14 @@ test.describe('Home', () => {
     if (planned.length) test.info().annotations.push({ type: 'planned routes not built yet', description: planned.join(', ') });
   });
 
-  test('has no accessibility violations (axe)', async ({ page }) => {
+  test('has no accessibility violations (axe)', { tag: ['@a11y'] }, async ({ page }) => {
     await page.goto('/');
     await settle(page);
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
   });
 
-  test('headings are in order and images have alt text', async ({ page }) => {
+  test('headings are in order and images have alt text', { tag: ['@a11y'] }, async ({ page }) => {
     await page.goto('/');
     const levels = await page.locator('h1, h2, h3').evaluateAll((els) => els.map((e) => Number(e.tagName[1])));
     expect(levels[0]).toBe(1);
@@ -97,7 +101,7 @@ test.describe('Home', () => {
     expect(missingAlt).toBe(0);
   });
 
-  test('keyboard focus is visible on the first interactive element', async ({ page }) => {
+  test('keyboard focus is visible on the first interactive element', { tag: ['@a11y'] }, async ({ page }) => {
     await page.goto('/');
     await page.keyboard.press('Tab');
     const skip = page.locator('.skip');
@@ -601,9 +605,33 @@ test.describe('Home', () => {
 
   test('the self test runs, reports and scores the page, and the Quality link stays visible', async ({ page }) => {
     await page.goto('/');
-    // Nothing is ticked before the test runs: idle boxes and blank counts, the last run as text only
-    await expect(page.locator('.panel.is-idle')).toHaveCount(6);
-    await expect(page.locator('.panel.is-pass, .panel.is-failed')).toHaveCount(0);
+    // Before anyone presses the button each panel shows the suite's own checks for its area: the
+    // tagged tests, counted here from Playwright's own list. A build from a run ticks them with that
+    // run's passes; a local build (no run) shows the count unticked.
+    const cli = path.join(path.dirname(require.resolve('@playwright/test/package.json')), 'cli.js');
+    const list = JSON.parse(execFileSync(process.execPath, [cli, 'test', '--list', '--reporter=json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
+    const tagged: Record<string, number> = {};
+    const walk = (s: { specs?: { tags?: string[]; tests: unknown[] }[]; suites?: unknown[] }) => {
+      for (const sp of s.specs ?? []) for (const t of sp.tags ?? []) tagged[t.replace(/^@/, '')] = (tagged[t.replace(/^@/, '')] ?? 0) + sp.tests.length;
+      for (const c of (s.suites ?? []) as (typeof s)[]) walk(c);
+    };
+    for (const s of list.suites) walk(s);
+    const panels = await page.locator('.panel').evaluateAll((els) =>
+      els.map((el) => ({ id: (el as HTMLElement).dataset.check!, from: (el as HTMLElement).dataset.from, cls: el.className, count: el.querySelector('[data-count]')!.textContent!.trim(), of: el.querySelector('.panel__of')!.textContent!.trim() })),
+    );
+    expect(panels).toHaveLength(6);
+    for (const p of panels) {
+      expect(tagged[p.id], `${p.id} has tagged checks`).toBeGreaterThan(0);
+      if (p.from === 'run') {
+        expect(p.cls).toMatch(/is-pass|is-failed/);
+        expect(p.of).toBe(`of ${tagged[p.id]}`);
+        expect(Number(p.count)).toBeLessThanOrEqual(tagged[p.id]);
+      } else {
+        expect(p.cls).toContain('is-idle');
+        expect(p.count).toBe(String(tagged[p.id]));
+        expect(p.of).toBe('checks');
+      }
+    }
     await expect(page.locator('#selftest-status')).toHaveText(/\d+ (of \d+ checks passed in the last run|checks run before every deploy)/);
     const quality = page.locator('.proof').getByRole('link', { name: 'How I test this site' });
     await expect(quality).toHaveAttribute('href', '/quality/');
@@ -632,7 +660,7 @@ test.describe('Home', () => {
     }
   });
 
-  test('hero content is in the HTML before any script runs', async ({ browser }) => {
+  test('hero content is in the HTML before any script runs', { tag: ['@pages'] }, async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
     await page.goto('/');
@@ -649,7 +677,7 @@ test.describe('Home', () => {
   });
 
   for (const vp of VIEWPORTS) {
-    test(`renders without sideways overflow at ${vp.width}px (${vp.name})`, async ({ page }) => {
+    test(`renders without sideways overflow at ${vp.width}px (${vp.name})`, { tag: ['@viewports'] }, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto('/');
       await page.evaluate(() => document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in')));

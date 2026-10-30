@@ -13,7 +13,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 
 type JsonTest = { status?: string };
-type JsonSpec = { title: string; file: string; tests: JsonTest[] };
+type JsonSpec = { title: string; file: string; tags?: string[]; tests: JsonTest[] };
 type JsonSuite = { title: string; file?: string; specs: JsonSpec[]; suites?: JsonSuite[] };
 type Report = { suites: JsonSuite[]; stats?: { startTime?: string; duration?: number } };
 
@@ -29,8 +29,12 @@ export type Group = {
   failed: number;
 };
 
+export type Tally = { total: number; passed: number; failed: number };
+
 export type Suite = {
   groups: Group[];
+  /** The checks tagged for each area of the Home scoreboard (`@pages`, `@a11y` and so on). */
+  areas: Record<string, Tally>;
   files: number;
   total: number;
   passed: number;
@@ -82,23 +86,29 @@ ${(err.stdout ?? '').slice(0, 2000)}`);
   }
 }
 
-function collect(suite: JsonSuite, into: Map<string, { total: number; passed: number; failed: number }>) {
+function collect(suite: JsonSuite, into: Map<string, Tally>, areas: Record<string, Tally>) {
   for (const spec of suite.specs ?? []) {
     const file = path.basename(spec.file);
     const g = into.get(file) ?? { total: 0, passed: 0, failed: 0 };
+    const tagged = (spec.tags ?? []).map((t) => (areas[t.replace(/^@/, '')] ??= { total: 0, passed: 0, failed: 0 }));
     for (const t of spec.tests ?? []) {
-      g.total++;
-      if (t.status === 'expected' || t.status === 'flaky') g.passed++;
-      if (t.status === 'unexpected') g.failed++;
+      const passed = t.status === 'expected' || t.status === 'flaky';
+      const failed = t.status === 'unexpected';
+      for (const tally of [g, ...tagged]) {
+        tally.total++;
+        if (passed) tally.passed++;
+        if (failed) tally.failed++;
+      }
     }
     into.set(file, g);
   }
-  for (const s of suite.suites ?? []) collect(s, into);
+  for (const s of suite.suites ?? []) collect(s, into, areas);
 }
 
 const { report, fromRun } = load();
-const counts = new Map<string, { total: number; passed: number; failed: number }>();
-for (const s of report.suites) collect(s, counts);
+const counts = new Map<string, Tally>();
+const areas: Record<string, Tally> = {};
+for (const s of report.suites) collect(s, counts, areas);
 if (counts.size === 0) throw new Error('No tests found: the Quality page cannot be built without the suite.');
 
 const groups: Group[] = [...counts.entries()]
@@ -110,6 +120,7 @@ const groups: Group[] = [...counts.entries()]
 
 export const suite: Suite = {
   groups,
+  areas,
   files: groups.length,
   total: groups.reduce((n, g) => n + g.total, 0),
   passed: groups.reduce((n, g) => n + g.passed, 0),
