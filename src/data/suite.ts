@@ -1,0 +1,134 @@
+/**
+ * The test suite, read at build time, so no number on the site is typed by hand.
+ *
+ * The list of checks comes from Playwright itself (`playwright test --list`), which expands every
+ * loop and parameter in the spec files. When the build runs on GitHub Actions, the suite has
+ * already passed in the job before it, and that job's JSON report is downloaded into
+ * tests/results/run.json first: then the counts, the passes and the time come from the run that
+ * deployed the page. A local build has no run, only the list.
+ */
+import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+
+type JsonTest = { status?: string };
+type JsonSpec = { title: string; file: string; tests: JsonTest[] };
+type JsonSuite = { title: string; file?: string; specs: JsonSpec[]; suites?: JsonSuite[] };
+type Report = { suites: JsonSuite[]; stats?: { startTime?: string; duration?: number } };
+
+export type Group = {
+  id: string;
+  file: string;
+  title: string;
+  detail: string;
+  /** Checks in this file, loops expanded. */
+  total: number;
+  /** Set only when the numbers come from a run. */
+  passed: number;
+  failed: number;
+};
+
+export type Suite = {
+  groups: Group[];
+  files: number;
+  total: number;
+  passed: number;
+  failed: number;
+  /** The run the numbers come from, or null when only the list is known. */
+  run: { startedAt: Date; seconds: number } | null;
+};
+
+// The words for each file. The numbers never live here.
+const COPY: Record<string, [title: string, detail: string]> = {
+  'brand.spec.ts': ['Brand assets', 'Both typefaces load, the logo renders, favicon and Open Graph image present.'],
+  'bugs.spec.ts': ['Bugs off the text', 'Every bug sits in empty field on six pages at four widths, all along its walk.'],
+  'contact.spec.ts': ['Contact form', 'Validation, every answer the script can give, and the mailto fallback.'],
+  'credits.spec.ts': ['Credits', 'Every typeface, tool and sprite is credited, and the page passes axe.'],
+  'games.spec.ts': ['The games', 'Runner, bug hunt, achievements and HUD by mouse, touch and keyboard, and off under reduced motion.'],
+  'home.spec.ts': ['Home', 'Loads clean, every link resolves, three widths, axe, the self test.'],
+  'links.spec.ts': ['Links', 'Links that leave the site open a new tab and say so. Internal links stay.'],
+  'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, no console errors, no stale facts, and passes axe.'],
+  'phone.spec.ts': ['Home on a phone', 'A real device profile: nothing clipped, the button on the first screen, a slim HUD.'],
+  'selection.spec.ts': ['Selectable text', 'A drag selects a paragraph on every page and the highlight reads on every field.'],
+};
+
+// The build bundles this module under dist/, so the project root is the working directory, not a
+// path relative to the file.
+const root = process.cwd();
+const runFile = path.join(root, 'tests', 'results', 'run.json');
+
+function load(): { report: Report; fromRun: boolean } {
+  if (existsSync(runFile)) return { report: JSON.parse(readFileSync(runFile, 'utf8')), fromRun: true };
+  const require = createRequire(import.meta.url);
+  const cli = path.join(path.dirname(require.resolve('@playwright/test/package.json')), 'cli.js');
+  try {
+    const out = execFileSync(process.execPath, [cli, 'test', '--list', '--reporter=json'], {
+      cwd: root,
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    return { report: JSON.parse(out), fromRun: false };
+  } catch (e) {
+    const err = e as { stderr?: string; stdout?: string; message: string };
+    throw new Error(`Could not list the test suite: ${err.message}
+${err.stderr ?? ''}
+${(err.stdout ?? '').slice(0, 2000)}`);
+  }
+}
+
+function collect(suite: JsonSuite, into: Map<string, { total: number; passed: number; failed: number }>) {
+  for (const spec of suite.specs ?? []) {
+    const file = path.basename(spec.file);
+    const g = into.get(file) ?? { total: 0, passed: 0, failed: 0 };
+    for (const t of spec.tests ?? []) {
+      g.total++;
+      if (t.status === 'expected' || t.status === 'flaky') g.passed++;
+      if (t.status === 'unexpected') g.failed++;
+    }
+    into.set(file, g);
+  }
+  for (const s of suite.suites ?? []) collect(s, into);
+}
+
+const { report, fromRun } = load();
+const counts = new Map<string, { total: number; passed: number; failed: number }>();
+for (const s of report.suites) collect(s, counts);
+if (counts.size === 0) throw new Error('No tests found: the Quality page cannot be built without the suite.');
+
+const groups: Group[] = [...counts.entries()]
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([file, n]) => {
+    const [title, detail] = COPY[file] ?? [file.replace(/\.spec\.ts$/, ''), ''];
+    return { id: file.replace(/\.spec\.ts$/, ''), file, title, detail, ...n };
+  });
+
+export const suite: Suite = {
+  groups,
+  files: groups.length,
+  total: groups.reduce((n, g) => n + g.total, 0),
+  passed: groups.reduce((n, g) => n + g.passed, 0),
+  failed: groups.reduce((n, g) => n + g.failed, 0),
+  run:
+    fromRun && report.stats?.startTime
+      ? { startedAt: new Date(report.stats.startTime), seconds: Math.round((report.stats.duration ?? 0) / 1000) }
+      : null,
+};
+
+/** "2 minutes 14 seconds", for the run time. */
+export function spell(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  const parts = [];
+  if (m) parts.push(`${m} minute${m === 1 ? '' : 's'}`);
+  if (s || !m) parts.push(`${s} second${s === 1 ? '' : 's'}`);
+  return parts.join(' ');
+}
+
+/** The versions the loop names, read from the files that set them. */
+const workflow = readFileSync(path.join(root, '.github', 'workflows', 'deploy.yml'), 'utf8');
+export const versions = {
+  node: workflow.match(/node-version:\s*['"]?(\d+)/)?.[1] ?? null,
+  playwright: (JSON.parse(readFileSync(path.join(root, 'node_modules', '@playwright', 'test', 'package.json'), 'utf8')) as { version: string }).version,
+};

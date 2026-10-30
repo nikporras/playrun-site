@@ -1,32 +1,64 @@
 ---
 /**
  * A bug to squash: a real button carrying the bug sprite, placed inside a level with inline
- * position. Hidden until the games script turns the games on, so there is nothing without script.
+ * position and a short walk there and back. Hidden until the games script turns the games on,
+ * so there is nothing without script.
  */
 import Sprite from './Sprite.astro';
 
 interface Props {
   id: string;
-  /** Where it sits on a desktop, as CSS declarations: "right: 7%; top: 44%". */
+  /** Where it sits on a desktop (64rem and up), as CSS declarations: "left: 8%; bottom: 20%". */
   style: string;
+  /** Where it sits on a tablet (48rem to 63.99rem), the same way. Defaults to the desktop spot. */
+  tablet?: string;
   /** Where it sits on a phone, the same way, or "none" to leave it out there. Phones default to
    *  the top right corner of the level, which is empty on every page. */
   phone?: string;
+  /** The walk: an axis and a distance, "x 2rem" or "y -1.5rem". The bug paces there and back. */
+  walk?: string;
 }
-const { id, style, phone } = Astro.props;
+const { id, style, tablet, phone, walk = 'x 1.5rem' } = Astro.props;
 
-// The positions become custom properties, so the phone ones can override in CSS without !important.
-const vars = (decl: string, prefix: string) =>
-  decl
-    .split(';')
-    .map((d) => d.trim())
-    .filter(Boolean)
-    .map((d) => {
-      const [k, v] = d.split(':').map((x) => x.trim());
-      return `--${prefix}${k[0]}: ${v}`;
-    })
-    .join('; ');
-const placed = [vars(style, 'd'), phone && phone !== 'none' ? vars(phone, 'p') : ''].filter(Boolean).join('; ');
+// Each tier sets all four sides, so a spot placed from the left and bottom never inherits the
+// right and top of the tier below it (two sides on one axis would leave the first one winning).
+const sides = ['left', 'right', 'top', 'bottom'];
+const vars = (decl: string, prefix: string) => {
+  const given = Object.fromEntries(
+    decl
+      .split(';')
+      .map((d) => d.trim())
+      .filter(Boolean)
+      .map((d) => d.split(':').map((x) => x.trim())),
+  );
+  return sides.map((s) => `--${prefix}${s[0]}: ${given[s] ?? 'auto'}`).join('; ');
+};
+const [axis, given] = walk.split(/\s+/);
+const length = given.replace(/^-/, '');
+// The sprite faces up. It turns to face the way it walks, and turns round at each end.
+const face = (back: boolean) => (axis === 'x' ? (back ? ['-90deg', '90deg'] : ['90deg', '-90deg']) : back ? ['0deg', '180deg'] : ['180deg', '0deg']);
+const walkVars = (back: boolean, prefix: string) => {
+  const d = `${back ? '-' : ''}${length}`;
+  const [out, home] = face(back);
+  return `--${prefix}wx: ${axis === 'x' ? d : '0px'}; --${prefix}wy: ${axis === 'y' ? d : '0px'}; --${prefix}fo: ${out}; --${prefix}fb: ${home}`;
+};
+// On a tablet or a phone the bug hangs off an edge, so it walks in from that edge: left from a
+// right edge, up from a bottom edge.
+const inward = (sides: string) => (axis === 'x' ? /\bright\s*:/.test(sides) : /\bbottom\s*:/.test(sides));
+const phoneSides = phone && phone !== 'none' ? phone : 'right: 0.75rem; top: 0.75rem';
+// A pace of its own per bug, so no two bugs on a page move in step.
+const seconds = 5 + ([...id].reduce((n, c) => n + c.charCodeAt(0), 0) % 7) * 0.5;
+const placed = [
+  vars(style, 'd'),
+  tablet ? vars(tablet, 't') : '',
+  phone && phone !== 'none' ? vars(phone, 'p') : '',
+  walkVars(given.startsWith('-'), ''),
+  tablet ? walkVars(inward(tablet), 't') : '',
+  walkVars(inward(phoneSides), 'p'),
+  `--walk-time: ${seconds}s`,
+]
+  .filter(Boolean)
+  .join('; ');
 ---
 
 <button type="button" class="bug" data-bug={id} data-phone={phone === 'none' ? 'none' : undefined} style={placed} aria-label="Catch this bug" hidden>
@@ -41,6 +73,22 @@ const placed = [vars(style, 'd'), phone && phone !== 'none' ? vars(phone, 'p') :
     right: var(--dr, auto);
     top: var(--dt, auto);
     bottom: var(--db, auto);
+    --kx: var(--wx);
+    --ky: var(--wy);
+    --face-out: var(--fo);
+    --face-back: var(--fb);
+  }
+  @media (min-width: 48rem) and (max-width: 63.99rem) {
+    .bug {
+      left: var(--tl, var(--dl, auto));
+      right: var(--tr, var(--dr, auto));
+      top: var(--tt, var(--dt, auto));
+      bottom: var(--tb, var(--db, auto));
+      --kx: var(--twx, var(--wx));
+      --ky: var(--twy, var(--wy));
+      --face-out: var(--tfo, var(--fo));
+      --face-back: var(--tfb, var(--fb));
+    }
   }
   @media (max-width: 47.99rem) {
     .bug {
@@ -50,6 +98,10 @@ const placed = [vars(style, 'd'), phone && phone !== 'none' ? vars(phone, 'p') :
       right: var(--pr, 0.75rem);
       top: var(--pt, 0.75rem);
       bottom: var(--pb, auto);
+      --kx: var(--pwx);
+      --ky: var(--pwy);
+      --face-out: var(--pfo);
+      --face-back: var(--pfb);
     }
     .bug[data-phone='none'] {
       display: none;

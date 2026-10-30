@@ -50,6 +50,12 @@ jobs:
           name: playwright-report
           path: playwright-report
           retention-days: 14
+      - name: Hand the results to the build
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: tests/results/run.json
+          retention-days: 14
 
   build:
     name: Build site
@@ -58,6 +64,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Results of the test job, read by the Quality page
+        uses: actions/download-artifact@v4
+        with:
+          name: playwright-results
+          path: tests/results
       - uses: withastro/action@v3
         with:
           node-version: 24

@@ -57,20 +57,25 @@ test.describe("Home on a phone", () => {
     await expect(page.locator(".hud__panel")).toBeHidden();
   });
 
-  test("phone bugs sit in the top right corner of their level and the final level has none", async ({
-    page,
-  }) => {
+  test("phone bugs sit in a corner of their level, one of them on the final level", async ({ page }) => {
     await page.goto("/");
     const bugs = page.locator("[data-bug]:visible");
-    expect(await bugs.count()).toBe(4);
-    expect(await page.locator(".final [data-bug]").count()).toBe(0);
+    expect(await bugs.count()).toBe(5);
+    expect(await page.locator(".final [data-bug]:visible").count()).toBe(1);
     for (const b of await bugs.all()) {
-      const near = await b.evaluate((el) => {
+      const corner = await b.evaluate((el) => {
+        // Measured at the start of its walk, which leads inwards from the corner.
+        el.getAnimations().forEach((a) => {
+          a.pause();
+          a.currentTime = 0;
+        });
         const r = el.getBoundingClientRect();
         const level = el.closest("[data-level]")!.getBoundingClientRect();
-        return level.right - r.right < 24 && r.top - level.top < 24;
+        const x = Math.min(r.left - level.left, level.right - r.right);
+        const y = Math.min(r.top - level.top, level.bottom - r.bottom);
+        return x < 24 && y < 24;
       });
-      expect(near).toBe(true);
+      expect(corner).toBe(true);
     }
   });
 });

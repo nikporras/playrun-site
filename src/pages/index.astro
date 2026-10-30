@@ -10,7 +10,7 @@ import Bug from '../components/Bug.astro';
 import IconPrimary from '../assets/logo/icon-primary.svg';
 import GameIcon from '../components/GameIcon.astro';
 import ExternalLink from '../components/ExternalLink.astro';
-import results from '../../tests/results/latest.json';
+import { suite } from '../data/suite';
 import { contact, primaryAction, site } from '../config';
 
 import portrait from '../assets/photos/nicolas.png';
@@ -89,8 +89,16 @@ const ci = process.env.GITHUB_RUN_ID
       url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
     }
   : null;
-const totalChecks = results.groups.reduce((n, g) => n + g.passed + g.failed, 0);
-const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
+// The six live checks the button runs on this page, in the visitor's browser. Their counts are
+// filled in when they run; the line above the board carries the suite's own numbers.
+const checks = [
+  { id: 'pages', title: 'Pages load', detail: 'Every route answers 200 and renders one h1. No blank screens.' },
+  { id: 'console', title: 'Zero console errors', detail: 'Nothing red in the console, no request left failing.' },
+  { id: 'links', title: 'Internal links resolve', detail: 'Every internal link answers 200. No 404s hiding in the footer.' },
+  { id: 'viewports', title: 'Three widths', detail: 'No sideways scroll at 375, 768 and 1440 pixels. Phones count.' },
+  { id: 'a11y', title: 'Accessibility scan', detail: 'axe-core finds no violations. Keyboard and screen readers get the whole page.' },
+  { id: 'brand', title: 'Brand assets', detail: 'Both typefaces load, the logo renders, favicon and Open Graph image present.' },
+];
 ---
 
 <Base title="Home" fullTitle={`${site.name}, the game QA portfolio of Nicolás Porras, London`}>
@@ -132,7 +140,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
         </ul>
       </div>
     </div>
-    <Bug id="hero-1" style="right: 10%; top: 0" />
+    <Bug id="hero-1" style="left: 6%; top: 10rem" walk="x 2rem" />
   </section>
 
   <!-- The run sheet: one band, two lanes -->
@@ -165,7 +173,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
         }
       </ol>
     </div>
-    <Bug id="services-1" style="right: 8%; top: 0.5rem" />
+    <Bug id="services-1" style="left: 10%; bottom: 22%" tablet="right: 8%; top: 18rem" phone="left: 1rem; bottom: 0.75rem" walk="y 1.5rem" />
   </section>
 
   <!-- Level 3: work as a stage select on a cyan field -->
@@ -200,8 +208,8 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     <p class="work__also" data-enter>
       <a class="textlink" href="/portfolio">Also: Thick as Thieves, CLAWPUNK, Ghostbusters: Rise of the Ghost Lord, Synapse, Fracked and more</a>
     </p>
-    <Bug id="work-1" style="right: 30%; top: 0.5rem" />
-    <Bug id="work-2" style="right: 8%; top: 0.5rem" phone="none" />
+    <Bug id="work-1" style="right: 6%; top: 17rem" phone="right: 1rem; bottom: 0.5rem" walk="x -1.5rem" />
+    <Bug id="work-2" style="left: 22%; bottom: 1rem" phone="none" walk="x 2rem" />
   </section>
 
   <!-- Level 4: proof as a scoreboard on a green field -->
@@ -225,7 +233,9 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
           <button class="button button--navy" type="button" id="selftest" aria-describedby="selftest-status">
             Test this page
           </button>
-          <p id="selftest-status" class="proof__status" aria-live="polite">{totalPassed} of {totalChecks} checks passed in the last run</p>
+          <p id="selftest-status" class="proof__status" aria-live="polite">
+            {suite.run ? `${suite.passed} of ${suite.total} checks passed in the last run` : `${suite.total} checks run before every deploy`}
+          </p>
         </div>
         <p class="proof__score" id="selftest-score" hidden>
           <span data-score-mark class="proof__scoremark"><PassMark /></span>
@@ -236,7 +246,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
     </div>
     <div class="proof__board">
       {
-        results.groups.map((g, i) => (
+        checks.map((g, i) => (
           <div
             class:list={['panel', 'is-idle', `panel--${panelTones[i]}`]}
             style={`--span: ${panelSpans[i]}; --enter-delay: ${i * 60}ms`}
@@ -250,7 +260,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
             </div>
             <p class="panel__num num">
               <span data-count>&ndash; &ndash;</span>
-              <span class="panel__of"> of {g.passed + g.failed}</span>
+              <span class="panel__of"></span>
             </p>
             <h3 class="panel__title">{g.title}</h3>
             <p class="panel__detail" data-detail>{g.detail}</p>
@@ -265,7 +275,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
         <a class="textlink panel__link" href="/quality">How I test this site</a>
       </div>
     </div>
-    <Bug id="proof-1" style="right: 8%; top: 0.5rem" />
+    <Bug id="proof-1" style="left: 56%; bottom: 1.25rem" phone="left: 1rem; bottom: 0.75rem" walk="x -2rem" />
   </section>
 
   <!-- Level 5: the final level, a light field with the one line that matters -->
@@ -300,7 +310,7 @@ const totalPassed = results.groups.reduce((n, g) => n + g.passed, 0);
         decoding="async"
       />
     </div>
-    <Bug id="final-1" style="right: 8%; top: 0.5rem" phone="none" />
+    <Bug id="final-1" style="right: 12%; top: 9.5rem" tablet="left: 2rem; bottom: 1rem" walk="x -1.5rem" />
   </section>
 </Base>
 

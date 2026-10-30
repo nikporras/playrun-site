@@ -113,7 +113,7 @@ test.describe('Home', () => {
     // Nothing is ticked before the test runs: idle boxes and blank counts, the last run as text only
     await expect(page.locator('.panel.is-idle')).toHaveCount(6);
     await expect(page.locator('.panel.is-pass, .panel.is-failed')).toHaveCount(0);
-    await expect(page.locator('#selftest-status')).toHaveText(/\d+ of \d+ checks passed in the last run/);
+    await expect(page.locator('#selftest-status')).toHaveText(/\d+ (of \d+ checks passed in the last run|checks run before every deploy)/);
     await page.getByRole('button', { name: 'Test this page' }).click();
     await expect(page.locator('#selftest-status')).toContainText(/on your device/, { timeout: 15_000 });
     await expect(page.getByRole('button', { name: 'Run again' })).toBeVisible();

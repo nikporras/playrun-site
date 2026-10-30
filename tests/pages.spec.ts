@@ -8,7 +8,7 @@ const PAGES = [
   { path: '/about', h1: /Nicolás\s*Porras/, must: ['LinkedIn profile', 'via Universally Speaking', 'Senior QA Tester', 'Helldivers, The Witcher and God of War'] },
   { path: '/skills', h1: /What I test\s*and how/, must: ['Functional testing', 'Bug reporting', 'GOG'] },
   { path: '/portfolio', h1: /Games I have\s*tested/, must: ['Select title', "Lou's Lagoon", 'Hello Sunshine', 'Vaewolf', 'Pathfinder: Abomination Vaults', 'Guildford Castle VR', 'Londinium: AD 215', 'Ghostbusters: Rise of the Ghost Lord', 'Lead QA Technician on one cancelled project.', 'Cyberpunk 2077', 'A Township Tale', 'The Climb 2'] },
-  { path: '/quality', h1: /This site is\s*a test subject/, must: ['tests, read from the code', 'Deploy only if green'] },
+  { path: '/quality', h1: /This site is\s*a test subject/, must: ['checks, read from the code', 'Deploy only if green', 'Playwright 1.'] },
   { path: '/privacy', h1: /Privacy notice/, must: ['Nicolás Porras (PlayRun)', 'deleted after 24 months', 'ico.org.uk'] },
   { path: '/terms', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales'] },
   { path: '/accessibility', h1: /Accessibility/, must: ['WCAG', 'reduced motion', 'Report a problem'] },
@@ -50,6 +50,15 @@ for (const p of PAGES) {
       expect(await page.locator('img:not([alt])').count()).toBe(0);
       const hrefs = await page.locator('a[href^="/"]').evaluateAll((as) => [...new Set((as as HTMLAnchorElement[]).map((a) => a.getAttribute('href')!.split('#')[0]).filter(Boolean))]);
       for (const href of hrefs) expect((await request.get(href)).status(), href).toBe(200);
+    });
+
+    test('the canonical link and the share address are the clean page address', async ({ page }) => {
+      await page.goto(p.path);
+      const expected = `https://playrunqa.com${p.path}`;
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', expected);
+      await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', expected);
+      await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', 'https://playrunqa.com/og.png');
+      await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute('content', /logo/);
     });
 
     test('has no accessibility violations (axe)', async ({ page }) => {

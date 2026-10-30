@@ -1,4 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
+
+// A bug paces while the games are on; a click waits for a still target, so the walk is paused first.
+const still = (bug: Locator) => bug.evaluate((el) => el.getAnimations().forEach((a) => a.pause()));
 
 /**
  * The games: the runner on the floor, the bug hunt, the achievements, the HUD toggle and the
@@ -25,6 +28,7 @@ test.describe('Games', () => {
     await page.goto('/');
     const bug = page.locator('[data-bug]:visible').first();
     const id = await bug.getAttribute('data-bug');
+    await still(bug);
     await bug.scrollIntoViewIfNeeded();
     await expect(bug).toHaveAccessibleName('Catch this bug');
     await bug.click();
@@ -63,6 +67,7 @@ test.describe('Games', () => {
     await page.goto('/');
     const bug = page.locator('[data-bug]:visible').first();
     expect(await bug.evaluate((el) => getComputedStyle(el).cursor)).not.toContain('net-cursor');
+    await still(bug);
     await bug.tap();
     await expect(bug).toHaveClass(/is-caught/);
     await expect(page.locator('[data-hud-bugs]')).toHaveText('01');
