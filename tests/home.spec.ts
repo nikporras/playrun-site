@@ -316,7 +316,7 @@ test.describe('Home', () => {
     await expect.poll(opacity, { timeout: 1000 }).toBe(0);
     // then the page scrolls on with the heap riding on the title by itself
     await at(1000);
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1300);
     await expect(canvas).toBeVisible();
     expect(await canvas.evaluate((el) => getComputedStyle(el).position), 'in the page, so it scrolls with the title').toBe('absolute');
     // the pixels: landed on the tops of the title's letters, none on them, a heap along them. The
@@ -361,7 +361,7 @@ test.describe('Home', () => {
     expect(land.onEdge, 'a heap along their tops').toBeGreaterThan(20);
     // on the way back the pixels fly home on the clock and the name is whole again
     await at(0);
-    await expect(canvas).toBeHidden({ timeout: 1000 });
+    await expect(canvas).toBeHidden({ timeout: 2000 });
     await expect(h1).toHaveCSS('opacity', '1');
     await expect.poll(opacity, { timeout: 1000 }).toBe(1);
     await expect(ticket).toContainText('Fixed');
@@ -508,7 +508,7 @@ test.describe('Home', () => {
     });
   }
 
-  test("the hero's exit is triggered, not scrubbed: it plays for a fixed time whatever the scroll speed, holds still at the threshold, and draws nothing while the page scrolls between crossings", async ({ page }) => {
+  test("the hero's exit is triggered, not scrubbed: it plays for a fixed time (1.2 s down, 1 s back) whatever the scroll speed, holds still at the threshold, and draws nothing while the page scrolls between crossings", async ({ page }) => {
     test.setTimeout(60_000);
     // count every pixel drawn on the break's canvas
     await page.addInitScript(() => {
@@ -537,9 +537,12 @@ test.describe('Home', () => {
     const t0 = Date.now();
     await page.waitForTimeout(150);
     const early = await draws();
-    await page.waitForTimeout(900);
+    await page.waitForTimeout(850);
+    const later = await draws();
+    expect(later, 'still drawing a second after the jump, on its own clock (1.2 s)').toBeGreaterThan(early);
+    await page.waitForTimeout(800);
     const done = await draws();
-    expect(done, 'still drawing after the jump, on its own clock').toBeGreaterThan(early);
+    expect(done, 'and still a little more before it settles').toBeGreaterThan(later);
     // settled: scrolling around this side of the threshold draws nothing at all
     for (const y of [breakY + 300, breakY + 900, breakY + 80, breakY + 1400]) {
       await page.evaluate((y) => window.scrollTo(0, y), y);
@@ -549,12 +552,14 @@ test.describe('Home', () => {
     expect(Date.now() - t0).toBeGreaterThan(600);
     // between the two markers it holds whichever state it was in
     await page.evaluate((y) => window.scrollTo(0, y), Math.round((breakY + mendY) / 2));
-    await page.waitForTimeout(900);
+    await page.waitForTimeout(1500);
     await expect(canvas, 'still broken between the markers').toBeVisible();
     await page.evaluate((y) => window.scrollTo(0, y), mendY - 40);
-    await expect(canvas).toBeHidden({ timeout: 1500 });
+    await page.waitForTimeout(600);
+    await expect(canvas, 'the way home takes about a second').toBeVisible();
+    await expect(canvas).toBeHidden({ timeout: 2000 });
     await page.evaluate((y) => window.scrollTo(0, y), Math.round((breakY + mendY) / 2));
-    await page.waitForTimeout(900);
+    await page.waitForTimeout(1500);
     await expect(canvas, 'still whole between the markers').toBeHidden();
     await expect(page.locator('h1')).toHaveCSS('opacity', '1');
   });

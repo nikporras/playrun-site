@@ -3,10 +3,11 @@
  * Level 2, a little apart; one IntersectionObserver watches them cross the foot of the hero as
  * Level 2 slides up over it. When the lower one passes, the name breaks: its own font pixels fall
  * over the clouds and land on the tops of the letters of the next title ("Games I've tested") in
- * a fixed 0.6 s, shrinking to that title's pixel size into a small heap while the rest fade on the
- * way. When the upper one comes back below the foot, it plays in reverse and the name is whole
- * again. A second pair further down fades the hero out in 0.4 s once Level 2 covers most of it (the
- * photo shows through the clouds until then) and back in on the way up. The gap between the
+ * a fixed time (TIMING: 1.2 s, eased out so they visibly fall and settle), shrinking to that
+ * title's pixel size into a small heap while the rest fade on the way. When the upper one comes
+ * back below the foot, it plays in reverse (1 s) and the name is whole again. A second pair further
+ * down fades the hero out in 0.4 s once Level 2 covers most of it (the photo shows through the
+ * clouds until then) and back in on the way up. The gap between the
  * markers of a pair keeps it from flickering at the threshold, and nothing here reads or follows
  * the scroll position frame by frame, so the page scrolls natively and nothing trails it (Firefox
  * scrolls on its own thread and warns about scroll-linked effects; there are none).
@@ -33,9 +34,11 @@ type Box = { left: number; top: number; right: number; bottom: number };
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
 const ease = (k: number) => k * k; // each pixel's fall gathers speed
-const easeInOut = (k: number) => (k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2);
-const FALL_MS = 600;
-const FADE_MS = 400;
+// The timings, in milliseconds: the break and the fall to the title, the pixels flying home, the
+// hero's fade. Tune them here.
+const TIMING = { fall: 1200, mend: 1000, fade: 400 };
+// a gentle ease-out (cubic): quick away, slow to settle, both ways
+const easeOut = (k: number) => 1 - (1 - k) ** 3;
 const SHOW_MS = 3000;
 const KEY = 'playrun.ticket';
 const seen = () => {
@@ -222,9 +225,12 @@ export function startBreak() {
     ctx.globalAlpha = 1;
   };
 
-  // ---- The animation: u runs from 0 (the name whole) to 1 (all landed) at a fixed pace, towards
-  // the goal the threshold last set, whatever the scroll does meanwhile.
-  let u = 0;
+  // ---- The animation: p runs from 0 (the name whole) to 1 (all landed), towards the goal the
+  // threshold last set, on the clock (TIMING) whatever the scroll does meanwhile, eased out both
+  // ways. t is the time run so far in the current direction, 0 to 1; a turn mid-way picks t up from
+  // where p is, so nothing jumps.
+  let p = 0;
+  let t = 1;
   let goal: 0 | 1 = 0;
   let raf = 0;
   let last = 0;
@@ -232,7 +238,7 @@ export function startBreak() {
   const fadeHero = (target: number, instant: boolean) => {
     const now = Number(getComputedStyle(hero).opacity);
     fade?.cancel();
-    fade = hero.animate([{ opacity: now }, { opacity: target }], { duration: instant ? 0 : FADE_MS, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'forwards' });
+    fade = hero.animate([{ opacity: now }, { opacity: target }], { duration: instant ? 0 : TIMING.fade, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'forwards' });
   };
   const settle = () => {
     if (goal === 0) {
@@ -241,12 +247,13 @@ export function startBreak() {
       if (armed && !dismissed) show('fixed');
     }
   };
-  const step = (t: number) => {
-    const dt = last ? t - last : 16;
-    last = t;
-    u = goal === 1 ? Math.min(1, u + dt / FALL_MS) : Math.max(0, u - dt / FALL_MS);
-    render(easeInOut(u));
-    if (u === goal) {
+  const step = (now: number) => {
+    const dt = last ? now - last : 16;
+    last = now;
+    t = Math.min(1, t + dt / (goal === 1 ? TIMING.fall : TIMING.mend));
+    p = goal === 1 ? easeOut(t) : 1 - easeOut(t);
+    render(p);
+    if (t === 1) {
       raf = 0;
       settle();
     } else raf = requestAnimationFrame(step);
@@ -255,10 +262,15 @@ export function startBreak() {
     cancelAnimationFrame(raf);
     last = 0;
     if (instant) {
-      u = goal;
-      render(u);
+      t = 1;
+      p = goal;
+      render(p);
       settle();
-    } else raf = requestAnimationFrame(step);
+      return;
+    }
+    // (the inverse of the ease, from where the pixels are now)
+    t = 1 - Math.cbrt(goal === 1 ? 1 - p : p);
+    raf = requestAnimationFrame(step);
   };
   let broken = false;
   let sampled = false;
@@ -488,7 +500,8 @@ export function startBreak() {
       canvas.hidden = true;
       h1.classList.remove('is-broken');
       broken = false;
-      u = 0;
+      p = 0;
+      t = 1;
       docked = false;
       hide();
     } else decide(true);
