@@ -66,6 +66,7 @@ export function startGames() {
     achOut.textContent = `${state.achievements.length}/${total}`;
     toggle.setAttribute('aria-pressed', String(state.on));
     toggle.querySelector('b')!.textContent = state.on ? 'on' : 'off';
+    toggle.setAttribute('aria-label', state.on ? 'Games on' : 'Games off');
     hud.classList.toggle('hud--off', !state.on);
     html.classList.toggle('games', state.on);
     html.classList.toggle('games-off', !state.on);
@@ -152,10 +153,14 @@ export function startGames() {
   const panel = pick('.hud__panel');
   const more = pick('.hud__more');
   const stacked = matchMedia('(max-width: 47.99rem)');
+  // On desktop the bar stands on the left edge and the ship runs down it; otherwise it lies
+  // along the bottom and the ship runs across.
+  const vertical = matchMedia('(min-width: 64rem)');
   const layout = () => {
-    // The ship runs the width the panel leaves free; on a phone that is the Games button.
-    const free = hud.clientWidth - (stacked.matches ? more.offsetWidth : panel.offsetWidth);
-    hud.style.setProperty('--track', `${Math.max(0, free - runner.offsetWidth)}px`);
+    // The ship runs the length the panel leaves free; on a phone that is the Games button.
+    const free = vertical.matches ? hud.clientHeight - panel.offsetHeight : hud.clientWidth - (stacked.matches ? more.offsetWidth : panel.offsetWidth);
+    const ship = vertical.matches ? runner.offsetHeight : runner.offsetWidth;
+    hud.style.setProperty('--track', `${Math.max(0, free - ship)}px`);
     levelsList.replaceChildren(
       ...sections.slice(1).map((s, i) => {
         const li = document.createElement('li');
@@ -194,6 +199,7 @@ export function startGames() {
   };
   addEventListener('scroll', onScroll, { passive: true });
   addEventListener('resize', layout);
+  vertical.addEventListener('change', layout);
 
   // Controls. On phones the panel opens from the Games button and closes with it, or when
   // anything outside it is tapped.

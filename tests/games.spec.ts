@@ -74,13 +74,43 @@ test.describe('Games', () => {
     await context.close();
   });
 
-  test('the ship moves along the floor with the scroll', async ({ page }) => {
+  test('the ship moves down the track with the scroll', async ({ page }) => {
     await page.goto('/');
-    const x = () => page.locator('.hud__runner').evaluate((el) => el.getBoundingClientRect().left);
-    const start = await x();
+    const y = () => page.locator('.hud__runner').evaluate((el) => el.getBoundingClientRect().top);
+    const start = await y();
     await page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight / 2, behavior: 'instant' }));
-    await expect.poll(x).toBeGreaterThan(start + 100);
+    await expect.poll(y).toBeGreaterThan(start + 100);
     await expect(page.locator('[data-hud-level]')).not.toHaveText('1');
+  });
+
+  test('the track is a slim bar on the left on desktop, folded to short labels until hovered, and lies along the bottom on a phone', async ({ page }) => {
+    for (const path of ['/', '/skills', '/portfolio', '/quality']) {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto(path);
+      const hud = page.locator('#hud');
+      await expect(hud).toBeVisible();
+      const box = (await hud.boundingBox())!;
+      expect(box.x, `${path}: on the left edge`).toBe(0);
+      expect(box.width, `${path}: slim`).toBeLessThanOrEqual(48);
+      expect(box.height, `${path}: full height`).toBeGreaterThanOrEqual(880);
+      const levels = await page.locator('[data-level]').count();
+      await expect(page.locator('.hud__levels li')).toHaveCount(levels - 1);
+      await expect(page.locator('[data-hud-bugs]')).toBeVisible();
+      await expect(page.locator('.hud__long').first()).toBeHidden();
+      await hud.hover();
+      await expect(page.locator('.hud__long').first()).toBeVisible();
+      await expect.poll(async () => (await page.locator('.hud__panel').boundingBox())!.width, 'the panel widens').toBeGreaterThan(150);
+      await page.mouse.move(700, 450);
+      await expect(page.locator('.hud__long').first()).toBeHidden();
+      await page.getByRole('button', { name: /Games on/ }).focus();
+      await expect(page.locator('.hud__long').first()).toBeVisible();
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/skills');
+    const bar = (await page.locator('#hud').boundingBox())!;
+    expect(bar.width).toBe(390);
+    expect(bar.height).toBeLessThanOrEqual(48);
+    expect(bar.y + bar.height).toBe(844);
   });
 
   test('reduced motion removes the games and the bar', async ({ browser }) => {

@@ -137,6 +137,69 @@ test.describe('Home', () => {
     await context.close();
   });
 
+  test('the headline breaks with the scroll and mends on the way back; the ticket reads Open, then Fixed; nothing under reduced motion', async ({ page, browser }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    await page.evaluate(() => document.fonts.ready);
+    const h1 = page.locator('h1');
+    const canvas = page.locator('.hero__break');
+    const ticket = page.locator('.hero__ticket');
+    await expect(canvas).toBeHidden();
+    await expect(ticket).toBeHidden();
+    // the centre of the drawn pixels, to see them move with the scroll
+    const centre = () =>
+      page.evaluate(() => {
+        const c = document.querySelector<HTMLCanvasElement>('.hero__break')!;
+        const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+        let n = 0;
+        let sum = 0;
+        for (let i = 3; i < d.length; i += 4 * 7) {
+          if (d[i] > 100) {
+            n++;
+            sum += Math.floor(i / 4 / c.width);
+          }
+        }
+        return { n, y: sum / Math.max(1, n) };
+      });
+    await page.evaluate(() => window.scrollTo(0, 120));
+    await expect(canvas).toBeVisible();
+    await expect(h1).toHaveCSS('opacity', '0');
+    await expect(h1).toHaveText(/Nicolás\s*Porras/);
+    await expect(ticket).toHaveClass(/is-in/);
+    await expect(ticket).toContainText('BUG-001');
+    await expect(ticket).toContainText('Open');
+    const near = await centre();
+    expect(near.n).toBeGreaterThan(20);
+    await page.evaluate(() => window.scrollTo(0, 400));
+    await page.waitForTimeout(100);
+    const far = await centre();
+    expect(far.y, 'the pixels have fallen further').toBeGreaterThan(near.y + 10);
+    await page.evaluate(() => window.scrollTo(0, 120));
+    await page.waitForTimeout(100);
+    expect((await centre()).y, 'and come back up').toBeLessThan(far.y - 10);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(canvas).toBeHidden();
+    await expect(h1).toHaveCSS('opacity', '1');
+    await expect(ticket).toContainText('Fixed');
+    await expect(ticket).toHaveClass(/is-in/);
+    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 5000 });
+    // every time, not once a visit
+    await page.evaluate(() => window.scrollTo(0, 120));
+    await expect(ticket).toContainText('Open');
+    await expect(ticket).toHaveClass(/is-in/);
+
+    const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
+    const quiet = await context.newPage();
+    await quiet.goto('/');
+    await quiet.evaluate(() => window.scrollTo(0, 300));
+    await quiet.waitForTimeout(200);
+    await expect(quiet.locator('.hero__break')).toBeHidden();
+    await expect(quiet.locator('.hero__ticket')).toBeHidden();
+    await expect(quiet.locator('h1')).toHaveCSS('opacity', '1');
+    await context.close();
+  });
+
   test('the wall shows every title as a logo or its icon, each linking to the portfolio', async ({ page }) => {
     await page.goto('/');
     const links = page.locator('.wall__link');

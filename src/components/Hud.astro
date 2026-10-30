@@ -1,10 +1,11 @@
 ---
 /**
- * The HUD and the floor: a fixed bar at the foot of the viewport. The ship runs along the floor
- * as the page scrolls, flags mark where each level starts, the panel keeps the score, and the
- * achievement toast sits above it. On phones the bar is one slim row and the panel opens from a
- * Games button, so it never covers the page. Hidden until script turns it on; removed under
- * reduced motion.
+ * The track and the HUD. On desktop (64rem and up) a slim vertical bar on the left edge, inside
+ * the gutter: the ship moves down it as the page scrolls, a marker per level sits along it, and
+ * a compact panel at its foot keeps the score (bugs, achievements, games on or off, reset),
+ * folded to short labels until hovered or focused. On phones and tablets the same bar lies along
+ * the bottom of the screen, one slim row on phones with the panel behind a Games button, so it
+ * never covers the page. Hidden until script turns it on; removed under reduced motion.
  */
 import Sprite from './Sprite.astro';
 import PassMark from './PassMark.astro';
@@ -22,13 +23,20 @@ import PassMark from './PassMark.astro';
       <span class="hud__key"><span class="hud__long">Level</span><span class="hud__short">L</span></span>
       <span><b data-hud-level>1</b><span class="hud__of">/<span data-hud-levels>5</span></span></span>
     </p>
-    <p class="hud__stat"><span class="hud__key">Bugs</span> <b data-hud-bugs>00</b></p>
     <p class="hud__stat">
-      <span class="hud__key"><span class="hud__long">Achievements</span><span class="hud__short">Ach</span></span>
+      <span class="hud__key"><span class="hud__long">Bugs</span><span class="hud__short">B</span></span>
+      <b data-hud-bugs>00</b>
+    </p>
+    <p class="hud__stat">
+      <span class="hud__key"><span class="hud__long">Achievements</span><span class="hud__short">A</span></span>
       <b data-hud-ach>0/4</b>
     </p>
-    <button type="button" class="hud__button" data-hud-toggle aria-pressed="true">Games <b>on</b></button>
-    <button type="button" class="hud__button hud__button--quiet" data-hud-reset>Reset</button>
+    <button type="button" class="hud__button" data-hud-toggle aria-pressed="true" aria-label="Games on">
+      <span class="hud__long">Games</span><span class="hud__short">G</span> <b>on</b>
+    </button>
+    <button type="button" class="hud__button hud__button--quiet" data-hud-reset aria-label="Reset">
+      <span class="hud__long">Reset</span><span class="hud__short">R</span>
+    </button>
   </div>
   <p class="visually-hidden" aria-live="polite" data-hud-live></p>
 </div>
@@ -49,6 +57,7 @@ import PassMark from './PassMark.astro';
 </div>
 
 <style>
+  /* The bar along the bottom: phones and tablets. */
   .hud {
     position: fixed;
     left: 0;
@@ -114,8 +123,6 @@ import PassMark from './PassMark.astro';
     width: var(--ship-w);
     height: var(--ship-w);
     will-change: transform;
-  }
-  .hud__runner {
     transform: translateX(calc(var(--p, 0) * var(--track, 0px)));
     transition: transform 120ms linear;
   }
@@ -327,6 +334,152 @@ import PassMark from './PassMark.astro';
   .hud__more {
     display: none;
   }
+
+  /* Desktop: the bar stands on the left edge, in the gutter. The floor is its right edge, the
+     ship runs down it, the markers hang off the floor, the panel sits at the foot. */
+  @media (min-width: 64rem) {
+    .hud {
+      left: 0;
+      right: auto;
+      top: 0;
+      bottom: 0;
+      width: var(--track-w);
+      height: auto;
+      border-top: 0;
+      border-right: 2px solid var(--surface-2);
+    }
+    .hud__floor {
+      left: auto;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: var(--floor-h);
+      height: auto;
+    }
+    .hud__levels {
+      left: 0;
+      right: var(--floor-h);
+      top: 0;
+      bottom: auto;
+    }
+    .hud__levels :global(li) {
+      left: auto;
+      right: 0;
+      bottom: auto;
+      top: calc(var(--at, 0) * var(--track, 100vh) + (var(--track-w) - var(--floor-h)) / 2);
+      flex-direction: row;
+      gap: 4px;
+      font-size: 0.875rem;
+      transform: translateY(-50%);
+    }
+    .hud__levels :global(li)::after {
+      width: 0.6rem;
+      height: 2px;
+    }
+    .hud__runner {
+      left: 0;
+      right: auto;
+      top: 0;
+      bottom: auto;
+      width: calc(var(--track-w) - var(--floor-h));
+      height: calc(var(--track-w) - var(--floor-h));
+      transform: translateY(calc(var(--p, 0) * var(--track, 0px)));
+    }
+    .hud__ship :global(.sprite) {
+      transform: rotate(180deg);
+    }
+    .hud__runner[data-dir='-1'] .hud__ship {
+      transform: scaleY(-1);
+    }
+    .hud__panel {
+      right: auto;
+      left: 0;
+      top: auto;
+      bottom: 0;
+      width: 100%;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+      padding: 0.75rem 0;
+      font-size: 0.8125rem;
+      letter-spacing: 0.04em;
+      transition: width var(--dur-fast) var(--ease-out);
+    }
+    .hud__stat {
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2em;
+    }
+    .hud__button {
+      align-self: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      padding: 0;
+    }
+    .hud__button b {
+      margin-left: 0;
+    }
+    .hud__long,
+    .hud__button b {
+      display: none;
+    }
+    .hud__short {
+      display: inline;
+    }
+    /* Hovered or focused: the panel widens past the bar and the labels come out. */
+    .hud:hover .hud__panel,
+    .hud:focus-within .hud__panel {
+      width: 13rem;
+      align-items: flex-start;
+      padding: 0.75rem 0.875rem;
+      border: 2px solid var(--surface-2);
+      border-left: 0;
+    }
+    .hud:hover .hud__stat,
+    .hud:focus-within .hud__stat {
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0.5em;
+    }
+    .hud:hover .hud__long,
+    .hud:focus-within .hud__long,
+    .hud:hover .hud__button b,
+    .hud:focus-within .hud__button b {
+      display: inline;
+    }
+    .hud:hover .hud__short,
+    .hud:focus-within .hud__short {
+      display: none;
+    }
+    .hud:hover .hud__button,
+    .hud:focus-within .hud__button {
+      align-self: stretch;
+      justify-content: flex-start;
+      width: auto;
+      height: auto;
+      padding: 0.5rem 0.75rem;
+    }
+    .hud:hover .hud__button b,
+    .hud:focus-within .hud__button b {
+      margin-left: 0.4em;
+    }
+    .hud--off {
+      top: auto;
+      width: var(--track-w);
+      border-right: 0;
+    }
+    .hud--off .hud__panel {
+      position: static;
+      height: auto;
+      border: 2px solid var(--surface-2);
+    }
+    .toast {
+      right: var(--s-3);
+      bottom: var(--s-3);
+    }
+  }
+
   /* Phones: one slim row. The ship runs beside a small Games button; the panel is a sheet that
      opens above the bar when asked and closes with the same button. */
   @media (max-width: 47.99rem) {

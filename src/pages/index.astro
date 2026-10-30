@@ -59,10 +59,24 @@ const checks = [
   <section class="level level--navy hero" data-level="1" aria-labelledby="hero-title">
     <div class="level__head hero__head">
       <p class="flag" data-load style="--d: 0ms"><span>Level 1 &middot; Start</span></p>
-      <h1 id="hero-title" class="hero__title">
-        <span class="hero__mask"><span class="hero__line" style="--i: 0">Nicolás</span></span>
-        <span class="hero__mask"><span class="hero__line" style="--i: 1">Porras</span></span>
-      </h1>
+      <div class="hero__name">
+        <h1 id="hero-title" class="hero__title">
+          <span class="hero__mask"><span class="hero__line" style="--i: 0">Nicolás</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 1">Porras</span></span>
+        </h1>
+        <!-- The visual copy of the name for the break, and the ticket it raises -->
+        <canvas class="hero__break" aria-hidden="true" hidden></canvas>
+        <aside class="hero__ticket" aria-hidden="true" hidden>
+          <p class="ticket__key">BUG-001</p>
+          <p class="ticket__title">Headline broke</p>
+          <dl class="ticket__meta">
+            <dt>Severity</dt>
+            <dd>Cosmetic</dd>
+            <dt>Status</dt>
+            <dd class="ticket__status" data-ticket-status>Open</dd>
+          </dl>
+        </aside>
+      </div>
       <p class="hero__role" data-load style="--d: 440ms">Game QA, platform compliance &amp; release testing</p>
       <p class="hero__value" data-load style="--d: 500ms">
         I've been testing games since 2021 and leading QA teams since 2022, at nDreams and Historic VR, and on indie
@@ -216,8 +230,10 @@ const checks = [
     padding-top: var(--s-4);
     padding-bottom: var(--s-6);
   }
-  :global(.games) .hero {
-    --hud-space: var(--hud-h);
+  @media (max-width: 63.99rem) {
+    :global(.games) .hero {
+      --hud-space: var(--hud-h);
+    }
   }
   @media (prefers-reduced-motion: no-preference) {
     .hero {
@@ -232,6 +248,11 @@ const checks = [
   }
   .hero__head .flag {
     margin-bottom: 0;
+  }
+  .hero__name {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
   }
   .hero__title {
     font-size: var(--step-hero);
@@ -249,6 +270,86 @@ const checks = [
   }
   .hero__line {
     display: block;
+  }
+  /* The break: the real heading fades while its pixel copy is up; the copy is one canvas. */
+  .hero__title.is-broken {
+    opacity: 0;
+  }
+  .hero__break {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .hero__break[hidden] {
+    display: none;
+  }
+  /* The ticket: a small tracker card beside the name, transform and opacity only. */
+  .hero__ticket {
+    position: absolute;
+    left: calc(100% + var(--s-4));
+    top: 0.25em;
+    width: 18rem;
+    z-index: 2;
+    padding: 0.875rem 1rem;
+    background: var(--surface);
+    border-left: 4px solid var(--accent-2);
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+    opacity: 0;
+    transform: translateX(-0.5rem) scale(0.9);
+    transform-origin: left top;
+    visibility: hidden;
+    transition:
+      transform 320ms var(--ease-out),
+      opacity 240ms ease,
+      visibility 0s linear 240ms;
+  }
+  .hero__ticket[hidden] {
+    display: none;
+  }
+  .hero__ticket.is-in {
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .hero__ticket[data-status='fixed'] {
+    border-left-color: var(--accent);
+  }
+  .ticket__key {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .ticket__title {
+    font-size: 1.25rem;
+    margin: 0.2em 0 0.4em;
+    max-width: none;
+  }
+  .ticket__meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.1em 0.75em;
+    margin: 0;
+    color: var(--muted);
+  }
+  .ticket__meta dd {
+    margin: 0;
+  }
+  .ticket__status {
+    color: var(--accent-2);
+  }
+  .hero__ticket[data-status='fixed'] .ticket__status {
+    color: var(--accent);
+  }
+  .hero__ticket[data-status='fixed'] .ticket__status::before {
+    content: '✓ ';
   }
   .hero__role {
     font-family: var(--font-display);
@@ -330,6 +431,16 @@ const checks = [
     }
     .hero__actions .button {
       width: 100%;
+    }
+    /* On a phone the ticket pins to the top of the screen, where the toast goes too. */
+    .hero__ticket {
+      position: fixed;
+      left: 0.5rem;
+      right: 0.5rem;
+      top: 0.5rem;
+      width: auto;
+      transform: translateY(-0.5rem) scale(0.96);
+      transform-origin: top center;
     }
     /* On a phone the photo comes under the text, still on the bottom edge. */
     .hero__figure {
@@ -693,15 +804,18 @@ const checks = [
 </style>
 
 <script>
+  import { startBreak } from '../scripts/break';
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  startBreak();
 
   // The curtain: the hero is pinned while the next level slides over it. A hero taller than the
   // screen (a phone) pins with its bottom edge on the bottom of the screen instead of its top.
   const hero = document.querySelector<HTMLElement>('.hero');
   if (hero && !reduce) {
     const pin = () => {
-      const hud = document.getElementById('hud')?.getBoundingClientRect().height ?? 0;
-      hero.style.setProperty('--hero-top', `${Math.min(0, innerHeight - hud - hero.offsetHeight)}px`);
+      // The room the bottom bar takes; the desktop track stands in the gutter and takes none.
+      const bar = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
+      hero.style.setProperty('--hero-top', `${Math.min(0, innerHeight - bar - hero.offsetHeight)}px`);
     };
     pin();
     addEventListener('resize', pin);

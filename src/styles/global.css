@@ -556,6 +556,13 @@ p + p {
 .games-off body {
   padding-bottom: 3rem; /* the folded HUD panel */
 }
+@media (min-width: 64rem) {
+  /* The track stands in the left gutter: nothing to leave room for at the foot. */
+  .games body,
+  .games-off body {
+    padding-bottom: 0;
+  }
+}
 .bug {
   position: absolute;
   z-index: 3;
