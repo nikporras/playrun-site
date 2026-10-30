@@ -56,7 +56,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
       {
         groups.map((g, gi) => (
           <div class:list={['group', `accent--${g.accent}`]} aria-labelledby={`group-${gi}`} data-year={yearOf(g)}>
-            <div class="group__head" data-land>
+            <div class="group__head" data-enter>
               <div class="group__id">
                 <h3 id={`group-${gi}`} class="group__name">{g.name}</h3>
                 <p class="group__when">{span(g)}</p>
@@ -79,7 +79,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
             {g.projects.length > 0 && (
               <div class="group__grid">
                 {g.projects.map((p, i) => (
-                  <GameCard project={p} via={g.via} delay={i * 60} land />
+                  <GameCard project={p} via={g.via} delay={i * 60} scan />
                 ))}
               </div>
             )}

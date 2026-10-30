@@ -10,6 +10,7 @@ import type { CollectionEntry } from 'astro:content';
 import { Image } from 'astro:assets';
 import GameIcon from './GameIcon.astro';
 import ExternalLink from './ExternalLink.astro';
+import PassMark from './PassMark.astro';
 import { logos } from '../data/logos';
 
 interface Props {
@@ -17,16 +18,17 @@ interface Props {
   /** A tag under the title, such as "via Universally Speaking". */
   via?: string;
   delay?: number;
-  /** Land with the laser from the track (the Portfolio journey) instead of the plain entrance. */
-  land?: boolean;
+  /** A target for the track's scan: once on screen and settled, the ship scans it (a bonus, never a gate). */
+  scan?: boolean;
 }
-const { project: p, via, delay = 0, land = false } = Astro.props;
+const { project: p, via, delay = 0, scan = false } = Astro.props;
 const logo = logos[p.id];
 const when = p.data.status === 'in-development' ? 'In development' : `${p.data.year} · Released`;
 const store = p.data.store ?? 'Steam';
 ---
 
-<article class="card tile--live" data-enter={land ? undefined : 'place'} data-land={land ? '' : undefined} style={`--enter-delay: ${delay}ms`}>
+<article class="card tile--live" data-enter="place" data-scan={scan ? '' : undefined} style={`--enter-delay: ${delay}ms`}>
+  <span class="card__tick" aria-hidden="true"><PassMark /></span>
   <div class="card__top">
     <span class="card__logo">
       {logo ? (
@@ -213,6 +215,70 @@ const store = p.data.store ?? 'Steam';
   .card__platforms {
     margin-top: auto;
     padding-top: var(--s-2);
+  }
+  /* The scan: the track's laser hits the card and a line sweeps it top to bottom like a QA pass,
+     then a green tick flashes in the bottom right corner and fades. Nothing in the card moves. */
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 0 calc(100% - 3px), var(--accent-2) 0);
+    box-shadow: 0 2px 14px var(--accent-2);
+    opacity: 0;
+    transform: translateY(-100%);
+    pointer-events: none;
+  }
+  .card__tick {
+    position: absolute;
+    right: var(--s-2);
+    bottom: var(--s-2);
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.25rem;
+    color: var(--accent);
+    opacity: 0;
+    transform: scale(0.5);
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .card.is-scanned::before {
+      animation: scan-sweep 450ms linear 120ms both;
+    }
+    .card.is-scanned .card__tick {
+      animation:
+        tick-pop 220ms var(--ease-out) 560ms both,
+        tick-fade 320ms ease 1500ms forwards;
+    }
+  }
+  @keyframes scan-sweep {
+    0% {
+      opacity: 1;
+      transform: translateY(-100%);
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(0);
+    }
+  }
+  @keyframes tick-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes tick-fade {
+    to {
+      opacity: 0;
+    }
   }
   @media (max-width: 63.99rem) {
     .card {

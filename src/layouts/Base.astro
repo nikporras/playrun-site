@@ -19,8 +19,9 @@ interface Props {
 
 const { title, description = site.description, fullTitle, ogImage = '/og.png' } = Astro.props;
 const pageTitle = fullTitle ?? `${title} | ${site.name}, ${site.tagline}`;
-// The build writes file routes (/about.html); the public address is the clean one (/about).
-const canonical = new URL(Astro.url.pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, ''), Astro.site);
+// The build writes a folder per page (/about/index.html); the public address is the clean one
+// (/about, no trailing slash), which is what the canonical link and the share address carry.
+const canonical = new URL(Astro.url.pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, '').replace(/(.)\/$/, '$1'), Astro.site);
 const ogUrl = new URL(ogImage, Astro.site);
 // Routes that exist in this build. The live link checks only test links to these, so pages that
 // are not built yet never count as failures; new pages join the list the moment they are built.
@@ -82,53 +83,32 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
     <Hud />
     <script>
       // Section entrances: once, in reading order, with the stagger set per element in --enter-delay.
-      // Landings ([data-land]) are announced to the track, which claims them (preventDefault), fires
-      // its laser at each in turn and lands them; if nothing claims one it lands on its own. A
-      // claimed landing still lands by itself after a long while, so nothing can stay hidden.
+      // Nothing waits for anything else: whatever enters the screen shows.
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const items = document.querySelectorAll<HTMLElement>('[data-enter], [data-land]');
-      const show = (el: Element) => {
-        if (el.hasAttribute('data-land')) {
-          if (el.classList.contains('is-landed') || el.hasAttribute('data-landing')) return;
-          el.setAttribute('data-landing', '');
-          if (reduce) {
-            el.classList.add('is-landed');
-            return;
-          }
-          const claimed = !document.dispatchEvent(new CustomEvent('playrun:land', { detail: el, cancelable: true }));
-          setTimeout(() => el.classList.add('is-landed'), claimed ? 12000 : 0);
-          return;
-        }
-        el.classList.add('is-in');
-      };
+      const items = document.querySelectorAll<HTMLElement>('[data-enter]');
+      const show = (el: Element) => el.classList.add('is-in');
       if (reduce || !('IntersectionObserver' in window)) {
         items.forEach(show);
       } else {
-        const onShow = (entries: IntersectionObserverEntry[], io: IntersectionObserver) => {
-          for (const e of entries) {
-            if (e.isIntersecting) {
-              show(e.target);
-              io.unobserve(e.target);
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                show(e.target);
+                io.unobserve(e.target);
+              }
             }
-          }
-        };
-        // Entrances show as they come up from the bottom; landings wait until the header or card
-        // reaches the middle of the screen, so the shot and the landing are in full view.
-        const enter = new IntersectionObserver(onShow, { rootMargin: '0px 0px -8% 0px', threshold: 0 });
-        const landing = new IntersectionObserver(onShow, { rootMargin: '0px 0px -45% 0px', threshold: 0 });
-        items.forEach((el) => (el.hasAttribute('data-land') ? landing : enter).observe(el));
-        const isLand = (el: Element) => el.hasAttribute('data-land');
-        const landed = (el: Element) => el.classList.contains('is-landed') || el.hasAttribute('data-landing');
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0 },
+        );
+        items.forEach((el) => io.observe(el));
         // Belt and braces: whatever is on screen shows on the next frame of every scroll, and
-        // every entrance shows after a few seconds regardless, so no heading can stay clipped.
-        // Landings keep waiting for the middle of the screen; at the foot of the page, where the
-        // last ones can go no higher, everything lands.
+        // everything shows after a few seconds regardless, so no heading can stay clipped.
         const sweep = () => {
-          const atEnd = scrollY + innerHeight >= document.documentElement.scrollHeight - 2;
           for (const el of items) {
-            if (isLand(el) ? landed(el) : el.classList.contains('is-in')) continue;
+            if (el.classList.contains('is-in')) continue;
             const r = el.getBoundingClientRect();
-            if (isLand(el) ? atEnd || (r.top < innerHeight * 0.55 && r.bottom > 0) : r.top < innerHeight && r.bottom > 0) show(el);
+            if (r.top < innerHeight && r.bottom > 0) show(el);
           }
         };
         setTimeout(sweep, 50);
@@ -145,7 +125,7 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
           },
           { passive: true },
         );
-        setTimeout(() => items.forEach((el) => !isLand(el) && show(el)), 4000);
+        setTimeout(() => items.forEach(show), 4000);
       }
     </script>
   </body>

@@ -769,43 +769,12 @@ html:not(.games) .bug {
   }
 }
 
-/* Landings: a header or a card on the Portfolio waits off its mark until the track's laser hits
-   it, then slides into place with a flash. Visible without script; simply there under reduced
-   motion. The card's ::after is its scanline, so the flash is the ::before. */
-.js [data-land] {
-  opacity: 0;
-  transform: translateY(28px);
-}
-.js [data-land].is-landed {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 320ms var(--ease-out),
-    transform 520ms var(--ease-expo);
-}
-.js [data-land].is-landed::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--accent-2);
-  opacity: 0;
-  pointer-events: none;
-  animation: land-flash 560ms ease-out;
-}
-@keyframes land-flash {
-  from {
-    opacity: 0.5;
-  }
-  to {
-    opacity: 0;
-  }
-}
 /* The dealt deck (src/scripts/deck.ts): on a desktop with motion the deck is several screens
    tall and its stage pins for all but the first (the level head sits above the deck and scrolls
-   away, so a card has the whole screen); the cards sit on one stage. Card 0 lies in
-   place; each next card rises from below the screen as --e goes 0 to 1 with the scroll, landing
-   a little lower than the last and tilted its own few degrees. Transform only; the card's own
-   entrance (opacity, a transition) is off. Without is-deck the cards stand in flow. */
+   away, so a card has the whole screen); the cards sit on one stage. Card 0 lies in place; each
+   next card rises from below the screen as --e goes 0 to 1 with the scroll, landing a little lower
+   than the last and tilted its own few degrees. Transform only; the card's own entrance (opacity,
+   a transition) is off. Without is-deck the cards stand in flow. */
 .deck.is-deck {
   height: calc(100vh + (var(--n, 5) - 1) * 70vh);
   overflow: clip;
@@ -843,42 +812,75 @@ html:not(.games) .bug {
   --e: 1;
 }
 
-/* The laser: a beam from the ship to the thing that just came into view. It extends for the first
-   third of the shot, holds while the target lands, then fades. */
+/* The laser: the track's shot at a card that is on screen and settled. A thick beam with a glow
+   from the ship's nose to the card's logo: it extends in a tenth of a second, holds while the
+   card's scan line sweeps, then fades. The flash is the muzzle, at the nose, for a blink. */
 .laser {
   position: fixed;
   left: 0;
   top: 0;
   z-index: 39;
-  height: 5px;
+  height: 14px;
   width: var(--len, 0px);
-  background: var(--accent);
+  background: linear-gradient(to right, var(--pr-light), var(--accent) 30%, var(--accent-2));
   box-shadow:
     0 0 0 1px var(--pr-navy),
-    0 0 8px var(--accent-2);
+    0 0 18px var(--accent-2),
+    0 0 36px color-mix(in srgb, var(--accent-2) 50%, transparent);
   transform-origin: 0 50%;
-  transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--a, 0rad)) scaleX(0);
+  transform: translate(var(--x, 0px), calc(var(--y, 0px) - 7px)) rotate(var(--a, 0rad)) scaleX(0);
   opacity: 0;
   pointer-events: none;
 }
 .laser.is-on {
-  animation: laser 520ms var(--ease-out) forwards;
+  animation: laser 420ms var(--ease-out) forwards;
 }
 @keyframes laser {
   0% {
-    transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--a, 0rad)) scaleX(0);
+    transform: translate(var(--x, 0px), calc(var(--y, 0px) - 7px)) rotate(var(--a, 0rad)) scaleX(0);
     opacity: 1;
   }
-  35% {
-    transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--a, 0rad)) scaleX(1);
+  25% {
+    transform: translate(var(--x, 0px), calc(var(--y, 0px) - 7px)) rotate(var(--a, 0rad)) scaleX(1);
     opacity: 1;
   }
   70% {
-    transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--a, 0rad)) scaleX(1);
+    transform: translate(var(--x, 0px), calc(var(--y, 0px) - 7px)) rotate(var(--a, 0rad)) scaleX(1);
     opacity: 1;
   }
   100% {
-    transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--a, 0rad)) scaleX(1);
+    transform: translate(var(--x, 0px), calc(var(--y, 0px) - 7px)) rotate(var(--a, 0rad)) scaleX(1);
+    opacity: 0;
+  }
+}
+.flash {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 39;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--pr-light), var(--accent) 45%, transparent 70%);
+  transform: translate(var(--x, 0px), var(--y, 0px)) scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+.flash.is-on {
+  animation: flash 240ms var(--ease-out) forwards;
+}
+@keyframes flash {
+  0% {
+    transform: translate(var(--x, 0px), var(--y, 0px)) scale(0.3);
+    opacity: 1;
+  }
+  60% {
+    transform: translate(var(--x, 0px), var(--y, 0px)) scale(1.3);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(var(--x, 0px), var(--y, 0px)) scale(1.6);
     opacity: 0;
   }
 }
@@ -934,15 +936,14 @@ html:not(.games) .bug {
   html {
     scroll-behavior: auto;
   }
-  .js [data-enter],
-  .js [data-land] {
+  .js [data-enter] {
     opacity: 1;
     transform: none;
     clip-path: none;
     transition: none;
   }
-  .js [data-land].is-landed::before,
-  .laser.is-on {
+  .laser.is-on,
+  .flash.is-on {
     animation: none;
   }
   .js [data-enter='scan'].is-in::after,

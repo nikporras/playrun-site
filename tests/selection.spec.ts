@@ -9,7 +9,7 @@ const PAGES = ['/', '/skills', '/portfolio', '/contact', '/quality', '/privacy',
 async function settle(page: Page) {
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
   await page.evaluate(() => {
-    document.querySelectorAll('[data-enter], [data-land]').forEach((e) => e.classList.add('is-in', 'is-landed'));
+    document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in'));
     // the Skills deck is scrubbed by the scroll; the plain rows are what a drag can reach
     document.querySelectorAll('[data-deck]').forEach((e) => e.classList.remove('is-deck'));
     return Promise.all(

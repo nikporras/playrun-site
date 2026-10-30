@@ -14,15 +14,21 @@ const projectRedirects = Object.fromEntries([...projectSlugs, 'the-climb'].map((
 export default defineConfig({
   site: 'https://playrunqa.com',
   output: 'static',
-  trailingSlash: 'never',
-  build: { format: 'file' },
+  // Every page builds as a folder with an index.html, so GitHub Pages answers /portfolio and
+  // /portfolio/ alike (it sends the first to the second). Links and canonicals stay slash-free.
+  trailingSlash: 'ignore',
+  build: { format: 'directory' },
   // The About page was folded into Home, the Portfolio and Skills; its address goes home.
   // The Credits page was folded into the Terms page.
   redirects: { '/services': '/skills', '/about': '/', '/credits': '/terms#credits', ...projectRedirects },
   integrations: [
     sitemap({
-      // Redirect pages are not pages.
-      filter: (page) => !page.includes('/portfolio/') && !page.endsWith('/services') && !page.endsWith('/about') && !page.endsWith('/credits'),
+      // Redirect pages are not pages; the addresses in the map carry no trailing slash.
+      filter: (page) => {
+        const path = new URL(page).pathname.replace(/\/$/, '');
+        return !/^\/portfolio\/./.test(path) && !['/services', '/about', '/credits'].includes(path);
+      },
+      serialize: (item) => ({ ...item, url: item.url.replace(/\/$/, '') || item.url }),
     }),
   ],
   devToolbar: { enabled: false },

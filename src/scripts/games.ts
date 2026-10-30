@@ -194,55 +194,92 @@ export function startGames() {
   }
   document.addEventListener('playrun:achieve', (e) => achieve((e as CustomEvent<string>).detail));
 
-  // Landings: the ship fires a laser at each header or card as it comes into view, then the thing
-  // lands. Shots queue, one every SHOT_MS, so a row of cards is visibly shot in one by one; a
-  // target that has already left the screen (a fast scroll) lands at once without a shot.
-  const SHOT_MS = 360;
-  const HIT_MS = 260;
-  const land = (el: HTMLElement) => el.classList.add('is-landed');
-  const onScreen = (r: DOMRect) => r.bottom > 0 && r.top < innerHeight;
-  const shots: HTMLElement[] = [];
-  let firing = false;
-  const fire = () => {
-    const el = shots.shift();
-    if (!el) {
-      firing = false;
-      return;
+  // The scan: a bonus on a game card that is already on screen. Once the scroll settles, the card
+  // that is wholly on screen and nearest the middle gets one shot: on a desktop the ship fires a
+  // beam at its logo, with a flash at the nose, and the card is scanned (a line sweeps it, a tick
+  // flashes); on a phone the sweep alone. One shot at a time, never while scrolling fast, each card
+  // once per page view; a card that misses its moment is simply shown. Nothing is ever hidden.
+  const SHOT_MS = 900;
+  const flash = document.querySelector<HTMLElement>('[data-flash]');
+  const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-scan]'));
+  const scanned = new Set<HTMLElement>();
+  let shooting = false;
+  let speed = 0;
+  let settleTimer = 0;
+  const shoot = (card: HTMLElement) => {
+    scanned.add(card);
+    shooting = true;
+    if (vertical.matches && laser) {
+      const r = (card.querySelector('.card__logo') ?? card).getBoundingClientRect();
+      const s = runner.getBoundingClientRect();
+      // from the nose of the ship to the middle of the card's logo
+      const sx = s.right;
+      const sy = s.top + s.height / 2;
+      const tx = r.left + r.width / 2;
+      const ty = r.top + r.height / 2;
+      const dx = tx - sx;
+      const dy = ty - sy;
+      laser.style.setProperty('--x', `${sx}px`);
+      laser.style.setProperty('--y', `${sy}px`);
+      laser.style.setProperty('--len', `${Math.hypot(dx, dy)}px`);
+      laser.style.setProperty('--a', `${Math.atan2(dy, dx)}rad`);
+      laser.classList.remove('is-on');
+      void laser.offsetWidth;
+      laser.classList.add('is-on');
+      if (flash) {
+        flash.style.setProperty('--x', `${sx}px`);
+        flash.style.setProperty('--y', `${sy}px`);
+        flash.classList.remove('is-on');
+        void flash.offsetWidth;
+        flash.classList.add('is-on');
+      }
     }
-    firing = true;
-    const r = el.getBoundingClientRect();
-    if (!laser || !state.on || hud.classList.contains('hud--off') || !onScreen(r)) {
-      land(el);
-      fire();
-      return;
-    }
-    const s = runner.getBoundingClientRect();
-    const v = vertical.matches;
-    // From the nose of the ship to the nearest edge of the target: its left edge on desktop (at
-    // the ship's height where the target spans it), its bottom edge from the bar on a phone.
-    const sx = v ? s.right : s.left + s.width / 2;
-    const sy = v ? s.top + s.height / 2 : s.top;
-    const tx = v ? r.left : Math.min(Math.max(sx, r.left), r.right);
-    // on a phone the target is always above the bar, even one still coming up from below it
-    const ty = v ? Math.min(Math.max(sy, r.top), r.bottom) : Math.min(r.bottom, sy - 8);
-    const dx = tx - sx;
-    const dy = ty - sy;
-    laser.style.setProperty('--x', `${sx}px`);
-    laser.style.setProperty('--y', `${sy}px`);
-    laser.style.setProperty('--len', `${Math.hypot(dx, dy)}px`);
-    laser.style.setProperty('--a', `${Math.atan2(dy, dx)}rad`);
-    laser.classList.remove('is-on');
-    void laser.offsetWidth;
-    laser.classList.add('is-on');
-    window.setTimeout(() => land(el), HIT_MS);
-    window.setTimeout(fire, SHOT_MS);
+    card.classList.add('is-scanned');
+    window.setTimeout(() => {
+      shooting = false;
+      consider();
+    }, SHOT_MS);
   };
-  document.addEventListener('playrun:land', (e) => {
-    // claimed: the page leaves the landing to the track instead of landing it itself
-    e.preventDefault();
-    shots.push((e as CustomEvent<HTMLElement>).detail);
-    if (!firing) fire();
-  });
+  const consider = () => {
+    if (shooting || !state.on || hud.classList.contains('hud--off') || speed > 0.6) return;
+    const mid = innerHeight / 2;
+    let best: HTMLElement | null = null;
+    let bestD = Infinity;
+    for (const card of targets) {
+      if (scanned.has(card) || !card.classList.contains('is-in')) continue;
+      const r = card.getBoundingClientRect();
+      if (r.top < 0 || r.bottom > innerHeight) continue;
+      const centre = (r.top + r.bottom) / 2;
+      if (centre < innerHeight * 0.2 || centre > innerHeight * 0.8) continue;
+      const d = Math.abs(centre - mid);
+      if (d < bestD) {
+        bestD = d;
+        best = card;
+      }
+    }
+    if (best) shoot(best);
+  };
+  if (targets.length) {
+    let speedY = scrollY;
+    let speedT = performance.now();
+    addEventListener(
+      'scroll',
+      () => {
+        const now = performance.now();
+        speed = Math.abs(scrollY - speedY) / Math.max(1, now - speedT);
+        speedY = scrollY;
+        speedT = now;
+        window.clearTimeout(settleTimer);
+        settleTimer = window.setTimeout(() => {
+          speed = 0;
+          consider();
+        }, 160);
+      },
+      { passive: true },
+    );
+    window.setTimeout(consider, 400);
+    addEventListener('load', () => window.setTimeout(consider, 300));
+  }
 
   // The runner: scroll progress, set on scroll inside a frame, drives its place on the track
   // through one custom property. Level marks sit where each section starts along the same track.

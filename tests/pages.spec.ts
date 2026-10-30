@@ -50,7 +50,7 @@ const PAGES = [
 
 async function settle(page: Page) {
   await page.evaluate(() => {
-    document.querySelectorAll('[data-enter], [data-land]').forEach((e) => e.classList.add('is-in', 'is-landed'));
+    document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in'));
     return Promise.all(
       document
         .getAnimations()
@@ -190,17 +190,7 @@ test('every card has a logo or its icon, the labels and one store button in a ne
   await page.goto('/portfolio');
   // seven posts, newest first, in LinkedIn's words, each with its own accent
   await expect(page.locator('.group__name')).toHaveText(['Aonic', 'HCLTech', 'Nexus Studios', 'Universally Speaking', 'Historic VR', 'nDreams', 'Universally Speaking']);
-  // a header or card lands when it reaches the middle of the screen, not as it enters at the foot
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.reload();
-  await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
-  const second = page.locator('.group').nth(1).locator('[data-land]').first();
-  const y = await second.evaluate((el) => el.getBoundingClientRect().top + scrollY);
-  await page.evaluate((y) => window.scrollTo(0, y - innerHeight * 0.8), y);
-  await page.waitForTimeout(700);
-  await expect(second, 'in the lower fifth of the screen: not landed yet').not.toHaveClass(/is-landed/);
-  await page.evaluate((y) => window.scrollTo(0, y - innerHeight * 0.45), y);
-  await expect(second, 'at the middle: shot and landed').toHaveClass(/is-landed/, { timeout: 3000 });
+
   // the dates, large and in the accent, right under the name; a post with several roles keeps
   // each role's own dates on its line
   await expect(page.locator('.group__when')).toHaveText(['Jul 2026 to present', 'Apr 2026 to Jul 2026', 'Oct 2025 to Dec 2025', 'Jun 2025 to Aug 2025', 'Feb 2025 to Feb 2026', 'Mar 2022 to Oct 2024', '2021 to 2022']);
@@ -337,6 +327,33 @@ test('the skills jump list lands on each skill', async ({ page }) => {
   for (const id of ids) await expect(page.locator(`#${id}`)).toHaveCount(1);
 });
 
+test('every page answers with and without a trailing slash, the canonical and the sitemap carry none, and a missing page is still the 404', async ({ request, page }) => {
+  const routes = ['/skills', '/portfolio', '/quality', '/contact', '/privacy', '/terms', '/accessibility'];
+  for (const route of routes) {
+    for (const form of [route, `${route}/`]) {
+      const res = await request.get(form);
+      expect(res.status(), `${form} answers 200`).toBe(200);
+      const html = await res.text();
+      expect(html, `${form} is not the 404 page`).not.toContain('Game over');
+      expect(html, `${form} carries the clean canonical`).toContain(`<link rel="canonical" href="https://playrunqa.com${route}">`);
+    }
+  }
+  for (const form of ['/', '/index.html']) {
+    const res = await request.get(form);
+    expect(res.status(), form).toBe(200);
+    expect(await res.text()).toContain('<link rel="canonical" href="https://playrunqa.com/">');
+  }
+  const sitemap = await (await request.get('/sitemap-0.xml')).text();
+  for (const route of routes) expect(sitemap).toContain(`https://playrunqa.com${route}<`);
+  expect(sitemap).not.toMatch(/playrunqa\.com\/[a-z-]+\/</);
+  const missing = await request.get('/this-page-is-not-in-the-build/');
+  expect(missing.status()).toBe(404);
+  expect(await missing.text()).toContain('Game over');
+  await page.goto('/portfolio/');
+  await expect(page.locator('h1')).toHaveText(/Games I've\s*tested/);
+  await expect(page.locator('header').getByRole('link', { name: 'Portfolio' })).toHaveAttribute('aria-current', 'page');
+});
+
 test('the old services, about and credits addresses send visitors on', async ({ request, page }) => {
   const services = await request.get('/services');
   expect(services.status()).toBe(200);
@@ -395,7 +412,7 @@ test('the built site is a portfolio, offers no work, links to no repository and 
     const hit = text.match(offers);
     expect(hit, `${file}: ${hit?.[0]}`).toBeNull();
     expect(text, `${file} links to a repository`).not.toMatch(/href="https?:\/\/github\.com/);
-    if (file.endsWith('portfolio.html')) portfolio = text;
+    if (file.replace(/\\/g, '/').endsWith('/portfolio/index.html')) portfolio = text;
   }
   for (const t of titles) expect(portfolio, t).toContain(t);
 });
