@@ -109,12 +109,8 @@ const role = (r: { title: string; contract?: boolean }) => (r.contract ? `${r.ti
     column-gap: var(--s-5);
     row-gap: var(--s-2);
     align-items: start;
-    padding: var(--s-3);
-    background: var(--bg);
-    color: var(--ink);
-    border-left: 0.5rem solid var(--g-accent, var(--accent-2));
-    --sel-bg: var(--accent);
-    --sel-ink: var(--accent-ink);
+    padding: var(--s-4) 0;
+    border-top: 1px solid var(--rule);
   }
   .group__name {
     grid-area: name;
@@ -128,7 +124,6 @@ const role = (r: { title: string; contract?: boolean }) => (r.contract ? `${r.ti
     font-family: var(--font-display);
     font-size: 1.25rem;
     line-height: 1.25;
-    color: var(--g-ink, var(--accent-2));
   }
   .group__dot {
     margin-inline: 0.2em;
@@ -171,7 +166,7 @@ const role = (r: { title: string; contract?: boolean }) => (r.contract ? `${r.ti
         'name'
         'roles'
         'lead';
-      padding: var(--s-3) var(--s-2);
+      padding: var(--s-3) 0;
     }
     .group__grid {
       grid-template-columns: 1fr;

@@ -9,6 +9,7 @@ tags: ["Functional", "Compatibility", "Performance"]
 url: "https://store.steampowered.com/app/1873920/Fracked/"
 employer: "ndreams"
 icon: "mountain"
+wordmark: true
 public: true
 ---
 

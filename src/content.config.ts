@@ -28,6 +28,8 @@ const projects = defineCollection({
     icon: z.enum(['city', 'basketball', 'seaplane', 'frog', 'mask', 'cat', 'sabres', 'golf', 'dino', 'ghost', 'brain', 'mountain', 'sun', 'wolf', 'castle', 'helmet', 'hut', 'drone', 'hand', 'vault']),
     // Where the official logo in src/assets/logos/<id>.png came from: the press kit or official page.
     logoSource: z.string().url().optional(),
+    // The name set in Pixel Operator where no clean official logo exists but the icon is not wanted.
+    wordmark: z.boolean().default(false),
     // Only projects cleared for public use are shown. Default is hidden.
     public: z.boolean().default(false),
   }),

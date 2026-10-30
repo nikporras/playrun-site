@@ -106,20 +106,37 @@ for (const p of PAGES) {
       }
     });
 
-    test('the level label reads on its field (WCAG AA)', async ({ page }) => {
+    test('the level label is a short line and small text that reads on its field (WCAG AA)', async ({ page }) => {
       await page.goto(p.path);
-      const flags = await page.locator('.level .flag span').evaluateAll((els) =>
+      const flags = await page.locator('.level .flag').evaluateAll((els) =>
         els.map((el) => {
           const level = el.closest('.level')!;
-          return { field: level.className.match(/level--(\w+)/)?.[1], bg: getComputedStyle(el).backgroundColor, ink: getComputedStyle(el).color };
+          const cs = getComputedStyle(el);
+          const line = getComputedStyle(el, '::before');
+          return {
+            field: level.className.match(/level--(\w+)/)?.[1],
+            ink: cs.color,
+            box: cs.backgroundColor,
+            spanBox: getComputedStyle(el.querySelector('span')!).backgroundColor,
+            line: line.backgroundColor,
+            lineW: parseFloat(line.width),
+            size: parseFloat(cs.fontSize),
+          };
         }),
       );
       const navy = 'rgb(12, 21, 42)';
       const green = 'rgb(103, 193, 140)';
-      const light = 'rgb(229, 231, 234)';
+      const white = 'rgb(255, 255, 255)';
+      const none = 'rgba(0, 0, 0, 0)';
+      expect(flags.length).toBeGreaterThan(0);
       for (const f of flags) {
-        if (f.field === 'navy' || f.field === 'blue') expect(f, `${f.field}: green label, navy text`).toEqual(expect.objectContaining({ bg: green, ink: navy }));
-        else expect(f, `${f.field}: navy label, light text`).toEqual(expect.objectContaining({ bg: navy, ink: light }));
+        expect(f.box, 'no filled box').toBe(none);
+        expect(f.spanBox, 'no filled box').toBe(none);
+        expect(f.lineW, 'a short line before the text').toBeGreaterThanOrEqual(16);
+        expect(f.size, 'small text').toBeLessThanOrEqual(16);
+        if (f.field === 'navy') expect(f, 'green on navy').toEqual(expect.objectContaining({ ink: green, line: green }));
+        else if (f.field === 'blue') expect(f, 'white text, green line on blue').toEqual(expect.objectContaining({ ink: white, line: green }));
+        else expect(f, `navy on ${f.field}`).toEqual(expect.objectContaining({ ink: navy, line: navy }));
       }
     });
 
@@ -188,6 +205,7 @@ test('every card has a logo or its icon, the labels and one store button in a ne
         rel: a?.getAttribute('rel') ?? '',
         logo: el.querySelectorAll('.card__logo img').length,
         icon: el.querySelectorAll('.card__logo .gameicon').length,
+        wordmark: el.querySelectorAll('.card__wordmark').length,
         tags: [...el.querySelectorAll('.card__tags li')].map((t) => t.textContent?.trim()),
         did: el.querySelector('.card__did')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
         when: el.querySelector('.card__when')?.textContent?.trim() ?? '',
@@ -203,7 +221,7 @@ test('every card has a logo or its icon, the labels and one store button in a ne
     expect(c.text).toMatch(/^View on (Steam|Meta Quest|PlayStation Store|2K) \(opens in a new tab\)$/);
     expect(c.target).toBe('_blank');
     expect(c.rel.split(' ')).toEqual(expect.arrayContaining(['noopener', 'noreferrer']));
-    expect(c.logo + c.icon, `${c.title}: a logo or an icon`).toBe(1);
+    expect(c.logo + c.icon + c.wordmark, `${c.title}: a logo, a wordmark or an icon`).toBe(1);
     expect(c.tags.length, `${c.title}: labels`).toBeGreaterThan(0);
     expect(c.when).toMatch(/^(\d{4} · Released|In development)$/);
     expect(c.stage, `${c.title}: no stage numbers`).toBe(false);

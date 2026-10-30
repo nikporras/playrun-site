@@ -9,6 +9,7 @@ tags: ["CQA", "Compatibility", "Performance"]
 url: "https://store.steampowered.com/app/1862880/Guildford_Castle_VR/"
 employer: "historic-vr"
 icon: "castle"
+logoSource: "https://historicvr.com/"
 public: true
 ---
 

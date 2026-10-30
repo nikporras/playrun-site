@@ -20,7 +20,7 @@
   --accent-ink: var(--pr-navy);
   --accent-2: var(--pr-cyan); /* links, hover, focus */
   --field-blue: var(--pr-blue);
-  --field-blue-ink: var(--pr-light);
+  --field-blue-ink: #ffffff; /* the brand light is 3.9:1 on the blue; white is 4.9:1 */
   --field-light: var(--pr-light);
   --field-light-ink: var(--pr-navy);
   --field-light-surface: #d6d9de;
@@ -28,6 +28,7 @@
   --field-cyan-ink: var(--pr-navy);
   --field-green: var(--pr-green);
   --field-green-ink: var(--pr-navy);
+  --rule: color-mix(in srgb, currentColor 24%, transparent); /* the thin divider on every field */
 
   /* Type */
   --font-display: 'Pixel Operator', 'Lucida Console', 'Courier New', monospace;

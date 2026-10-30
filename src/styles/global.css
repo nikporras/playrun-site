@@ -300,7 +300,6 @@ p + p {
 .level--blue,
 .tile--ground,
 .tile--blue,
-.row,
 .footer {
   --sel-bg: var(--accent);
   --sel-ink: var(--accent-ink);
@@ -310,16 +309,9 @@ p + p {
 .level--light,
 .tile--light,
 .tile--accent,
-.button,
-.flag span {
+.button {
   --sel-bg: var(--pr-navy);
   --sel-ink: var(--pr-light);
-}
-.level--cyan .flag span,
-.level--green .flag span,
-.level--light .flag span {
-  --sel-bg: var(--accent);
-  --sel-ink: var(--accent-ink);
 }
 .button.button--navy {
   --sel-bg: var(--accent);
@@ -357,10 +349,14 @@ p + p {
 .level--navy {
   background: var(--bg);
   color: var(--ink);
+  --ink-2: var(--accent-2);
+  --muted-2: var(--muted);
 }
 .level--blue {
   background: var(--field-blue);
   color: var(--field-blue-ink);
+  --ink-2: #ffffff;
+  --muted-2: #ffffff;
 }
 .level--cyan {
   background: var(--field-cyan);
@@ -374,40 +370,42 @@ p + p {
   background: var(--field-light);
   color: var(--field-light-ink);
 }
+.level--cyan,
+.level--green,
+.level--light {
+  --ink-2: var(--pr-navy);
+  --muted-2: var(--pr-navy);
+}
 .flag {
   display: inline-flex;
-  align-items: stretch;
+  align-items: center;
+  gap: 0.75rem;
   margin: 0;
   max-width: none;
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 0.9375rem;
   line-height: 1;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--accent-ink);
+  letter-spacing: 0.14em;
+  color: var(--accent);
 }
 .flag::before {
   content: '';
-  width: 0.5rem;
-  background: var(--accent);
-  margin-right: 0.5rem;
+  flex: none;
+  width: 1.5rem;
+  height: 3px;
+  background: currentColor;
 }
-.flag span {
+.level--blue .flag {
+  color: #ffffff;
+}
+.level--blue .flag::before {
   background: var(--accent);
-  padding: 0.5rem 0.625rem 0.375rem;
 }
 .level--cyan .flag,
 .level--green .flag,
 .level--light .flag {
-  color: var(--pr-light);
-}
-.level--cyan .flag::before,
-.level--cyan .flag span,
-.level--green .flag::before,
-.level--green .flag span,
-.level--light .flag::before,
-.level--light .flag span {
-  background: var(--pr-navy);
+  color: var(--pr-navy);
 }
 
 /* Level furniture: every level header is one stacked, left-aligned block (the flag, the title
@@ -470,16 +468,17 @@ p + p {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
   min-width: 0;
 }
 .row {
-  background: var(--bg);
-  color: var(--ink);
-  padding: var(--s-3);
+  padding: var(--s-4) 0;
   display: flex;
   flex-direction: column;
   gap: var(--s-1);
+  border-top: 1px solid var(--rule);
+}
+.row:last-child {
+  border-bottom: 1px solid var(--rule);
 }
 .row__title {
   font-size: 2rem;
@@ -487,7 +486,7 @@ p + p {
 .row__meta {
   font-family: var(--font-display);
   font-size: 1rem;
-  color: var(--accent-2);
+  color: var(--ink-2, var(--accent-2));
   max-width: none;
 }
 .row__text {
@@ -501,7 +500,7 @@ p + p {
   gap: 0 0.4em;
   font-family: var(--font-display);
   font-size: 1rem;
-  color: var(--accent-2);
+  color: var(--ink-2, var(--accent-2));
 }
 .row__terms li:not(:last-child)::after {
   content: ',';
@@ -543,7 +542,7 @@ p + p {
     font-size: round(19vw, 8px);
   }
   .row {
-    padding: var(--s-3) var(--s-2);
+    padding: var(--s-3) 0;
   }
   .row__title {
     font-size: 1.75rem;
