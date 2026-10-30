@@ -28,7 +28,8 @@ export const social: { label: string; href: string }[] = [{ label: 'LinkedIn', h
 // PlayRun is a brand, not a post: the footer and the hero name it.
 export const playrun = { role: 'Founder & Lead QA', when: 'Oct 2025 to present' };
 
-export type Role = { title: string; when: string; contract?: boolean };
+// `lead`: a lead or management QA role, counted on the Home stats drum.
+export type Role = { title: string; when: string; contract?: boolean; lead?: boolean };
 export type Employer = {
   id: string;
   name: string;
@@ -75,7 +76,7 @@ export const employers: Employer[] = [
     id: 'historic-vr',
     name: 'Historic VR',
     accent: 'cyan',
-    roles: [{ title: 'QA Manager', when: 'Feb 2025 to Feb 2026', contract: true }],
+    roles: [{ title: 'QA Manager', when: 'Feb 2025 to Feb 2026', contract: true, lead: true }],
     lead: "Ran QA across the studio's VR projects: test strategy, compliance checks for each VR platform, schedules with development and production, the test hardware and low and recommended spec rigs, Unreal Engine profiling to hit performance targets, and an outsourced team scaled to 10 testers.",
   },
   {
@@ -85,7 +86,7 @@ export const employers: Employer[] = [
     roles: [
       { title: 'QA Tester', when: 'Mar 2022 to Sep 2022' },
       { title: 'Senior QA Tester', when: 'Sep 2022 to Apr 2023' },
-      { title: 'Lead QA Tester', when: 'Apr 2023 to Oct 2024' },
+      { title: 'Lead QA Tester', when: 'Apr 2023 to Oct 2024', lead: true },
     ],
     lead: 'Grew from tester to lead. Sole tester on a project, then led a QA team: test planning, the bug lifecycle in Jira and Confluence, QA in sprint planning and retrospectives, mentoring testers and managing an external QA vendor. Lead QA Tester on one cancelled project.',
   },

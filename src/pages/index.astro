@@ -44,12 +44,16 @@ const size = (id: string) => {
 };
 const wall = [...FEATURED.flatMap((id) => byPost.filter((p) => p.id === id)), ...byPost.filter((p) => !FEATURED.includes(p.id))];
 
-// The numbers, counted from the data so they stay right as it grows.
+// The numbers, counted from the data so they stay right as it grows. A VR game is one whose
+// platform line names a headset; a lead role is one flagged `lead` in the employers.
+const isVR = (p: (typeof shown)[number]) => p.data.platforms.some((name) => /VR|Quest/i.test(name));
 const stats = [
   { n: new Date().getFullYear() - since, suffix: '+', label: 'years in QA' },
   { n: new Set(employers.map((e) => e.name)).size, suffix: '', label: 'companies' },
   { n: shown.length, suffix: '', label: 'games' },
+  { n: shown.filter(isVR).length, suffix: '', label: 'VR games' },
   { n: 10, suffix: '+', label: 'platforms' },
+  { n: employers.flatMap((e) => e.roles).filter((r) => r.lead).length, suffix: '', label: 'QA lead roles' },
 ];
 
 const ALT = 'Nicolás Porras wearing a VR headset pushed up on his head';
@@ -158,9 +162,9 @@ const checks = [
   </section>
 
   <!-- Level 3: the numbers, counted from the portfolio, on a drum that turns: five rows on show,
-       the active one in the centre, the four stats three times over so the loop never ends (the
-       outer copies hidden from assistive tech). A still list without script or under reduced
-       motion. -->
+       the active one in the centre, the six stats three times over so the loop never ends and no
+       stat shows twice at once (the outer copies hidden from assistive tech). A still list
+       without script or under reduced motion. -->
   <section class="level level--navy stats" data-level="3" aria-labelledby="stats-title">
     <div class="stats__grid">
       <div class="level__head stats__head">

@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 /**
  * Routes that are planned but not built yet. Links to them are reported, not failed,
@@ -354,12 +356,22 @@ test.describe('Home', () => {
     const drum = page.locator('[data-drum]');
     await expect(drum).toHaveClass(/is-live/);
     const real = page.locator('.drum__row:not(.drum__clone)');
-    await expect(real).toHaveCount(4);
-    await expect(real).toHaveText([/5\+\s*years in QA/, /6\s*companies/, /20\s*games/, /10\+\s*platforms/]);
+    await expect(real).toHaveCount(6);
+    // the two new stats come from the data: VR games from the platform lines, lead roles from the flag
+    const projects = readdirSync(join(process.cwd(), 'src/content/projects')).filter((f) => f.endsWith('.md'));
+    const vr = projects.filter((f) => {
+      const text = readFileSync(join(process.cwd(), 'src/content/projects', f), 'utf8');
+      const platforms = text.match(/^platforms:\s*\[(.*)\]/m)?.[1] ?? '';
+      return /public: true/.test(text) && /VR|Quest/i.test(platforms);
+    });
+    expect(vr.length).toBe(10);
+    const leads = (readFileSync(join(process.cwd(), 'src/config.ts'), 'utf8').match(/lead: true/g) ?? []).length;
+    expect(leads).toBe(2);
+    await expect(real).toHaveText([/5\+\s*years in QA/, /6\s*companies/, /20\s*games/, new RegExp(`${vr.length}\\s*VR games`), /10\+\s*platforms/, new RegExp(`${leads}\\s*QA lead roles`)]);
     // the copies that make the loop are out of the accessibility tree
-    await expect(page.locator('.drum__clone')).toHaveCount(8);
+    await expect(page.locator('.drum__clone')).toHaveCount(12);
     expect(await page.locator('.drum__clone:not([aria-hidden="true"])').count()).toBe(0);
-    expect(await page.locator('.drum__row[aria-hidden="true"]').count()).toBe(8);
+    expect(await page.locator('.drum__row[aria-hidden="true"]').count()).toBe(12);
     // the statement on the left, the drum on the right
     const head = (await page.locator('.stats__head').boundingBox())!;
     const box = (await drum.boundingBox())!;
@@ -396,6 +408,7 @@ test.describe('Home', () => {
     expect(s.shown.length, 'five rows on show').toBe(5);
     expect(Math.round(s.viewH / s.rowH)).toBe(5);
     expect(s.shown.map((r) => r.d)).toEqual(['2', '1', '0', '1', '2']);
+    expect(new Set(s.shown.map((r) => r.text)).size, 'no stat shows twice at once').toBe(5);
     expect(s.shown.map((r) => r.opacity)).toEqual([0.25, 0.5, 1, 0.5, 0.25]);
     expect(s.shown.map((r) => r.x)).toEqual([64, 32, 0, 32, 64]);
     expect(s.shown[2].num).toBe('rgb(103, 193, 140)');
@@ -472,14 +485,15 @@ test.describe('Home', () => {
     expect((await state()).shown[2].text, 'paused').toBe(pausedText);
     await page.getByRole('button', { name: 'Play the stats' }).click();
     await page.mouse.click(10, 10);
-    // and it loops: eight turns forward come back round with no gap
+    // and it loops: a full turn and more comes back round with no gap, and no stat shows twice at any stop
     for (let k = 0; k < 8; k++) {
       await next.click();
       await page.waitForTimeout(700);
+      await page.mouse.move(10, 10);
+      s = await state();
+      expect(s.shown.length, `stop ${k}: five rows`).toBe(5);
+      expect(new Set(s.shown.map((r) => r.text)).size, `stop ${k}: no stat twice`).toBe(5);
     }
-    await page.mouse.move(10, 10);
-    s = await state();
-    expect(s.shown.length).toBe(5);
     expect(s.shown.map((r) => r.d)).toEqual(['2', '1', '0', '1', '2']);
     // off screen it stops
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -530,7 +544,7 @@ test.describe('Home', () => {
     await p2.goto('/');
     await expect(p2.locator('[data-drum]')).not.toHaveClass(/is-live/);
     const rows = p2.locator('.drum__row:not(.drum__clone)');
-    await expect(rows).toHaveCount(4);
+    await expect(rows).toHaveCount(6);
     for (const r of await rows.all()) {
       await expect(r).toBeVisible();
       await expect(r).toHaveCSS('opacity', '1');
@@ -585,7 +599,7 @@ test.describe('Home', () => {
     await expect(page.locator('.hero__value')).toBeVisible();
     await expect(page.locator('.ticker__seq').first().locator('.wall__mark')).toHaveCount(18);
     await expect(page.getByRole('button', { name: /the logos/ })).toBeHidden();
-    await expect(page.locator('.drum__row:not(.drum__clone)')).toHaveCount(4);
+    await expect(page.locator('.drum__row:not(.drum__clone)')).toHaveCount(6);
     await expect(page.locator('.drum__row:not(.drum__clone)').first()).toContainText('5+');
     await expect(page.locator('.drum__clone').first()).toBeHidden();
     await expect(page.locator('[data-drum-next]')).toBeHidden();
