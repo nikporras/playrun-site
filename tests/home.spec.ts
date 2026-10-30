@@ -281,7 +281,7 @@ test.describe('Home', () => {
     await context.close();
   });
 
-  test("the hero's exit: it fades in step with the curtain, the name breaks and its pixels land on the next title's top edge without covering it, the first ticket waits for the fix, a later one shows for three seconds, and everything mends on the way back", async ({ page }) => {
+  test("the hero's exit, triggered at thresholds and played on the clock: the name breaks and its pixels land, the hero fades on the next title's top edge without covering it, the first ticket waits for the fix, a later one shows for three seconds, and everything mends on the way back", async ({ page }) => {
     test.setTimeout(60_000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
@@ -293,37 +293,32 @@ test.describe('Home', () => {
     const ticket = page.locator('.hero__ticket');
     await expect(canvas).toBeHidden();
     await expect(ticket).toBeHidden();
-    // how far Level 2 covers the hero, and the hero's opacity, at a scroll position
+    const opacity = () => page.locator('.hero').evaluate((el) => Number(getComputedStyle(el).opacity));
     const at = async (y: number) => {
       await page.evaluate((y) => window.scrollTo(0, y), y);
       await page.waitForTimeout(120);
-      return page.evaluate(() => {
-        const hero = document.querySelector('.hero')!.getBoundingClientRect();
-        const wall = document.querySelector('.wall')!;
-        const band = (wall.querySelector('.join--top') as HTMLElement).offsetHeight;
-        const edge = wall.getBoundingClientRect().top + band / 2;
-        const top = Math.max(0, hero.top);
-        const bottom = Math.min(innerHeight, hero.bottom);
-        return { covered: Math.min(1, Math.max(0, (bottom - edge) / (bottom - top))), opacity: Number(getComputedStyle(document.querySelector('.hero')!).opacity) };
-      });
     };
-    // the fade follows the slide: whole at the start, fading as it is covered, gone just before
-    let prev = 1.01;
-    for (const y of [0, 250, 450, 650, 850]) {
-      const s = await at(y);
-      expect(s.opacity, `at ${y}`).toBeLessThan(prev);
-      expect(Math.abs(s.opacity - (1 - Math.min(1, s.covered / 0.9))), `opacity follows the cover at ${y}`).toBeLessThan(0.03);
-      prev = s.opacity;
-    }
-    const nearly = await at(1000);
-    expect(nearly.opacity, 'gone just before it is covered').toBe(0);
-    expect(nearly.covered).toBeLessThan(1);
-    // the break: the h1 still in the page, its copy landed: the heap drawn once in Level 2, the
-    // falling copy put away
-    await expect(page.locator('.wall__heap')).toBeVisible();
+    // above the threshold nothing moves: the scroll alone never scrubs it
+    await at(120);
+    await page.waitForTimeout(500);
     await expect(canvas).toBeHidden();
+    expect(await opacity()).toBe(1);
+    // past it, the break plays by itself on the clock, the pixels landed in about 0.6 s whatever the
+    // scroll does meanwhile (here it stands still); the hero stays, the photo showing through the clouds
+    await at(260);
+    await expect(canvas).toBeVisible();
     await expect(h1).toHaveCSS('opacity', '0');
     await expect(h1).toHaveText(/Nicolás\s*Porras/);
+    await page.waitForTimeout(700);
+    expect(await opacity(), 'the hero still there early in the slide').toBe(1);
+    // once Level 2 covers most of it, the hero fades out on the clock too, in about 0.4 s
+    await at(850);
+    await expect.poll(opacity, { timeout: 1000 }).toBe(0);
+    // then the page scrolls on with the heap riding on the title by itself
+    await at(1000);
+    await page.waitForTimeout(500);
+    await expect(canvas).toBeVisible();
+    expect(await canvas.evaluate((el) => getComputedStyle(el).position), 'in the page, so it scrolls with the title').toBe('absolute');
     // the pixels: landed on the tops of the title's letters, none on them, a heap along them. The
     // letters are read from a screenshot with the copy hidden (the copy is the same colour)
     await page.waitForTimeout(200);
@@ -334,7 +329,7 @@ test.describe('Home', () => {
       return { x: Math.floor(r.left), y: Math.floor(r.top), w: Math.ceil(r.width), h: Math.ceil(r.height) };
     });
     expect(text.y, 'the title is on screen').toBeGreaterThan(0);
-    await page.addStyleTag({ content: '.hero__break, .wall__heap, .hero__ticket { visibility: hidden !important; }' }).then((h) => h.evaluate((el) => el.setAttribute('id', 'zz-hide')));
+    await page.addStyleTag({ content: '.hero__break, .hero__ticket { visibility: hidden !important; }' }).then((h) => h.evaluate((el) => el.setAttribute('id', 'zz-hide')));
     const png = await page.screenshot({ clip: { x: text.x, y: text.y, width: text.w, height: text.h } });
     await page.evaluate(() => document.getElementById('zz-hide')!.remove());
     const { data: shot, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
@@ -343,9 +338,9 @@ test.describe('Home', () => {
     const inkTop = text.y + Math.floor(letters.findIndex(Boolean) / info.width);
     const land = await page.evaluate(
       ({ text, letters, width, inkTop }) => {
-        // every lit pixel of both canvases (the falling copy, and the heap once it has settled), on the screen
+        // every lit pixel of the canvas, on the screen
         const points: [number, number][] = [];
-        for (const c of document.querySelectorAll<HTMLCanvasElement>('.hero__break, .wall__heap')) {
+        for (const c of document.querySelectorAll<HTMLCanvasElement>('.hero__break')) {
           if (c.hidden) continue;
           const r = c.getBoundingClientRect();
           const k = c.width / r.width;
@@ -364,11 +359,11 @@ test.describe('Home', () => {
     expect(land.onLetters, 'no pixel on the letters').toBe(0);
     expect(land.below, 'nothing drawn below their tops').toBe(0);
     expect(land.onEdge, 'a heap along their tops').toBeGreaterThan(20);
-    // on the way back the pixels fly home and the name is whole again
+    // on the way back the pixels fly home on the clock and the name is whole again
     await at(0);
-    await expect(canvas).toBeHidden();
+    await expect(canvas).toBeHidden({ timeout: 1000 });
     await expect(h1).toHaveCSS('opacity', '1');
-    expect((await at(0)).opacity).toBe(1);
+    await expect.poll(opacity, { timeout: 1000 }).toBe(1);
     await expect(ticket).toContainText('Fixed');
     await expect(ticket.locator('.ticket__hint')).toBeHidden();
     await expect(ticket).not.toHaveClass(/is-in/, { timeout: 5000 });
@@ -512,6 +507,57 @@ test.describe('Home', () => {
       await fresh.close();
     });
   }
+
+  test("the hero's exit is triggered, not scrubbed: it plays for a fixed time whatever the scroll speed, holds still at the threshold, and draws nothing while the page scrolls between crossings", async ({ page }) => {
+    test.setTimeout(60_000);
+    // count every pixel drawn on the break's canvas
+    await page.addInitScript(() => {
+      const w = window as unknown as { draws: number };
+      w.draws = 0;
+      const fill = CanvasRenderingContext2D.prototype.fillRect;
+      CanvasRenderingContext2D.prototype.fillRect = function (...args: [number, number, number, number]) {
+        if (this.canvas.classList.contains('hero__break')) w.draws++;
+        return fill.apply(this, args);
+      };
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(600);
+    const draws = () => page.evaluate(() => (window as unknown as { draws: number }).draws);
+    const canvas = page.locator('.hero__break');
+    // the two markers: the break lower than the mend, so a stop at the threshold cannot flicker
+    const markAt = (k: string) => page.locator(`.wall__trip[data-trip="${k}"]`).evaluate((el) => el.getBoundingClientRect().top + scrollY);
+    const [breakY, mendY] = (await Promise.all([markAt('break'), markAt('mend')])).map((m) => Math.round(m - 900));
+    expect(breakY - mendY, 'a gap between the two').toBeGreaterThanOrEqual(16);
+    // one jump far past the threshold: the animation still takes its own time
+    await page.evaluate((y) => window.scrollTo(0, y), breakY + 600);
+    await expect(canvas).toBeVisible();
+    const t0 = Date.now();
+    await page.waitForTimeout(150);
+    const early = await draws();
+    await page.waitForTimeout(900);
+    const done = await draws();
+    expect(done, 'still drawing after the jump, on its own clock').toBeGreaterThan(early);
+    // settled: scrolling around this side of the threshold draws nothing at all
+    for (const y of [breakY + 300, breakY + 900, breakY + 80, breakY + 1400]) {
+      await page.evaluate((y) => window.scrollTo(0, y), y);
+      await page.waitForTimeout(150);
+    }
+    expect(await draws(), 'no drawing on scroll').toBe(done);
+    expect(Date.now() - t0).toBeGreaterThan(600);
+    // between the two markers it holds whichever state it was in
+    await page.evaluate((y) => window.scrollTo(0, y), Math.round((breakY + mendY) / 2));
+    await page.waitForTimeout(900);
+    await expect(canvas, 'still broken between the markers').toBeVisible();
+    await page.evaluate((y) => window.scrollTo(0, y), mendY - 40);
+    await expect(canvas).toBeHidden({ timeout: 1500 });
+    await page.evaluate((y) => window.scrollTo(0, y), Math.round((breakY + mendY) / 2));
+    await page.waitForTimeout(900);
+    await expect(canvas, 'still whole between the markers').toBeHidden();
+    await expect(page.locator('h1')).toHaveCSS('opacity', '1');
+  });
 
   test("the hero's exit is off under reduced motion and with the games off: the name stays whole, the hero simply goes behind, no ticket", async ({ page, browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });

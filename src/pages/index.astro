@@ -111,8 +111,8 @@ const checks = [
     <Bug id="hero-1" style="left: 40%; top: 2rem" tablet="right: 6%; top: 8rem" walk="x 2rem" />
   </section>
 
-  <!-- The visual copy of the name for its break, drawn over the whole screen so its pixels can land
-       on the next title (fixed, click-through, decorative), and the ticket the break raises -->
+  <!-- The visual copy of the name for its break, so its pixels can land on the next title
+       (click-through, decorative), and the ticket the break raises -->
   <canvas class="hero__break" aria-hidden="true" hidden></canvas>
   <div class="hero__ticket" hidden>
     <div class="ticket__body" aria-hidden="true">
@@ -136,7 +136,6 @@ const checks = [
   <!-- Level 2: the ticker of titles, their official logos in one colour, rolling slowly left -->
   <section class="level level--blue level--tight has-join-top has-join-bottom wall" data-level="2" aria-labelledby="wall-title">
     <Join kind="clouds" at="top" from="var(--pr-navy)" to="var(--field-blue)" seed="home-wall" />
-    <canvas class="wall__heap" aria-hidden="true" hidden></canvas>
     <Join kind="terrain" from="var(--field-blue)" to="var(--pr-navy)" seed="home-stats" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; Portfolio</span></p>
@@ -325,7 +324,7 @@ const checks = [
       position: sticky;
       top: var(--hero-top, 0px);
       z-index: 0;
-      will-change: opacity; /* it fades with the scroll: on its own layer, nothing repaints */
+      will-change: opacity; /* it fades as the name breaks: on its own layer, nothing repaints */
     }
   }
   .hero__head {
@@ -361,11 +360,12 @@ const checks = [
   .hero__title.is-broken {
     opacity: 0;
   }
+  /* (placed and sized by the script: in the page while the pixels fall to the title, fixed on the
+     screen while they fly home) */
   .hero__break {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
     pointer-events: none;
     z-index: 30;
   }
@@ -494,14 +494,15 @@ const checks = [
   .hero__ticket.is-docked .ticket__severity {
     display: none;
   }
-  /* The heap of landed pixels, drawn once, riding on the title's letters. */
-  .wall__heap {
+  /* The two markers the break watches, from near the top of Level 2 to the end of the page
+     (placed by the script; invisible, click-through). */
+  :global(.wall__trip) {
     position: absolute;
-    z-index: 1;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
     pointer-events: none;
-  }
-  .wall__heap[hidden] {
-    display: none;
   }
   /* The post, right under the name. */
   .hero__post {
