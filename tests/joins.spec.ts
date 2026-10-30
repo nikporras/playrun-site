@@ -44,7 +44,8 @@ for (const path of PAGES) {
             const covered = Array.from(document.querySelectorAll(text))
               .filter((t) => {
                 const b = t.getBoundingClientRect();
-                return b.width > 0 && b.height > 0 && b.left < r.right && b.right > r.left && b.top < r.bottom - 0.5 && b.bottom > r.top + 0.5;
+                // (the clipped content of a folded card on a phone is hidden, not covered)
+                return b.width > 0 && b.height > 0 && getComputedStyle(t).visibility !== 'hidden' && b.left < r.right && b.right > r.left && b.top < r.bottom - 0.5 && b.bottom > r.top + 0.5;
               })
               .map((t) => `${t.tagName}: ${(t.textContent ?? '').trim().slice(0, 30)}`);
             // the front layer's top edge, column by column, from its own path (M0 144 V.. H.. V.. H.. Z)
