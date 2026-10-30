@@ -281,7 +281,7 @@ test.describe('Home', () => {
     await context.close();
   });
 
-  test("the hero's exit: it fades in step with the curtain, the name breaks and its pixels land on the next title's top edge without covering it, the ticket reads Open with Scroll back up to fix for about two seconds, and everything mends on the way back", async ({ page }) => {
+  test("the hero's exit: it fades in step with the curtain, the name breaks and its pixels land on the next title's top edge without covering it, the first ticket waits for the fix, a later one shows for three seconds, and everything mends on the way back", async ({ page }) => {
     test.setTimeout(60_000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
@@ -318,8 +318,10 @@ test.describe('Home', () => {
     const nearly = await at(1000);
     expect(nearly.opacity, 'gone just before it is covered').toBe(0);
     expect(nearly.covered).toBeLessThan(1);
-    // the break: the copy is up, the h1 still in the page, the ticket open with the hint
-    await expect(canvas).toBeVisible();
+    // the break: the h1 still in the page, its copy landed: the heap drawn once in Level 2, the
+    // falling copy put away
+    await expect(page.locator('.wall__heap')).toBeVisible();
+    await expect(canvas).toBeHidden();
     await expect(h1).toHaveCSS('opacity', '0');
     await expect(h1).toHaveText(/Nicolás\s*Porras/);
     // the pixels: landed on the tops of the title's letters, none on them, a heap along them. The
@@ -332,7 +334,7 @@ test.describe('Home', () => {
       return { x: Math.floor(r.left), y: Math.floor(r.top), w: Math.ceil(r.width), h: Math.ceil(r.height) };
     });
     expect(text.y, 'the title is on screen').toBeGreaterThan(0);
-    await page.addStyleTag({ content: '.hero__break, .hero__ticket { visibility: hidden !important; }' }).then((h) => h.evaluate((el) => el.setAttribute('id', 'zz-hide')));
+    await page.addStyleTag({ content: '.hero__break, .wall__heap, .hero__ticket { visibility: hidden !important; }' }).then((h) => h.evaluate((el) => el.setAttribute('id', 'zz-hide')));
     const png = await page.screenshot({ clip: { x: text.x, y: text.y, width: text.w, height: text.h } });
     await page.evaluate(() => document.getElementById('zz-hide')!.remove());
     const { data: shot, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
@@ -341,22 +343,20 @@ test.describe('Home', () => {
     const inkTop = text.y + Math.floor(letters.findIndex(Boolean) / info.width);
     const land = await page.evaluate(
       ({ text, letters, width, inkTop }) => {
-        const c = document.querySelector<HTMLCanvasElement>('.hero__break')!;
-        const k = c.width / innerWidth;
-        const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
-        const lit = (vx: number, vy: number) => d[(Math.floor(vy * k) * c.width + Math.floor(vx * k)) * 4 + 3] > 0;
-        let onLetters = 0;
-        for (let y = 0; y < text.h; y++) for (let x = 0; x < width; x++) if (letters[y * width + x] && lit(text.x + x, text.y + y)) onLetters++;
-        let onEdge = 0;
-        let below = 0;
-        for (let y = 0; y < c.height; y += 2) {
-          for (let x = 0; x < c.width; x += 2) {
-            if (d[(y * c.width + x) * 4 + 3] < 128) continue;
-            const vy = y / k;
-            if (vy >= inkTop - 16 && vy <= inkTop) onEdge++;
-            if (vy > inkTop + 0.5) below++;
-          }
+        // every lit pixel of both canvases (the falling copy, and the heap once it has settled), on the screen
+        const points: [number, number][] = [];
+        for (const c of document.querySelectorAll<HTMLCanvasElement>('.hero__break, .wall__heap')) {
+          if (c.hidden) continue;
+          const r = c.getBoundingClientRect();
+          const k = c.width / r.width;
+          const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+          for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3] >= 128) points.push([r.left + x / k, r.top + y / k]);
         }
+        const lit = new Set(points.map(([x, y]) => `${Math.floor(x)},${Math.floor(y)}`));
+        let onLetters = 0;
+        for (let y = 0; y < text.h; y++) for (let x = 0; x < width; x++) if (letters[y * width + x] && lit.has(`${text.x + x},${text.y + y}`)) onLetters++;
+        const onEdge = points.filter(([, vy]) => vy >= inkTop - 16 && vy <= inkTop).length;
+        const below = points.filter(([, vy]) => vy > inkTop + 0.5).length;
         return { onLetters, onEdge, below };
       },
       { text, letters, width: info.width, inkTop },
@@ -372,20 +372,146 @@ test.describe('Home', () => {
     await expect(ticket).toContainText('Fixed');
     await expect(ticket.locator('.ticket__hint')).toBeHidden();
     await expect(ticket).not.toHaveClass(/is-in/, { timeout: 5000 });
-    // the ticket on a fresh break: Open, the hint, about two seconds, over Level 2 as it rises
+    // a later break in the same visit: Open with the hint for three seconds, then it tucks away
     await at(300);
     await expect(ticket).toHaveClass(/is-in/);
     await expect(ticket).toContainText('BUG-001');
     await expect(ticket).toContainText('Open');
+    await expect(ticket).not.toHaveClass(/is-docked/);
     await expect(ticket.locator('.ticket__hint')).toHaveText('Scroll back up to fix');
     await expect(ticket.locator('.ticket__hint')).toBeVisible();
     const t0 = Date.now();
     await at(700);
-    await page.waitForTimeout(Math.max(0, 1500 - (Date.now() - t0)));
-    await expect(ticket, 'still there after a second and a half, as Level 2 rises').toHaveClass(/is-in/);
-    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 1200 });
-    expect(Date.now() - t0).toBeLessThan(2900);
+    await page.waitForTimeout(Math.max(0, 2500 - (Date.now() - t0)));
+    await expect(ticket, 'still there after two and a half seconds').toHaveClass(/is-in/);
+    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 1500 });
+    expect(Date.now() - t0).toBeLessThan(4000);
   });
+
+  for (const [width, height] of [
+    [1440, 900],
+    [375, 780],
+  ] as const) {
+    test(`the first ticket of a visit (${width}px) docks and stays until the fix, dressed like the achievement toasts and readable, never over a heading, a button, a field or the scoreboard; later ones show for three seconds; Dismiss closes it`, async ({ page, browser }) => {
+      test.setTimeout(90_000);
+      await page.setViewportSize({ width, height });
+      await page.goto('/');
+      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForTimeout(600);
+      const ticket = page.locator('.hero__ticket');
+      const wallTop = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
+      const breakAt = width < 768 ? Math.round(wallTop - height + 260) : 300;
+      await page.evaluate((y) => window.scrollTo(0, y), breakAt);
+      await expect(ticket).toHaveClass(/is-in/);
+      await expect(ticket).toHaveClass(/is-docked/);
+      await expect(ticket.locator('.ticket__hint')).toHaveText('Scroll back up to fix');
+      await page.waitForTimeout(400);
+      // docked: bottom left on a desktop, the lower third above the bar on a phone
+      const box = (await ticket.boundingBox())!;
+      if (width < 768) {
+        const bar = (await page.locator('.tabbar').boundingBox())!;
+        expect(box.y).toBeGreaterThanOrEqual((height / 3) * 2 - 40);
+        expect(box.y + box.height).toBeLessThanOrEqual(bar.y);
+      } else {
+        expect(box.x, 'on the left').toBeLessThan(200);
+        expect(box.y + box.height, 'at the foot').toBeGreaterThan(height - 120);
+      }
+      // the same family as the toasts: the light field, navy ink, a navy outline, Pixel Operator
+      const look = await page.evaluate(() => {
+        const t = getComputedStyle(document.querySelector('.hero__ticket')!);
+        const o = getComputedStyle(document.querySelector('.toast')!);
+        return { bg: [t.backgroundColor, o.backgroundColor], ink: [t.color, o.color], outline: [t.outlineColor, o.outlineColor], font: [t.fontFamily, o.fontFamily] };
+      });
+      for (const [k, [a, b]] of Object.entries(look)) expect(a, k).toBe(b);
+      // every piece of text reads at AA on what is behind it (the ticket is opaque)
+      const ratios = await ticket.evaluate((el) => {
+        const lum = (c: string) => {
+          const [r, g, b] = (c.match(/[\d.]+/g) ?? []).slice(0, 3).map((v) => {
+            const s = Number(v) / 255;
+            return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        };
+        const bgOf = (n: Element | null): string => {
+          for (; n; n = n.parentElement) {
+            const c = getComputedStyle(n).backgroundColor;
+            if (c !== 'rgba(0, 0, 0, 0)') return c;
+          }
+          return 'rgb(12, 21, 42)';
+        };
+        return Array.from(el.querySelectorAll('.ticket__key, .ticket__title, dt, .ticket__status, .ticket__hint, .ticket__close'))
+          .filter((n) => n.getClientRects().length)
+          .map((n) => {
+            const a = lum(getComputedStyle(n).color);
+            const b = lum(bgOf(n));
+            return { what: n.className || n.tagName, ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) };
+          });
+      });
+      expect(ratios.length).toBeGreaterThanOrEqual(5);
+      for (const r of ratios) expect(r.ratio, `${r.what} at AA`).toBeGreaterThanOrEqual(4.5);
+      // the status, a coloured label
+      expect(await ticket.locator('.ticket__status').evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(look.bg[0]);
+      // it stays, wherever the visitor reads, and keeps clear of what matters
+      await page.waitForTimeout(3600);
+      await expect(ticket, 'still there after three and a half seconds').toHaveClass(/is-in/);
+      const end = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+      let shown = 0;
+      for (let y = breakAt; y <= end; y += Math.round(height * 0.35)) {
+        await page.evaluate((y) => window.scrollTo(0, y), y);
+        await page.waitForTimeout(120);
+        const hits = await page.evaluate(() => {
+          const t = document.querySelector('.hero__ticket')!;
+          if (!t.classList.contains('is-in')) return null;
+          const b = t.getBoundingClientRect();
+          return Array.from(document.querySelectorAll<HTMLElement>('main :is(h1, h2, h3, .button, button, input, textarea, select), .score__pill, .tabbar'))
+            .filter((el) => !el.closest('.hero__ticket, .bug, .hero') && el.getClientRects().length)
+            .filter((el) => {
+              const r = el.getBoundingClientRect();
+              return r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top;
+            })
+            .map((el) => `${el.tagName} ${(el.textContent ?? '').trim().slice(0, 30)}`);
+        });
+        if (hits === null) continue;
+        shown++;
+        expect(hits, `clear at ${y}`).toEqual([]);
+      }
+      expect(shown, 'on show most of the way down').toBeGreaterThan(3);
+      // back to the top: the name is whole, Fixed, then it leaves; the visit has had its first ticket
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await expect(ticket).toContainText('Fixed');
+      await expect(ticket).toHaveClass(/is-in/);
+      await expect(ticket).not.toHaveClass(/is-in/, { timeout: 4500 });
+      expect(await page.evaluate(() => sessionStorage.getItem('playrun.ticket'))).toBe('done');
+      // later in the visit (a reload too): three seconds, then away
+      await page.reload();
+      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForTimeout(400);
+      await page.evaluate((y) => window.scrollTo(0, y), breakAt);
+      await expect(ticket).toHaveClass(/is-in/);
+      await expect(ticket).not.toHaveClass(/is-docked/);
+      await expect(ticket).not.toHaveClass(/is-in/, { timeout: 4500 });
+      // Dismiss: a real button, closes it, counts as done, and no Fixed after it
+      const fresh = await browser.newContext({ viewport: { width, height } });
+      const p2 = await fresh.newPage();
+      await p2.goto('/');
+      await p2.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+      await p2.evaluate(() => document.fonts.ready);
+      await p2.waitForTimeout(400);
+      await p2.evaluate((y) => window.scrollTo(0, y), breakAt);
+      const t2 = p2.locator('.hero__ticket');
+      await expect(t2).toHaveClass(/is-docked/);
+      await expect(t2).toHaveClass(/is-in/);
+      await p2.getByRole('button', { name: 'Dismiss ticket' }).click();
+      await expect(t2).not.toHaveClass(/is-in/);
+      expect(await p2.evaluate(() => sessionStorage.getItem('playrun.ticket'))).toBe('done');
+      await p2.evaluate(() => window.scrollTo(0, 0));
+      await p2.waitForTimeout(600);
+      await expect(t2).not.toHaveClass(/is-in/);
+      await fresh.close();
+    });
+  }
 
   test("the hero's exit is off under reduced motion and with the games off: the name stays whole, the hero simply goes behind, no ticket", async ({ page, browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });

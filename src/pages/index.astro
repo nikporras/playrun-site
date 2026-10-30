@@ -112,23 +112,31 @@ const checks = [
   </section>
 
   <!-- The visual copy of the name for its break, drawn over the whole screen so its pixels can land
-       on the next title, and the ticket the break raises (both fixed, click-through, decorative) -->
+       on the next title (fixed, click-through, decorative), and the ticket the break raises -->
   <canvas class="hero__break" aria-hidden="true" hidden></canvas>
-  <aside class="hero__ticket" aria-hidden="true" hidden>
-    <p class="ticket__key">BUG-001</p>
-    <p class="ticket__title">Headline broke</p>
-    <dl class="ticket__meta">
-      <dt>Severity</dt>
-      <dd>Cosmetic</dd>
-      <dt>Status</dt>
-      <dd class="ticket__status" data-ticket-status>Open</dd>
-    </dl>
-    <p class="ticket__hint">Scroll back up to fix</p>
-  </aside>
+  <div class="hero__ticket" hidden>
+    <div class="ticket__body" aria-hidden="true">
+      <p class="ticket__key">BUG-001</p>
+      <p class="ticket__title">Headline broke</p>
+      <dl class="ticket__meta">
+        <dt class="ticket__severity">Severity</dt>
+        <dd class="ticket__severity">Cosmetic</dd>
+        <dt>Status</dt>
+        <dd><span class="ticket__status" data-ticket-status>Open</span></dd>
+      </dl>
+      <p class="ticket__hint">Scroll back up to fix</p>
+    </div>
+    <button type="button" class="ticket__close" aria-label="Dismiss ticket" data-ticket-close>
+      <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" width="14" height="14">
+        <path d="M0 0h1v1H0zM6 0h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM2 2h1v1H2zM4 2h1v1H4zM3 3h1v1H3zM2 4h1v1H2zM4 4h1v1H4zM1 5h1v1H1zM5 5h1v1H5zM0 6h1v1H0zM6 6h1v1H6z" fill="currentColor"></path>
+      </svg>
+    </button>
+  </div>
 
   <!-- Level 2: the ticker of titles, their official logos in one colour, rolling slowly left -->
   <section class="level level--blue level--tight has-join-top has-join-bottom wall" data-level="2" aria-labelledby="wall-title">
     <Join kind="clouds" at="top" from="var(--pr-navy)" to="var(--field-blue)" seed="home-wall" />
+    <canvas class="wall__heap" aria-hidden="true" hidden></canvas>
     <Join kind="terrain" from="var(--field-blue)" to="var(--pr-navy)" seed="home-stats" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; Portfolio</span></p>
@@ -317,6 +325,7 @@ const checks = [
       position: sticky;
       top: var(--hero-top, 0px);
       z-index: 0;
+      will-change: opacity; /* it fades with the scroll: on its own layer, nothing repaints */
     }
   }
   .hero__head {
@@ -363,30 +372,37 @@ const checks = [
   .hero__break[hidden] {
     display: none;
   }
-  /* The ticket: a small tracker card, fixed on the screen beside the name (placed by script), so it
-     stays as Level 2 comes up under it; transform and opacity only. */
+  /* The ticket: a tracker card in the same family as the achievement toasts and the scoreboard
+     card (the light field, navy ink, a navy outline, Pixel Operator), fixed on the screen and placed
+     by script; transform and opacity only. Docked (the first time in a visit) it is compact. */
   .hero__ticket {
     position: fixed;
     left: 0;
     top: 0;
-    width: 18rem;
     z-index: 35;
-    pointer-events: none;
-    padding: 0.875rem 1rem;
-    background: var(--surface);
-    border-left: 4px solid var(--accent-2);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s-1);
+    width: 18rem;
+    padding: 0.75rem 0.5rem 0.75rem 0.875rem;
+    background: var(--field-light);
+    color: var(--field-light-ink);
+    outline: 2px solid var(--pr-navy);
+    border-left: 4px solid var(--pr-blue);
     font-family: var(--font-display);
     font-size: 0.875rem;
-    line-height: 1.5;
+    line-height: 1.4;
     letter-spacing: 0.04em;
     opacity: 0;
-    transform: translateX(-0.5rem) scale(0.9);
-    transform-origin: left top;
+    transform: translateY(0.5rem) scale(0.96);
+    transform-origin: left bottom;
     visibility: hidden;
     transition:
       transform 320ms var(--ease-out),
       opacity 240ms ease,
       visibility 0s linear 240ms;
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
   }
   .hero__ticket[hidden] {
     display: none;
@@ -398,46 +414,94 @@ const checks = [
     transition-delay: 0s;
   }
   .hero__ticket[data-status='fixed'] {
-    border-left-color: var(--accent);
+    border-left-color: var(--pr-green);
   }
-  .ticket__hint {
-    margin-top: 0.5em;
-    color: var(--accent-2);
-    max-width: none;
-  }
-  .hero__ticket[data-status='fixed'] .ticket__hint {
-    display: none;
+  .ticket__body {
+    flex: 1;
+    min-width: 0;
   }
   .ticket__key {
-    font-size: 0.75rem;
-    letter-spacing: 0.12em;
+    font-size: 0.8125rem;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: var(--accent-2);
+    color: #3d4a66; /* 7.2:1 on the light field */
     max-width: none;
   }
   .ticket__title {
     font-size: 1.25rem;
-    margin: 0.2em 0 0.4em;
+    line-height: 1.1;
+    margin: 0.2em 0 0.45em;
     max-width: none;
   }
   .ticket__meta {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 0.1em 0.75em;
+    align-items: center;
+    gap: 0.25em 0.75em;
     margin: 0;
-    color: var(--muted);
+  }
+  .ticket__meta dt {
+    color: #3d4a66;
   }
   .ticket__meta dd {
     margin: 0;
   }
+  /* The status, a coloured label: Open in cyan on navy, Fixed in navy on green (both above 8:1). */
   .ticket__status {
-    color: var(--accent-2);
+    display: inline-block;
+    padding: 0.1em 0.5em;
+    background: var(--pr-navy);
+    color: var(--pr-cyan);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
   }
   .hero__ticket[data-status='fixed'] .ticket__status {
-    color: var(--accent);
+    background: var(--pr-green);
+    color: var(--pr-navy);
   }
   .hero__ticket[data-status='fixed'] .ticket__status::before {
     content: '✓ ';
+  }
+  .ticket__hint {
+    margin-top: 0.5em;
+    max-width: none;
+  }
+  .hero__ticket[data-status='fixed'] .ticket__hint {
+    display: none;
+  }
+  .ticket__close {
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: -0.5rem -0.25rem 0 0;
+    display: grid;
+    place-items: center;
+    color: var(--pr-navy);
+  }
+  .ticket__close:hover {
+    color: var(--pr-blue);
+  }
+  .ticket__close:focus-visible {
+    outline: 3px solid var(--pr-navy);
+    outline-offset: -3px;
+  }
+  .hero__ticket.is-docked {
+    width: 15rem;
+  }
+  .hero__ticket.is-docked .ticket__title {
+    font-size: 1rem;
+  }
+  .hero__ticket.is-docked .ticket__severity {
+    display: none;
+  }
+  /* The heap of landed pixels, drawn once, riding on the title's letters. */
+  .wall__heap {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .wall__heap[hidden] {
+    display: none;
   }
   /* The post, right under the name. */
   .hero__post {
@@ -533,20 +597,11 @@ const checks = [
     .hero__value {
       font-size: 1rem;
     }
-    /* On a phone the ticket sits in the lower third, just above the bottom bar and the ship. */
-    .hero__ticket {
-      left: var(--margin);
-      right: var(--margin);
-      top: auto;
-      bottom: calc(var(--hud-h) + var(--ship-w) + var(--s-2));
-      width: auto;
-      transform: translateY(0.5rem) scale(0.96);
+    /* On a phone the ticket spans the column (the script sets it in the lower third, above the bar). */
+    .hero__ticket,
+    .hero__ticket.is-docked {
+      width: calc(100vw - 2 * var(--margin));
       transform-origin: bottom center;
-    }
-    /* (while the next title passes the lower third, the top of the screen) */
-    .hero__ticket.is-top {
-      top: var(--s-2);
-      bottom: auto;
     }
     /* On a phone the photo comes under the text, on the bottom edge. */
     .hero__figure {
