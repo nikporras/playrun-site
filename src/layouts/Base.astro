@@ -19,9 +19,9 @@ interface Props {
 
 const { title, description = site.description, fullTitle, ogImage = '/og.png' } = Astro.props;
 const pageTitle = fullTitle ?? `${title} | ${site.name}, ${site.tagline}`;
-// The build writes a folder per page (/about/index.html); the public address is the clean one
-// (/about, no trailing slash), which is what the canonical link and the share address carry.
-const canonical = new URL(Astro.url.pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, '').replace(/(.)\/$/, '$1'), Astro.site);
+// The build writes a folder per page (/skills/index.html); the public address is the one with the
+// trailing slash (/skills/), which is what the canonical link and the share address carry.
+const canonical = new URL(Astro.url.pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, '/').replace(/([^/])$/, '$1/'), Astro.site);
 const ogUrl = new URL(ogImage, Astro.site);
 // Routes that exist in this build. The live link checks only test links to these, so pages that
 // are not built yet never count as failures; new pages join the list the moment they are built.

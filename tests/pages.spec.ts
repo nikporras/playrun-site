@@ -6,7 +6,7 @@ import { join } from 'node:path';
 /** The inner pages: Skills, Portfolio, Quality, and the legal pages. */
 const PAGES = [
   {
-    path: '/skills',
+    path: '/skills/',
     h1: /What I test\s*and how/,
     must: [
       'Functional testing',
@@ -20,7 +20,7 @@ const PAGES = [
     ],
   },
   {
-    path: '/portfolio',
+    path: '/portfolio/',
     h1: /Games I've\s*tested/,
     must: [
       'Senior Quality Assurance Tester',
@@ -42,10 +42,10 @@ const PAGES = [
       'The Climb 2',
     ],
   },
-  { path: '/quality', h1: /Let's test this\s*page together/, must: ['Smoke test', 'Responsive', 'Accessibility', 'Links', 'Performance', 'Bug report template', 'Playwright 1.'] },
-  { path: '/privacy', h1: /Privacy notice/, must: ['Nicolás Porras (PlayRun)', 'deleted after 24 months', 'ico.org.uk'] },
-  { path: '/terms', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales', 'Credits and trademarks', 'Pixel Operator by Jayvee Enaguas (CC0)', 'Montserrat by Julieta Ulanovsky and contributors (SIL Open Font License)', 'Game names and logos are trademarks of their respective owners'] },
-  { path: '/accessibility', h1: /Accessibility/, must: ['WCAG', 'reduced motion', 'Report a problem'] },
+  { path: '/quality/', h1: /Let's test this\s*page together/, must: ['Smoke test', 'Responsive', 'Accessibility', 'Links', 'Performance', 'Bug report template', 'Playwright 1.'] },
+  { path: '/privacy/', h1: /Privacy notice/, must: ['Nicolás Porras (PlayRun)', 'deleted after 24 months', 'ico.org.uk'] },
+  { path: '/terms/', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales', 'Credits and trademarks', 'Pixel Operator by Jayvee Enaguas (CC0)', 'Montserrat by Julieta Ulanovsky and contributors (SIL Open Font License)', 'Game names and logos are trademarks of their respective owners'] },
+  { path: '/accessibility/', h1: /Accessibility/, must: ['WCAG', 'reduced motion', 'Report a problem'] },
 ];
 
 async function settle(page: Page) {
@@ -175,7 +175,7 @@ for (const p of PAGES) {
 test('the content sits in a centred column of at most 1280px with wide margins, at every width', async ({ page }) => {
   for (const width of [390, 1280, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/skills');
+    await page.goto('/skills/');
     const m = await page.locator('.level').first().evaluate((el) => {
       const cs = getComputedStyle(el);
       return { left: parseFloat(cs.paddingLeft), right: parseFloat(cs.paddingRight), content: el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) };
@@ -187,7 +187,7 @@ test('the content sits in a centred column of at most 1280px with wide margins, 
 });
 
 test('every card has a logo or its icon, the labels and one store button in a new tab; the old project addresses go to the portfolio', async ({ page, request }) => {
-  await page.goto('/portfolio');
+  await page.goto('/portfolio/');
   // seven posts, newest first, in LinkedIn's words, each with its own accent
   await expect(page.locator('.group__name')).toHaveText(['Aonic', 'HCLTech', 'Nexus Studios', 'Universally Speaking', 'Historic VR', 'nDreams', 'Universally Speaking']);
 
@@ -277,19 +277,19 @@ test('every card has a logo or its icon, the labels and one store button in a ne
   expect(cards.filter((c) => c.logo).length, 'official logos').toBeGreaterThanOrEqual(16);
   // the old pages are gone from the build and the sitemap; their addresses send visitors to the portfolio
   for (const slug of ['lous-lagoon', 'synapse', 'cyberpunk-2077', 'the-climb', 'pathfinder-abomination-vaults']) {
-    const res = await request.get(`/portfolio/${slug}`);
+    const res = await request.get(`/portfolio/${slug}/`);
     expect(res.status(), slug).toBe(200);
     expect(await res.text(), slug).toMatch(/http-equiv="refresh"[^>]*url=\/portfolio"?/);
   }
   const sitemap = await (await request.get('/sitemap-0.xml')).text();
-  expect(sitemap).toContain('/portfolio<');
-  expect(sitemap).not.toContain('/portfolio/');
-  expect(sitemap).not.toContain('/about');
+  expect(sitemap).toContain('/portfolio/<');
+  expect(sitemap, 'no page per game in the map').not.toMatch(/\/portfolio\/[a-z0-9-]+/);
+  expect(sitemap).not.toContain('/about/');
 });
 
 test('every Skills paragraph is full first-person sentences, and the In practice items are readable labels', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/skills');
+  await page.goto('/skills/');
   const texts = await page.locator('.six__text').allTextContents();
   expect(texts).toHaveLength(5);
   for (const t of texts) {
@@ -321,31 +321,44 @@ test('every Skills paragraph is full first-person sentences, and the In practice
 });
 
 test('the skills jump list lands on each skill', async ({ page }) => {
-  await page.goto('/skills');
+  await page.goto('/skills/');
   const ids = await page.locator('.svc__jump a').evaluateAll((as) => (as as HTMLAnchorElement[]).map((a) => a.getAttribute('href')!.slice(1)));
   expect(ids.length).toBe(5);
   for (const id of ids) await expect(page.locator(`#${id}`)).toHaveCount(1);
 });
 
-test('every page answers with and without a trailing slash, the canonical and the sitemap carry none, and a missing page is still the 404', async ({ request, page }) => {
-  const routes = ['/skills', '/portfolio', '/quality', '/contact', '/privacy', '/terms', '/accessibility'];
+test('the trailing-slash address is the one official form: every internal link answers 200 with no redirect, the canonical and og:url match it, the sitemap lists it, and a missing page is still the 404', async ({ request, page }) => {
+  const routes = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/'];
+  const seen = new Set<string>();
   for (const route of routes) {
-    for (const form of [route, `${route}/`]) {
-      const res = await request.get(form);
-      expect(res.status(), `${form} answers 200`).toBe(200);
-      const html = await res.text();
-      expect(html, `${form} is not the 404 page`).not.toContain('Game over');
-      expect(html, `${form} carries the clean canonical`).toContain(`<link rel="canonical" href="https://playrunqa.com${route}">`);
+    const res = await request.get(route, { maxRedirects: 0 });
+    expect(res.status(), `${route} answers 200 with no redirect`).toBe(200);
+    const html = await res.text();
+    expect(html, `${route} is not the 404 page`).not.toContain('Game over');
+    expect(html, `${route} carries its own canonical`).toContain(`<link rel="canonical" href="https://playrunqa.com${route}">`);
+    expect(html, `${route} shares the same address`).toContain(`<meta property="og:url" content="https://playrunqa.com${route}">`);
+    for (const m of html.matchAll(/href="(\/[^"#?]*)"/g)) {
+      const href = m[1];
+      if (/\.[a-z0-9]+$/i.test(href) || seen.has(href)) continue; // files (css, fonts, icons) are not pages
+      seen.add(href);
+      expect(href, `${href} on ${route} carries the trailing slash`).toMatch(/\/$/);
+      const linked = await request.get(href, { maxRedirects: 0 });
+      expect(linked.status(), `${href} (linked from ${route}) answers 200 with no redirect`).toBe(200);
     }
   }
-  for (const form of ['/', '/index.html']) {
-    const res = await request.get(form);
-    expect(res.status(), form).toBe(200);
-    expect(await res.text()).toContain('<link rel="canonical" href="https://playrunqa.com/">');
-  }
+  expect(seen.size, 'the pages link to each other').toBeGreaterThanOrEqual(routes.length);
   const sitemap = await (await request.get('/sitemap-0.xml')).text();
-  for (const route of routes) expect(sitemap).toContain(`https://playrunqa.com${route}<`);
-  expect(sitemap).not.toMatch(/playrunqa\.com\/[a-z-]+\/</);
+  const listed = Array.from(sitemap.matchAll(/<loc>([^<]+)<\/loc>/g), (m) => m[1]);
+  expect(listed.sort()).toEqual(routes.map((r) => `https://playrunqa.com${r}`).sort());
+  for (const url of listed) {
+    const path = new URL(url).pathname;
+    expect(path, `${url} carries the trailing slash`).toMatch(/\/$/);
+    const res = await request.get(path, { maxRedirects: 0 });
+    expect(res.status(), `${url} answers 200 with no redirect`).toBe(200);
+  }
+  // the slash-free form is never a second copy of a page: the host sends it to the slash form
+  const bare = await request.get('/skills', { maxRedirects: 0 });
+  expect([301, 302, 308, 404], '/skills is a redirect or nothing, never a copy').toContain(bare.status());
   const missing = await request.get('/this-page-is-not-in-the-build/');
   expect(missing.status()).toBe(404);
   expect(await missing.text()).toContain('Game over');
@@ -355,17 +368,17 @@ test('every page answers with and without a trailing slash, the canonical and th
 });
 
 test('the old services, about and credits addresses send visitors on', async ({ request, page }) => {
-  const services = await request.get('/services');
+  const services = await request.get('/services/');
   expect(services.status()).toBe(200);
-  expect(await services.text()).toMatch(/http-equiv="refresh"[^>]*url=\/skills/);
-  const about = await request.get('/about');
+  expect(await services.text()).toMatch(/http-equiv="refresh"[^>]*url=\/skills\//);
+  const about = await request.get('/about/');
   expect(about.status()).toBe(200);
   expect(await about.text()).toMatch(/http-equiv="refresh"[^>]*url=\/"?/);
-  const credits = await request.get('/credits');
+  const credits = await request.get('/credits/');
   expect(credits.status()).toBe(200);
-  expect(await credits.text()).toMatch(/http-equiv="refresh"[^>]*url=\/terms#credits/);
+  expect(await credits.text()).toMatch(/http-equiv="refresh"[^>]*url=\/terms\/#credits/);
   const sitemap = await (await request.get('/sitemap-0.xml')).text();
-  expect(sitemap).not.toContain('/credits');
+  expect(sitemap).not.toContain('/credits/');
   await page.goto('/');
   await expect(page.locator('footer').getByRole('link', { name: 'Credits' })).toHaveCount(0);
   await expect(page.locator('footer').getByRole('link')).toContainText(['Home', 'Skills', 'Portfolio', 'Quality', 'Contact']);
@@ -373,7 +386,7 @@ test('the old services, about and credits addresses send visitors on', async ({ 
 });
 
 test('no controller or headset sprite anywhere, and nothing stands in their place', async ({ page }) => {
-  for (const path of ['/', '/skills', '/portfolio', '/contact', '/quality', '/terms']) {
+  for (const path of ['/', '/skills/', '/portfolio/', '/contact/', '/quality/', '/terms/']) {
     await page.goto(path);
     await expect(page.locator('.sprite--controller, .sprite--headset'), path).toHaveCount(0);
     await expect(page.locator('.plat__photo'), path).toHaveCount(0);

@@ -98,7 +98,7 @@ test.describe('Games', () => {
   });
 
   test('the track is a rail no wider than the ship on the left, its numbers fully visible; the scoreboard is a compact card bottom right that opens on hover, Enter or a click', async ({ page }) => {
-    for (const path of ['/', '/skills', '/portfolio', '/quality']) {
+    for (const path of ['/', '/skills/', '/portfolio/', '/quality/']) {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(path);
       await page.mouse.move(700, 450);
@@ -189,7 +189,7 @@ test.describe('Games', () => {
       await expect(pill).toHaveAttribute('aria-expanded', 'false');
     }
     // the end of the page: the scoreboard never sits on the footer's last line
-    await page.goto('/skills');
+    await page.goto('/skills/');
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await page.waitForTimeout(200);
     const legal = (await page.locator('.footer__legal').boundingBox())!;
@@ -197,7 +197,7 @@ test.describe('Games', () => {
     expect(legal.y + legal.height).toBeLessThanOrEqual(pillEnd.y);
     // a phone: the bar lies along the bottom, the pill at its right end
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/skills');
+    await page.goto('/skills/');
     const bar = (await page.locator('#hud').boundingBox())!;
     expect(bar.width).toBe(390);
     expect(bar.height).toBeLessThanOrEqual(48);
@@ -221,7 +221,7 @@ test.describe('Games', () => {
   });
 
   test('the 404 page counts down and Stay here stops it', async ({ page }) => {
-    const res = await page.goto('/this-page-is-not-in-the-build');
+    const res = await page.goto('/this-page-is-not-in-the-build/');
     expect(res?.status()).toBe(404);
     await expect(page.locator('h1')).toHaveText('Game over');
     const num = page.locator('[data-count]');
@@ -230,14 +230,14 @@ test.describe('Games', () => {
     await page.getByRole('button', { name: 'Stay here' }).click();
     await expect(num).toBeHidden();
     await page.waitForTimeout(1500);
-    expect(page.url()).toContain('/this-page-is-not-in-the-build');
+    expect(page.url()).toContain('/this-page-is-not-in-the-build/');
     await expect(page.getByRole('link', { name: 'Continue to Home' })).toHaveAttribute('href', '/');
   });
 
   test('the 404 page is a plain link home without script', async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
-    await page.goto('/nothing-here');
+    await page.goto('/nothing-here/');
     await expect(page.locator('h1')).toHaveText('Game over');
     await expect(page.locator('[data-count]')).toBeHidden();
     await expect(page.getByRole('link', { name: 'Continue to Home' })).toBeVisible();

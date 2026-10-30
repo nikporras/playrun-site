@@ -219,7 +219,7 @@ const checks = [
       </p>
       <div class="level__actions" data-enter style="--enter-delay: 160ms">
         <button class="button button--navy" type="button" id="selftest" aria-describedby="selftest-status">Test this page</button>
-        <a class="textlink proof__link" href="/quality">How I test this site</a>
+        <a class="textlink proof__link" href="/quality/">How I test this site</a>
       </div>
       <p id="selftest-status" class="proof__status" aria-live="polite" data-enter style="--enter-delay: 200ms">
         {suite.run ? `${suite.passed} of ${suite.total} checks passed in the last run${runDate ? `, on ${runDate}` : ''}` : `${suite.total} checks run before every deploy`}

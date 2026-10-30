@@ -5,7 +5,7 @@ import { test, expect, type Page } from '@playwright/test';
  * on any page at any width, anywhere along their walk. Every visible bug's box is sampled along
  * its walk and checked, with a small margin, against every text block and tile on the page.
  */
-const PAGES = ['/', '/skills', '/portfolio', '/contact', '/quality'];
+const PAGES = ['/', '/skills/', '/portfolio/', '/contact/', '/quality/'];
 const WIDTHS = [390, 768, 1024, 1440];
 const MARGIN = 6;
 

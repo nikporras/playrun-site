@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Quality, the guided test run', () => {
   test('five steps run live as they come into view, and the report adds them up', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/quality');
+    await page.goto('/quality/');
     // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
     await page.mouse.move(640, 300);
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
@@ -42,7 +42,7 @@ test.describe('Quality, the guided test run', () => {
 
   test('the computer steps are one action each, name every browser where they differ, mark the Chrome and Edge only ones, and say what to expect; Tab really lands on Skip to content', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/quality');
+    await page.goto('/quality/');
     await page.mouse.move(640, 300);
     const hows = page.locator('.step__desktop .how');
     expect(await hows.count()).toBeGreaterThanOrEqual(10);
@@ -107,7 +107,7 @@ test.describe('Quality, the guided test run', () => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-    await page.goto('/quality');
+    await page.goto('/quality/');
     // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
     await page.mouse.move(640, 300);
     await page.evaluate(() => document.fonts.ready);
@@ -123,7 +123,7 @@ test.describe('Quality, the guided test run', () => {
 
   test('the bug report template copies, or selects itself where the clipboard is refused', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await page.goto('/quality');
+    await page.goto('/quality/');
     // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
     await page.mouse.move(640, 300);
     const pre = page.locator('[data-template]');
@@ -138,7 +138,7 @@ test.describe('Quality, the guided test run', () => {
   test('without script the plan still reads, with the steps to take yourself', async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
-    await page.goto('/quality');
+    await page.goto('/quality/');
     // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
     await page.mouse.move(640, 300);
     await expect(page.locator('.step')).toHaveCount(5);
@@ -152,7 +152,7 @@ test.describe('Quality, the guided test run', () => {
   test('under reduced motion every step runs at once and nothing animates', async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce' });
     const page = await context.newPage();
-    await page.goto('/quality');
+    await page.goto('/quality/');
     // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
     await page.mouse.move(640, 300);
     await expect(page.locator('.step.is-pass')).toHaveCount(5, { timeout: 15_000 });

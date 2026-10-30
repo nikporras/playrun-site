@@ -13,7 +13,7 @@ const noSmooth = (page: Page) => page.addStyleTag({ content: 'html { scroll-beha
 test.describe('The Portfolio journey', () => {
   test('the track shows the year as the page scrolls, 2026 down to 2021, with a marker where each year begins', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/portfolio');
+    await page.goto('/portfolio/');
     await noSmooth(page);
     const year = page.locator('[data-hud-year]');
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
@@ -31,7 +31,7 @@ test.describe('The Portfolio journey', () => {
 
   test('nothing waits for the laser: every header and card shows as it enters the screen, and a fast scroll to the foot shows them all at once', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/portfolio');
+    await page.goto('/portfolio/');
     await noSmooth(page);
     const entrances = page.locator('.group__head[data-enter], .card[data-enter]');
     expect(await entrances.count()).toBe(27);
@@ -65,7 +65,7 @@ test.describe('The Portfolio journey', () => {
   test('a settled card with a clear line of fire gets one shot: a pixel bolt from the nose to its logo, a muzzle flash, a burst at the hit, then the card flashes, a scan band sweeps it and a PASS stamp stays; one at a time, cards only, each once', async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/portfolio');
+    await page.goto('/portfolio/');
     await noSmooth(page);
     await page.mouse.move(640, 300);
     await page.evaluate(() => {
@@ -221,7 +221,7 @@ test.describe('The Portfolio journey', () => {
   test('every card gets the reaction and the stamp: a settled row plays left to right, the bolt only on the clear line, one reaction at a time, and a card skipped on a fast scroll gets its turn later', async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/portfolio');
+    await page.goto('/portfolio/');
     await noSmooth(page);
     await page.mouse.move(640, 300);
     // the entrances first, so the cards' boxes are their settled ones
@@ -292,7 +292,7 @@ test.describe('The Portfolio journey', () => {
 
   test('with the games off there is no laser and no scan, and everything still shows', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/portfolio');
+    await page.goto('/portfolio/');
     await noSmooth(page);
     await page.mouse.move(640, 300);
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
@@ -315,7 +315,7 @@ test.describe('The Portfolio journey', () => {
   test('on a phone the card reacts without a bolt', async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const page = await context.newPage();
-    await page.goto('/portfolio');
+    await page.goto('/portfolio/');
     await noSmooth(page);
     const first = page.locator('.card').first();
     const y = await first.evaluate((el) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
@@ -329,7 +329,7 @@ test.describe('The Portfolio journey', () => {
   test('under reduced motion there is no laser and no sweep and everything is simply there; without script too', async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
     const page = await context.newPage();
-    await page.goto('/portfolio');
+    await page.goto('/portfolio/');
     await expect(page.locator('.card').first()).toHaveCSS('opacity', '1');
     const first = page.locator('.card').first();
     const y = await first.evaluate((el) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
@@ -344,7 +344,7 @@ test.describe('The Portfolio journey', () => {
 
     const plain = await browser.newContext({ javaScriptEnabled: false });
     const page2 = await plain.newPage();
-    await page2.goto('/portfolio');
+    await page2.goto('/portfolio/');
     await expect(page2.locator('.card').last()).toBeVisible();
     await expect(page2.locator('.card').last()).toHaveCSS('opacity', '1');
     await plain.close();

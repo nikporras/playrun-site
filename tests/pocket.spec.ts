@@ -8,7 +8,7 @@ import { test, expect, devices } from '@playwright/test';
 test.use({ ...devices['Pixel 7'], viewport: { width: 390, height: 844 } });
 
 test('the phone steps replace the computer ones, and the panel shows the console, the requests and the timings', async ({ page }) => {
-  await page.goto('/quality');
+  await page.goto('/quality/');
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
   await expect(page.locator('.step__desktop .step__howtitle').first()).toBeHidden();
   await expect(page.locator('.step__desktop').first()).toBeHidden();

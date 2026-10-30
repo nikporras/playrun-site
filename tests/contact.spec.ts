@@ -24,29 +24,29 @@ test.describe('Contact', () => {
     const errors: string[] = [];
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
     page.on('pageerror', (e) => errors.push(e.message));
-    const res = await page.goto('/contact');
+    const res = await page.goto('/contact/');
     expect(res?.status()).toBe(200);
     await expect(page.locator('h1')).toHaveCount(1);
     await expect(page.locator('h1')).toHaveText(/Get in\s*touch/);
     await expect(page.getByRole('link', { name: 'studio@playrunqa.com' }).first()).toHaveAttribute('href', 'mailto:studio@playrunqa.com');
-    await expect(page.locator('.form').getByRole('link', { name: 'privacy notice' })).toHaveAttribute('href', '/privacy');
+    await expect(page.locator('.form').getByRole('link', { name: 'privacy notice' })).toHaveAttribute('href', '/privacy/');
     for (const name of ['Privacy', 'Terms', 'Accessibility']) await expect(page.locator('footer').getByRole('link', { name, exact: true })).toBeVisible();
     await page.waitForLoadState('networkidle');
     expect(errors).toEqual([]);
   });
 
   test('an empty form is stopped with named errors and focus on the first field', async ({ page }) => {
-    await page.goto('/contact');
+    await page.goto('/contact/');
     await page.getByRole('button', { name: 'Send the message' }).click();
     await expect(page.locator('.form__error:visible')).toHaveCount(3);
     await expect(page.locator('#f-name')).toBeFocused();
     await expect(page.locator('#f-name')).toHaveAttribute('aria-invalid', 'true');
     await expect(page.locator('#form-status')).toHaveText('3 fields need a look.');
-    expect(page.url()).toContain('/contact');
+    expect(page.url()).toContain('/contact/');
   });
 
   test('a bad email is named, and fixing it clears the error', async ({ page }) => {
-    await page.goto('/contact');
+    await page.goto('/contact/');
     await page.fill('#f-name', 'Ada');
     await page.fill('#f-email', 'not-an-email');
     await page.fill('#f-message', 'Hello from the test suite.');
@@ -65,21 +65,21 @@ test.describe('Contact', () => {
       sent = { headers: req.headers(), body: JSON.parse(req.postData() ?? '{}') };
       return route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
     });
-    await page.goto('/contact');
+    await page.goto('/contact/');
     await fillValid(page);
     await page.getByRole('button', { name: 'Send the message' }).click();
     await expect(page.locator('#form-status')).toHaveText(/^Sent/);
     await expect(page.locator('#f-name')).toBeHidden();
     expect(sent?.headers['content-type']).toBe('text/plain;charset=utf-8');
     // The message travels in the field the script already knows.
-    expect(sent?.body).toMatchObject({ name: 'Ada', email: 'ada@example.com', brief: 'Hello from the test suite.', page: '/contact', website: '' });
+    expect(sent?.body).toMatchObject({ name: 'Ada', email: 'ada@example.com', brief: 'Hello from the test suite.', page: '/contact/', website: '' });
     expect(sent?.body).not.toHaveProperty('studio');
     expect(typeof sent?.body.startedAt).toBe('number');
   });
 
   test('field errors from the script are shown beside the fields', async ({ page }) => {
     await answer(page, { ok: false, errors: ['email'] });
-    await page.goto('/contact');
+    await page.goto('/contact/');
     await fillValid(page);
     await page.getByRole('button', { name: 'Send the message' }).click();
     await expect(page.locator('#e-email')).toBeVisible();
@@ -90,7 +90,7 @@ test.describe('Contact', () => {
 
   test("the script's error for the message field lands on the message box", async ({ page }) => {
     await answer(page, { ok: false, errors: ['brief'] });
-    await page.goto('/contact');
+    await page.goto('/contact/');
     await fillValid(page);
     await page.getByRole('button', { name: 'Send the message' }).click();
     await expect(page.locator('#e-message')).toBeVisible();
@@ -99,7 +99,7 @@ test.describe('Contact', () => {
 
   test('a rate limit asks for a minute', async ({ page }) => {
     await answer(page, { ok: false, errors: ['rate_limited'] });
-    await page.goto('/contact');
+    await page.goto('/contact/');
     await fillValid(page);
     await page.getByRole('button', { name: 'Send the message' }).click();
     await expect(page.locator('#form-status')).toHaveText("You've just sent a message, give it a minute.");
@@ -108,7 +108,7 @@ test.describe('Contact', () => {
 
   test('a server error or a network failure keeps the mail fallback', async ({ page }) => {
     await answer(page, { ok: false, errors: ['server'] });
-    await page.goto('/contact');
+    await page.goto('/contact/');
     await fillValid(page);
     await page.getByRole('button', { name: 'Send the message' }).click();
     await expect(page.locator('#form-status')).toContainText('did not send');
@@ -124,7 +124,7 @@ test.describe('Contact', () => {
   });
 
   test('the honeypot is out of the tab order and hidden from assistive tech', async ({ page }) => {
-    await page.goto('/contact');
+    await page.goto('/contact/');
     const trap = page.locator('#f-website');
     await expect(trap).toHaveAttribute('tabindex', '-1');
     await expect(trap).toHaveAttribute('autocomplete', 'off');
@@ -134,7 +134,7 @@ test.describe('Contact', () => {
   });
 
   test('has no accessibility violations (axe)', async ({ page }) => {
-    await page.goto('/contact');
+    await page.goto('/contact/');
     await page.evaluate(() =>
       Promise.all(
         document
@@ -150,7 +150,7 @@ test.describe('Contact', () => {
   for (const width of [375, 1440]) {
     test(`renders without sideways overflow at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/contact');
+      await page.goto('/contact/');
       await page.evaluate(() => document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in')));
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow).toBeLessThanOrEqual(0);

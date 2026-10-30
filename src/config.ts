@@ -105,13 +105,13 @@ export const since = 2021;
 
 export const nav = [
   { label: 'Home', href: '/' },
-  { label: 'Skills', href: '/skills' },
-  { label: 'Portfolio', href: '/portfolio' },
-  { label: 'Quality', href: '/quality' },
+  { label: 'Skills', href: '/skills/' },
+  { label: 'Portfolio', href: '/portfolio/' },
+  { label: 'Quality', href: '/quality/' },
 ];
 
 // The one action. It appears in the nav, in the hero and at the end of Home, nowhere else.
-export const primaryAction = { label: 'Get in touch', href: '/contact' };
+export const primaryAction = { label: 'Get in touch', href: '/contact/' };
 
 // Legal pages. Put the business address in `address` when there is one to show; while it is
 // empty the pages fall back to the location in `contact`.
@@ -122,7 +122,7 @@ export const legal = {
 };
 
 export const legalNav = [
-  { label: 'Privacy', href: '/privacy' },
-  { label: 'Terms', href: '/terms' },
-  { label: 'Accessibility', href: '/accessibility' },
+  { label: 'Privacy', href: '/privacy/' },
+  { label: 'Terms', href: '/terms/' },
+  { label: 'Accessibility', href: '/accessibility/' },
 ];

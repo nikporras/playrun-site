@@ -1,5 +1,6 @@
 // @ts-check
-import { readdirSync } from 'node:fs';
+import { copyFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
@@ -9,26 +10,42 @@ import sitemap from '@astrojs/sitemap';
 const projectSlugs = readdirSync('./src/content/projects')
   .filter((f) => f.endsWith('.md'))
   .map((f) => f.replace(/\.md$/, ''));
-const projectRedirects = Object.fromEntries([...projectSlugs, 'the-climb'].map((slug) => [`/portfolio/${slug}`, '/portfolio']));
+const projectRedirects = Object.fromEntries([...projectSlugs, 'the-climb'].map((slug) => [`/portfolio/${slug}`, '/portfolio/']));
+const redirects = { '/services': '/skills/', '/about': '/', '/credits': '/terms/#credits', ...projectRedirects };
+
+// Every redirect page is written twice: as the folder Astro builds (/services/index.html) and as a
+// file beside it (/services.html). GitHub Pages serves the file for the old slash-free address, so
+// an old link reaches the redirect at once instead of a 301 to the folder first. Real pages get no
+// twin: their slash-free form must stay a redirect to the one official address, never a copy.
+const redirectTwins = {
+  name: 'redirect-twins',
+  hooks: {
+    'astro:build:done': ({ dir }) => {
+      const out = fileURLToPath(dir);
+      for (const from of Object.keys(redirects)) copyFileSync(`${out}${from.slice(1)}/index.html`, `${out}${from.slice(1)}.html`);
+    },
+  },
+};
 
 export default defineConfig({
   site: 'https://playrunqa.com',
   output: 'static',
-  // Every page builds as a folder with an index.html, so GitHub Pages answers /portfolio and
-  // /portfolio/ alike (it sends the first to the second). Links and canonicals stay slash-free.
-  trailingSlash: 'ignore',
+  // Every page builds as a folder with an index.html. The address with the trailing slash is the
+  // one official form everywhere (links, canonicals, the sitemap, redirect targets): GitHub Pages
+  // sends /portfolio to /portfolio/ itself, so the slash-free form is only ever a redirect.
+  trailingSlash: 'always',
   build: { format: 'directory' },
   // The About page was folded into Home, the Portfolio and Skills; its address goes home.
   // The Credits page was folded into the Terms page.
-  redirects: { '/services': '/skills', '/about': '/', '/credits': '/terms#credits', ...projectRedirects },
+  redirects,
   integrations: [
+    redirectTwins,
     sitemap({
-      // Redirect pages are not pages; the addresses in the map carry no trailing slash.
+      // Redirect pages are not pages; the addresses in the map carry the trailing slash.
       filter: (page) => {
         const path = new URL(page).pathname.replace(/\/$/, '');
         return !/^\/portfolio\/./.test(path) && !['/services', '/about', '/credits'].includes(path);
       },
-      serialize: (item) => ({ ...item, url: item.url.replace(/\/$/, '') || item.url }),
     }),
   ],
   devToolbar: { enabled: false },

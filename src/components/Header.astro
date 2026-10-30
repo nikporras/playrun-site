@@ -3,7 +3,7 @@ import Lockup from '../assets/logo/logo-horizontal.svg';
 import { nav, primaryAction, site } from '../config';
 
 // The build writes file routes (/skills.html, /index.html); the nav compares the clean address.
-const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '').replace(/\/$/, '') || '/';
+const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '/').replace(/([^/])$/, '$1/');
 ---
 
 <header class="header wrap">

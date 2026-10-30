@@ -569,7 +569,7 @@ test.describe('Home', () => {
     await expect(page.locator('.panel.is-pass, .panel.is-failed')).toHaveCount(0);
     await expect(page.locator('#selftest-status')).toHaveText(/\d+ (of \d+ checks passed in the last run|checks run before every deploy)/);
     const quality = page.locator('.proof').getByRole('link', { name: 'How I test this site' });
-    await expect(quality).toHaveAttribute('href', '/quality');
+    await expect(quality).toHaveAttribute('href', '/quality/');
     await page.getByRole('button', { name: 'Test this page' }).click();
     await expect(page.locator('#selftest-status')).toContainText(/on your device/, { timeout: 15_000 });
     await expect(page.getByRole('button', { name: 'Run again' })).toBeVisible();
@@ -589,7 +589,7 @@ test.describe('Home', () => {
     await expect(page.locator('.hero button:not([data-bug])')).toHaveCount(0);
     await expect(page.locator('.final').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
     await expect(page.locator('footer').getByRole('link', { name: 'Get in touch' })).toHaveCount(0);
-    for (const path of ['/skills', '/portfolio', '/quality', '/contact', '/terms', '/privacy']) {
+    for (const path of ['/skills/', '/portfolio/', '/quality/', '/contact/', '/terms/', '/privacy/']) {
       await page.goto(path);
       await expect(page.locator('main').getByRole('link', { name: 'Get in touch' }), path).toHaveCount(0);
     }

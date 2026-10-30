@@ -10,7 +10,7 @@ import { test, expect } from '@playwright/test';
 test.describe('The Quality deck', () => {
   test('pins and deals the five steps with the scroll, transform only, clear of the track and the scoreboard', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/quality');
+    await page.goto('/quality/');
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
     await page.mouse.move(640, 300);
     const deck = page.locator('[data-deck]');
@@ -90,7 +90,7 @@ test.describe('The Quality deck', () => {
   test('a phone slides the cards in one at a time beside Pocket DevTools; reduced motion and no script keep them still', async ({ browser }) => {
     const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const p1 = await phone.newPage();
-    await p1.goto('/quality');
+    await p1.goto('/quality/');
     await expect(p1.locator('[data-deck]')).not.toHaveClass(/is-deck/);
     const cards = p1.locator('.deck__card');
     expect(await cards.first().evaluate((el) => getComputedStyle(el).position)).toBe('static');
@@ -107,7 +107,7 @@ test.describe('The Quality deck', () => {
 
     const tablet = await browser.newContext({ viewport: { width: 768, height: 1024 } });
     const p4 = await tablet.newPage();
-    await p4.goto('/quality');
+    await p4.goto('/quality/');
     await expect(p4.locator('[data-deck]')).not.toHaveClass(/is-deck/);
     await expect(p4.locator('.step__fold').first()).toBeHidden();
     await expect(p4.locator('.step__desktop').first()).toBeVisible();
@@ -117,7 +117,7 @@ test.describe('The Quality deck', () => {
 
     const quiet = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
     const p2 = await quiet.newPage();
-    await p2.goto('/quality');
+    await p2.goto('/quality/');
     await expect(p2.locator('[data-deck]')).not.toHaveClass(/is-deck/);
     expect(await p2.locator('.deck__card').last().evaluate((el) => getComputedStyle(el).transform)).toBe('none');
     await expect(p2.locator('.deck__card').last().locator('.step__desktop .step__list')).toBeVisible();
@@ -126,7 +126,7 @@ test.describe('The Quality deck', () => {
 
     const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
     const p3 = await plain.newPage();
-    await p3.goto('/quality');
+    await p3.goto('/quality/');
     await expect(p3.locator('[data-deck]')).not.toHaveClass(/is-deck/);
     await expect(p3.locator('.deck__card').last()).toBeVisible();
     await plain.close();
@@ -134,7 +134,7 @@ test.describe('The Quality deck', () => {
 
   test('Skills Level 2 is plain rows again', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/skills');
+    await page.goto('/skills/');
     await expect(page.locator('[data-deck]')).toHaveCount(0);
     await expect(page.locator('.six__row')).toHaveCount(5);
     const rows = await page.locator('.six__row').evaluateAll((els) => els.map((el) => ({ pos: getComputedStyle(el).position, transform: getComputedStyle(el).transform, top: el.getBoundingClientRect().top + scrollY })));
