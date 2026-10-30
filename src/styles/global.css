@@ -411,22 +411,23 @@ p + p {
   --g-ink: var(--pr-light);
 }
 
-/* Levels: every section is a full-bleed field with its own ink. The flag names the level. The
-   page is one continuous navy world: the first level is the sky, the darkest navy with a faint
-   pixel grid and a few pixel stars; the levels after it stand on a slightly lighter navy field
-   with the same grid, set apart by space and their labels rather than by colour. The bright
-   fields are kept for one or two highlights a page, each reached through a pixel join. */
+/* Levels: every section is a full-bleed field with its own ink, and the fields alternate (navy,
+   blue, navy, green, light on Home) so the levels read apart. The flag names the level. The first
+   level of a page is the sky: the navy with a faint pixel grid and a few pixel stars. Every change
+   of colour is crossed by a pixel join (Join.astro), never a straight edge. Each variant names its
+   colour in --level-bg so a level under the curtain can paint its field below the join only. */
 .level {
   position: relative;
   padding: var(--level-pad) var(--gutter);
   overflow: clip;
+  background-color: var(--level-bg);
 }
 .level--tight {
   padding-block: var(--s-6);
 }
 .level--navy,
 .level--field {
-  background-color: var(--bg);
+  --level-bg: var(--bg);
   background-image: var(--grid-img);
   background-size: var(--grid-size) var(--grid-size);
   color: var(--ink);
@@ -434,7 +435,7 @@ p + p {
   --muted-2: var(--muted);
 }
 .level--field {
-  background-color: var(--field-2);
+  --level-bg: var(--field-2);
 }
 /* The stars: a sparse tile of 2px and 3px squares, light at a third and one in cyan, behind the sky. */
 .level--sky::after {
@@ -451,21 +452,21 @@ p + p {
   z-index: 1;
 }
 .level--blue {
-  background: var(--field-blue);
+  --level-bg: var(--field-blue);
   color: var(--field-blue-ink);
   --ink-2: #ffffff;
   --muted-2: #ffffff;
 }
 .level--cyan {
-  background: var(--field-cyan);
+  --level-bg: var(--field-cyan);
   color: var(--field-cyan-ink);
 }
 .level--green {
-  background: var(--field-green);
+  --level-bg: var(--field-green);
   color: var(--field-green-ink);
 }
 .level--light {
-  background: var(--field-light);
+  --level-bg: var(--field-light);
   color: var(--field-light-ink);
 }
 .level--cyan,

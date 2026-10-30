@@ -21,7 +21,7 @@ const steps = [
 
 <Base title="Contact" description="Get in touch with Nicolás Porras of PlayRun in London: networking, opportunities, a question about game QA, or just to say hello.">
   <!-- Level 1: the ask -->
-  <section class="level level--navy level--sky contact" data-level="1" aria-labelledby="contact-title">
+  <section class="level level--navy level--sky has-join-bottom contact" data-level="1" aria-labelledby="contact-title">
     <div class="level__head">
       <p class="flag" data-load style="--d: 0ms"><span>Contact</span></p>
       <h1 id="contact-title" class="contact__title">
@@ -44,12 +44,13 @@ const steps = [
         </li>
       </ul>
     </div>
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-blue)" seed="contact-msg" />
     <Bug id="contact-1" style="left: 30%; top: 9rem" tablet="right: 10%; top: 0.75rem" walk="x 2rem" />
   </section>
 
   <!-- Level 2: the message, a form on a blue field -->
-  <section class="level level--field has-join-top msg" data-level="2" aria-labelledby="message-title">
-    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-2)" seed="contact-msg" />
+  <section class="level level--blue has-join-bottom msg" data-level="2" aria-labelledby="message-title">
+    <Join kind="terrain" from="var(--field-blue)" to="var(--field-green)" seed="contact-next" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; The message</span></p>
       <h2 id="message-title" class="level__title" data-enter="wipe">Write to me</h2>
@@ -113,9 +114,8 @@ const steps = [
   </section>
 
   <!-- Level 3: what happens next, three panels on green -->
-  <section class="level level--green has-join-top has-join-bottom next" data-level="3" aria-labelledby="next-title">
-    <Join kind="terrain" from="var(--field-2)" to="var(--field-green)" seed="contact-next" />
-    <Join kind="terrain" at="bottom" from="var(--field-green)" to="var(--pr-navy)" seed="contact-foot" />
+  <section class="level level--green has-join-bottom next" data-level="3" aria-labelledby="next-title">
+    <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="contact-foot" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 3 &middot; What happens next</span></p>
       <h2 id="next-title" class="level__title" data-enter="wipe">Then</h2>
@@ -139,7 +139,7 @@ const steps = [
   /* Level 1 */
   .contact {
     padding-top: var(--s-2);
-    padding-bottom: var(--s-7);
+    padding-bottom: calc(var(--s-5) + var(--join-h)); /* room for the clouds at its foot */
   }
   .contact__title {
     font-size: var(--step-hero);
@@ -235,7 +235,7 @@ const steps = [
     display: flex;
     flex-direction: column;
     gap: var(--s-4);
-    color: var(--ink);
+    color: var(--pr-navy);
   }
   .msg__list {
     font-family: var(--font-display);
@@ -424,7 +424,7 @@ const steps = [
 
   @media (max-width: 63.99rem) {
     .contact {
-      padding-bottom: var(--s-6);
+      padding-bottom: calc(var(--s-4) + var(--join-h));
     }
     .msg__grid {
       grid-template-columns: 1fr;

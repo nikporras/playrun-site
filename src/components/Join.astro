@@ -2,26 +2,29 @@
 /**
  * A pixel join between two levels: instead of a straight edge, two or three layered silhouettes
  * (stepped pixel clouds, or stepped hills like the ground in a platformer) sit across the boundary,
- * so the colour change happens behind them. The band is in normal flow at the top (or the foot) of
- * the lower level and is the upper level's colour; the front layer is the lower level's colour, so
- * there is no seam. Everything is inline SVG in brand colours, drawn at build time from a seeded
- * random walk so no two joins repeat, in 8px pixels (scaled to 6px on tablets and 4px on phones).
- * On scroll the back layers drift a little (scroll-driven CSS where supported, still under reduced
- * motion). Decorative: hidden from assistive tech, no pointer events, no layout shift.
+ * so the colour change happens behind them. The band is transparent and sits at the foot of the
+ * upper level (the level adds the band's height to its padding), so the upper level's own field
+ * shows above the shapes and the front layer, the lower level's colour, meets the lower level: no
+ * seam, and no box. On Home the first join sits at the top of Level 2 instead (`at="top"`), so the
+ * clouds slide up over the pinned hero with the level, the hero and the photo showing through above
+ * them. Everything is inline SVG in brand colours, drawn at build time from a seeded random walk
+ * so no two joins repeat, in 8px pixels (scaled to 6px on tablets and 4px on phones). On scroll
+ * the back layers drift a little (scroll-driven CSS where supported, still under reduced motion).
+ * Decorative: hidden from assistive tech, no pointer events, no layout shift.
  */
 interface Props {
   /** clouds for the dark sky into the next level; terrain into a bright highlight and down again */
   kind: 'clouds' | 'terrain';
-  /** the upper level's colour (the band) */
+  /** the upper level's colour (the back layers are mixes of the two) */
   from: string;
   /** the lower level's colour (the front layer) */
   to: string;
   /** a word that seeds the shapes, different on every join */
   seed: string;
-  /** at the top of the level the band belongs to (default), or at its foot, going into what follows */
+  /** at the foot of the upper level (default), or at the top of the lower one (the Home curtain) */
   at?: 'top' | 'bottom';
 }
-const { kind, from, to, seed, at = 'top' } = Astro.props;
+const { kind, from, to, seed, at = 'bottom' } = Astro.props;
 
 // a small seeded generator (mulberry32), so the shapes are the same on every build
 let state = [...`${kind}:${seed}`].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 2654435761) >>> 0, 2166136261);
@@ -126,9 +129,10 @@ const layers = spec.map((s) => {
 </div>
 
 <style is:global>
-  /* The band: the upper colour, with the same faint grid as the fields, the layers standing on
-     its foot. In flow: the level it belongs to adds its height to its padding (has-join-top or
-     has-join-bottom), so nothing is ever covered and nothing shifts. */
+  /* The band: transparent, the layers standing on its foot, so whatever is behind it (the level's
+     own field, or the hero under the curtain) shows above the shapes. In flow: the level it belongs
+     to adds its height to its padding (has-join-top or has-join-bottom), so nothing is ever covered
+     and nothing shifts. */
   .join {
     --join-s: 1;
     position: absolute;
@@ -136,9 +140,7 @@ const layers = spec.map((s) => {
     right: 0;
     height: var(--join-h);
     overflow: hidden;
-    background-color: var(--from);
-    background-image: var(--grid-img);
-    background-size: var(--grid-size) var(--grid-size);
+    background: transparent;
     pointer-events: none;
     z-index: 0;
     --join-back: color-mix(in srgb, var(--to) 50%, var(--from));
@@ -179,17 +181,25 @@ const layers = spec.map((s) => {
   .join__layer--front .join__light {
     fill: color-mix(in srgb, var(--to) 86%, var(--pr-light));
   }
-  .level.has-join-top {
-    padding-top: calc(var(--level-pad) + var(--join-h));
-  }
+  /* The level under a bottom join keeps a little of its own padding above the band (the band reads
+     as space too). A level with a top join (the curtain) paints its field only below the band, so
+     the band stays see-through. */
   .level.has-join-bottom {
-    padding-bottom: calc(var(--level-pad) + var(--join-h));
-  }
-  .level--tight.has-join-top {
-    padding-top: calc(var(--s-6) + var(--join-h));
+    padding-bottom: calc(var(--s-5) + var(--join-h));
   }
   .level--tight.has-join-bottom {
-    padding-bottom: calc(var(--s-6) + var(--join-h));
+    padding-bottom: calc(var(--s-3) + var(--join-h));
+  }
+  .level.has-join-top {
+    padding-top: calc(var(--s-6) + var(--join-h));
+    background-color: transparent;
+    background-image: linear-gradient(var(--level-bg), var(--level-bg));
+    background-size: 100% calc(100% - var(--join-h));
+    background-position: 0 var(--join-h);
+    background-repeat: no-repeat;
+  }
+  .level--tight.has-join-top {
+    padding-top: calc(var(--s-5) + var(--join-h));
   }
   /* The drift: as the band crosses the screen the back layers slide a little, the front one stays
      put on the level it belongs to. Only where scroll-driven animations exist, never under reduced

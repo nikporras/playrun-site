@@ -26,7 +26,7 @@ const GHOST = [122, 134, 166]; // a navy-tinted grey, 4.6:1 on navy
 const LOGOS = {
   'a-township-tale': 'logo_01.png',
   'beat-saber': ['BSLogo.png', { tight: 0.66 }], // the glow cut back to the letters, with their full stroke
-  clawpunk: ['ClawPunkLogo_4K.png', { luma: [0.5, 0.85] }],
+  clawpunk: ['ClawPunkLogo_4K.png', { luma: [0.2, 0.5], tight: 0.3 }],
   'cyberpunk-2077': 'logo-cp77-yellow-en@2x.png',
   'gang-of-frogs': 'GoF_04-3.png',
   'ghostbusters-rise-of-the-ghost-lord': ['gb_meta_store_assets_frozen_empire_logo_fe-1.png', { keepBands: 2, tone: { x: [0.165, 0.29], y: [0, 0.7], over: 0.6, color: GHOST } }],

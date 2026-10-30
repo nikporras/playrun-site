@@ -32,7 +32,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
 
 <Base title="Portfolio" description="Games Nicolás Porras has tested, by company: the Megabit titles at Aonic, Guildford Castle VR and Londinium at Historic VR, the nDreams VR titles, and Cyberpunk 2077, NBA 2K21 and the VR titles via Universally Speaking.">
   <!-- Level 1 -->
-  <section class="level level--navy level--sky work" data-level="1" aria-labelledby="work-title">
+  <section class="level level--navy level--sky has-join-bottom work" data-level="1" aria-labelledby="work-title">
     <div class="level__head">
       <p class="flag" data-load style="--d: 0ms"><span>Portfolio</span></p>
       <h1 id="work-title" class="page__title">
@@ -43,12 +43,13 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
         {words[count] ?? count} titles across {words[companies]?.toLowerCase() ?? companies} companies, from where I started in 2021 to the latest indie releases.
       </p>
     </div>
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-cyan)" seed="portfolio-titles" />
     <Bug id="portfolio-1" style="right: 12%; top: 9rem" tablet="right: 10%; bottom: 0.75rem" walk="x -2rem" />
   </section>
 
   <!-- Level 2: every post, newest first, with its titles -->
-  <section class="level level--field has-join-top titles" data-level="2" aria-labelledby="titles-title">
-    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-2)" seed="portfolio-titles" />
+  <section class="level level--cyan has-join-bottom titles" data-level="2" aria-labelledby="titles-title">
+    <Join kind="terrain" from="var(--field-cyan)" to="var(--field-green)" seed="portfolio-next" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; By company</span></p>
       <h2 id="titles-title" class="level__title" data-enter="wipe">Where I tested them</h2>
@@ -99,9 +100,8 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
   </section>
 
   <!-- Level 3: a short way on -->
-  <section class="level level--green level--tight has-join-top has-join-bottom next" data-level="3" aria-labelledby="next-title">
-    <Join kind="terrain" from="var(--field-2)" to="var(--field-green)" seed="portfolio-next" />
-    <Join kind="terrain" at="bottom" from="var(--field-green)" to="var(--pr-navy)" seed="portfolio-foot" />
+  <section class="level level--green level--tight has-join-bottom next" data-level="3" aria-labelledby="next-title">
+    <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="portfolio-foot" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 3 &middot; Next</span></p>
       <h2 id="next-title" class="level__title level__title--small" data-enter="wipe">How I test</h2>

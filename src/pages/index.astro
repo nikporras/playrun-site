@@ -123,8 +123,9 @@ const checks = [
   </section>
 
   <!-- Level 2: the ticker of titles, their official logos in one colour, rolling slowly left -->
-  <section class="level level--field level--tight has-join-top wall" data-level="2" aria-labelledby="wall-title">
-    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-2)" seed="home-wall" />
+  <section class="level level--blue level--tight has-join-top has-join-bottom wall" data-level="2" aria-labelledby="wall-title">
+    <Join kind="clouds" at="top" from="var(--pr-navy)" to="var(--field-blue)" seed="home-wall" />
+    <Join kind="terrain" from="var(--field-blue)" to="var(--pr-navy)" seed="home-stats" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; Portfolio</span></p>
       <h2 id="wall-title" class="level__title wall__title" data-enter="wipe">Games I've tested</h2>
@@ -169,7 +170,8 @@ const checks = [
        the active one in the centre, the six stats three times over so the loop never ends and no
        stat shows twice at once (the outer copies hidden from assistive tech). A still list
        without script or under reduced motion. -->
-  <section class="level level--field stats" data-level="3" aria-labelledby="stats-title">
+  <section class="level level--navy has-join-bottom stats" data-level="3" aria-labelledby="stats-title">
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-green)" seed="home-proof" />
     <div class="stats__grid">
       <div class="level__head stats__head">
         <p class="flag" data-enter><span>Level 3 &middot; Stats</span></p>
@@ -212,12 +214,12 @@ const checks = [
         <p class="visually-hidden" aria-live="polite" data-drum-live></p>
       </div>
     </div>
-    <Bug id="stats-1" style="left: 42%; bottom: 1.5rem" tablet="right: 8%; top: 0.75rem" phone="right: 1rem; top: 0.25rem" walk="x 2rem" />
+    <Bug id="stats-1" style="left: 42%; bottom: 1.5rem" tablet="right: 8%; bottom: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x 2rem" />
   </section>
 
   <!-- Level 4: proof as a scoreboard on a green field -->
-  <section class="level level--cyan has-join-top proof" data-level="4" aria-labelledby="proof-title">
-    <Join kind="terrain" from="var(--field-2)" to="var(--field-cyan)" seed="home-proof" />
+  <section class="level level--green has-join-bottom proof" data-level="4" aria-labelledby="proof-title">
+    <Join kind="terrain" from="var(--field-green)" to="var(--field-light)" seed="home-final" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 4 &middot; Proof</span></p>
       <h2 id="proof-title" class="level__title" data-enter="wipe">Tested like my games</h2>
@@ -260,9 +262,8 @@ const checks = [
   </section>
 
   <!-- Level 5: after hours, and the one last button -->
-  <section class="level level--field has-join-top has-join-bottom final" data-level="5" aria-labelledby="final-title">
-    <Join kind="terrain" from="var(--field-cyan)" to="var(--field-2)" seed="home-final" />
-    <Join kind="terrain" at="bottom" from="var(--field-2)" to="var(--pr-navy)" seed="home-foot" />
+  <section class="level level--light has-join-bottom final" data-level="5" aria-labelledby="final-title">
+    <Join kind="terrain" from="var(--field-light)" to="var(--pr-navy)" seed="home-foot" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 5 &middot; Final level</span></p>
       <h2 id="final-title" class="level__title" data-enter="wipe">After hours</h2>
@@ -731,6 +732,10 @@ const checks = [
      half strength and shifted right; the outer rows at a quarter and shifted twice as far, the
      stepped offsets giving the curve of a drum. The same type size on every row: the emphasis is
      only colour, opacity and offset, and all three move smoothly as the drum turns. */
+  /* The terrain at the foot of the ticker is the breathing room above the stats: less padding here. */
+  .stats {
+    padding-top: var(--s-5);
+  }
   .stats__grid {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
@@ -917,6 +922,8 @@ const checks = [
   @media (max-width: 47.99rem) {
     .drum {
       column-gap: var(--s-2);
+      /* a caption wraps to two lines on a phone: the row grows to hold label and caption */
+      --row: max(calc(var(--num) * 1.25), 4.75rem);
     }
     .drum__button {
       width: 2.5rem;
@@ -1092,10 +1099,10 @@ const checks = [
   .final__mail {
     font-family: var(--font-display);
     font-size: 1.25rem;
-    color: var(--ink);
+    color: var(--pr-navy);
   }
   .final__mail:hover {
-    color: var(--accent-2);
+    color: var(--pr-blue);
   }
 </style>
 
