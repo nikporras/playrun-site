@@ -9,6 +9,8 @@ test.describe('Quality, the guided test run', () => {
   test('five steps run live as they come into view, and the report adds them up', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/quality');
+    // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
+    await page.mouse.move(640, 300);
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
     const steps = page.locator('.step');
     await expect(steps).toHaveCount(5);
@@ -43,6 +45,8 @@ test.describe('Quality, the guided test run', () => {
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
     await page.goto('/quality');
+    // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
+    await page.mouse.move(640, 300);
     await page.evaluate(() => document.fonts.ready);
     await page.getByRole('button', { name: 'Run every step' }).click();
     await expect(page.locator('#run-status'), errors.join(' | ')).toContainText(/steps run|Every step has run/, { timeout: 15_000 });
@@ -57,6 +61,8 @@ test.describe('Quality, the guided test run', () => {
   test('the bug report template copies, or selects itself where the clipboard is refused', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/quality');
+    // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
+    await page.mouse.move(640, 300);
     const pre = page.locator('[data-template]');
     await expect(pre).toContainText('Steps to reproduce');
     await expect(pre).toContainText('Severity: [Blocker / Major / Minor / Cosmetic]');
@@ -70,6 +76,8 @@ test.describe('Quality, the guided test run', () => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
     await page.goto('/quality');
+    // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
+    await page.mouse.move(640, 300);
     await expect(page.locator('.step')).toHaveCount(5);
     await expect(page.locator('.step__list').first()).toBeVisible();
     await expect(page.locator('[data-step-result]').first()).toContainText('script');
@@ -81,6 +89,8 @@ test.describe('Quality, the guided test run', () => {
     const context = await browser.newContext({ reducedMotion: 'reduce' });
     const page = await context.newPage();
     await page.goto('/quality');
+    // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
+    await page.mouse.move(640, 300);
     await expect(page.locator('.step.is-pass')).toHaveCount(5, { timeout: 15_000 });
     expect(await page.locator('.step__mark').first().evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
     await context.close();
