@@ -314,7 +314,7 @@ Attachments: [screenshot or video]</pre>
   .step.is-fail .step__mark :global(.step__cross) {
     display: block;
   }
-  .step.is-pass .step__state {
+  .step.is-pass .step__mark {
     color: var(--accent);
   }
   @media (prefers-reduced-motion: no-preference) {
@@ -618,10 +618,16 @@ Attachments: [screenshot or video]</pre>
     let failed = 0;
     const details: string[] = [];
     for (const c of ids) {
-      const r = await checks[c].run();
-      passed += r.passed;
-      failed += r.failed;
-      details.push(r.detail);
+      try {
+        const r = await checks[c].run();
+        passed += r.passed;
+        failed += r.failed;
+        details.push(r.detail);
+      } catch (e) {
+        // a check that throws is a failed check, not a stuck page
+        failed++;
+        details.push(`${c} could not run: ${(e as Error).message}`);
+      }
     }
     step.classList.remove('is-running');
     step.classList.add(failed ? 'is-fail' : 'is-pass');
