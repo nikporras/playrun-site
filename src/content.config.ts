@@ -34,6 +34,9 @@ const projects = defineCollection({
     // Historic VR logo with Guildford Castle VR) or cannot read as a solid white mark among the
     // others (Space Pirate Trainer's only official logo is an outline), so the ticker stays even.
     wall: z.boolean().default(true),
+    // A VR game whose platform line does not say so (Londinium lists "Steam" alone): counted
+    // among the VR games on the Home stats drum. Titles with VR or Quest in a platform count anyway.
+    vr: z.boolean().default(false),
     // Only projects cleared for public use are shown. Default is hidden.
     public: z.boolean().default(false),
   }),

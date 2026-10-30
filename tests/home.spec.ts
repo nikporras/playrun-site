@@ -362,9 +362,12 @@ test.describe('Home', () => {
     const vr = projects.filter((f) => {
       const text = readFileSync(join(process.cwd(), 'src/content/projects', f), 'utf8');
       const platforms = text.match(/^platforms:\s*\[(.*)\]/m)?.[1] ?? '';
-      return /public: true/.test(text) && /VR|Quest/i.test(platforms);
+      return /public: true/.test(text) && (/VR|Quest/i.test(platforms) || /^vr: true/m.test(text));
     });
-    expect(vr.length).toBe(10);
+    expect(vr.length).toBe(11);
+    // both Historic VR titles count: Guildford by its platform line, Londinium by its flag
+    expect(vr).toContain('guildford-castle-vr.md');
+    expect(vr).toContain('londinium-ad-215.md');
     const leads = (readFileSync(join(process.cwd(), 'src/config.ts'), 'utf8').match(/lead: true/g) ?? []).length;
     expect(leads).toBe(2);
     await expect(real).toHaveText([/5\+\s*years in QA/, /6\s*companies/, /20\s*games/, new RegExp(`${vr.length}\\s*VR games`), /10\+\s*platforms/, new RegExp(`${leads}\\s*QA lead roles`)]);

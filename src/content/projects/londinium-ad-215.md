@@ -11,6 +11,7 @@ employer: "historic-vr"
 icon: "helmet"
 logoSource: "https://historicvr.com/"
 wall: false
+vr: true
 public: true
 ---
 

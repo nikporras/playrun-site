@@ -45,8 +45,9 @@ const size = (id: string) => {
 const wall = [...FEATURED.flatMap((id) => byPost.filter((p) => p.id === id)), ...byPost.filter((p) => !FEATURED.includes(p.id))];
 
 // The numbers, counted from the data so they stay right as it grows. A VR game is one whose
-// platform line names a headset; a lead role is one flagged `lead` in the employers.
-const isVR = (p: (typeof shown)[number]) => p.data.platforms.some((name) => /VR|Quest/i.test(name));
+// platform line names a headset, or one flagged `vr` (Londinium, whose platform line is Steam
+// alone); a lead role is one flagged `lead` in the employers.
+const isVR = (p: (typeof shown)[number]) => p.data.vr || p.data.platforms.some((name) => /VR|Quest/i.test(name));
 const stats = [
   { n: new Date().getFullYear() - since, suffix: '+', label: 'years in QA' },
   { n: new Set(employers.map((e) => e.name)).size, suffix: '', label: 'companies' },
