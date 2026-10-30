@@ -13,7 +13,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 
 type JsonTest = { status?: string };
-type JsonSpec = { title: string; file: string; tests: JsonTest[] };
+type JsonSpec = { title: string; file: string; tags?: string[]; tests: JsonTest[] };
 type JsonSuite = { title: string; file?: string; specs: JsonSpec[]; suites?: JsonSuite[] };
 type Report = { suites: JsonSuite[]; stats?: { startTime?: string; duration?: number } };
 
@@ -29,8 +29,12 @@ export type Group = {
   failed: number;
 };
 
+export type Tally = { total: number; passed: number; failed: number };
+
 export type Suite = {
   groups: Group[];
+  /** The checks tagged for each area of the Home scoreboard (`@pages`, `@a11y` and so on). */
+  areas: Record<string, Tally>;
   files: number;
   total: number;
   passed: number;
@@ -46,11 +50,11 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'contact.spec.ts': ['Contact form', 'Validation, every answer the script can give, and the mailto fallback.'],
   'credits.spec.ts': ['Credits', 'Every typeface, tool and sprite is credited, and the page passes axe.'],
   'games.spec.ts': ['The games', 'The track, the runner, the bug hunt and the achievements by mouse, touch and keyboard, and off under reduced motion.'],
-  'home.spec.ts': ['Home', 'Loads clean, the curtain, the headline break, the wall, the stats, three widths, axe, the self test.'],
+  'home.spec.ts': ['Home', 'Loads clean, the bottom bar on a phone, the curtain, the headline break, the wall, the stats, three widths, axe, the self test.'],
   'links.spec.ts': ['Links', 'Links that leave the site open a new tab and say so. Internal links stay.'],
   'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, stacked level headers, labels that read, no stale facts, and passes axe.'],
   'portfolio.spec.ts': ['The Portfolio journey', 'The year on the track as you scroll, each header and card landing once from the laser, nothing under reduced motion.'],
-  'phone.spec.ts': ['Home on a phone', 'A real device profile: nothing clipped, the button on the first screen, a slim HUD.'],
+  'phone.spec.ts': ['Home on a phone', 'A real device profile: nothing clipped, the hero on the first screen, the pages and the scoreboard in the bottom bar.'],
   'pocket.spec.ts': ['Pocket DevTools', 'On a phone: the phone steps instead of the computer ones, and the console, the requests and the timings from the page itself.'],
   'quality.spec.ts': ['The guided test run', 'Five live steps, the report, the template, the phone steps and Pocket DevTools, without script and under reduced motion.'],
   'selection.spec.ts': ['Selectable text', 'A drag selects a paragraph on every page and the highlight reads on every field.'],
@@ -72,6 +76,8 @@ function load(): { report: Report; fromRun: boolean } {
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
       stdio: ['ignore', 'pipe', 'pipe'],
+      // (the list goes to stdout, whatever report file the run around this build may be writing)
+      env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: '', PLAYWRIGHT_JSON_OUTPUT_FILE: '' },
     });
     return { report: JSON.parse(out), fromRun: false };
   } catch (e) {
@@ -82,23 +88,29 @@ ${(err.stdout ?? '').slice(0, 2000)}`);
   }
 }
 
-function collect(suite: JsonSuite, into: Map<string, { total: number; passed: number; failed: number }>) {
+function collect(suite: JsonSuite, into: Map<string, Tally>, areas: Record<string, Tally>) {
   for (const spec of suite.specs ?? []) {
     const file = path.basename(spec.file);
     const g = into.get(file) ?? { total: 0, passed: 0, failed: 0 };
+    const tagged = (spec.tags ?? []).map((t) => (areas[t.replace(/^@/, '')] ??= { total: 0, passed: 0, failed: 0 }));
     for (const t of spec.tests ?? []) {
-      g.total++;
-      if (t.status === 'expected' || t.status === 'flaky') g.passed++;
-      if (t.status === 'unexpected') g.failed++;
+      const passed = t.status === 'expected' || t.status === 'flaky';
+      const failed = t.status === 'unexpected';
+      for (const tally of [g, ...tagged]) {
+        tally.total++;
+        if (passed) tally.passed++;
+        if (failed) tally.failed++;
+      }
     }
     into.set(file, g);
   }
-  for (const s of suite.suites ?? []) collect(s, into);
+  for (const s of suite.suites ?? []) collect(s, into, areas);
 }
 
 const { report, fromRun } = load();
-const counts = new Map<string, { total: number; passed: number; failed: number }>();
-for (const s of report.suites) collect(s, counts);
+const counts = new Map<string, Tally>();
+const areas: Record<string, Tally> = {};
+for (const s of report.suites) collect(s, counts, areas);
 if (counts.size === 0) throw new Error('No tests found: the Quality page cannot be built without the suite.');
 
 const groups: Group[] = [...counts.entries()]
@@ -110,6 +122,7 @@ const groups: Group[] = [...counts.entries()]
 
 export const suite: Suite = {
   groups,
+  areas,
   files: groups.length,
   total: groups.reduce((n, g) => n + g.total, 0),
   passed: groups.reduce((n, g) => n + g.passed, 0),

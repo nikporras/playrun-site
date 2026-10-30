@@ -2,9 +2,10 @@
 /**
  * The track and the scoreboard. On desktop (64rem and up) the track is a slim vertical rail on
  * the left edge, inside the gutter, no wider than the ship: the ship moves down it as the page
- * scrolls and a marker per level (or per year on the Portfolio) sits beside it. On phones and
- * tablets the same bar lies along the bottom of the screen. The scoreboard is a small card in the
- * bottom right corner (inside the bar on phones and tablets): compact by default, it opens on
+ * scrolls and a marker per level (or per year on the Portfolio) sits beside it. On tablets the
+ * same bar lies along the bottom of the screen; on phones it is a thin line on the top edge of the
+ * bottom bar (TabBar.astro). The scoreboard is a small card in the bottom right corner (inside the
+ * bar on tablets, the counter at the bottom bar's right end on phones): compact by default, it opens on
  * hover, focus or a tap into the full card (level, year on the Portfolio, bugs caught, the
  * achievements, games on or off, reset). Achievement unlocks appear above it. Hidden until script
  * turns it on; removed under reduced motion.
@@ -520,13 +521,83 @@ import PassMark from './PassMark.astro';
       bottom: 0;
     }
   }
-  /* On a phone the pill is tighter but says the same: the level of how many, the bugs, the
-     achievements. */
+  /* A phone: the bottom bar (TabBar.astro) holds the pages. The track is a thin line along its top
+     edge, filling green behind the ship that rides on it, the markers notches in the line. The
+     scoreboard is the counter at the bar's right end (the bugs over the achievements; the level is
+     still in its name), and the card and the toasts open above the bar, clear of the ship. */
   @media (max-width: 47.99rem) {
+    .hud {
+      bottom: var(--hud-h);
+      height: 3px;
+      z-index: 41;
+      border-top: 0;
+      background: color-mix(in srgb, var(--pr-light) 35%, var(--pr-navy));
+    }
+    .hud__floor {
+      right: auto;
+      height: 100%;
+      width: calc(var(--p, 0) * var(--track, 0px) + var(--ship-w) / 2);
+      background: var(--accent);
+      transition: width 120ms linear;
+    }
+    .hud__levels {
+      bottom: 0;
+      height: 100%;
+    }
+    .hud__levels :global(li) {
+      bottom: -2px;
+    }
+    .hud__levels :global(li)::after {
+      width: 2px;
+      height: 7px;
+    }
+    .hud__levels :global(li span) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .hud__runner {
+      bottom: 100%;
+    }
+    .dock,
+    .dock.dock--off {
+      right: 0;
+      bottom: env(safe-area-inset-bottom, 0px);
+      width: var(--counter-w);
+      height: var(--bar-h);
+    }
+    .score {
+      height: 100%;
+      align-items: stretch;
+    }
     .score__pill {
-      gap: 0.4rem;
-      padding-inline: 0.4rem;
-      font-size: 0.8125rem;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.3rem;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      font-size: 0.875rem;
+      background: var(--pr-navy);
+      border-left: 2px solid var(--surface-2);
+    }
+    .score__pill:focus-visible {
+      outline-offset: -3px;
+    }
+    .score__item[data-hud-level-stat] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .score__panel,
+    .toast {
+      margin-bottom: calc(3px + var(--ship-w) + var(--s-1));
     }
   }
 

@@ -5,11 +5,12 @@ import { test, expect, type Page } from '@playwright/test';
  * card, tag, image and link that shows at 1440 shows at 375, in the same order; only the layout
  * changes. The few things that are phone-specific by design are listed here and nowhere else: on
  * Quality, the phone steps, Pocket DevTools and the computer steps folded under "Checking on a
- * computer?"; the Menu button; the bottom bar; the swipe rows' count. Decorations (bugs, joins,
- * the shot) are not content.
+ * computer?"; the bottom bar; the rows of the Portfolio's folded list. Decorations
+ * (bugs, joins, the shot) are not content. The folded cards are all in the page, one tap away: the
+ * phone's read opens every one of them first.
  */
 const PAGES = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
-const EXCEPT = '.step__fold, .step__phone, .step__desktop, .devtools, .header__toggle, .hud, .dock, [data-shot], .group__pos, .bug, .join';
+const EXCEPT = '.step__fold, .step__phone, .step__desktop, .devtools, .tabbar, .hud, .dock, [data-shot], .card__toggle, .bug, .join';
 
 const content = (page: Page) =>
   page.evaluate((except) => {
@@ -40,7 +41,7 @@ const order = (page: Page) =>
   }, EXCEPT);
 
 for (const path of PAGES) {
-  test(`${path}: the phone shows every section, heading and piece of content the desktop shows, in the same order`, async ({ page }) => {
+  test(`${path}: the phone shows every section, heading and piece of content the desktop shows, in the same order`, { tag: ['@viewports'] }, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(path);
@@ -49,6 +50,8 @@ for (const path of PAGES) {
     const deskOrder = await order(page);
     await page.setViewportSize({ width: 375, height: 812 });
     await page.waitForTimeout(400);
+    // (every folded card opened, as a tap on its row would)
+    await page.evaluate(() => document.querySelectorAll('[data-card]').forEach((c) => c.classList.add('is-open')));
     const phone = await content(page);
     const phoneOrder = await order(page);
     expect(desk.length, 'the page has content').toBeGreaterThan(5);

@@ -7,6 +7,7 @@ import montserrat400 from '@fontsource/montserrat/files/montserrat-latin-400-nor
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Hud from '../components/Hud.astro';
+import TabBar from '../components/TabBar.astro';
 import { site } from '../config';
 
 interface Props {
@@ -34,7 +35,7 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
 <html lang="en-GB">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
@@ -80,6 +81,7 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
       <slot />
     </main>
     <Footer />
+    <TabBar />
     <Hud />
     <script>
       // Section entrances: once, in reading order, with the stagger set per element in --enter-delay.

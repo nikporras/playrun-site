@@ -322,8 +322,10 @@ export function startGames() {
       if (scanned.has(card) || !card.classList.contains('is-in')) continue;
       const r = card.getBoundingClientRect();
       if (r.top < 0 || r.bottom > innerHeight) continue;
-      // (a card swiped out of a phone row is off screen too)
       if (r.right < 1 || r.left > innerWidth - 1 || r.left < -1 || r.right > innerWidth + 1) continue;
+      // (a card folded to its row on a phone waits until it is opened)
+      const body = card.querySelector('.card__body');
+      if (body && getComputedStyle(body).visibility === 'hidden') continue;
       const centre = (r.top + r.bottom) / 2;
       if (centre < innerHeight * 0.2 || centre > innerHeight * 0.8) continue;
       const key = Math.round(r.top / 8);
@@ -357,8 +359,8 @@ export function startGames() {
     );
     window.setTimeout(consider, 400);
     addEventListener('load', () => window.setTimeout(consider, 300));
-    // a swipe row that has settled on a phone
-    document.addEventListener('playrun:rowsettle', () => {
+    // a card opened in a phone's folded list
+    document.addEventListener('playrun:cardopen', () => {
       speed = 0;
       consider();
     });
@@ -370,8 +372,10 @@ export function startGames() {
   // On desktop the bar stands on the left edge and the ship runs down it; otherwise it lies
   // along the bottom and the ship runs across, with the scoreboard pill at the right end.
   const vertical = matchMedia('(min-width: 64rem)');
+  // (on a phone the line runs the whole width, over the bottom bar; the pill sits in the bar)
+  const phone = matchMedia('(max-width: 47.99rem)');
   const layout = () => {
-    const free = vertical.matches ? hud.clientHeight : hud.clientWidth - pill.offsetWidth;
+    const free = vertical.matches ? hud.clientHeight : phone.matches ? hud.clientWidth : hud.clientWidth - pill.offsetWidth;
     const ship = vertical.matches ? runner.offsetHeight : runner.offsetWidth;
     hud.style.setProperty('--track', `${Math.max(0, free - ship)}px`);
     levelsList.replaceChildren(
@@ -425,6 +429,7 @@ export function startGames() {
   addEventListener('scroll', onScroll, { passive: true });
   addEventListener('resize', layout);
   vertical.addEventListener('change', layout);
+  phone.addEventListener('change', layout);
 
   // Controls. The pill opens the card and closes it (a tap on a phone, a click or Enter anywhere);
   // a click outside closes it too. Hover and focus open it without pinning it.
@@ -466,6 +471,8 @@ export function startGames() {
 
   hud.hidden = false;
   dock.hidden = false;
+  // (a phone's bottom bar leaves its right end for the counter)
+  html.classList.add('has-dock');
   render();
   layout();
   onScroll();

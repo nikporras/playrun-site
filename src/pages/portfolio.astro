@@ -80,15 +80,14 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
               <p class="group__lead">{g.lead}</p>
             </div>
             {g.projects.length > 0 && (
-              <div class="group__row" data-row role="region" aria-label={`${g.name} games, ${span(g)}`}>
+              <div class="group__row" role="region" aria-label={`${g.name} games, ${span(g)}`}>
                 <ul role="list" class="group__grid">
                   {g.projects.map((p, i) => (
                     <li class="group__cell">
-                      <GameCard project={p} via={g.via} delay={i * 60} scan />
+                      <GameCard project={p} via={g.via} delay={i * 60} scan open={i === 0} />
                     </li>
                   ))}
                 </ul>
-                <p class="group__pos" data-row-pos aria-live="polite" hidden></p>
               </div>
             )}
           </div>
@@ -199,9 +198,6 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
   .group__cell:last-child:nth-child(3n + 2) {
     grid-column: span 3;
   }
-  .group__pos {
-    display: none;
-  }
   .level__title--small {
     font-size: var(--step-head);
     font-size: round(var(--step-head), 16px);
@@ -234,97 +230,41 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
       grid-column: 1 / -1;
     }
   }
-  /* On a phone each company's cards are a swipe row: the list scrolls sideways and snaps a card
-     to the left edge, the next card peeking in; a count under it says where you are; the list
-     takes keyboard focus (the script sets it when the row scrolls) so the arrow keys scroll it,
-     with the ring drawn inside its edges. The row runs edge to edge; the cards keep the column. */
-  @media (max-width: 47.99rem) {
-    .group__row {
-      position: relative;
-    }
-    .group__grid {
-      position: relative;
-      display: flex;
-      gap: 0.5rem;
-      margin-inline: calc(-1 * var(--gutter));
-      padding: 4px var(--gutter);
-      overflow-x: auto;
-      overscroll-behavior-x: contain;
-      scroll-snap-type: x mandatory;
-      scroll-padding-inline-start: var(--gutter);
-      scrollbar-width: none;
-    }
-    .group__grid::-webkit-scrollbar {
-      display: none;
-    }
-    .group__grid:focus-visible {
-      outline: 3px solid var(--accent-2);
-      outline-offset: -3px;
-    }
-    .group__cell,
-    .group__cell:last-child:nth-child(3n + 1),
-    .group__cell:nth-last-child(2):nth-child(3n + 1),
-    .group__cell:last-child:nth-child(3n + 2) {
-      flex: 0 0 86%;
-      max-width: 20rem;
-      scroll-snap-align: start;
-    }
-    .group__pos {
-      display: block;
-      margin-top: 0.5rem;
-      font-family: var(--font-display);
-      font-size: 0.875rem;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      max-width: none;
-    }
-    .group__pos[hidden] {
-      display: none;
-    }
-  }
 </style>
 
 <script>
-  // The swipe rows: where a company's list scrolls sideways (a phone), the list takes keyboard
-  // focus, the count under it follows the card snapped to the left edge, and a settled swipe tells
-  // the games script to look at the cards again (so the scan reaches every card in the row).
-  document.querySelectorAll<HTMLElement>('[data-row]').forEach((row) => {
-    const list = row.querySelector<HTMLElement>('.group__grid')!;
-    const pos = row.querySelector<HTMLElement>('[data-row-pos]')!;
-    const cells = Array.from(list.children) as HTMLElement[];
-    let timer = 0;
-    const update = () => {
-      if (list.scrollWidth <= list.clientWidth + 2) {
-        list.removeAttribute('tabindex');
-        pos.hidden = true;
-        return;
-      }
-      list.tabIndex = 0;
-      const origin = cells[0].offsetLeft;
-      let at = 0;
-      let best = Infinity;
-      cells.forEach((cell, k) => {
-        const d = Math.abs(cell.offsetLeft - origin - list.scrollLeft);
-        if (d < best) {
-          best = d;
-          at = k;
-        }
-      });
-      pos.textContent = `${at + 1} / ${cells.length}`;
-      pos.hidden = false;
+  // The folded list on a phone: each company's cards are rows, one open at a time (the first to
+  // begin with). A tap on a row opens its card and folds the one that was open; the row stays under
+  // the finger while the cards above it fold. Once open, a card that runs off the screen is brought
+  // into view, and the games script is told to look at it (the scan plays on an open card only).
+  const phone = matchMedia('(max-width: 47.99rem)');
+  const still = matchMedia('(prefers-reduced-motion: reduce)');
+  const FOLD_MS = 280;
+  document.querySelectorAll<HTMLElement>('.group__grid').forEach((list) => {
+    const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-card]'));
+    const set = (card: HTMLElement, open: boolean) => {
+      card.classList.toggle('is-open', open);
+      card.querySelector('[data-card-toggle]')!.setAttribute('aria-expanded', String(open));
     };
-    list.addEventListener(
-      'scroll',
-      () => {
-        window.clearTimeout(timer);
-        timer = window.setTimeout(() => {
-          update();
-          document.dispatchEvent(new CustomEvent('playrun:rowsettle'));
-        }, 120);
-      },
-      { passive: true },
-    );
-    addEventListener('resize', update);
-    update();
+    cards.forEach((card) => {
+      const button = card.querySelector<HTMLButtonElement>('[data-card-toggle]')!;
+      button.addEventListener('click', () => {
+        const opening = !card.classList.contains('is-open');
+        const before = button.getBoundingClientRect().top;
+        cards.forEach((c) => set(c, c === card && opening));
+        const until = performance.now() + (still.matches ? 0 : FOLD_MS);
+        const frame = () => {
+          const drift = button.getBoundingClientRect().top - before;
+          if (Math.abs(drift) > 0.5) scrollBy({ top: drift, behavior: 'instant' });
+          if (performance.now() < until) return requestAnimationFrame(frame);
+          if (!opening || !phone.matches) return;
+          const r = card.getBoundingClientRect();
+          const room = innerHeight - (parseFloat(getComputedStyle(document.body).paddingBottom) || 0);
+          if (r.bottom > room && r.height < room) scrollBy({ top: r.bottom - room + 8, behavior: still.matches ? 'instant' : 'smooth' });
+          document.dispatchEvent(new CustomEvent('playrun:cardopen'));
+        };
+        requestAnimationFrame(frame);
+      });
+    });
   });
 </script>

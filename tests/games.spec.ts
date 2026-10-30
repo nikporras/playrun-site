@@ -195,18 +195,33 @@ test.describe('Games', () => {
     const legal = (await page.locator('.footer__legal').boundingBox())!;
     const pillEnd = (await page.locator('.score__pill').boundingBox())!;
     expect(legal.y + legal.height).toBeLessThanOrEqual(pillEnd.y);
-    // a phone: the bar lies along the bottom, the pill at its right end
-    await page.setViewportSize({ width: 390, height: 844 });
+    // a tablet: the bar lies along the bottom, the pill at its right end
+    await page.setViewportSize({ width: 820, height: 1000 });
     await page.goto('/skills/');
     const bar = (await page.locator('#hud').boundingBox())!;
-    expect(bar.width).toBe(390);
-    expect(bar.height).toBeLessThanOrEqual(48);
-    expect(bar.y + bar.height).toBe(844);
+    expect(bar.width).toBe(820);
+    expect(bar.y + bar.height).toBe(1000);
     const pp = (await page.locator('.score__pill').boundingBox())!;
-    expect(pp.x + pp.width).toBe(390);
+    expect(pp.x + pp.width).toBe(820);
     expect(pp.y).toBeGreaterThanOrEqual(bar.y);
-    expect(pp.y + pp.height).toBeLessThanOrEqual(844);
-    expect(pp.width, 'compact on a phone, saying the same as on a desktop').toBeLessThanOrEqual(140);
+    // a phone: the track is a thin line on the top edge of the bottom bar, the ship riding on it,
+    // and the counter at the bar's right end
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/skills/');
+    const line = (await page.locator('#hud').boundingBox())!;
+    const tabbar = (await page.locator('.tabbar').boundingBox())!;
+    expect(line.width).toBe(390);
+    expect(line.height, 'a thin line').toBeLessThanOrEqual(4);
+    expect(Math.abs(line.y + line.height - tabbar.y), "on the bar's top edge").toBeLessThanOrEqual(1);
+    const ship = (await page.locator('.hud__runner').boundingBox())!;
+    expect(Math.abs(ship.y + ship.height - line.y), 'the ship rides on it').toBeLessThanOrEqual(1);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+    await expect.poll(async () => (await page.locator('.hud__runner').boundingBox())!.x, 'and runs along it with the scroll').toBeGreaterThan(100);
+    const counter = (await page.locator('.score__pill').boundingBox())!;
+    expect(counter.x + counter.width).toBe(390);
+    expect(counter.y).toBeGreaterThanOrEqual(tabbar.y);
+    expect(counter.y + counter.height).toBeLessThanOrEqual(844);
+    expect(counter.height, 'a 44px target').toBeGreaterThanOrEqual(44);
   });
 
   test('reduced motion removes the games and the bar', async ({ browser }) => {

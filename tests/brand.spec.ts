@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Brand assets', () => {
-  test('both typefaces load', async ({ page }) => {
+  test('both typefaces load', { tag: ['@brand'] }, async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
     const loaded = await page.evaluate(() => ({
@@ -11,7 +11,7 @@ test.describe('Brand assets', () => {
     expect(loaded).toEqual({ pixel: true, montserrat: true });
   });
 
-  test('the logo renders in the header and the icon in the footer', async ({ page }) => {
+  test('the logo renders in the header and the icon in the footer', { tag: ['@brand'] }, async ({ page }) => {
     await page.goto('/');
     const header = page.locator('header svg').first();
     await expect(header).toBeVisible();
@@ -22,7 +22,7 @@ test.describe('Brand assets', () => {
     expect((await footer.boundingBox())?.height ?? 0).toBeLessThanOrEqual(64);
   });
 
-  test('favicon, touch icon and Open Graph image exist', async ({ page, request }) => {
+  test('favicon, touch icon and Open Graph image exist', { tag: ['@brand'] }, async ({ page, request }) => {
     await page.goto('/');
     for (const path of ['/favicon.svg', '/favicon.ico', '/apple-touch-icon.png', '/og.png', '/sitemap-index.xml', '/robots.txt']) {
       const res = await request.get(path);

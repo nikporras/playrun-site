@@ -64,8 +64,9 @@ const ALT = 'Nicolás Porras wearing a VR headset pushed up on his head';
 // The run that built this page. GitHub Actions builds only after the suite has passed, so the
 // numbers on the board are that run's. Local builds carry no run.
 const runDate = suite.run ? suite.run.startedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
-// The six live checks the button runs on this page, in the visitor's browser. Their counts are
-// filled in when they run; the line above the board carries the suite's own numbers.
+// The six live checks the button runs on this page, in the visitor's browser. Until they run,
+// each panel shows the suite's own checks for that area (tagged in the spec files), from the run
+// that built the page; the line above the board carries the whole suite's numbers.
 const checks = [
   { id: 'pages', title: 'Pages load', detail: 'Every route answers 200 and renders one h1. No blank screens.' },
   { id: 'console', title: 'Zero console errors', detail: 'Nothing red in the console, no request left failing.' },
@@ -86,18 +87,6 @@ const checks = [
           <span class="hero__mask"><span class="hero__line" style="--i: 0">Nicolás</span></span>
           <span class="hero__mask"><span class="hero__line" style="--i: 1">Porras</span></span>
         </h1>
-        <!-- The visual copy of the name for the break, and the ticket it raises -->
-        <canvas class="hero__break" aria-hidden="true" hidden></canvas>
-        <aside class="hero__ticket" aria-hidden="true" hidden>
-          <p class="ticket__key">BUG-001</p>
-          <p class="ticket__title">Headline broke</p>
-          <dl class="ticket__meta">
-            <dt>Severity</dt>
-            <dd>Cosmetic</dd>
-            <dt>Status</dt>
-            <dd class="ticket__status" data-ticket-status>Open</dd>
-          </dl>
-        </aside>
       </div>
       <p class="hero__post" data-load style="--d: 400ms">{playrun.role}, {site.name}</p>
       <p class="hero__value" data-load style="--d: 500ms">
@@ -121,6 +110,21 @@ const checks = [
     </div>
     <Bug id="hero-1" style="left: 40%; top: 2rem" tablet="right: 6%; top: 8rem" walk="x 2rem" />
   </section>
+
+  <!-- The visual copy of the name for its break, drawn over the whole screen so its pixels can land
+       on the next title, and the ticket the break raises (both fixed, click-through, decorative) -->
+  <canvas class="hero__break" aria-hidden="true" hidden></canvas>
+  <aside class="hero__ticket" aria-hidden="true" hidden>
+    <p class="ticket__key">BUG-001</p>
+    <p class="ticket__title">Headline broke</p>
+    <dl class="ticket__meta">
+      <dt>Severity</dt>
+      <dd>Cosmetic</dd>
+      <dt>Status</dt>
+      <dd class="ticket__status" data-ticket-status>Open</dd>
+    </dl>
+    <p class="ticket__hint">Scroll back up to fix</p>
+  </aside>
 
   <!-- Level 2: the ticker of titles, their official logos in one colour, rolling slowly left -->
   <section class="level level--blue level--tight has-join-top has-join-bottom wall" data-level="2" aria-labelledby="wall-title">
@@ -241,21 +245,26 @@ const checks = [
     </div>
     <div class="proof__board level__body">
       {
-        checks.map((g, i) => (
-          <div class="panel is-idle" style={`--enter-delay: ${i * 60}ms`} data-check={g.id} data-enter="scan">
+        checks.map((g, i) => {
+          const a = suite.areas[g.id] ?? { total: 0, passed: 0, failed: 0 };
+          // From a run: ticked (or crossed) with its passes. A local build has only the list: the count, unticked.
+          const state = suite.run ? (a.failed ? 'is-failed' : 'is-pass') : 'is-idle';
+          return (
+          <div class:list={['panel', state]} style={`--enter-delay: ${i * 60}ms`} data-check={g.id} data-enter="scan" data-from={suite.run ? 'run' : 'list'}>
             <div class="panel__mark" aria-hidden="true">
               <svg class="proof__idle" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M0 0h7v1H0zM0 6h7v1H0zM0 1h1v5H0zM6 1h1v5H6z" fill="currentColor" /></svg>
               <PassMark class="proof__pass" />
               <CrossMark class="proof__cross" />
             </div>
             <p class="panel__num num">
-              <span data-count>&ndash; &ndash;</span>
-              <span class="panel__of"></span>
+              <span data-count>{suite.run ? a.passed : a.total}</span>
+              <span class="panel__of">{suite.run ? ` of ${a.total}` : ' checks'}</span>
             </p>
             <h3 class="panel__title">{g.title}</h3>
             <p class="panel__detail" data-detail>{g.detail}</p>
           </div>
-        ))
+          );
+        })
       }
     </div>
     <Bug id="proof-1" style="right: 12%; top: 10rem" tablet="right: 20%; top: 0.75rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
@@ -294,6 +303,12 @@ const checks = [
   }
   @media (max-width: 63.99rem) {
     :global(.games) .hero {
+      --hud-space: var(--hud-h);
+    }
+  }
+  /* a phone's bottom bar is there with the games on or off */
+  @media (max-width: 47.99rem) {
+    .hero {
       --hud-space: var(--hud-h);
     }
   }
@@ -338,22 +353,25 @@ const checks = [
     opacity: 0;
   }
   .hero__break {
-    position: absolute;
-    left: 0;
-    top: 0;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
-    z-index: 1;
+    z-index: 30;
   }
   .hero__break[hidden] {
     display: none;
   }
-  /* The ticket: a small tracker card beside the name, transform and opacity only. */
+  /* The ticket: a small tracker card, fixed on the screen beside the name (placed by script), so it
+     stays as Level 2 comes up under it; transform and opacity only. */
   .hero__ticket {
-    position: absolute;
-    left: calc(100% + var(--s-4));
-    top: 0.25em;
+    position: fixed;
+    left: 0;
+    top: 0;
     width: 18rem;
-    z-index: 2;
+    z-index: 35;
+    pointer-events: none;
     padding: 0.875rem 1rem;
     background: var(--surface);
     border-left: 4px solid var(--accent-2);
@@ -381,6 +399,14 @@ const checks = [
   }
   .hero__ticket[data-status='fixed'] {
     border-left-color: var(--accent);
+  }
+  .ticket__hint {
+    margin-top: 0.5em;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .hero__ticket[data-status='fixed'] .ticket__hint {
+    display: none;
   }
   .ticket__key {
     font-size: 0.75rem;
@@ -507,15 +533,20 @@ const checks = [
     .hero__value {
       font-size: 1rem;
     }
-    /* On a phone the ticket pins to the top of the screen, where the toast goes too. */
+    /* On a phone the ticket sits in the lower third, just above the bottom bar and the ship. */
     .hero__ticket {
-      position: fixed;
-      left: 0.5rem;
-      right: 0.5rem;
-      top: 0.5rem;
+      left: var(--margin);
+      right: var(--margin);
+      top: auto;
+      bottom: calc(var(--hud-h) + var(--ship-w) + var(--s-2));
       width: auto;
-      transform: translateY(-0.5rem) scale(0.96);
-      transform-origin: top center;
+      transform: translateY(0.5rem) scale(0.96);
+      transform-origin: bottom center;
+    }
+    /* (while the next title passes the lower third, the top of the screen) */
+    .hero__ticket.is-top {
+      top: var(--s-2);
+      bottom: auto;
     }
     /* On a phone the photo comes under the text, on the bottom edge. */
     .hero__figure {
@@ -1004,7 +1035,8 @@ const checks = [
     width: 1em;
     height: 1em;
   }
-  /* Before the test runs nothing is ticked: an empty box and a blank count */
+  /* A build with no run to read (a local one) ticks nothing: an empty box and the count of checks;
+     while the live checks run, the same box */
   .panel.is-idle .panel__mark .proof__idle {
     display: block;
   }
@@ -1141,10 +1173,11 @@ const checks = [
   }
 
   // The drum: the four stats three times over; row --i (a float index into the list) sits in the
-  // centre. It turns one row every 2.5 s with a 0.6 s slide, and keeps turning after the arrows.
+  // centre. It turns one row every 3.5 s with a 0.6 s slide, and keeps turning after the arrows.
   // At the end of the middle copy it slides onto the next copy, then jumps back a copy with no
-  // transition, which looks the same. It rests while hovered or holding focus, when paused, and
-  // while the level is off screen. Still under reduced motion.
+  // transition, which looks the same. It rests under a mouse, while holding keyboard focus, when
+  // paused, for a few seconds after a tap, and while the level is off screen. Still under reduced
+  // motion.
   const drum = document.querySelector<HTMLElement>('[data-drum]');
   if (drum && !reduce) {
     const list = drum.querySelector<HTMLElement>('.drum__list')!;
@@ -1192,13 +1225,15 @@ const checks = [
         moving = false;
       }, 620);
     };
-    const resting = () => hovered || focused || paused || !seen;
+    // A tap rests it a moment, then it carries on.
+    let touchedUntil = 0;
+    const resting = () => hovered || focused || paused || !seen || performance.now() < touchedUntil;
     const tick = () => {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
         if (!resting()) go(1);
         tick();
-      }, 2500);
+      }, 3500);
     };
     drum.querySelector('[data-drum-next]')!.addEventListener('click', () => {
       go(1);
@@ -1215,9 +1250,14 @@ const checks = [
       pause.setAttribute('aria-pressed', String(paused));
     });
     pause.setAttribute('aria-pressed', 'false');
-    drum.addEventListener('pointerenter', () => (hovered = true));
+    // Hover is a mouse's: a finger on a phone fires the same pointer events and would hold the
+    // drum still for good. Focus counts when it is the keyboard's (a tapped button keeps focus too).
+    drum.addEventListener('pointerenter', (e) => (hovered = e.pointerType === 'mouse'));
     drum.addEventListener('pointerleave', () => (hovered = false));
-    drum.addEventListener('focusin', () => (focused = true));
+    drum.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse') touchedUntil = performance.now() + 4000;
+    });
+    drum.addEventListener('focusin', (e) => (focused = (e.target as HTMLElement).matches(':focus-visible')));
     drum.addEventListener('focusout', (e) => {
       if (!drum.contains(e.relatedTarget as Node | null)) focused = false;
     });
@@ -1250,8 +1290,9 @@ const checks = [
       score.classList.remove('is-in', 'is-fail');
     }
     for (const t of tiles.values()) {
-      t.classList.remove('is-idle');
+      t.classList.remove('is-idle', 'is-pass', 'is-failed');
       t.classList.add('is-pending');
+      t.dataset.from = 'live';
     }
     let passedAll = 0;
     let failedAll = 0;

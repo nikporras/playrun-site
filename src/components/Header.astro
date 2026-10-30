@@ -11,11 +11,7 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
     <Lockup class="header__lockup" aria-hidden="true" role="presentation" />
   </a>
 
-  <button class="header__toggle" type="button" aria-expanded="false" aria-controls="site-nav">
-    <span data-closed>Menu</span><span data-open hidden>Close</span>
-  </button>
-
-  <nav id="site-nav" class="header__nav" aria-label="Site">
+  <nav class="header__nav" aria-label="Site">
     <ul role="list" class="header__links">
       {
         nav.map((item) => (
@@ -95,70 +91,10 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
   .header__links a[aria-current='page']::after {
     background: var(--accent);
   }
-  .header__toggle {
-    display: none;
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    line-height: 1;
-    min-height: 3rem;
-    padding: 0.75rem 1rem;
-    background: var(--surface);
-  }
-
+  /* A phone has the bottom bar (TabBar.astro) instead: the header keeps the logo. */
   @media (max-width: 47.99rem) {
-    .header__toggle {
-      display: inline-flex;
-      align-items: center;
-    }
     .header__nav {
       display: none;
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 100%;
-      z-index: 50;
-      flex-direction: column;
-      align-items: stretch;
-      gap: var(--s-2);
-      padding: var(--s-2) var(--gutter) var(--s-4);
-      background: var(--surface);
-    }
-    .header__nav.is-open {
-      display: flex;
-    }
-    .header__links {
-      flex-direction: column;
-      gap: 0;
-      font-size: 1.5rem;
-    }
-    .header__links a {
-      display: block;
-      padding: 0.875rem 0.25rem;
-    }
-    .header__action {
-      width: 100%;
     }
   }
 </style>
-
-<script>
-  const toggle = document.querySelector<HTMLButtonElement>('.header__toggle');
-  const nav = document.getElementById('site-nav');
-  if (toggle && nav) {
-    const closed = toggle.querySelector<HTMLElement>('[data-closed]')!;
-    const opened = toggle.querySelector<HTMLElement>('[data-open]')!;
-    const set = (open: boolean) => {
-      toggle.setAttribute('aria-expanded', String(open));
-      nav.classList.toggle('is-open', open);
-      closed.hidden = open;
-      opened.hidden = !open;
-    };
-    toggle.addEventListener('click', () => set(toggle.getAttribute('aria-expanded') !== 'true'));
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
-        set(false);
-        toggle.focus();
-      }
-    });
-  }
-</script>

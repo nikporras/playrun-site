@@ -8,7 +8,7 @@ const PAGES = ['/', '/skills/', '/portfolio/', '/contact/', '/quality/', '/priva
 const SITE = 'https://playrunqa.com';
 
 for (const path of PAGES) {
-  test(`${path}: external links open in a new tab with a hint, internal links do not`, async ({ page }) => {
+  test(`${path}: external links open in a new tab with a hint, internal links do not`, { tag: ['@links'] }, async ({ page }) => {
     await page.goto(path);
     const links = await page.locator('a[href]').evaluateAll((as) =>
       (as as HTMLAnchorElement[]).map((a) => ({

@@ -60,7 +60,6 @@ jobs:
   build:
     name: Build site
     needs: test
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -69,6 +68,10 @@ jobs:
         with:
           name: playwright-results
           path: tests/results
+      - name: The build reads the run from this pipeline, so it must be there
+        run: |
+          test -s tests/results/run.json || { echo "::error::tests/results/run.json is missing: the Home scoreboard and the Quality page need the test job's run"; exit 1; }
+          node -e "const r=require('./tests/results/run.json'); if(!r.stats||!r.suites?.length){console.error('::error::run.json has no run in it'); process.exit(1)}"
       - uses: withastro/action@v3
         with:
           node-version: 24

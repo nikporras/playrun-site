@@ -29,56 +29,90 @@ test.describe('The Portfolio journey', () => {
     await expect(page.locator('.hud__levels li').first()).toHaveText('2026');
   });
 
-  test("on a phone each company's cards are a swipe row: a labelled region holding the list, scroll snap with the next card peeking in, a count that follows the swipe, keyboard scrolling with a visible ring, and the scan reaching the swiped cards; the desktop keeps the grid", async ({ page }) => {
+  test("on a phone each company's games are a folded list: one-line rows (logo, title, year and status, chevron) that are real buttons opening the whole card in place, one open at a time, the first open to begin with; the scan plays on an opened card; the desktop keeps the grid of whole cards", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/portfolio/');
     await noSmooth(page);
-    const row = page.locator('[data-row]').first();
-    const list = row.locator('.group__grid');
-    const cells = list.locator('> li');
-    await expect(row).toHaveAttribute('role', 'region');
-    await expect(row).toHaveAttribute('aria-label', /^Aonic games, Jul 2026 to present$/);
+    const region = page.locator('.group__row').first();
+    await expect(region).toHaveAttribute('role', 'region');
+    await expect(region).toHaveAttribute('aria-label', /^Aonic games, Jul 2026 to present$/);
+    const list = region.locator('.group__grid');
     await expect(list).toHaveAttribute('role', 'list');
-    await expect(cells).toHaveCount(7);
-    await expect(list).toHaveAttribute('tabindex', '0');
-    const st = await list.evaluate((el) => {
-      const cs = getComputedStyle(el);
-      return { overflow: cs.overflowX, snap: cs.scrollSnapType, w: el.clientWidth, scrollW: el.scrollWidth };
-    });
-    expect(st.overflow).toBe('auto');
-    expect(st.snap).toMatch(/^x/);
-    expect(st.scrollW, 'the row scrolls').toBeGreaterThan(st.w);
-    const boxes = await cells.evaluateAll((els) => els.map((e) => e.getBoundingClientRect()));
-    expect(boxes[0].width, 'a card leaves room for the next to peek').toBeLessThan(375 - 40);
-    expect(boxes[1].left, 'the next card peeks in').toBeLessThan(375);
-    expect(boxes[1].right).toBeGreaterThan(375);
+    const cards = list.locator('.card');
+    await expect(cards).toHaveCount(7);
+    const rows = list.locator('[data-card-toggle]');
+    // every row a button with a name, a chevron, its panel, at least 44px tall; only the first open
+    for (let i = 0; i < 7; i++) {
+      const row = rows.nth(i);
+      await expect(row).toBeVisible();
+      await expect(row).toHaveAttribute('aria-expanded', i === 0 ? 'true' : 'false');
+      const panel = page.locator(`#${await row.getAttribute('aria-controls')}`);
+      await expect(panel).toHaveCount(1);
+      expect(await cards.nth(i).locator('.card__body').evaluate((el) => el.id)).toBe(await row.getAttribute('aria-controls'));
+      expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await expect(row.locator('.card__chevron')).toBeVisible();
+      await expect(row).toHaveAccessibleName(new RegExp(`^${(await cards.nth(i).locator('.card__title').textContent())!.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${i === 0 ? '' : ' (\\d{4} · Released|In development)'}$`));
+      if (i > 0) await expect(cards.nth(i).locator('.card__title')).toBeHidden();
+    }
+    // the open card shows the whole card in the desktop's order
+    const open = cards.nth(0);
+    for (const k of ['.card__logo', '.card__when', '.card__title', '.card__summary', '.card__makers', '.card__did', '.card__tags', '.card__platforms', '.card__store']) await expect(open.locator(k).first()).toBeVisible();
+    // a closed row is one line: about a row tall
+    expect((await cards.nth(1).boundingBox())!.height).toBeLessThan(80);
+    // a tap on the third row opens it and folds the first; the row stays under the finger
+    const before = (await rows.nth(2).boundingBox())!.y;
+    await rows.nth(2).click();
+    await expect(rows.nth(2)).toHaveAttribute('aria-expanded', 'true');
+    await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'false');
+    await expect(cards.nth(2).locator('.card__store')).toBeVisible();
+    await expect(cards.nth(0).locator('.card__title')).toBeHidden();
+    await page.waitForTimeout(400);
+    // (the open card may be brought up into view, so the row only ever moves up)
+    expect((await rows.nth(2).boundingBox())!.y).toBeLessThanOrEqual(before + 2);
+    // the scan plays on the opened card, and never on a folded one
+    await cards.nth(2).evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await expect(cards.nth(2)).toHaveClass(/is-scanned/, { timeout: 4000 });
+    await page.waitForTimeout(1500);
+    for (const i of [1, 3, 4, 5, 6]) await expect(cards.nth(i)).not.toHaveClass(/is-scanned/);
+    // the keyboard: Enter and Space open and close it, focus stays on the row with a ring
+    await rows.nth(3).focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    await expect(rows.nth(3)).toBeFocused();
+    expect(await rows.nth(3).evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
+    await page.keyboard.press('Enter');
+    await expect(rows.nth(3)).toHaveAttribute('aria-expanded', 'true');
+    await expect(rows.nth(2)).toHaveAttribute('aria-expanded', 'false');
+    await page.keyboard.press('Space');
+    await expect(rows.nth(3)).toHaveAttribute('aria-expanded', 'false');
+    await expect(rows.nth(3)).toBeFocused();
+    // each company keeps its own first card open
+    await expect(page.locator('.group__grid').nth(1).locator('[data-card-toggle]').first()).toHaveAttribute('aria-expanded', 'true');
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), 'no sideways page scroll').toBeLessThanOrEqual(0);
-    const pos = row.locator('[data-row-pos]');
-    await expect(pos).toHaveText('1 / 7');
-    await expect(pos).toBeVisible();
-    // the scan reaches the first card once the row has settled in the middle of the screen
-    await row.evaluate((el) => el.scrollIntoView({ block: 'center' }));
-    await expect(cells.nth(0).locator('.card')).toHaveClass(/is-scanned/, { timeout: 4000 });
-    // a swipe: the count follows, and the next card gets its turn
-    await list.evaluate((el) => el.scrollBy({ left: (el.querySelector('li') as HTMLElement).getBoundingClientRect().width + 8, behavior: 'instant' as ScrollBehavior }));
-    await expect(pos).toHaveText('2 / 7');
-    await expect(cells.nth(1).locator('.card')).toHaveClass(/is-scanned/, { timeout: 4000 });
-    // keyboard: the list takes focus with a ring inside its edges, and the arrow keys scroll it
-    await list.evaluate((el) => el.scrollTo({ left: 0, behavior: 'instant' as ScrollBehavior }));
-    await list.focus();
-    const ring = await list.evaluate((el) => ({ style: getComputedStyle(el).outlineStyle, offset: parseFloat(getComputedStyle(el).outlineOffset) }));
-    expect(ring.style).not.toBe('none');
-    expect(ring.offset).toBeLessThan(0);
-    await page.keyboard.press('ArrowRight');
-    await expect.poll(() => list.evaluate((el) => el.scrollLeft), 'the arrow key moves the row a card').toBeGreaterThan(0);
-    await expect(pos).toHaveText('2 / 7');
-    // a desktop keeps the grid: no scrolling, no count, no tab stop
+    // a desktop keeps the grid of whole cards: no rows, every card open
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.waitForTimeout(300);
     expect(await list.evaluate((el) => getComputedStyle(el).display)).toBe('grid');
-    await expect(pos).toBeHidden();
-    await expect(list).not.toHaveAttribute('tabindex', /.*/);
-    await expect(row).toHaveAttribute('role', 'region');
+    await expect(rows.first()).toBeHidden();
+    for (let i = 0; i < 7; i++) await expect(cards.nth(i).locator('.card__title')).toBeVisible();
+  });
+
+  test('on a phone the folded list opens and closes at once under reduced motion, and without script every card is whole', async ({ browser }) => {
+    const still = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 375, height: 812 } });
+    const page = await still.newPage();
+    await page.goto('/portfolio/');
+    const card = page.locator('.card').nth(1);
+    await card.locator('[data-card-toggle]').click();
+    expect(await card.locator('.card__body').evaluate((el) => getComputedStyle(el).transitionDuration.split(',').every((d) => parseFloat(d) === 0))).toBe(true);
+    await expect(card.locator('.card__store')).toBeVisible();
+    await still.close();
+    const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 375, height: 812 } });
+    const p2 = await plain.newPage();
+    await p2.goto('/portfolio/');
+    await expect(p2.locator('[data-card-toggle]').first()).toBeHidden();
+    const titles = p2.locator('.card__title');
+    for (let i = 0; i < (await titles.count()); i++) await expect(titles.nth(i)).toBeVisible();
+    await plain.close();
   });
 
   test('nothing waits for the laser: every header and card shows as it enters the screen, and a fast scroll to the foot shows them all at once', async ({ page }) => {

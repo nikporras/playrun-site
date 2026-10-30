@@ -1,7 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import sharp from 'sharp';
+import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import path, { join } from 'node:path';
+
+const require = createRequire(import.meta.url);
 
 /**
  * Routes that are planned but not built yet. Links to them are reported, not failed,
@@ -41,7 +46,7 @@ async function collectErrors(page: Page) {
 }
 
 test.describe('Home', () => {
-  test('loads with one h1 and no console errors or failed requests', async ({ page }) => {
+  test('loads with one h1 and no console errors or failed requests', { tag: ['@pages', '@console'] }, async ({ page }) => {
     const errors = await collectErrors(page);
     const response = await page.goto('/');
     expect(response?.status()).toBe(200);
@@ -60,7 +65,7 @@ test.describe('Home', () => {
     expect(errors, errors.join('\n')).toEqual([]);
   });
 
-  test('every internal link resolves', async ({ page, request }) => {
+  test('every internal link resolves', { tag: ['@links'] }, async ({ page, request }) => {
     await page.goto('/');
     const hrefs = await page.locator('a[href]').evaluateAll((as) =>
       (as as HTMLAnchorElement[]).map((a) => a.getAttribute('href') ?? '').filter((h) => h.startsWith('/')),
@@ -79,14 +84,14 @@ test.describe('Home', () => {
     if (planned.length) test.info().annotations.push({ type: 'planned routes not built yet', description: planned.join(', ') });
   });
 
-  test('has no accessibility violations (axe)', async ({ page }) => {
+  test('has no accessibility violations (axe)', { tag: ['@a11y'] }, async ({ page }) => {
     await page.goto('/');
     await settle(page);
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
   });
 
-  test('headings are in order and images have alt text', async ({ page }) => {
+  test('headings are in order and images have alt text', { tag: ['@a11y'] }, async ({ page }) => {
     await page.goto('/');
     const levels = await page.locator('h1, h2, h3').evaluateAll((els) => els.map((e) => Number(e.tagName[1])));
     expect(levels[0]).toBe(1);
@@ -97,7 +102,7 @@ test.describe('Home', () => {
     expect(missingAlt).toBe(0);
   });
 
-  test('keyboard focus is visible on the first interactive element', async ({ page }) => {
+  test('keyboard focus is visible on the first interactive element', { tag: ['@a11y'] }, async ({ page }) => {
     await page.goto('/');
     await page.keyboard.press('Tab');
     const skip = page.locator('.skip');
@@ -106,18 +111,92 @@ test.describe('Home', () => {
     expect(outline).not.toBe('none');
   });
 
-  test('menu toggle works on a phone, and the nav holds Home, the three pages and the button', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+  for (const width of [375, 360]) {
+    test(`on a phone (${width}px) the pages are in a bottom bar: Home, Skills, Portfolio, Quality, Contact as real links with pixel icons and labels of 16px, the current page in green, at least 44px tall with a visible focus; the header keeps the logo and has no Menu`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 780 });
+      await page.goto('/portfolio/');
+      await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
+      await expect(page.locator('.header__nav')).toBeHidden();
+      await expect(page.locator('.header__brand')).toBeVisible();
+      const bar = page.getByRole('navigation', { name: 'Site' });
+      await expect(bar).toHaveCount(1);
+      const links = bar.getByRole('link');
+      await expect(links).toHaveText(['Home', 'Skills', 'Portfolio', 'Quality', 'Contact']);
+      expect(await links.evaluateAll((els) => els.map((a) => a.getAttribute('href')))).toEqual(['/', '/skills/', '/portfolio/', '/quality/', '/contact/']);
+      await expect(bar.getByRole('link', { name: 'Portfolio' })).toHaveAttribute('aria-current', 'page');
+      await expect(bar.locator('[aria-current]')).toHaveCount(1);
+      const box = (await bar.boundingBox())!;
+      expect(box.x).toBe(0);
+      expect(box.width).toBe(width);
+      expect(box.y + box.height, 'on the foot of the screen').toBe(780);
+      const cells = await links.evaluateAll((els) =>
+        els.map((a) => {
+          const r = a.getBoundingClientRect();
+          const label = a.querySelector('.tabbar__label') as HTMLElement;
+          return { h: r.height, w: r.width, labelW: label.getBoundingClientRect().width, size: parseFloat(getComputedStyle(label).fontSize), color: getComputedStyle(a).color, icon: a.querySelectorAll('svg path').length, current: a.hasAttribute('aria-current') };
+        }),
+      );
+      for (const c of cells) {
+        expect(c.h, 'a 44px target').toBeGreaterThanOrEqual(44);
+        expect(c.size, 'a label of 16px').toBe(16);
+        expect(c.labelW, 'the whole label fits its cell').toBeLessThanOrEqual(c.w);
+        expect(c.icon, 'a pixel icon').toBe(1);
+        expect(c.color).toBe(c.current ? 'rgb(103, 193, 140)' : 'rgb(170, 179, 197)');
+      }
+      // the counter takes the right end, after the five
+      const pill = (await page.locator('.score__pill').boundingBox())!;
+      expect(pill.x + pill.width).toBe(width);
+      expect(pill.y).toBeGreaterThanOrEqual(box.y);
+      for (const c of await links.evaluateAll((els) => els.map((a) => a.getBoundingClientRect().right))) expect(c).toBeLessThanOrEqual(pill.x + 1);
+      // focus: a ring on the link
+      await page.keyboard.press('Tab');
+      await links.first().focus();
+      await page.keyboard.press('Shift+Tab');
+      await page.keyboard.press('Tab');
+      await expect(links.first()).toBeFocused();
+      expect(await links.first().evaluate((a) => getComputedStyle(a).outlineStyle)).not.toBe('none');
+      // a real link: Quality loads with Quality marked
+      await bar.getByRole('link', { name: 'Quality' }).click();
+      await expect(page).toHaveURL(/\/quality\/$/);
+      await expect(page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Quality' })).toHaveAttribute('aria-current', 'page');
+    });
+  }
+
+  test('on a phone the bottom bar covers nothing: the last button and the footer end above it and the ship, the achievement toast rises above it, and it is there without script and under reduced motion', async ({ page, browser }) => {
+    await page.setViewportSize({ width: 375, height: 780 });
     await page.goto('/');
-    const toggle = page.getByRole('button', { name: 'Menu' });
-    await expect(toggle).toBeVisible();
-    await toggle.click();
-    await expect(page.getByRole('button', { name: 'Close' })).toHaveAttribute('aria-expanded', 'true');
-    const nav = page.getByRole('navigation', { name: 'Site' });
-    await expect(nav.getByRole('link')).toHaveText(['Home', 'Skills', 'Portfolio', 'Quality', 'Get in touch']);
-    await expect(nav.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
-    await page.keyboard.press('Escape');
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(300);
+    const top = (await page.locator('.tabbar').boundingBox())!.y;
+    const ship = (await page.locator('.hud__runner').boundingBox())!;
+    expect(ship.y + ship.height, 'the ship rides on the bar').toBeLessThanOrEqual(top + 1);
+    const last = (await page.locator('.footer__legal').boundingBox())!;
+    expect(last.y + last.height, 'the footer ends above the ship').toBeLessThanOrEqual(ship.y);
+    const button = (await page.getByRole('link', { name: 'Get in touch' }).last().boundingBox())!;
+    expect(button.y + button.height).toBeLessThanOrEqual(ship.y);
+    // a toast: above the bar and the ship, never over them
+    await page.evaluate(() => document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'selftest' })));
+    const toast = page.locator('[data-toast]');
+    await expect(toast).toHaveClass(/is-in/);
+    await page.waitForTimeout(400);
+    const t = (await toast.boundingBox())!;
+    expect(t.y + t.height).toBeLessThanOrEqual(ship.y);
+    expect(t.x).toBeGreaterThanOrEqual(0);
+    expect(t.x + t.width).toBeLessThanOrEqual(375);
+    // without script and under reduced motion the pages are still in the bar (no counter, no line)
+    for (const options of [{ javaScriptEnabled: false }, { reducedMotion: 'reduce' as const }]) {
+      const context = await browser.newContext({ ...options, viewport: { width: 375, height: 780 } });
+      const p = await context.newPage();
+      await p.goto('/skills/');
+      await expect(p.getByRole('navigation', { name: 'Site' }).getByRole('link')).toHaveText(['Home', 'Skills', 'Portfolio', 'Quality', 'Contact']);
+      await expect(p.locator('.hud__runner')).toHaveCount(options.reducedMotion ? 0 : 1);
+      const links = await p.locator('.tabbar__link').evaluateAll((els) => els.map((a) => a.getBoundingClientRect().right));
+      expect(links[4], 'the five take the whole bar').toBeGreaterThan(370);
+      await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      const legal = (await p.locator('.footer__legal').boundingBox())!;
+      expect(legal.y + legal.height).toBeLessThanOrEqual((await p.locator('.tabbar').boundingBox())!.y);
+      await context.close();
+    }
   });
 
   test('the hero is pinned and the next level slides over it; it scrolls away under reduced motion', async ({ page, browser }) => {
@@ -202,66 +281,164 @@ test.describe('Home', () => {
     await context.close();
   });
 
-  test('the headline breaks with the scroll and mends on the way back; the ticket reads Open, then Fixed; nothing under reduced motion', async ({ page, browser }) => {
+  test("the hero's exit: it fades in step with the curtain, the name breaks and its pixels land on the next title's top edge without covering it, the ticket reads Open with Scroll back up to fix for about two seconds, and everything mends on the way back", async ({ page }) => {
+    test.setTimeout(60_000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
     await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(600);
     const h1 = page.locator('h1');
     const canvas = page.locator('.hero__break');
     const ticket = page.locator('.hero__ticket');
     await expect(canvas).toBeHidden();
     await expect(ticket).toBeHidden();
-    // the centre of the drawn pixels, to see them move with the scroll
-    const centre = () =>
-      page.evaluate(() => {
-        const c = document.querySelector<HTMLCanvasElement>('.hero__break')!;
-        const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
-        let n = 0;
-        let sum = 0;
-        for (let i = 3; i < d.length; i += 4 * 7) {
-          if (d[i] > 100) {
-            n++;
-            sum += Math.floor(i / 4 / c.width);
-          }
-        }
-        return { n, y: sum / Math.max(1, n) };
+    // how far Level 2 covers the hero, and the hero's opacity, at a scroll position
+    const at = async (y: number) => {
+      await page.evaluate((y) => window.scrollTo(0, y), y);
+      await page.waitForTimeout(120);
+      return page.evaluate(() => {
+        const hero = document.querySelector('.hero')!.getBoundingClientRect();
+        const wall = document.querySelector('.wall')!;
+        const band = (wall.querySelector('.join--top') as HTMLElement).offsetHeight;
+        const edge = wall.getBoundingClientRect().top + band / 2;
+        const top = Math.max(0, hero.top);
+        const bottom = Math.min(innerHeight, hero.bottom);
+        return { covered: Math.min(1, Math.max(0, (bottom - edge) / (bottom - top))), opacity: Number(getComputedStyle(document.querySelector('.hero')!).opacity) };
       });
-    await page.evaluate(() => window.scrollTo(0, 120));
+    };
+    // the fade follows the slide: whole at the start, fading as it is covered, gone just before
+    let prev = 1.01;
+    for (const y of [0, 250, 450, 650, 850]) {
+      const s = await at(y);
+      expect(s.opacity, `at ${y}`).toBeLessThan(prev);
+      expect(Math.abs(s.opacity - (1 - Math.min(1, s.covered / 0.9))), `opacity follows the cover at ${y}`).toBeLessThan(0.03);
+      prev = s.opacity;
+    }
+    const nearly = await at(1000);
+    expect(nearly.opacity, 'gone just before it is covered').toBe(0);
+    expect(nearly.covered).toBeLessThan(1);
+    // the break: the copy is up, the h1 still in the page, the ticket open with the hint
     await expect(canvas).toBeVisible();
     await expect(h1).toHaveCSS('opacity', '0');
     await expect(h1).toHaveText(/Nicolás\s*Porras/);
+    // the pixels: landed on the tops of the title's letters, none on them, a heap along them. The
+    // letters are read from a screenshot with the copy hidden (the copy is the same colour)
+    await page.waitForTimeout(200);
+    const text = await page.locator('.wall__title').evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const r = range.getBoundingClientRect();
+      return { x: Math.floor(r.left), y: Math.floor(r.top), w: Math.ceil(r.width), h: Math.ceil(r.height) };
+    });
+    expect(text.y, 'the title is on screen').toBeGreaterThan(0);
+    await page.addStyleTag({ content: '.hero__break, .hero__ticket { visibility: hidden !important; }' }).then((h) => h.evaluate((el) => el.setAttribute('id', 'zz-hide')));
+    const png = await page.screenshot({ clip: { x: text.x, y: text.y, width: text.w, height: text.h } });
+    await page.evaluate(() => document.getElementById('zz-hide')!.remove());
+    const { data: shot, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+    const letters: boolean[] = [];
+    for (let i = 0; i < info.width * info.height; i++) letters.push(shot[i * info.channels] > 200 && shot[i * info.channels + 1] > 200 && shot[i * info.channels + 2] > 200);
+    const inkTop = text.y + Math.floor(letters.findIndex(Boolean) / info.width);
+    const land = await page.evaluate(
+      ({ text, letters, width, inkTop }) => {
+        const c = document.querySelector<HTMLCanvasElement>('.hero__break')!;
+        const k = c.width / innerWidth;
+        const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+        const lit = (vx: number, vy: number) => d[(Math.floor(vy * k) * c.width + Math.floor(vx * k)) * 4 + 3] > 0;
+        let onLetters = 0;
+        for (let y = 0; y < text.h; y++) for (let x = 0; x < width; x++) if (letters[y * width + x] && lit(text.x + x, text.y + y)) onLetters++;
+        let onEdge = 0;
+        let below = 0;
+        for (let y = 0; y < c.height; y += 2) {
+          for (let x = 0; x < c.width; x += 2) {
+            if (d[(y * c.width + x) * 4 + 3] < 128) continue;
+            const vy = y / k;
+            if (vy >= inkTop - 16 && vy <= inkTop) onEdge++;
+            if (vy > inkTop + 0.5) below++;
+          }
+        }
+        return { onLetters, onEdge, below };
+      },
+      { text, letters, width: info.width, inkTop },
+    );
+    expect(land.onLetters, 'no pixel on the letters').toBe(0);
+    expect(land.below, 'nothing drawn below their tops').toBe(0);
+    expect(land.onEdge, 'a heap along their tops').toBeGreaterThan(20);
+    // on the way back the pixels fly home and the name is whole again
+    await at(0);
+    await expect(canvas).toBeHidden();
+    await expect(h1).toHaveCSS('opacity', '1');
+    expect((await at(0)).opacity).toBe(1);
+    await expect(ticket).toContainText('Fixed');
+    await expect(ticket.locator('.ticket__hint')).toBeHidden();
+    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 5000 });
+    // the ticket on a fresh break: Open, the hint, about two seconds, over Level 2 as it rises
+    await at(300);
     await expect(ticket).toHaveClass(/is-in/);
     await expect(ticket).toContainText('BUG-001');
     await expect(ticket).toContainText('Open');
-    const near = await centre();
-    expect(near.n).toBeGreaterThan(20);
-    await page.evaluate(() => window.scrollTo(0, 400));
-    await page.waitForTimeout(100);
-    const far = await centre();
-    expect(far.y, 'the pixels have fallen further').toBeGreaterThan(near.y + 10);
-    await page.evaluate(() => window.scrollTo(0, 120));
-    await page.waitForTimeout(100);
-    expect((await centre()).y, 'and come back up').toBeLessThan(far.y - 10);
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(canvas).toBeHidden();
-    await expect(h1).toHaveCSS('opacity', '1');
-    await expect(ticket).toContainText('Fixed');
-    await expect(ticket).toHaveClass(/is-in/);
-    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 5000 });
-    // every time, not once a visit
-    await page.evaluate(() => window.scrollTo(0, 120));
-    await expect(ticket).toContainText('Open');
-    await expect(ticket).toHaveClass(/is-in/);
+    await expect(ticket.locator('.ticket__hint')).toHaveText('Scroll back up to fix');
+    await expect(ticket.locator('.ticket__hint')).toBeVisible();
+    const t0 = Date.now();
+    await at(700);
+    await page.waitForTimeout(Math.max(0, 1500 - (Date.now() - t0)));
+    await expect(ticket, 'still there after a second and a half, as Level 2 rises').toHaveClass(/is-in/);
+    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 1200 });
+    expect(Date.now() - t0).toBeLessThan(2900);
+  });
 
+  test("the hero's exit is off under reduced motion and with the games off: the name stays whole, the hero simply goes behind, no ticket", async ({ page, browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
     const quiet = await context.newPage();
     await quiet.goto('/');
-    await quiet.evaluate(() => window.scrollTo(0, 300));
-    await quiet.waitForTimeout(200);
+    await quiet.evaluate(() => window.scrollTo(0, 500));
+    await quiet.waitForTimeout(300);
     await expect(quiet.locator('.hero__break')).toBeHidden();
     await expect(quiet.locator('.hero__ticket')).toBeHidden();
     await expect(quiet.locator('h1')).toHaveCSS('opacity', '1');
+    await expect(quiet.locator('.hero')).toHaveCSS('opacity', '1');
+    await context.close();
+    // games off from the scoreboard
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    await page.getByRole('button', { name: /^Scoreboard/ }).click();
+    await page.getByRole('button', { name: 'Games on' }).click();
+    await page.mouse.click(700, 120);
+    await page.evaluate(() => document.fonts.ready);
+    for (const y of [200, 500, 800]) {
+      await page.evaluate((y) => window.scrollTo(0, y), y);
+      await page.waitForTimeout(250);
+      await expect(page.locator('.hero__break')).toBeHidden();
+      await expect(page.locator('.hero__ticket')).not.toHaveClass(/is-in/);
+      await expect(page.locator('h1')).toHaveCSS('opacity', '1');
+      await expect(page.locator('.hero')).toHaveCSS('opacity', '1');
+    }
+  });
+
+  test('on a phone the ticket sits in the lower third, above the bottom bar and clear of the headings', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 375, height: 780 }, hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    await page.goto('/');
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(600);
+    const wallTop = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
+    // the hero pins by its foot: Level 2 starts up from the bottom of the screen
+    await page.evaluate((y) => window.scrollTo(0, y), Math.round(wallTop - 780 + 260));
+    const ticket = page.locator('.hero__ticket');
+    await expect(ticket).toHaveClass(/is-in/);
+    await page.waitForTimeout(400);
+    const t = (await ticket.boundingBox())!;
+    const bar = (await page.locator('.tabbar').boundingBox())!;
+    expect(t.y, 'in the lower third').toBeGreaterThanOrEqual(780 / 3 * 2 - 40);
+    expect(t.y + t.height, 'above the bar and the ship').toBeLessThanOrEqual(bar.y - 24);
+    expect(t.x).toBeGreaterThanOrEqual(0);
+    expect(t.x + t.width).toBeLessThanOrEqual(375);
+    for (const sel of ['.wall__title', 'h1']) {
+      const h = (await page.locator(sel).boundingBox())!;
+      expect(h.y + h.height <= t.y || h.y >= t.y + t.height, `clear of ${sel}`).toBe(true);
+    }
     await context.close();
   });
 
@@ -388,6 +565,7 @@ test.describe('Home', () => {
   });
 
   test('the stats turn on a drum: five rows, the active one centred in green, the drum turning on its own, by the arrows, resting on hover, focus and pause, each stat announced once', async ({ page }) => {
+    test.setTimeout(60_000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
@@ -484,8 +662,8 @@ test.describe('Home', () => {
     expect(fit.labelLeft).toBeGreaterThanOrEqual(fit.numRight);
     expect(fit.labelRight).toBeLessThan(fit.buttonsLeft);
     const first = s.shown[2].text;
-    // it turns on its own, one row every 2.5 s
-    await page.waitForTimeout(3300);
+    // it turns on its own, one row every 3.5 s
+    await page.waitForTimeout(4300);
     s = await state();
     expect(s.shown[2].text, 'the drum turned').not.toBe(first);
     expect(s.shown[2].d).toBe('0');
@@ -504,7 +682,7 @@ test.describe('Home', () => {
     // hovered: it rests
     await drum.hover();
     const held = (await state()).shown[2].text;
-    await page.waitForTimeout(3300);
+    await page.waitForTimeout(4300);
     expect((await state()).shown[2].text, 'rests under the pointer').toBe(held);
     await page.mouse.move(10, 10);
     // focus inside: it rests; the buttons show their focus
@@ -513,7 +691,7 @@ test.describe('Home', () => {
     await expect(next).toBeFocused();
     expect(await next.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
     const focusedText = (await state()).shown[2].text;
-    await page.waitForTimeout(3300);
+    await page.waitForTimeout(4300);
     expect((await state()).shown[2].text, 'rests while a button has focus').toBe(focusedText);
     await page.mouse.click(10, 10);
     // the pause control
@@ -522,7 +700,7 @@ test.describe('Home', () => {
     await page.mouse.click(10, 10);
     await expect(page.getByRole('button', { name: 'Play the stats' })).toHaveAttribute('aria-pressed', 'true');
     const pausedText = (await state()).shown[2].text;
-    await page.waitForTimeout(3300);
+    await page.waitForTimeout(4300);
     expect((await state()).shown[2].text, 'paused').toBe(pausedText);
     await page.getByRole('button', { name: 'Play the stats' }).click();
     await page.mouse.click(10, 10);
@@ -540,9 +718,73 @@ test.describe('Home', () => {
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(400);
     const away = await page.locator('.drum__list').evaluate((el) => el.style.getPropertyValue('--i'));
-    await page.waitForTimeout(3300);
+    await page.waitForTimeout(4300);
     expect(await page.locator('.drum__list').evaluate((el) => el.style.getPropertyValue('--i')), 'still while off screen').toBe(away);
   });
+
+  test('the drum turns one stat every 3.5 s, the slide still 0.6 s', async ({ page }) => {
+    test.setTimeout(45_000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.locator('[data-drum]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await page.mouse.move(5, 5);
+    // every turn of the drum, timed in the page (a jump back a copy is not a turn)
+    await page.evaluate(() => {
+      const list = document.querySelector<HTMLElement>('.drum__list')!;
+      const w = window as unknown as { turns: number[] };
+      w.turns = [];
+      let last = Number(list.style.getPropertyValue('--i'));
+      new MutationObserver(() => {
+        const i = Number(list.style.getPropertyValue('--i'));
+        if (Math.abs(i - last) === 1) w.turns.push(performance.now());
+        last = i;
+      }).observe(list, { attributes: true, attributeFilter: ['style'] });
+    });
+    await page.waitForTimeout(12_500);
+    const turns = await page.evaluate(() => (window as unknown as { turns: number[] }).turns);
+    expect(turns.length, 'three turns or so in 12.5 s').toBeGreaterThanOrEqual(3);
+    for (let k = 1; k < turns.length; k++) {
+      expect(turns[k] - turns[k - 1]).toBeGreaterThan(3300);
+      expect(turns[k] - turns[k - 1]).toBeLessThan(3800);
+    }
+    const slide = await page.locator('.drum__list').evaluate((el) => getComputedStyle(el).transitionDuration);
+    expect(slide.split(',').map((d) => parseFloat(d))).toContain(0.6);
+  });
+
+  for (const width of [375, 360]) {
+    test(`on a touch phone (${width}px) the drum turns on its own, and a tap on it or on its arrows only rests it a moment`, async ({ browser }) => {
+      test.setTimeout(60_000);
+      const context = await browser.newContext({ viewport: { width, height: 780 }, hasTouch: true, isMobile: true });
+      const page = await context.newPage();
+      await page.goto('/');
+      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+      const drum = page.locator('[data-drum]');
+      await expect(drum).toHaveClass(/is-live/);
+      await drum.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      const at = () => page.locator('.drum__list').evaluate((el) => Number(el.style.getPropertyValue('--i')));
+      // untouched, it turns
+      const start = await at();
+      await expect.poll(at, { timeout: 5000, message: 'it turns on its own' }).not.toBe(start);
+      // a tap on the drum: a short rest, then it turns again
+      const box = (await drum.boundingBox())!;
+      await page.touchscreen.tap(box.x + 30, box.y + box.height / 2);
+      const tapped = await at();
+      await expect.poll(at, { timeout: 10_000, message: 'it carries on after a tap' }).not.toBe(tapped);
+      // a tap on Next turns it at once, and it keeps turning on its own after (focus stays on the
+      // button, which used to hold it still for good)
+      await page.locator('[data-drum-next]').tap();
+      await page.waitForTimeout(800);
+      const after = await at();
+      await expect.poll(at, { timeout: 10_000, message: 'it carries on after a tap on Next' }).not.toBe(after);
+      // the Pause button still holds it until Play
+      await page.locator('[data-drum-pause]').tap();
+      await page.waitForTimeout(800);
+      const held = await at();
+      await page.waitForTimeout(8000);
+      expect(await at(), 'paused').toBe(held);
+      await context.close();
+    });
+  }
 
   test('on a phone the drum stacks under the title and nothing overflows; under reduced motion the four stats are a still list', async ({ browser }) => {
     const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
@@ -601,9 +843,33 @@ test.describe('Home', () => {
 
   test('the self test runs, reports and scores the page, and the Quality link stays visible', async ({ page }) => {
     await page.goto('/');
-    // Nothing is ticked before the test runs: idle boxes and blank counts, the last run as text only
-    await expect(page.locator('.panel.is-idle')).toHaveCount(6);
-    await expect(page.locator('.panel.is-pass, .panel.is-failed')).toHaveCount(0);
+    // Before anyone presses the button each panel shows the suite's own checks for its area: the
+    // tagged tests, counted here from Playwright's own list. A build from a run ticks them with that
+    // run's passes; a local build (no run) shows the count unticked.
+    const cli = path.join(path.dirname(require.resolve('@playwright/test/package.json')), 'cli.js');
+    const list = JSON.parse(execFileSync(process.execPath, [cli, 'test', '--list', '--reporter=json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: '', PLAYWRIGHT_JSON_OUTPUT_FILE: '' } }));
+    const tagged: Record<string, number> = {};
+    const walk = (s: { specs?: { tags?: string[]; tests: unknown[] }[]; suites?: unknown[] }) => {
+      for (const sp of s.specs ?? []) for (const t of sp.tags ?? []) tagged[t.replace(/^@/, '')] = (tagged[t.replace(/^@/, '')] ?? 0) + sp.tests.length;
+      for (const c of (s.suites ?? []) as (typeof s)[]) walk(c);
+    };
+    for (const s of list.suites) walk(s);
+    const panels = await page.locator('.panel').evaluateAll((els) =>
+      els.map((el) => ({ id: (el as HTMLElement).dataset.check!, from: (el as HTMLElement).dataset.from, cls: el.className, count: el.querySelector('[data-count]')!.textContent!.trim(), of: el.querySelector('.panel__of')!.textContent!.trim() })),
+    );
+    expect(panels).toHaveLength(6);
+    for (const p of panels) {
+      expect(tagged[p.id], `${p.id} has tagged checks`).toBeGreaterThan(0);
+      if (p.from === 'run') {
+        expect(p.cls).toMatch(/is-pass|is-failed/);
+        expect(p.of).toBe(`of ${tagged[p.id]}`);
+        expect(Number(p.count)).toBeLessThanOrEqual(tagged[p.id]);
+      } else {
+        expect(p.cls).toContain('is-idle');
+        expect(p.count).toBe(String(tagged[p.id]));
+        expect(p.of).toBe('checks');
+      }
+    }
     await expect(page.locator('#selftest-status')).toHaveText(/\d+ (of \d+ checks passed in the last run|checks run before every deploy)/);
     const quality = page.locator('.proof').getByRole('link', { name: 'How I test this site' });
     await expect(quality).toHaveAttribute('href', '/quality/');
@@ -632,7 +898,7 @@ test.describe('Home', () => {
     }
   });
 
-  test('hero content is in the HTML before any script runs', async ({ browser }) => {
+  test('hero content is in the HTML before any script runs', { tag: ['@pages'] }, async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
     await page.goto('/');
@@ -649,7 +915,7 @@ test.describe('Home', () => {
   });
 
   for (const vp of VIEWPORTS) {
-    test(`renders without sideways overflow at ${vp.width}px (${vp.name})`, async ({ page }) => {
+    test(`renders without sideways overflow at ${vp.width}px (${vp.name})`, { tag: ['@viewports'] }, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto('/');
       await page.evaluate(() => document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in')));
