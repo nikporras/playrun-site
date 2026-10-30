@@ -248,6 +248,79 @@ p + p {
   background: var(--surface-2);
   color: var(--ink);
 }
+/* The outline button, for the repeated actions (one on every game card): a 2px green edge and
+   green text on the navy tile, a size smaller than the solid button and at least 44px tall, with
+   pixel-notched corners: two steps of 3px, cut by a clip path. The edge is the button's own
+   background showing round an inner fill (a border would be cut square at the notches). On hover
+   and keyboard focus the fill goes green with navy text, and focus adds a navy ring inside the
+   fill, since the clip path would hide an outline outside the box. */
+.button--outline {
+  --notch: 3px;
+  position: relative;
+  isolation: isolate;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background: var(--accent);
+  color: var(--accent);
+  clip-path: polygon(
+    0 calc(var(--notch) * 2),
+    var(--notch) calc(var(--notch) * 2),
+    var(--notch) var(--notch),
+    calc(var(--notch) * 2) var(--notch),
+    calc(var(--notch) * 2) 0,
+    calc(100% - var(--notch) * 2) 0,
+    calc(100% - var(--notch) * 2) var(--notch),
+    calc(100% - var(--notch)) var(--notch),
+    calc(100% - var(--notch)) calc(var(--notch) * 2),
+    100% calc(var(--notch) * 2),
+    100% calc(100% - var(--notch) * 2),
+    calc(100% - var(--notch)) calc(100% - var(--notch) * 2),
+    calc(100% - var(--notch)) calc(100% - var(--notch)),
+    calc(100% - var(--notch) * 2) calc(100% - var(--notch)),
+    calc(100% - var(--notch) * 2) 100%,
+    calc(var(--notch) * 2) 100%,
+    calc(var(--notch) * 2) calc(100% - var(--notch)),
+    var(--notch) calc(100% - var(--notch)),
+    var(--notch) calc(100% - var(--notch) * 2),
+    0 calc(100% - var(--notch) * 2)
+  );
+  --sel-bg: var(--accent);
+  --sel-ink: var(--accent-ink);
+}
+.button--outline::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  background: var(--bg);
+  clip-path: inherit;
+  transition: background-color var(--dur-fast) ease;
+}
+.button--outline::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  z-index: -1;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 2px var(--pr-navy);
+  opacity: 0;
+}
+.button--outline:hover,
+.button--outline:focus-visible {
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+.button--outline:hover::before,
+.button--outline:focus-visible::before {
+  background: var(--accent);
+}
+.button--outline:focus-visible {
+  outline: none;
+}
+.button--outline:focus-visible::after {
+  opacity: 1;
+}
 
 /* Links drawn as text */
 .textlink {
