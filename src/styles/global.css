@@ -812,77 +812,55 @@ html:not(.games) .bug {
   --e: 1;
 }
 
-/* The laser: the track's shot at a card that is on screen and settled. A thick beam with a glow
-   from the ship's nose to the card's logo: it extends in a tenth of a second, holds while the
-   card's scan line sweeps, then fades. The flash is the muzzle, at the nose, for a blink. */
-.laser {
+/* The shot, in pixels (src/scripts/games.ts): every square is a 6px block fixed at the origin and
+   moved by script. The bolt's head is light, then green, its trail cyan thinning to nothing; the
+   muzzle is a cross of five at the nose; the burst eight squares that scatter from the hit. */
+.shot .px {
   position: fixed;
-  left: 0;
-  top: 0;
-  z-index: 39;
-  height: 14px;
-  width: var(--len, 0px);
-  background: linear-gradient(to right, var(--pr-light), var(--accent) 30%, var(--accent-2));
-  box-shadow:
-    0 0 0 1px var(--pr-navy),
-    0 0 18px var(--accent-2),
-    0 0 36px color-mix(in srgb, var(--accent-2) 50%, transparent);
-  transform-origin: 0 50%;
-  transform: translate(var(--x, 0px), calc(var(--y, 0px) - 7px)) rotate(var(--a, 0rad)) scaleX(0);
+  left: -3px;
+  top: -3px;
+  width: 6px;
+  height: 6px;
   opacity: 0;
   pointer-events: none;
-}
-.laser.is-on {
-  animation: laser 420ms var(--ease-out) forwards;
-}
-@keyframes laser {
-  0% {
-    transform: translate(var(--x, 0px), calc(var(--y, 0px) - 7px)) rotate(var(--a, 0rad)) scaleX(0);
-    opacity: 1;
-  }
-  25% {
-    transform: translate(var(--x, 0px), calc(var(--y, 0px) - 7px)) rotate(var(--a, 0rad)) scaleX(1);
-    opacity: 1;
-  }
-  70% {
-    transform: translate(var(--x, 0px), calc(var(--y, 0px) - 7px)) rotate(var(--a, 0rad)) scaleX(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(var(--x, 0px), calc(var(--y, 0px) - 7px)) rotate(var(--a, 0rad)) scaleX(1);
-    opacity: 0;
-  }
-}
-.flash {
-  position: fixed;
-  left: 0;
-  top: 0;
   z-index: 39;
-  width: 28px;
-  height: 28px;
-  margin: -14px 0 0 -14px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--pr-light), var(--accent) 45%, transparent 70%);
-  transform: translate(var(--x, 0px), var(--y, 0px)) scale(0);
-  opacity: 0;
-  pointer-events: none;
+  will-change: transform, opacity;
 }
-.flash.is-on {
-  animation: flash 240ms var(--ease-out) forwards;
+.bolt__px--0,
+.bolt__px--1 {
+  background: var(--pr-light);
+  box-shadow: 0 0 6px var(--pr-light);
 }
-@keyframes flash {
-  0% {
-    transform: translate(var(--x, 0px), var(--y, 0px)) scale(0.3);
-    opacity: 1;
-  }
-  60% {
-    transform: translate(var(--x, 0px), var(--y, 0px)) scale(1.3);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate(var(--x, 0px), var(--y, 0px)) scale(1.6);
-    opacity: 0;
-  }
+.bolt__px--2,
+.bolt__px--3 {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+.bolt__px--4,
+.bolt__px--5,
+.bolt__px--6,
+.bolt__px--7 {
+  background: var(--accent-2);
+}
+.muzzle__px {
+  background: var(--pr-light);
+}
+.muzzle__px--0 {
+  background: var(--accent);
+}
+.burst__px--0,
+.burst__px--3,
+.burst__px--6 {
+  background: var(--pr-light);
+}
+.burst__px--1,
+.burst__px--4,
+.burst__px--7 {
+  background: var(--accent);
+}
+.burst__px--2,
+.burst__px--5 {
+  background: var(--accent-2);
 }
 
 /* Motion: section entrances, each section in its own manner, once. Content is visible without

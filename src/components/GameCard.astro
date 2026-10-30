@@ -28,7 +28,7 @@ const store = p.data.store ?? 'Steam';
 ---
 
 <article class="card tile--live" data-enter="place" data-scan={scan ? '' : undefined} style={`--enter-delay: ${delay}ms`}>
-  <span class="card__tick" aria-hidden="true"><PassMark /></span>
+  <span class="card__pass" aria-hidden="true"><PassMark /> Pass</span>
   <div class="card__top">
     <span class="card__logo">
       {logo ? (
@@ -216,68 +216,98 @@ const store = p.data.store ?? 'Steam';
     margin-top: auto;
     padding-top: var(--s-2);
   }
-  /* The scan: the track's laser hits the card and a line sweeps it top to bottom like a QA pass,
-     then a green tick flashes in the bottom right corner and fades. Nothing in the card moves. */
+  /* The scan: the track's bolt hits the card. Its border flashes green, a translucent green band
+     with faint scanlines and a glowing leading edge sweeps it top to bottom like a QA pass, and a
+     small PASS stamp pops into the top right corner, inside the padding, and stays. Nothing in the
+     card moves. --card-h is set by the script at the shot, so the band knows how far to travel. */
+  .card {
+    --card-h: 100%;
+  }
   .card::before {
     content: '';
     position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom, transparent 0 calc(100% - 3px), var(--accent-2) 0);
-    box-shadow: 0 2px 14px var(--accent-2);
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 48px;
+    background: repeating-linear-gradient(to bottom, rgba(103, 193, 140, 0.3) 0 2px, rgba(103, 193, 140, 0.14) 2px 4px);
+    border-bottom: 2px solid var(--accent-2);
+    box-shadow: 0 2px 12px var(--accent-2);
     opacity: 0;
-    transform: translateY(-100%);
+    transform: translateY(-48px);
+    pointer-events: none;
+    z-index: 2;
+  }
+  .card__pass {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.25rem;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.05rem 0.4rem;
+    border: 1px solid var(--accent);
+    background: var(--bg);
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    line-height: 1.2;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0;
+    transform: scale(0.6);
+    transform-origin: 100% 0;
     pointer-events: none;
   }
-  .card__tick {
-    position: absolute;
-    right: var(--s-2);
-    bottom: var(--s-2);
-    display: grid;
-    place-items: center;
-    width: 2rem;
-    height: 2rem;
-    font-size: 1.25rem;
-    color: var(--accent);
-    opacity: 0;
-    transform: scale(0.5);
-    pointer-events: none;
+  .card__pass :global(.passmark) {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+  .card.is-scanned .card__pass {
+    opacity: 1;
+    transform: none;
   }
   @media (prefers-reduced-motion: no-preference) {
-    .card.is-scanned::before {
-      animation: scan-sweep 450ms linear 120ms both;
+    .card.is-scanned {
+      animation: card-flash 240ms steps(2) both;
     }
-    .card.is-scanned .card__tick {
-      animation:
-        tick-pop 220ms var(--ease-out) 560ms both,
-        tick-fade 320ms ease 1500ms forwards;
+    .card.is-scanned::before {
+      animation: scan-band 500ms linear 40ms both;
+    }
+    .card.is-scanned .card__pass {
+      animation: pass-pop 200ms var(--ease-out) 600ms both;
     }
   }
-  @keyframes scan-sweep {
+  @keyframes card-flash {
+    from {
+      box-shadow: inset 0 0 0 3px var(--accent);
+    }
+    to {
+      box-shadow: inset 0 0 0 0 var(--accent);
+    }
+  }
+  @keyframes scan-band {
     0% {
       opacity: 1;
-      transform: translateY(-100%);
+      transform: translateY(-48px);
     }
-    90% {
+    88% {
       opacity: 1;
     }
     100% {
       opacity: 0;
-      transform: translateY(0);
+      transform: translateY(var(--card-h));
     }
   }
-  @keyframes tick-pop {
+  @keyframes pass-pop {
     from {
       opacity: 0;
-      transform: scale(0.5);
+      transform: scale(0.6);
     }
     to {
       opacity: 1;
       transform: none;
-    }
-  }
-  @keyframes tick-fade {
-    to {
-      opacity: 0;
     }
   }
   @media (max-width: 63.99rem) {

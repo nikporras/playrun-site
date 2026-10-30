@@ -62,7 +62,7 @@ test.describe('The Portfolio journey', () => {
     await expect(entrances.locator(':scope.is-in')).toHaveCount(27, { timeout: 1500 });
   });
 
-  test('a settled card near the middle gets one shot: a thick glowing beam from the ship to its logo, a flash at the nose, a sweep and a tick; one shot at a time, only cards, each once', async ({ page }) => {
+  test('a settled card with a clear line of fire gets one shot: a pixel bolt from the nose to its logo, a muzzle flash, a burst at the hit, then the card flashes, a scan band sweeps it and a PASS stamp stays; one at a time, cards only, each once', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/portfolio');
     await noSmooth(page);
@@ -72,72 +72,123 @@ test.describe('The Portfolio journey', () => {
       w.__shots = [];
       new MutationObserver((muts) => {
         for (const m of muts) {
-          const el = m.target as HTMLElement;
-          if (el.matches('.laser') && el.classList.contains('is-on')) {
-            const t = performance.now();
-            if (!w.__shots.length || t - w.__shots[w.__shots.length - 1] > 50) w.__shots.push(t);
-          }
+          if ((m.target as HTMLElement).matches('[data-shot]') && m.attributeName === 'data-to') w.__shots.push(performance.now());
         }
-      }).observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true });
+      }).observe(document.querySelector('[data-shot]')!, { attributes: true });
     });
     // bring the first card to the middle and let the scroll settle
     const first = page.locator('.card').first();
     const y = await first.evaluate((el) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
     await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
     await expect(first).toHaveClass(/is-scanned/, { timeout: 2500 });
-    await expect(page.locator('.laser')).toHaveClass(/is-on/);
-    await expect(page.locator('.flash')).toHaveClass(/is-on/);
-    const beam = await page.locator('.laser').evaluate((el) => {
-      const cs = getComputedStyle(el);
-      return { h: parseFloat(cs.height), x: parseFloat(cs.getPropertyValue('--x')), len: parseFloat(cs.getPropertyValue('--len')), a: parseFloat(cs.getPropertyValue('--a')), glow: cs.boxShadow, duration: el.getAnimations().map((a) => a.effect?.getComputedTiming().duration)[0] };
+    // the bolt: eight pixel squares, bright head and fading trail, each flying the path in a quarter of a second
+    const bolt = await page.evaluate(() => {
+      const px = [...document.querySelectorAll<HTMLElement>('.bolt__px')];
+      return px.map((el) => {
+        const a = el.getAnimations()[0];
+        const cs = getComputedStyle(el);
+        return { w: parseFloat(cs.width), h: parseFloat(cs.height), bg: cs.backgroundColor, duration: Number(a?.effect?.getComputedTiming().duration ?? 0), delay: Number(a?.effect?.getComputedTiming().delay ?? 0) };
+      });
     });
-    expect(beam.h, 'about three times the old 5px').toBeGreaterThanOrEqual(12);
-    expect(beam.x, 'from the ship on the left').toBeLessThan(60);
-    expect(beam.len).toBeGreaterThan(100);
-    expect(beam.glow, 'a glow').toContain('px');
-    expect(Number(beam.duration)).toBeLessThanOrEqual(500);
-    // the beam ends at the card's logo, not at its edge
-    const aim = await page.evaluate(() => {
-      const laser = document.querySelector<HTMLElement>('.laser')!;
-      const cs = getComputedStyle(laser);
-      const x = parseFloat(cs.getPropertyValue('--x'));
-      const y = parseFloat(cs.getPropertyValue('--y'));
-      const len = parseFloat(cs.getPropertyValue('--len'));
-      const a = parseFloat(cs.getPropertyValue('--a'));
-      const end = { x: x + Math.cos(a) * len, y: y + Math.sin(a) * len };
-      const logo = document.querySelector('.card.is-scanned .card__logo')!.getBoundingClientRect();
-      return { end, logo: { l: logo.left, r: logo.right, t: logo.top, b: logo.bottom } };
+    expect(bolt.length).toBe(8);
+    for (const p of bolt) {
+      expect(p.w, 'a 6px square').toBe(6);
+      expect(p.h).toBe(6);
+      expect(p.duration, 'a quarter of a second along the path').toBe(250);
+    }
+    expect(bolt.slice(0, 2).map((p) => p.bg)).toEqual(['rgb(229, 231, 234)', 'rgb(229, 231, 234)']);
+    expect(bolt[2].bg).toBe('rgb(103, 193, 140)');
+    expect(bolt[7].bg).toBe('rgb(86, 189, 218)');
+    expect(bolt[7].delay, 'the trail follows the head').toBeGreaterThan(bolt[0].delay);
+    expect(await page.locator('.muzzle__px').evaluateAll((els) => els.filter((el) => el.getAnimations().length).length), 'a muzzle flash').toBe(5);
+    expect(await page.locator('.burst__px').evaluateAll((els) => els.filter((el) => el.getAnimations().length).length), 'a burst at the hit').toBe(8);
+    // the path: from the ship's nose to the card's logo, crossing no other card and no company block
+    const path = await page.evaluate(() => {
+      const shot = document.querySelector('[data-shot]')!;
+      const [fx, fy] = shot.getAttribute('data-from')!.split(',').map(Number);
+      const [tx, ty] = shot.getAttribute('data-to')!.split(',').map(Number);
+      const ship = document.querySelector('.hud__runner')!.getBoundingClientRect();
+      const target = document.querySelector('.card.is-scanned')!;
+      const logo = target.querySelector('.card__logo')!.getBoundingClientRect();
+      const boxes = [...document.querySelectorAll<HTMLElement>('.card, .group__head')].filter((el) => el !== target).map((el) => el.getBoundingClientRect().toJSON());
+      return { fx, fy, tx, ty, ship: ship.toJSON(), logo: logo.toJSON(), boxes };
     });
-    expect(aim.end.x).toBeGreaterThan(aim.logo.l - 2);
-    expect(aim.end.x).toBeLessThan(aim.logo.r + 2);
-    expect(aim.end.y).toBeGreaterThan(aim.logo.t - 2);
-    expect(aim.end.y).toBeLessThan(aim.logo.b + 2);
-    // the sweep and the tick on the card, no layout shift
+    expect(Math.abs(path.fx - path.ship.right)).toBeLessThan(2);
+    expect(path.tx).toBeGreaterThan(path.logo.left - 1);
+    expect(path.tx).toBeLessThan(path.logo.right + 1);
+    expect(path.ty).toBeGreaterThan(path.logo.top - 1);
+    expect(path.ty).toBeLessThan(path.logo.bottom + 1);
+    const hits = path.boxes.filter((r: { left: number; right: number; top: number; bottom: number }) => {
+      // sample the segment finely and look for a point inside the box
+      for (let t = 0; t <= 1; t += 0.01) {
+        const x = path.fx + (path.tx - path.fx) * t;
+        const yy = path.fy + (path.ty - path.fy) * t;
+        if (x >= r.left && x <= r.right && yy >= r.top && yy <= r.bottom) return true;
+      }
+      return false;
+    });
+    expect(hits, 'the bolt never flies over another card or block').toEqual([]);
+    // the card's reaction: a green flash, a scan band with scanlines and a glowing edge, no layout shift
     const before = await first.locator('.card__title').evaluate((el) => el.getBoundingClientRect().top);
-    expect(await first.evaluate((el) => getComputedStyle(el, '::before').animationName)).toBe('scan-sweep');
-    expect(await first.locator('.card__tick').evaluate((el) => getComputedStyle(el).animationName)).toContain('tick-pop');
-    await page.waitForTimeout(600);
+    expect(await first.evaluate((el) => getComputedStyle(el).animationName)).toBe('card-flash');
+    const band = await first.evaluate((el) => {
+      const cs = getComputedStyle(el, '::before');
+      return { name: cs.animationName, duration: cs.animationDuration, h: parseFloat(cs.height), bg: cs.backgroundImage, edge: cs.borderBottomColor, glow: cs.boxShadow };
+    });
+    expect(band.name).toBe('scan-band');
+    expect(band.duration).toBe('0.5s');
+    expect(band.h).toBeGreaterThanOrEqual(40);
+    expect(band.h).toBeLessThanOrEqual(60);
+    expect(band.bg).toContain('repeating-linear-gradient');
+    expect(band.edge).toBe('rgb(86, 189, 218)');
+    expect(band.glow).toContain('rgb(86, 189, 218)');
+    // the stamp: PASS in the pixel face, green on navy, top right inside the padding, over nothing, and it stays
+    const stamp = first.locator('.card__pass');
+    await expect(stamp).toHaveAttribute('aria-hidden', 'true');
+    await expect(stamp).toHaveText(/Pass/i);
+    await page.waitForTimeout(1200);
+    const st = await stamp.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      const card = el.closest('.card')!;
+      const kids = [...card.querySelectorAll<HTMLElement>('.card__top, .card__logo, .card__when, .card__title, .card__did, .card__summary, .card__tags, .card__platforms, .card__store')];
+      const overlaps = kids.filter((k) => {
+        const b = k.getBoundingClientRect();
+        return r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top;
+      }).map((k) => k.className);
+      return { opacity: cs.opacity, family: cs.fontFamily, color: cs.color, bg: cs.backgroundColor, overlaps, right: card.getBoundingClientRect().right - r.right, top: r.top - card.getBoundingClientRect().top };
+    });
+    expect(st.opacity).toBe('1');
+    expect(st.family).toMatch(/Pixel Operator/);
+    expect(st.color).toBe('rgb(103, 193, 140)');
+    expect(st.bg).toBe('rgb(12, 21, 42)');
+    expect(st.overlaps, 'the stamp covers nothing').toEqual([]);
+    expect(st.right).toBeLessThan(12);
+    expect(st.top).toBeLessThan(12);
     expect(Math.abs((await first.locator('.card__title').evaluate((el) => el.getBoundingClientRect().top)) - before), 'no layout shift').toBeLessThan(0.5);
-    expect(await first.evaluate((el) => el.scrollHeight === el.clientHeight || getComputedStyle(el).overflow === 'hidden')).toBe(true);
-    // only cards are ever scanned; headers and blocks never
-    expect(await page.locator('.is-scanned:not(.card)').count()).toBe(0);
+    // only scanned cards carry a stamp; cards never scanned show none
+    expect(await page.locator('.card:not(.is-scanned) .card__pass').evaluateAll((els) => els.every((el) => getComputedStyle(el).opacity === '0'))).toBe(true);
+    expect(await page.locator('.is-scanned:not(.card)').count(), 'only cards are scanned').toBe(0);
     // one at a time: a walk down the page, pausing on each screen, never fires two shots within a shot's length
     const height = await page.evaluate(() => document.documentElement.scrollHeight);
     for (let s = 0; s < height; s += 700) {
       await page.evaluate((s) => window.scrollTo(0, s), s);
-      await page.waitForTimeout(1200);
+      await page.waitForTimeout(1500);
     }
     const shots = await page.evaluate(() => (window as unknown as { __shots: number[] }).__shots);
-    expect(shots.length).toBeGreaterThan(3);
-    for (let i = 1; i < shots.length; i++) expect(shots[i] - shots[i - 1], 'a shot at a time').toBeGreaterThanOrEqual(850);
+    // (only cards with a clear line of fire are shot, so a walk fires a few times, not at every card)
+    expect(shots.length).toBeGreaterThanOrEqual(2);
+    for (let i = 1; i < shots.length; i++) expect(shots[i] - shots[i - 1], 'a shot at a time').toBeGreaterThanOrEqual(1150);
+    // every shot on the page kept a clear line of fire, and the stamps stayed
+    expect(await page.locator('.card.is-scanned .card__pass').evaluateAll((els) => els.every((el) => getComputedStyle(el).opacity === '1'))).toBe(true);
     // each card at most once: coming back to a screen whose cards are all scanned fires nothing new
     const back = async () => {
       await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
-      await page.waitForTimeout(1300);
+      await page.waitForTimeout(1500);
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-      await page.waitForTimeout(1300);
+      await page.waitForTimeout(1500);
       await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
-      await page.waitForTimeout(1300);
+      await page.waitForTimeout(1500);
     };
     await back();
     const scannedOnce = await page.locator('.card.is-scanned').count();
@@ -145,7 +196,6 @@ test.describe('The Portfolio journey', () => {
     await back();
     expect(await page.locator('.card.is-scanned').count(), 'no card scanned twice').toBe(scannedOnce);
     expect(await page.evaluate(() => (window as unknown as { __shots: number[] }).__shots.length), 'no second shot at a scanned card').toBe(shotsOnce);
-    expect(scannedOnce).toBeLessThanOrEqual(await page.locator('.card').count());
   });
 
   test('with the games off there is no laser and no scan, and everything still shows', async ({ page }) => {
@@ -160,7 +210,7 @@ test.describe('The Portfolio journey', () => {
     const y = await first.evaluate((el) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
     await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
     await page.waitForTimeout(1300);
-    await expect(page.locator('.laser.is-on')).toHaveCount(0);
+    expect(await page.locator('.bolt__px').evaluateAll((els) => els.filter((el) => el.getAnimations().length).length), 'no bolt').toBe(0);
     await expect(page.locator('.is-scanned')).toHaveCount(0);
     await expect(first).toHaveCSS('opacity', '1');
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -170,7 +220,7 @@ test.describe('The Portfolio journey', () => {
     await page.getByRole('button', { name: /Games off/ }).click();
   });
 
-  test('on a phone the sweep plays without a beam', async ({ browser }) => {
+  test('on a phone the card reacts without a bolt', async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const page = await context.newPage();
     await page.goto('/portfolio');
@@ -179,8 +229,8 @@ test.describe('The Portfolio journey', () => {
     const y = await first.evaluate((el) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
     await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
     await expect(first).toHaveClass(/is-scanned/, { timeout: 2500 });
-    await expect(page.locator('.laser.is-on')).toHaveCount(0);
-    await expect(page.locator('.flash.is-on')).toHaveCount(0);
+    expect(await page.locator('.bolt__px, .muzzle__px, .burst__px').evaluateAll((els) => els.filter((el) => el.getAnimations().length).length), 'no bolt, no muzzle, no burst').toBe(0);
+    await expect(first.locator('.card__pass')).toHaveCSS('opacity', '1', { timeout: 2000 });
     await context.close();
   });
 
@@ -193,9 +243,10 @@ test.describe('The Portfolio journey', () => {
     const y = await first.evaluate((el) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
     await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
     await page.waitForTimeout(1300);
-    await expect(page.locator('.laser.is-on')).toHaveCount(0);
+    await expect(page.locator('[data-shot]')).toHaveCount(0);
     await expect(page.locator('.is-scanned')).toHaveCount(0);
     expect(await first.evaluate((el) => getComputedStyle(el, '::before').animationName)).toBe('none');
+    await expect(first.locator('.card__pass')).toHaveCSS('opacity', '0');
     await expect(page.locator('.card').last()).toHaveCSS('opacity', '1');
     await context.close();
 

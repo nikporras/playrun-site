@@ -39,6 +39,7 @@ export function startGames() {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
     hud.remove();
     dock.remove();
+    document.querySelector('[data-shot]')?.remove();
     return;
   }
 
@@ -69,7 +70,6 @@ export function startGames() {
   const achList = pick(dock, '[data-ach-list]');
   const yearStat = pick(dock, '[data-hud-year-stat]');
   const yearOut = pick(dock, '[data-hud-year]');
-  const laser = document.querySelector<HTMLElement>('[data-laser]');
   // On phones some bugs are left out, so they do not count towards catching every bug.
   if (matchMedia('(max-width: 47.99rem)').matches) document.querySelectorAll('[data-bug][data-phone="none"]').forEach((b) => b.remove());
   const bugs = () => Array.from(document.querySelectorAll<HTMLButtonElement>('[data-bug]'));
@@ -195,46 +195,112 @@ export function startGames() {
   document.addEventListener('playrun:achieve', (e) => achieve((e as CustomEvent<string>).detail));
 
   // The scan: a bonus on a game card that is already on screen. Once the scroll settles, the card
-  // that is wholly on screen and nearest the middle gets one shot: on a desktop the ship fires a
-  // beam at its logo, with a flash at the nose, and the card is scanned (a line sweeps it, a tick
-  // flashes); on a phone the sweep alone. One shot at a time, never while scrolling fast, each card
-  // once per page view; a card that misses its moment is simply shown. Nothing is ever hidden.
-  const SHOT_MS = 900;
-  const flash = document.querySelector<HTMLElement>('[data-flash]');
+  // wholly on screen nearest the middle gets one shot, one at a time, each card once per page
+  // view; a card that misses its moment is simply shown. On a desktop the ship fires a pixel bolt
+  // from its nose at the card's logo (a muzzle flash as it leaves, a burst of pixels where it
+  // lands), and only at a card with a clear line of fire: a path that crosses no other card and no
+  // company block, which in practice means the left column. On a phone the card's own reaction
+  // plays alone. The whole shot is done inside 1.2 s. Nothing is ever hidden.
+  const SHOT_MS = 1200;
+  const FLIGHT_MS = 250;
+  const shot = document.querySelector<HTMLElement>('[data-shot]');
+  const boltPx = Array.from(shot?.querySelectorAll<HTMLElement>('.bolt__px') ?? []);
+  const muzzlePx = Array.from(shot?.querySelectorAll<HTMLElement>('.muzzle__px') ?? []);
+  const burstPx = Array.from(shot?.querySelectorAll<HTMLElement>('.burst__px') ?? []);
   const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-scan]'));
+  const blocks = Array.from(document.querySelectorAll<HTMLElement>('.group__head'));
   const scanned = new Set<HTMLElement>();
   let shooting = false;
   let speed = 0;
   let settleTimer = 0;
+  const at = (x: number, y: number) => `translate(${x}px, ${y}px)`;
+  const nose = () => {
+    const s = runner.getBoundingClientRect();
+    return { x: s.right, y: s.top + s.height / 2 };
+  };
+  const logoOf = (card: HTMLElement) => {
+    const r = (card.querySelector('.card__logo') ?? card).getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  };
+  // Does the segment from a to b cross the box r? (Liang-Barsky clipping, with a little margin.)
+  const crosses = (a: { x: number; y: number }, b: { x: number; y: number }, r: DOMRect, pad = 4) => {
+    let t0 = 0;
+    let t1 = 1;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const edges = [
+      [-dx, a.x - (r.left - pad)],
+      [dx, r.right + pad - a.x],
+      [-dy, a.y - (r.top - pad)],
+      [dy, r.bottom + pad - a.y],
+    ];
+    for (const [p, q] of edges) {
+      if (p === 0) {
+        if (q < 0) return false;
+        continue;
+      }
+      const t = q / p;
+      if (p < 0) {
+        if (t > t1) return false;
+        if (t > t0) t0 = t;
+      } else {
+        if (t < t0) return false;
+        if (t < t1) t1 = t;
+      }
+    }
+    return t0 <= t1;
+  };
+  const clear = (card: HTMLElement) => {
+    const a = nose();
+    const b = logoOf(card);
+    const others = [...targets.filter((c) => c !== card), ...blocks];
+    return others.every((el) => !crosses(a, b, el.getBoundingClientRect()));
+  };
+  const fly = (el: HTMLElement, from: { x: number; y: number }, to: { x: number; y: number }, ms: number, delay: number, endOpacity: number, easing = 'linear') =>
+    el.animate([{ transform: at(from.x, from.y), opacity: 1 }, { transform: at(to.x, to.y), opacity: endOpacity }], { duration: ms, delay, easing, fill: 'forwards' });
+  const fire = (card: HTMLElement) => {
+    const a = nose();
+    const b = logoOf(card);
+    shot?.setAttribute('data-from', `${Math.round(a.x)},${Math.round(a.y)}`);
+    shot?.setAttribute('data-to', `${Math.round(b.x)},${Math.round(b.y)}`);
+    // the bolt: head first, the trail squares a beat behind, fading as they go
+    boltPx.forEach((px, i) => {
+      const anim = fly(px, a, b, FLIGHT_MS, i * 16, i < 3 ? 1 : Math.max(0.15, 0.8 - i * 0.1));
+      anim.onfinish = () => px.animate([{ opacity: i < 3 ? 1 : 0.5 }, { opacity: 0 }], { duration: 60, fill: 'forwards' });
+    });
+    // the muzzle: a cross of five at the nose, gone in a blink
+    const cross = [
+      [0, 0],
+      [-7, 0],
+      [7, 0],
+      [0, -7],
+      [0, 7],
+    ];
+    muzzlePx.forEach((px, i) => {
+      const [ox, oy] = cross[i];
+      px.animate([{ transform: at(a.x + ox, a.y + oy), opacity: 1 }, { transform: at(a.x + ox * 1.6, a.y + oy * 1.6), opacity: 0 }], { duration: 140, easing: 'steps(3, end)', fill: 'forwards' });
+    });
+    // the burst: eight squares scatter from the hit and fade
+    burstPx.forEach((px, i) => {
+      const angle = (i / burstPx.length) * Math.PI * 2 + (i % 2 ? 0.3 : 0);
+      const radius = 18 + (i % 3) * 7;
+      px.animate(
+        [
+          { transform: at(b.x, b.y), opacity: 1 },
+          { transform: at(b.x + Math.cos(angle) * radius, b.y + Math.sin(angle) * radius), opacity: 0 },
+        ],
+        { duration: 300, delay: FLIGHT_MS, easing: 'steps(6, end)', fill: 'forwards' },
+      );
+    });
+  };
   const shoot = (card: HTMLElement) => {
     scanned.add(card);
     shooting = true;
-    if (vertical.matches && laser) {
-      const r = (card.querySelector('.card__logo') ?? card).getBoundingClientRect();
-      const s = runner.getBoundingClientRect();
-      // from the nose of the ship to the middle of the card's logo
-      const sx = s.right;
-      const sy = s.top + s.height / 2;
-      const tx = r.left + r.width / 2;
-      const ty = r.top + r.height / 2;
-      const dx = tx - sx;
-      const dy = ty - sy;
-      laser.style.setProperty('--x', `${sx}px`);
-      laser.style.setProperty('--y', `${sy}px`);
-      laser.style.setProperty('--len', `${Math.hypot(dx, dy)}px`);
-      laser.style.setProperty('--a', `${Math.atan2(dy, dx)}rad`);
-      laser.classList.remove('is-on');
-      void laser.offsetWidth;
-      laser.classList.add('is-on');
-      if (flash) {
-        flash.style.setProperty('--x', `${sx}px`);
-        flash.style.setProperty('--y', `${sy}px`);
-        flash.classList.remove('is-on');
-        void flash.offsetWidth;
-        flash.classList.add('is-on');
-      }
-    }
-    card.classList.add('is-scanned');
+    card.style.setProperty('--card-h', `${card.offsetHeight}px`);
+    const bolt = vertical.matches && boltPx.length > 0;
+    if (bolt) fire(card);
+    // the card reacts as the bolt lands (at once on a phone, where there is no bolt)
+    window.setTimeout(() => card.classList.add('is-scanned'), bolt ? FLIGHT_MS : 0);
     window.setTimeout(() => {
       shooting = false;
       consider();
@@ -251,6 +317,7 @@ export function startGames() {
       if (r.top < 0 || r.bottom > innerHeight) continue;
       const centre = (r.top + r.bottom) / 2;
       if (centre < innerHeight * 0.2 || centre > innerHeight * 0.8) continue;
+      if (vertical.matches && !clear(card)) continue;
       const d = Math.abs(centre - mid);
       if (d < bestD) {
         bestD = d;
