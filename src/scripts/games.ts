@@ -322,6 +322,8 @@ export function startGames() {
       if (scanned.has(card) || !card.classList.contains('is-in')) continue;
       const r = card.getBoundingClientRect();
       if (r.top < 0 || r.bottom > innerHeight) continue;
+      // (a card swiped out of a phone row is off screen too)
+      if (r.right < 1 || r.left > innerWidth - 1 || r.left < -1 || r.right > innerWidth + 1) continue;
       const centre = (r.top + r.bottom) / 2;
       if (centre < innerHeight * 0.2 || centre > innerHeight * 0.8) continue;
       const key = Math.round(r.top / 8);
@@ -355,6 +357,11 @@ export function startGames() {
     );
     window.setTimeout(consider, 400);
     addEventListener('load', () => window.setTimeout(consider, 300));
+    // a swipe row that has settled on a phone
+    document.addEventListener('playrun:rowsettle', () => {
+      speed = 0;
+      consider();
+    });
   }
 
   // The runner: scroll progress, set on scroll inside a frame, drives its place on the track
