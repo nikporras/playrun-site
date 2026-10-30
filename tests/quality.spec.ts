@@ -45,14 +45,11 @@ test.describe('Quality, the guided test run', () => {
     await page.goto('/quality');
     await page.evaluate(() => document.fonts.ready);
     await page.getByRole('button', { name: 'Run every step' }).click();
-    await expect(page.locator('#run-status'), errors.join('
-')).toContainText(/steps run|Every step has run/, { timeout: 15_000 });
+    await expect(page.locator('#run-status'), errors.join(' | ')).toContainText(/steps run|Every step has run/, { timeout: 15_000 });
     await expect(page.locator('.step.is-pass, .step.is-fail')).toHaveCount(5, { timeout: 15_000 });
     const states = await page.locator('.step').evaluateAll((els) => els.map((e) => `${e.getAttribute('data-step')}: ${e.querySelector('[data-step-result]')?.textContent}`));
-    expect(errors, errors.join('
-')).toEqual([]);
-    await expect(page.locator('.step.is-pass'), states.join('
-')).toHaveCount(5);
+    expect(errors, errors.join(' | ')).toEqual([]);
+    await expect(page.locator('.step.is-pass'), states.join(' | ')).toHaveCount(5);
     await expect(page.getByRole('button', { name: 'Run again' })).toBeEnabled();
     await expect(page.locator('[data-report-score]')).toHaveText('5 of 5 steps passed on your device.');
   });
