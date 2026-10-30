@@ -761,8 +761,10 @@ html:not(.games) .bug {
       crawl 2.4s steps(2) infinite,
       bug-face calc(var(--walk-time, 6s) * 2) linear infinite;
   }
-  .bug.is-caught {
-    animation-play-state: paused;
+  .bug.is-caught,
+  .bug.is-away,
+  .bug.is-away .bug__body {
+    animation-play-state: paused; /* (off screen a bug rests: no work on frames nobody sees) */
   }
   /* The catch: the net swoops in, the bug wiggles inside it, both go, the +1 rises */
   .bug.is-caught .bug__net {

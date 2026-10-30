@@ -73,6 +73,11 @@ export function startGames() {
   // On phones some bugs are left out, so they do not count towards catching every bug.
   if (matchMedia('(max-width: 47.99rem)').matches) document.querySelectorAll('[data-bug][data-phone="none"]').forEach((b) => b.remove());
   const bugs = () => Array.from(document.querySelectorAll<HTMLButtonElement>('[data-bug]'));
+  // A bug off screen rests, so its walk costs nothing on the frames of a scroll.
+  if ('IntersectionObserver' in window) {
+    const away = new IntersectionObserver((entries) => entries.forEach((e) => e.target.classList.toggle('is-away', !e.isIntersecting)), { rootMargin: '200px 0px' });
+    bugs().forEach((b) => away.observe(b));
+  }
   const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-level]'));
   // On the Portfolio the markers are years, one where each new year begins, newest first.
   const yearEls = Array.from(document.querySelectorAll<HTMLElement>('[data-year]'));
@@ -366,22 +371,39 @@ export function startGames() {
     });
   }
 
-  // The runner: scroll progress, set on scroll inside a frame, drives its place on the track
-  // through one custom property. Level marks sit where each section starts along the same track.
-  const docRange = () => Math.max(1, html.scrollHeight - innerHeight);
+  // The runner: scroll progress, set on scroll inside a frame, moves the ship along the track with
+  // a transform of its own (and, on a phone, scales the green line behind it). Level marks sit
+  // where each section starts along the same track. Every position is measured once, when the page
+  // is laid out (and again when it changes size), so a frame on scroll only writes and never reads
+  // the layout.
   // On desktop the bar stands on the left edge and the ship runs down it; otherwise it lies
   // along the bottom and the ship runs across, with the scoreboard pill at the right end.
   const vertical = matchMedia('(min-width: 64rem)');
   // (on a phone the line runs the whole width, over the bottom bar; the pill sits in the bar)
   const phone = matchMedia('(max-width: 47.99rem)');
+  const floor = pick(hud, '.hud__floor');
+  let range = 1;
+  let track = 0;
+  let ship = 0;
+  let lineW = 1;
+  let sectionTops: number[] = [];
+  let markTops: number[] = [];
+  let yearTops: number[] = [];
   const layout = () => {
+    range = Math.max(1, html.scrollHeight - innerHeight);
     const free = vertical.matches ? hud.clientHeight : phone.matches ? hud.clientWidth : hud.clientWidth - pill.offsetWidth;
-    const ship = vertical.matches ? runner.offsetHeight : runner.offsetWidth;
-    hud.style.setProperty('--track', `${Math.max(0, free - ship)}px`);
+    ship = vertical.matches ? runner.offsetHeight : runner.offsetWidth;
+    track = Math.max(0, free - ship);
+    lineW = Math.max(1, hud.clientWidth);
+    hud.style.setProperty('--track', `${track}px`);
+    const top = (el: HTMLElement) => el.getBoundingClientRect().top + scrollY;
+    sectionTops = sections.map(top);
+    markTops = marks.map((m) => top(m.el));
+    yearTops = yearEls.map(top);
     levelsList.replaceChildren(
-      ...marks.map((m) => {
+      ...marks.map((m, i) => {
         const li = document.createElement('li');
-        li.style.setProperty('--at', String(Math.min(1, m.el.offsetTop / docRange())));
+        li.style.setProperty('--at', String(Math.min(1, markTops[i] / range)));
         const text = document.createElement('span');
         // The upright rail has room for two digits: a year shows its last two there.
         text.textContent = vertical.matches && m.label.length > 2 ? m.label.slice(-2) : m.label;
@@ -395,8 +417,10 @@ export function startGames() {
     // Pages without levels (Credits) show no level count.
     levelStat.hidden = sections.length === 0;
     panelLevelStat.hidden = sections.length === 0;
+    lastP = -1;
   };
   let lastY = scrollY;
+  let lastP = -1;
   let moveTimer = 0;
   let ticking = false;
   const onScroll = () => {
@@ -406,19 +430,26 @@ export function startGames() {
       ticking = false;
       const y = scrollY;
       if (y !== lastY) {
-        runner.dataset.dir = y < lastY ? '-1' : '1';
-        runner.classList.add('is-moving');
+        const dir = y < lastY ? '-1' : '1';
+        if (runner.dataset.dir !== dir) runner.dataset.dir = dir;
+        if (!runner.classList.contains('is-moving')) runner.classList.add('is-moving');
         window.clearTimeout(moveTimer);
         moveTimer = window.setTimeout(() => runner.classList.remove('is-moving'), 200);
       }
       lastY = y;
-      hud.style.setProperty('--p', String(Math.min(1, y / docRange())));
+      const p = Math.min(1, y / range);
+      if (p !== lastP) {
+        lastP = p;
+        const at = p * track;
+        runner.style.transform = vertical.matches ? `translateY(${at}px)` : `translateX(${at}px)`;
+        floor.style.transform = phone.matches ? `scaleX(${(at + ship / 2) / lineW})` : '';
+      }
       const line = y + innerHeight * 0.45;
       let now = 1;
-      sections.forEach((s, i) => s.offsetTop <= line && (now = i + 1));
-      Array.from(levelsList.children).forEach((li, i) => li.classList.toggle('is-past', marks[i].el.offsetTop <= line));
+      sectionTops.forEach((t, i) => t <= line && (now = i + 1));
+      Array.from(levelsList.children).forEach((li, i) => li.classList.toggle('is-past', markTops[i] <= line));
       let year = yearEls[0]?.dataset.year ?? '';
-      yearEls.forEach((el) => el.offsetTop <= line && (year = el.dataset.year!));
+      yearTops.forEach((t, i) => t <= line && (year = yearEls[i].dataset.year!));
       if (now !== level || (yearEls.length && year !== yearOut.textContent)) {
         level = now;
         if (yearEls.length) yearOut.textContent = year;
@@ -430,6 +461,19 @@ export function startGames() {
   addEventListener('resize', layout);
   vertical.addEventListener('change', layout);
   phone.addEventListener('change', layout);
+  // the page grows and shrinks (fonts, images, a card opened on a phone): measure again
+  if ('ResizeObserver' in window) {
+    let queued = false;
+    new ResizeObserver(() => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        layout();
+        onScroll();
+      });
+    }).observe(document.body);
+  }
 
   // Controls. The pill opens the card and closes it (a tap on a phone, a click or Enter anywhere);
   // a click outside closes it too. Hover and focus open it without pinning it.

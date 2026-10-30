@@ -172,7 +172,7 @@ import PassMark from './PassMark.astro';
     width: var(--ship-w);
     height: var(--ship-w);
     will-change: transform;
-    transform: translateX(calc(var(--p, 0) * var(--track, 0px)));
+    /* (the script moves it along the track with an inline transform) */
     transition: transform 120ms linear;
   }
   /* The ship on a solid navy plate: the sprite is hollow down its middle, so without the plate
@@ -536,9 +536,12 @@ import PassMark from './PassMark.astro';
     .hud__floor {
       right: auto;
       height: 100%;
-      width: calc(var(--p, 0) * var(--track, 0px) + var(--ship-w) / 2);
+      width: 100%;
       background: var(--accent);
-      transition: width 120ms linear;
+      /* (filled to the ship by the script, with a scale: no layout on scroll) */
+      transform: scaleX(0);
+      transform-origin: 0 50%;
+      transition: transform 120ms linear;
     }
     .hud__levels {
       bottom: 0;
@@ -665,7 +668,6 @@ import PassMark from './PassMark.astro';
       bottom: auto;
       width: var(--track-w);
       height: var(--track-w);
-      transform: translateY(calc(var(--p, 0) * var(--track, 0px)));
     }
     .hud__ship :global(.sprite) {
       transform: rotate(180deg);
