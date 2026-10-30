@@ -139,7 +139,8 @@ test.describe('Home', () => {
     });
     // the vertical fade (short at the top, eased over the last third) meets an ellipse, so the
     // lower sides and the bottom corners fade too and no straight edge is left
-    expect(mask.mask).toMatch(/linear-gradient\((to bottom, )?rgba\(0, 0, 0, 0\) 0%, rgb\(0, 0, 0\) 7%, rgb\(0, 0, 0\) 68%, rgba\(0, 0, 0, 0\.9\) 75%/);
+    expect(mask.mask).toMatch(/linear-gradient\((to bottom, )?rgb\(0, 0, 0\) 0%, rgb\(0, 0, 0\) 68%, rgba\(0, 0, 0, 0\.9\) 75%/);
+    expect(mask.mask, 'no fade at the top: the headset is whole in the picture').not.toMatch(/rgba\(0, 0, 0, 0\) 0%/);
     expect(mask.mask).toContain('radial-gradient(');
     expect(mask.mask.match(/gradient\(/g)?.length).toBe(2);
     expect(mask.composite, 'the two masks intersect').toMatch(/^intersect/);

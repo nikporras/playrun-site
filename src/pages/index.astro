@@ -434,16 +434,17 @@ const checks = [
      figure, so the glow behind it is not cut at the figure's edges. */
   .hero__figure :global(picture) {
     display: block;
-    /* two masks meet (intersect): the vertical fade, eased so the last 30% thins like fog, and an
-       ellipse that takes the lower sides and the bottom corners, so the cutout ends in a soft
-       rounded shape and never a straight edge. The face, headset and arms sit inside both. */
+    /* The cutout is whole at the top and the sides (the headset and both shoulders sit inside the
+       picture), so only the foot needs a fade, where the image edge cuts the arms: two masks meet
+       (intersect), the vertical fade eased over the last 30% like fog, and an ellipse that takes
+       the lower sides and the bottom corners, so the photo ends in a soft rounded shape. */
     -webkit-mask-image:
-      linear-gradient(to bottom, transparent 0%, #000 7%, #000 68%, rgba(0, 0, 0, 0.9) 75%, rgba(0, 0, 0, 0.68) 82%, rgba(0, 0, 0, 0.4) 89%, rgba(0, 0, 0, 0.15) 95%, transparent 100%),
-      radial-gradient(ellipse 76% 84% at 50% 36%, #000 60%, rgba(0, 0, 0, 0.7) 76%, rgba(0, 0, 0, 0.3) 90%, transparent 100%);
+      linear-gradient(to bottom, #000 0%, #000 68%, rgba(0, 0, 0, 0.9) 75%, rgba(0, 0, 0, 0.68) 82%, rgba(0, 0, 0, 0.4) 89%, rgba(0, 0, 0, 0.15) 95%, transparent 100%),
+      radial-gradient(ellipse 78% 92% at 50% 30%, #000 62%, rgba(0, 0, 0, 0.7) 78%, rgba(0, 0, 0, 0.3) 91%, transparent 100%);
     -webkit-mask-composite: source-in;
     mask-image:
-      linear-gradient(to bottom, transparent 0%, #000 7%, #000 68%, rgba(0, 0, 0, 0.9) 75%, rgba(0, 0, 0, 0.68) 82%, rgba(0, 0, 0, 0.4) 89%, rgba(0, 0, 0, 0.15) 95%, transparent 100%),
-      radial-gradient(ellipse 76% 84% at 50% 36%, #000 60%, rgba(0, 0, 0, 0.7) 76%, rgba(0, 0, 0, 0.3) 90%, transparent 100%);
+      linear-gradient(to bottom, #000 0%, #000 68%, rgba(0, 0, 0, 0.9) 75%, rgba(0, 0, 0, 0.68) 82%, rgba(0, 0, 0, 0.4) 89%, rgba(0, 0, 0, 0.15) 95%, transparent 100%),
+      radial-gradient(ellipse 78% 92% at 50% 30%, #000 62%, rgba(0, 0, 0, 0.7) 78%, rgba(0, 0, 0, 0.3) 91%, transparent 100%);
     mask-composite: intersect;
   }
   /* The glow: an ellipse that reaches transparent well inside its own box, so it has no edge. */
