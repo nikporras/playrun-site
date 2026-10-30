@@ -10,6 +10,7 @@ url: "https://store.steampowered.com/app/418650/Space_Pirate_Trainer/"
 employer: "universally-speaking-2021"
 icon: "drone"
 logoSource: "https://i-illusions.com/games/spacepiratetrainer"
+wall: false
 public: true
 ---
 

@@ -267,7 +267,7 @@ test.describe('Home', () => {
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
     const seq = page.locator('.ticker__seq').first();
     const marks = seq.locator('.wall__mark');
-    expect(await marks.count()).toBe(19);
+    expect(await marks.count()).toBe(18);
     // no links, nothing focusable, no pointer: the logos are pictures named by their alt text
     expect(await page.locator('.ticker a, .ticker [tabindex]:not([tabindex="-1"]), .ticker button:not([data-ticker-pause])').count()).toBe(0);
     const names = await marks.evaluateAll((els) => els.map((el) => el.querySelector('img')?.getAttribute('alt') || el.textContent?.replace(/\s+/g, ' ').trim() || ''));
@@ -275,7 +275,8 @@ test.describe('Home', () => {
     expect(names).toContain('The Climb 2');
     expect(names).toContain('Fracked');
     expect(names, 'Londinium shares the Historic VR logo, so it is not on the ticker').not.toContain('Londinium: AD 215');
-    expect(new Set(names).size).toBe(19);
+    expect(new Set(names).size).toBe(18);
+    expect(names, 'Space Pirate Trainer: its only official logo is an outline, so it stays off the ticker').not.toContain('Space Pirate Trainer');
     expect(names.every((n) => n.length > 0), 'every mark is named').toBe(true);
     expect(await marks.first().evaluate((el) => getComputedStyle(el).cursor)).toBe('auto');
     expect(await seq.locator('.wall__logo').count(), 'official logos').toBeGreaterThanOrEqual(16);
@@ -286,7 +287,7 @@ test.describe('Home', () => {
     expect(viewBox.height, 'the logos are the content of the section').toBeGreaterThanOrEqual(120);
     expect(viewBox.height).toBeLessThanOrEqual(200);
     // the title is the section-head size, smaller than the next level's title
-    const sizes = await page.evaluate(() => [parseFloat(getComputedStyle(document.querySelector('#wall-title')!).fontSize), parseFloat(getComputedStyle(document.querySelector('#stats-title')!).fontSize)]);
+    const sizes = await page.evaluate(() => [parseFloat(getComputedStyle(document.querySelector('#wall-title')!).fontSize), parseFloat(getComputedStyle(document.querySelector('#proof-title')!).fontSize)]);
     expect(sizes[0]).toBeLessThan(sizes[1]);
     // logos sized by eye: a tall stacked mark is taller and narrower than a wide wordmark
     const dims = await seq.locator('.wall__logo').evaluateAll((imgs) => imgs.map((img) => ({ name: img.getAttribute('alt'), w: img.getBoundingClientRect().width, h: img.getBoundingClientRect().height })));
@@ -346,38 +347,156 @@ test.describe('Home', () => {
     await context.close();
   });
 
-  test('the stats are counted from the data and count up into view', async ({ page }) => {
+  test('the stats turn on a drum: five rows, the active one centred in green, the drum turning on its own, by the arrows, resting on hover, focus and pause, each stat announced once', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
-    const nums = page.locator('.stat__num');
-    await expect(nums).toHaveCount(4);
-    const labels = await page.locator('.stat__label').allTextContents();
-    expect(labels).toEqual(['years in QA', 'companies', 'games', 'platforms']);
-    // one row, thin lines between, no boxes; the label under its number
-    const row = await page.locator('.stat').evaluateAll((els) =>
-      els.map((el) => {
-        const cs = getComputedStyle(el);
-        const num = el.querySelector('.stat__num')!.getBoundingClientRect();
-        const label = el.querySelector('.stat__label')!.getBoundingClientRect();
-        return { top: Math.round(el.getBoundingClientRect().top), bg: cs.backgroundColor, left: cs.borderLeftWidth, under: label.top >= num.bottom - 2, numSize: parseFloat(getComputedStyle(el.querySelector('.stat__num')!).fontSize) };
-      }),
-    );
-    expect(new Set(row.map((r) => r.top)).size, 'one row').toBe(1);
-    expect(row.map((r) => r.left)).toEqual(['0px', '1px', '1px', '1px']);
-    for (const r of row) {
-      expect(r.bg).toBe('rgba(0, 0, 0, 0)');
-      expect(r.under).toBe(true);
-      expect(r.numSize).toBeGreaterThanOrEqual(64);
+    const drum = page.locator('[data-drum]');
+    await expect(drum).toHaveClass(/is-live/);
+    const real = page.locator('.drum__row:not(.drum__clone)');
+    await expect(real).toHaveCount(4);
+    await expect(real).toHaveText([/5\+\s*years in QA/, /6\s*companies/, /20\s*games/, /10\+\s*platforms/]);
+    // the copies that make the loop are out of the accessibility tree
+    await expect(page.locator('.drum__clone')).toHaveCount(8);
+    expect(await page.locator('.drum__clone:not([aria-hidden="true"])').count()).toBe(0);
+    expect(await page.locator('.drum__row[aria-hidden="true"]').count()).toBe(8);
+    // the statement on the left, the drum on the right
+    const head = (await page.locator('.stats__head').boundingBox())!;
+    const box = (await drum.boundingBox())!;
+    expect(box.x).toBeGreaterThan(head.x + head.width - 1);
+    expect(await page.locator('.stats').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(12, 21, 42)');
+    // five rows on show, the active one in the middle: green number, white label, no offset;
+    // the neighbours white at half strength and 32px right; the outer rows at a quarter and 64px
+    await drum.scrollIntoViewIfNeeded();
+    await page.mouse.move(10, 10);
+    await page.waitForTimeout(700);
+    const state = () =>
+      page.evaluate(() => {
+        const view = document.querySelector('.drum__view')!.getBoundingClientRect();
+        const rows = [...document.querySelectorAll<HTMLElement>('.drum__row')];
+        const shown = rows.filter((r) => {
+          const b = r.getBoundingClientRect();
+          return b.top >= view.top - 1 && b.bottom <= view.bottom + 1;
+        });
+        return {
+          shown: shown.map((r) => ({
+            d: r.dataset.d,
+            text: r.textContent!.replace(/\s+/g, ' ').trim(),
+            opacity: Math.round(parseFloat(getComputedStyle(r).opacity) * 100) / 100,
+            x: Math.round(new DOMMatrix(getComputedStyle(r).transform).m41),
+            num: getComputedStyle(r.querySelector('.drum__num')!).color,
+            label: getComputedStyle(r.querySelector('.drum__label')!).color,
+            size: getComputedStyle(r.querySelector('.drum__num')!).fontSize,
+          })),
+          viewH: view.height,
+          rowH: rows[0].getBoundingClientRect().height,
+        };
+      });
+    let s = await state();
+    expect(s.shown.length, 'five rows on show').toBe(5);
+    expect(Math.round(s.viewH / s.rowH)).toBe(5);
+    expect(s.shown.map((r) => r.d)).toEqual(['2', '1', '0', '1', '2']);
+    expect(s.shown.map((r) => r.opacity)).toEqual([0.25, 0.5, 1, 0.5, 0.25]);
+    expect(s.shown.map((r) => r.x)).toEqual([64, 32, 0, 32, 64]);
+    expect(s.shown[2].num).toBe('rgb(103, 193, 140)');
+    expect(s.shown[2].label).toBe('rgb(255, 255, 255)');
+    expect(s.shown[1].num).toBe('rgb(255, 255, 255)');
+    expect(new Set(s.shown.map((r) => r.size)).size, 'one number size').toBe(1);
+    const first = s.shown[2].text;
+    // it turns on its own, one row every 2.5 s
+    await page.waitForTimeout(3300);
+    s = await state();
+    expect(s.shown[2].text, 'the drum turned').not.toBe(first);
+    expect(s.shown[2].d).toBe('0');
+    // the arrows turn it either way, and it keeps turning after
+    const next = page.getByRole('button', { name: 'Next stat' });
+    const prev = page.getByRole('button', { name: 'Previous stat' });
+    await expect(next).toBeVisible();
+    await next.click();
+    await page.mouse.move(10, 10);
+    await page.waitForTimeout(800);
+    const afterNext = (await state()).shown[2].text;
+    await prev.click();
+    await page.mouse.move(10, 10);
+    await page.waitForTimeout(800);
+    expect((await state()).shown[2].text).not.toBe(afterNext);
+    // hovered: it rests
+    await drum.hover();
+    const held = (await state()).shown[2].text;
+    await page.waitForTimeout(3300);
+    expect((await state()).shown[2].text, 'rests under the pointer').toBe(held);
+    await page.mouse.move(10, 10);
+    // focus inside: it rests; the buttons show their focus
+    await prev.focus();
+    await page.keyboard.press('Tab');
+    await expect(next).toBeFocused();
+    expect(await next.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
+    const focusedText = (await state()).shown[2].text;
+    await page.waitForTimeout(3300);
+    expect((await state()).shown[2].text, 'rests while a button has focus').toBe(focusedText);
+    await page.mouse.click(10, 10);
+    // the pause control
+    const pauseButton = page.getByRole('button', { name: 'Pause the stats' });
+    await pauseButton.click();
+    await page.mouse.click(10, 10);
+    await expect(page.getByRole('button', { name: 'Play the stats' })).toHaveAttribute('aria-pressed', 'true');
+    const pausedText = (await state()).shown[2].text;
+    await page.waitForTimeout(3300);
+    expect((await state()).shown[2].text, 'paused').toBe(pausedText);
+    await page.getByRole('button', { name: 'Play the stats' }).click();
+    await page.mouse.click(10, 10);
+    // and it loops: eight turns forward come back round with no gap
+    for (let k = 0; k < 8; k++) {
+      await next.click();
+      await page.waitForTimeout(700);
     }
-    await page.setViewportSize({ width: 390, height: 844 });
-    const tops = await page.locator('.stat').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
-    expect(new Set(tops).size, 'two per row on a phone').toBe(2);
-    await page.setViewportSize({ width: 1280, height: 720 });
-    await page.locator('.stats').scrollIntoViewIfNeeded();
-    await expect(nums.nth(0)).toHaveText('5+', { timeout: 5000 });
-    await expect(nums.nth(1)).toHaveText('6');
-    await expect(nums.nth(2)).toHaveText('20');
-    await expect(nums.nth(3)).toHaveText('10+');
+    await page.mouse.move(10, 10);
+    s = await state();
+    expect(s.shown.length).toBe(5);
+    expect(s.shown.map((r) => r.d)).toEqual(['2', '1', '0', '1', '2']);
+    // off screen it stops
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(400);
+    const away = await page.locator('.drum__list').evaluate((el) => el.style.getPropertyValue('--i'));
+    await page.waitForTimeout(3300);
+    expect(await page.locator('.drum__list').evaluate((el) => el.style.getPropertyValue('--i')), 'still while off screen').toBe(away);
+  });
+
+  test('on a phone the drum stacks under the title and nothing overflows; under reduced motion the four stats are a still list', async ({ browser }) => {
+    const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
+    const p1 = await phone.newPage();
+    await p1.goto('/');
+    await p1.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    await expect(p1.locator('[data-drum]')).toHaveClass(/is-live/);
+    const head = (await p1.locator('.stats__head').boundingBox())!;
+    const box = (await p1.locator('[data-drum]').boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(head.y + head.height - 1);
+    expect(box.x + box.width).toBeLessThanOrEqual(375);
+    await p1.locator('[data-drum]').scrollIntoViewIfNeeded();
+    await p1.waitForTimeout(500);
+    const xs = await p1.locator('.drum__row').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().right));
+    expect(Math.max(...xs), 'the shifted rows stay inside the screen').toBeLessThanOrEqual(375);
+    expect(await p1.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+    await expect(p1.getByRole('button', { name: 'Next stat' })).toBeVisible();
+    await phone.close();
+
+    const quiet = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
+    const p2 = await quiet.newPage();
+    await p2.goto('/');
+    await expect(p2.locator('[data-drum]')).not.toHaveClass(/is-live/);
+    const rows = p2.locator('.drum__row:not(.drum__clone)');
+    await expect(rows).toHaveCount(4);
+    for (const r of await rows.all()) {
+      await expect(r).toBeVisible();
+      await expect(r).toHaveCSS('opacity', '1');
+      expect(await r.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
+    }
+    await expect(p2.locator('.drum__clone').first()).toBeHidden();
+    await expect(p2.getByRole('button', { name: 'Next stat' })).toBeHidden();
+    const before = await p2.locator('.drum__list').evaluate((el) => getComputedStyle(el).transform);
+    await p2.waitForTimeout(3000);
+    expect(await p2.locator('.drum__list').evaluate((el) => getComputedStyle(el).transform)).toBe(before);
+    await quiet.close();
   });
 
   test('the self test runs, reports and scores the page, and the Quality link stays visible', async ({ page }) => {
@@ -419,9 +538,12 @@ test.describe('Home', () => {
     await page.goto('/');
     await expect(page.locator('h1')).toBeVisible();
     await expect(page.locator('.hero__value')).toBeVisible();
-    await expect(page.locator('.ticker__seq').first().locator('.wall__mark')).toHaveCount(19);
+    await expect(page.locator('.ticker__seq').first().locator('.wall__mark')).toHaveCount(18);
     await expect(page.getByRole('button', { name: /the logos/ })).toBeHidden();
-    await expect(page.locator('.stat__num').first()).toHaveText('5+');
+    await expect(page.locator('.drum__row:not(.drum__clone)')).toHaveCount(4);
+    await expect(page.locator('.drum__row:not(.drum__clone)').first()).toContainText('5+');
+    await expect(page.locator('.drum__clone').first()).toBeHidden();
+    await expect(page.locator('[data-drum-next]')).toBeHidden();
     await expect(page.locator('.final__text')).toContainText('Helldivers, The Witcher and God of War');
     await context.close();
   });

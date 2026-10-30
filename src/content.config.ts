@@ -31,7 +31,8 @@ const projects = defineCollection({
     // The name set in Pixel Operator where no clean official logo exists but the icon is not wanted.
     wordmark: z.boolean().default(false),
     // On the Home ticker. Off where the logo would repeat another title's (Londinium shares the
-    // Historic VR logo with Guildford Castle VR), so every logo on the ticker appears once.
+    // Historic VR logo with Guildford Castle VR) or cannot read as a solid white mark among the
+    // others (Space Pirate Trainer's only official logo is an outline), so the ticker stays even.
     wall: z.boolean().default(true),
     // Only projects cleared for public use are shown. Default is hidden.
     public: z.boolean().default(false),
