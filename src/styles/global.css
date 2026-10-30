@@ -768,6 +768,72 @@ html:not(.games) .bug {
   }
 }
 
+/* Landings: a header or a card on the Portfolio waits off its mark until the track's laser hits
+   it, then slides into place with a flash. Visible without script; simply there under reduced
+   motion. The card's ::after is its scanline, so the flash is the ::before. */
+.js [data-land] {
+  opacity: 0;
+  transform: translateY(28px);
+}
+.js [data-land].is-landed {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 320ms var(--ease-out),
+    transform 520ms var(--ease-expo);
+}
+.js [data-land].is-landed::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent-2);
+  opacity: 0;
+  pointer-events: none;
+  animation: land-flash 420ms ease-out;
+}
+@keyframes land-flash {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 0;
+  }
+}
+/* The laser: a short beam from the ship to the thing that just came into view. */
+.laser {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 39;
+  height: 4px;
+  width: var(--len, 0px);
+  background: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--pr-navy),
+    0 0 8px var(--accent-2);
+  transform-origin: 0 50%;
+  transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--a, 0rad)) scaleX(0);
+  opacity: 0;
+  pointer-events: none;
+}
+.laser.is-on {
+  animation: laser 300ms var(--ease-out) forwards;
+}
+@keyframes laser {
+  0% {
+    transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--a, 0rad)) scaleX(0);
+    opacity: 1;
+  }
+  55% {
+    transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--a, 0rad)) scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--a, 0rad)) scaleX(1);
+    opacity: 0;
+  }
+}
+
 /* Motion: section entrances, each section in its own manner, once. Content is visible without
    script (the hidden state only applies under html.js) and never later than 900ms in view. */
 .js [data-enter] {
@@ -819,11 +885,16 @@ html:not(.games) .bug {
   html {
     scroll-behavior: auto;
   }
-  .js [data-enter] {
+  .js [data-enter],
+  .js [data-land] {
     opacity: 1;
     transform: none;
     clip-path: none;
     transition: none;
+  }
+  .js [data-land].is-landed::before,
+  .laser.is-on {
+    animation: none;
   }
   .js [data-enter='scan'].is-in::after,
   .tile--live:hover::after {

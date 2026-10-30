@@ -49,6 +49,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'home.spec.ts': ['Home', 'Loads clean, the curtain, the headline break, the wall, the stats, three widths, axe, the self test.'],
   'links.spec.ts': ['Links', 'Links that leave the site open a new tab and say so. Internal links stay.'],
   'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, stacked level headers, labels that read, no stale facts, and passes axe.'],
+  'portfolio.spec.ts': ['The Portfolio journey', 'The year on the track as you scroll, each header and card landing once from the laser, nothing under reduced motion.'],
   'phone.spec.ts': ['Home on a phone', 'A real device profile: nothing clipped, the button on the first screen, a slim HUD.'],
   'selection.spec.ts': ['Selectable text', 'A drag selects a paragraph on every page and the highlight reads on every field.'],
 };

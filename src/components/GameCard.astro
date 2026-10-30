@@ -17,14 +17,16 @@ interface Props {
   /** A tag under the title, such as "via Universally Speaking". */
   via?: string;
   delay?: number;
+  /** Land with the laser from the track (the Portfolio journey) instead of the plain entrance. */
+  land?: boolean;
 }
-const { project: p, via, delay = 0 } = Astro.props;
+const { project: p, via, delay = 0, land = false } = Astro.props;
 const logo = logos[p.id];
 const when = p.data.status === 'in-development' ? 'In development' : `${p.data.year} · Released`;
 const store = p.data.store ?? 'Steam';
 ---
 
-<article class="card tile--live" data-enter="place" style={`--enter-delay: ${delay}ms`}>
+<article class="card tile--live" data-enter={land ? undefined : 'place'} data-land={land ? '' : undefined} style={`--enter-delay: ${delay}ms`}>
   <div class="card__top">
     <span class="card__logo">
       {logo ? (

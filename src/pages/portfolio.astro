@@ -18,6 +18,8 @@ const count = shown.length;
 const companies = new Set(employers.map((e) => e.name)).size;
 const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty', 'Twenty-one', 'Twenty-two', 'Twenty-three', 'Twenty-four'];
 const role = (r: { title: string; contract?: boolean }) => (r.contract ? `${r.title}, contract` : r.title);
+// The year a post began, for the track: the earliest year in its dates.
+const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) => (r.when.match(/\b(20\d\d)\b/g) ?? []).map(Number)));
 ---
 
 <Base title="Portfolio" description="Games Nicolás Porras has tested, by company: the Megabit titles at Aonic, Guildford Castle VR and Londinium at Historic VR, the nDreams VR titles, and Cyberpunk 2077, NBA 2K21 and the VR titles via Universally Speaking.">
@@ -46,8 +48,8 @@ const role = (r: { title: string; contract?: boolean }) => (r.contract ? `${r.ti
     <div class="level__body">
       {
         groups.map((g, gi) => (
-          <div class:list={['group', `accent--${g.accent}`]} aria-labelledby={`group-${gi}`}>
-            <div class="group__head" data-enter>
+          <div class:list={['group', `accent--${g.accent}`]} aria-labelledby={`group-${gi}`} data-year={yearOf(g)}>
+            <div class="group__head" data-land>
               <h3 id={`group-${gi}`} class="group__name">{g.name}</h3>
               <ul role="list" class="group__roles">
                 {g.roles.map((r) => (
@@ -61,7 +63,7 @@ const role = (r: { title: string; contract?: boolean }) => (r.contract ? `${r.ti
             {g.projects.length > 0 && (
               <div class="group__grid">
                 {g.projects.map((p, i) => (
-                  <GameCard project={p} via={g.via} delay={i * 60} />
+                  <GameCard project={p} via={g.via} delay={i * 60} land />
                 ))}
               </div>
             )}
@@ -111,6 +113,7 @@ const role = (r: { title: string; contract?: boolean }) => (r.contract ? `${r.ti
     align-items: start;
     padding: var(--s-4) 0;
     border-top: 1px solid var(--rule);
+    position: relative;
   }
   .group__name {
     grid-area: name;

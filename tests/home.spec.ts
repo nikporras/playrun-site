@@ -275,7 +275,7 @@ test.describe('Home', () => {
     test(`renders without sideways overflow at ${vp.width}px (${vp.name})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto('/');
-      await page.evaluate(() => document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in')));
+      await page.evaluate(() => document.querySelectorAll('[data-enter], [data-land]').forEach((e) => e.classList.add('is-in', 'is-landed')));
       await settle(page);
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

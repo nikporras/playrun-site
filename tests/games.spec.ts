@@ -87,14 +87,18 @@ test.describe('Games', () => {
     for (const path of ['/', '/skills', '/portfolio', '/quality']) {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(path);
+      // the pointer starts at the top left corner, which is where the bar is: move it off first
+      await page.mouse.move(700, 450);
       const hud = page.locator('#hud');
       await expect(hud).toBeVisible();
       const box = (await hud.boundingBox())!;
       expect(box.x, `${path}: on the left edge`).toBe(0);
       expect(box.width, `${path}: slim`).toBeLessThanOrEqual(48);
       expect(box.height, `${path}: full height`).toBeGreaterThanOrEqual(880);
+      // one marker per level after the first, or one per year where the page carries years
       const levels = await page.locator('[data-level]').count();
-      await expect(page.locator('.hud__levels li')).toHaveCount(levels - 1);
+      const years = await page.locator('[data-year]').evaluateAll((els) => els.map((e) => e.getAttribute('data-year')).filter((y, i, a) => i === 0 || y !== a[i - 1]).length);
+      await expect(page.locator('.hud__levels li')).toHaveCount(years || levels - 1);
       await expect(page.locator('[data-hud-bugs]')).toBeVisible();
       await expect(page.locator('.hud__long').first()).toBeHidden();
       await hud.hover();

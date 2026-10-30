@@ -53,10 +53,19 @@ export function startGames() {
   const achOut = pick('[data-hud-ach]');
   const levelOut = pick('[data-hud-level]');
   const levelsOut = pick('[data-hud-levels]');
+  const yearStat = pick('[data-hud-year-stat]');
+  const yearOut = pick('[data-hud-year]');
+  const laser = document.querySelector<HTMLElement>('[data-laser]');
   // On phones some bugs are left out, so they do not count towards catching every bug.
   if (matchMedia('(max-width: 47.99rem)').matches) document.querySelectorAll('[data-bug][data-phone="none"]').forEach((b) => b.remove());
   const bugs = () => Array.from(document.querySelectorAll<HTMLButtonElement>('[data-bug]'));
   const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-level]'));
+  // On the Portfolio the markers are years, one where each new year begins, newest first.
+  const yearEls = Array.from(document.querySelectorAll<HTMLElement>('[data-year]'));
+  const yearMarks = yearEls.filter((el, i) => i === 0 || el.dataset.year !== yearEls[i - 1].dataset.year);
+  const marks: { el: HTMLElement; label: string }[] = yearMarks.length
+    ? yearMarks.map((el) => ({ el, label: el.dataset.year! }))
+    : sections.slice(1).map((el, i) => ({ el, label: String(i + 2) }));
   const total = Object.keys(ACHIEVEMENTS).length;
 
   // HUD readouts
@@ -147,6 +156,50 @@ export function startGames() {
   }
   document.addEventListener('playrun:achieve', (e) => achieve((e as CustomEvent<string>).detail));
 
+  // Landings: the ship fires a short laser at each header or card as it comes into view, then
+  // the thing lands. Shots queue a beat apart so a row of cards lands one after the other.
+  const land = (el: HTMLElement) => el.classList.add('is-landed');
+  const shots: HTMLElement[] = [];
+  let firing = false;
+  const fire = () => {
+    const el = shots.shift();
+    if (!el) {
+      firing = false;
+      return;
+    }
+    firing = true;
+    if (!laser || !state.on || hud.classList.contains('hud--off')) {
+      land(el);
+      fire();
+      return;
+    }
+    const r = el.getBoundingClientRect();
+    const s = runner.getBoundingClientRect();
+    const v = vertical.matches;
+    // From the nose of the ship to the nearest edge of the target: its left edge on desktop (at
+    // the ship's height where the target spans it), its bottom edge from the bar on a phone.
+    const sx = v ? s.right : s.left + s.width / 2;
+    const sy = v ? s.top + s.height / 2 : s.top;
+    const tx = v ? r.left : Math.min(Math.max(sx, r.left), r.right);
+    // on a phone the target is always above the bar, even one still coming up from below it
+    const ty = v ? Math.min(Math.max(sy, r.top), r.bottom) : Math.min(r.bottom, sy - 8);
+    const dx = tx - sx;
+    const dy = ty - sy;
+    laser.style.setProperty('--x', `${sx}px`);
+    laser.style.setProperty('--y', `${sy}px`);
+    laser.style.setProperty('--len', `${Math.hypot(dx, dy)}px`);
+    laser.style.setProperty('--a', `${Math.atan2(dy, dx)}rad`);
+    laser.classList.remove('is-on');
+    void laser.offsetWidth;
+    laser.classList.add('is-on');
+    window.setTimeout(() => land(el), 170);
+    window.setTimeout(fire, 140);
+  };
+  document.addEventListener('playrun:land', (e) => {
+    shots.push((e as CustomEvent<HTMLElement>).detail);
+    if (!firing) fire();
+  });
+
   // The runner: scroll progress, set on scroll inside a frame, drives its place on the floor
   // through one custom property. Level flags mark where each section starts along the same track.
   const docRange = () => Math.max(1, html.scrollHeight - innerHeight);
@@ -162,13 +215,15 @@ export function startGames() {
     const ship = vertical.matches ? runner.offsetHeight : runner.offsetWidth;
     hud.style.setProperty('--track', `${Math.max(0, free - ship)}px`);
     levelsList.replaceChildren(
-      ...sections.slice(1).map((s, i) => {
+      ...marks.map((m) => {
         const li = document.createElement('li');
-        li.style.setProperty('--at', String(Math.min(1, s.offsetTop / docRange())));
-        li.textContent = String(i + 2);
+        li.style.setProperty('--at', String(Math.min(1, m.el.offsetTop / docRange())));
+        // The upright bar has room for two digits: a year shows its last two there.
+        li.textContent = vertical.matches && m.label.length > 2 ? m.label.slice(-2) : m.label;
         return li;
       }),
     );
+    yearStat.hidden = yearEls.length === 0;
     levelsOut.textContent = String(sections.length);
     // Pages without levels (Credits) show no level count.
     levelOut.closest<HTMLElement>('.hud__stat')!.hidden = sections.length === 0;
@@ -194,7 +249,12 @@ export function startGames() {
       let level = 1;
       sections.forEach((s, i) => s.offsetTop <= line && (level = i + 1));
       levelOut.textContent = String(level);
-      Array.from(levelsList.children).forEach((li, i) => li.classList.toggle('is-past', i + 2 <= level));
+      Array.from(levelsList.children).forEach((li, i) => li.classList.toggle('is-past', marks[i].el.offsetTop <= line));
+      if (yearEls.length) {
+        let year = yearEls[0].dataset.year!;
+        yearEls.forEach((el) => el.offsetTop <= line && (year = el.dataset.year!));
+        yearOut.textContent = year;
+      }
     });
   };
   addEventListener('scroll', onScroll, { passive: true });

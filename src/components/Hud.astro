@@ -23,6 +23,10 @@ import PassMark from './PassMark.astro';
       <span class="hud__key"><span class="hud__long">Level</span><span class="hud__short">L</span></span>
       <span><b data-hud-level>1</b><span class="hud__of">/<span data-hud-levels>5</span></span></span>
     </p>
+    <p class="hud__stat" data-hud-year-stat hidden>
+      <span class="hud__key"><span class="hud__long">Year</span><span class="hud__short">Y</span></span>
+      <b data-hud-year>2026</b>
+    </p>
     <p class="hud__stat">
       <span class="hud__key"><span class="hud__long">Bugs</span><span class="hud__short">B</span></span>
       <b data-hud-bugs>00</b>
@@ -40,6 +44,7 @@ import PassMark from './PassMark.astro';
   </div>
   <p class="visually-hidden" aria-live="polite" data-hud-live></p>
 </div>
+<div class="laser" aria-hidden="true" data-laser></div>
 
 <div class="toast" role="status" aria-live="polite" data-toast>
   <div class="toast__icon" aria-hidden="true"><PassMark class="toast__mark" /></div>

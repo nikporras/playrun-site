@@ -76,12 +76,27 @@ const ogUrl = new URL(ogImage, Astro.site);
     <Hud />
     <script>
       // Section entrances: once, in reading order, with the stagger set per element in --enter-delay.
+      // Landings ([data-land]) are announced to the track, which fires its laser and lands them;
+      // if nothing answers they land on their own.
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const items = document.querySelectorAll<HTMLElement>('[data-enter]');
+      const items = document.querySelectorAll<HTMLElement>('[data-enter], [data-land]');
+      const show = (el: Element) => {
+        if (el.hasAttribute('data-land')) {
+          if (el.classList.contains('is-landed') || el.hasAttribute('data-landing')) return;
+          el.setAttribute('data-landing', '');
+          if (reduce) {
+            el.classList.add('is-landed');
+            return;
+          }
+          document.dispatchEvent(new CustomEvent('playrun:land', { detail: el }));
+          setTimeout(() => el.classList.add('is-landed'), 700);
+          return;
+        }
+        el.classList.add('is-in');
+      };
       if (reduce || !('IntersectionObserver' in window)) {
-        items.forEach((el) => el.classList.add('is-in'));
+        items.forEach(show);
       } else {
-        const show = (el: Element) => el.classList.add('is-in');
         const io = new IntersectionObserver(
           (entries) => {
             for (const e of entries) {
@@ -91,7 +106,7 @@ const ogUrl = new URL(ogImage, Astro.site);
               }
             }
           },
-          { rootMargin: '0px 0px -5% 0px', threshold: 0 },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0 },
         );
         items.forEach((el) => io.observe(el));
         // Belt and braces: whatever is on screen shows on the next frame of every scroll, and

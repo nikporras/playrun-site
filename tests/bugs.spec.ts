@@ -15,7 +15,7 @@ const TILES = 'main :is(.card, .row, .bring__panel, .run__state, .plat__panel, .
 async function settle(page: Page) {
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
   await page.evaluate(() => {
-    document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in'));
+    document.querySelectorAll('[data-enter], [data-land]').forEach((e) => e.classList.add('is-in', 'is-landed'));
     return Promise.all(
       document
         .getAnimations()
