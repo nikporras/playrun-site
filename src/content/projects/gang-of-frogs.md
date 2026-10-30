@@ -1,13 +1,16 @@
 ---
 title: "Gang of Frogs"
-studio: "Aska Studios, published by Megabit Publishing (Aonic)"
+studio: "Aska Studios"
+publisher: "Megabit"
 platforms: ["PC (Steam)"]
-role: "Senior QA Tester at Aonic, in development"
-employer: "Aonic"
 status: "in-development"
-summary: "A one to four player co-op shooter about outlaw frogs sailing the galaxy. In development; no release date announced."
+summary: "A one to four player co-op shooter about outlaw frogs sailing the galaxy."
+did: "Embedded with the studio through monthly milestones, with playtest sessions and milestone reports."
+tags: ["CQA", "Stability", "Stress", "Playtesting"]
 url: "https://store.steampowered.com/app/3081510/Gang_of_Frogs/"
+employer: "aonic"
 icon: "frog"
+logoSource: "https://askastudios.is/"
 public: true
 ---
 

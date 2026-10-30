@@ -2,13 +2,15 @@
 title: "Synapse"
 studio: "nDreams"
 platforms: ["PS VR2"]
-role: "Senior QA Technician at nDreams"
 year: 2023
-summary: "A telekinetic VR action shooter, exclusive to PlayStation VR2, with eye tracking and the Sense controllers at the centre of the design."
+summary: "A telekinetic VR shooter built around PS VR2's eye tracking and Sense controllers."
+did: "On PS VR2, through to launch."
+tags: ["Functional", "VR comfort", "Tracking"]
 url: "https://store.playstation.com/en-gb/concept/10006846"
-store: "On the PlayStation Store"
-employer: "nDreams"
+store: "PlayStation Store"
+employer: "ndreams"
 icon: "brain"
+logoSource: "https://ndreams.com/games/synapse"
 public: true
 ---
 

@@ -1,13 +1,16 @@
 ---
 title: "Thick as Thieves"
-studio: "OtherSide Entertainment, published by Megabit Publishing (Aonic)"
+studio: "OtherSide Entertainment"
+publisher: "Megabit"
 platforms: ["PC (Steam)"]
-role: "Senior QA Tester at Aonic"
-employer: "Aonic"
 year: 2026
-summary: "A stealth-action heist game, solo or co-op, from OtherSide Entertainment."
+summary: "A stealth-action heist game, solo or in co-op."
+did: "Post-launch updates."
+tags: ["CQA", "Regression", "Fix verification"]
 url: "https://store.steampowered.com/app/3341000/Thick_As_Thieves/"
+employer: "aonic"
 icon: "mask"
+logoSource: "https://megabit-publishing.com/press/thick-as-thieves"
 public: true
 ---
 

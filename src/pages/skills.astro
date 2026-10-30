@@ -3,7 +3,6 @@ import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
 import PixelTile from '../components/PixelTile.astro';
 import PassMark from '../components/PassMark.astro';
-import { contact, primaryAction } from '../config';
 
 const services = [
   {
@@ -38,6 +37,14 @@ const services = [
   },
 ];
 
+// What I bring: the kit and the method, the languages and the education.
+const panels = [
+  { title: 'Tools', items: ['Jira and Confluence', 'TestRail', 'Unreal Engine: debugging, profiling, Blueprint', 'Agile and Scrum'] },
+  { title: 'How I work', items: ['A test plan the team can read before I start', 'Every pass on real hardware', 'Steps, severity, media and a build number on every bug', 'A quality report at each milestone'] },
+  { title: 'Languages', items: ['Spanish, fluent', 'English, fluent', 'Chinese, Portuguese and Italian, intermediate'] },
+  { title: 'Education', items: ['Swinburne University of Technology, Diploma in Information Technology, 2017 to 2019', 'South China Normal University, Guangzhou, Mandarin, 2015 to 2017'] },
+];
+
 const run = [
   ['Build received', 'The build lands. I set up the hardware and read the plan back to the team.'],
   ['Test plan', 'What gets tested, on what, in what order. Agreed with the team before the pass starts.'],
@@ -62,74 +69,89 @@ const platforms = [
 <Base title="Skills" description="What Nicolás Porras tests and how: functional testing, platforms and stores, performance and stress, playtesting and UX, and bug reporting, learned on shipped games since 2021.">
   <!-- Level 1 -->
   <section class="level level--navy svc" data-level="1" aria-labelledby="services-title">
-    <p class="flag" data-load style="--d: 0ms"><span>Skills</span></p>
-    <div class="svc__grid">
-      <div>
-        <h1 id="services-title" class="page__title">
-          <span class="mask"><span class="mask__line" style="--i: 0">What I test</span></span>
-          <span class="mask"><span class="mask__line" style="--i: 1">and how</span></span>
-        </h1>
-        <p class="svc__lead statement" data-load style="--d: 360ms">
-          Five areas, one tester. Five years of QA on console and PC, from the first test plan to the shipped
-          build.
-        </p>
-      </div>
-      <ol class="svc__jump" data-load style="--d: 440ms">
-        {
-          services.map((s) => (
-            <li>
-              <a href={`#${s.id}`}>{s.title}</a>
-            </li>
-          ))
-        }
-      </ol>
+    <div class="level__head">
+      <p class="flag" data-load style="--d: 0ms"><span>Skills</span></p>
+      <h1 id="services-title" class="page__title">
+        <span class="mask"><span class="mask__line" style="--i: 0">What I test</span></span>
+        <span class="mask"><span class="mask__line" style="--i: 1">and how</span></span>
+      </h1>
+      <p class="svc__lead statement" data-load style="--d: 360ms">
+        Five areas, one tester. Five years of QA on console, PC and VR, from the first test plan to the shipped build.
+      </p>
     </div>
-    <Bug id="services-1" style="right: 10%; top: 6rem" tablet="left: 10%; bottom: 1rem" walk="x -2rem" />
+    <ol class="svc__jump level__body" data-load style="--d: 440ms">
+      {
+        services.map((s) => (
+          <li>
+            <a href={`#${s.id}`}>{s.title}</a>
+          </li>
+        ))
+      }
+    </ol>
+    <Bug id="services-1" style="right: 12%; top: 9rem" tablet="left: 55%; bottom: 0.75rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 2: the six -->
+  <!-- Level 2: the five areas, each a full-width row -->
   <section class="level level--blue six" data-level="2" aria-labelledby="six-title">
-    <p class="flag" data-enter><span>Level 2 &middot; The five</span></p>
-    <div class="six__grid">
-      <div class="six__intro">
-        <h2 id="six-title" class="level__title" data-enter="wipe">Five areas</h2>
-        <p class="level__lead six__lead" data-enter style="--enter-delay: 80ms">
-          Each one learned on a shipped game, and used on every build since.
-        </p>
-        <div class="six__photo" data-enter="place">
-          <PixelTile name="ship" tone="navy" />
-        </div>
-      </div>
-      <ol class="rows">
-        {
-          services.map((s, i) => (
-            <li class="row" id={s.id} data-enter style={`--enter-delay: ${i * 70}ms`}>
+    <div class="level__head">
+      <p class="flag" data-enter><span>Level 2 &middot; The five</span></p>
+      <h2 id="six-title" class="level__title" data-enter="wipe">Five areas</h2>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">Each one learned on a shipped game, and used on every build since.</p>
+    </div>
+    <ol class="rows level__body">
+      {
+        services.map((s, i) => (
+          <li class="row six__row" id={s.id} data-enter data-achieve="services" style={`--enter-delay: ${i * 70}ms`}>
+            <div class="six__name">
               <h3 class="row__title">{s.title}</h3>
-              <p class="row__text">{s.text}</p>
               <p class="six__get">In practice</p>
               <ul role="list" class="row__terms">
                 {s.get.map((t) => (
                   <li>{t}</li>
                 ))}
               </ul>
-            </li>
-          ))
-        }
-      </ol>
-    </div>
-    <Bug id="services-2" style="left: 8%; bottom: 25%" tablet="right: 10%; top: 16.5rem" phone="right: 1rem; bottom: 0.25rem" walk="x 2rem" />
+            </div>
+            <p class="row__text six__text">{s.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <Bug id="services-2" style="right: 10%; top: 9rem" tablet="right: 8%; top: 8rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 3: the run -->
-  <section class="level level--cyan run" data-level="3" aria-labelledby="run-title">
-    <p class="flag" data-enter><span>Level 3 &middot; The run</span></p>
+  <!-- Level 3: what I bring -->
+  <section class="level level--cyan bring" data-level="3" aria-labelledby="bring-title">
     <div class="level__head">
-      <h2 id="run-title" class="level__title" data-enter="wipe">A build, start to finish</h2>
-      <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead">One run, from the build landing to the submission.</p>
-      </div>
+      <p class="flag" data-enter><span>Level 3 &middot; Kit and method</span></p>
+      <h2 id="bring-title" class="level__title" data-enter="wipe">What I bring</h2>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">The tools, the way I work, the languages and the education behind the testing.</p>
     </div>
-    <ol class="run__track">
+    <div class="bring__board level__body">
+      {
+        panels.map((p, i) => (
+          <div class="bring__panel" data-enter="place" style={`--enter-delay: ${i * 60}ms`}>
+            <PassMark class="bring__mark" />
+            <h3 class="bring__title">{p.title}</h3>
+            <ul role="list" class="bring__list">
+              {p.items.map((it) => (
+                <li>{it}</li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+    <Bug id="services-3" style="right: 10%; top: 9rem" tablet="right: 8%; top: 8rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
+  </section>
+
+  <!-- Level 4: the run -->
+  <section class="level level--green run" data-level="4" aria-labelledby="run-title">
+    <div class="level__head">
+      <p class="flag" data-enter><span>Level 4 &middot; The run</span></p>
+      <h2 id="run-title" class="level__title" data-enter="wipe">A build, start to finish</h2>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">One run, from the build landing to the submission.</p>
+    </div>
+    <ol class="run__track level__body">
       {
         run.map(([state, text], i) => (
           <li class:list={['run__state', i % 2 ? 'run__state--light' : 'run__state--navy']} data-enter="place" style={`--enter-delay: ${i * 50}ms`}>
@@ -140,19 +162,17 @@ const platforms = [
         ))
       }
     </ol>
-    <Bug id="services-3" style="right: 10%; top: 8rem" tablet="right: 10%; bottom: 1rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <Bug id="services-4" style="right: 12%; top: 9rem" tablet="right: 25%; top: 0.75rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 4: platforms and stores -->
-  <section class="level level--green plat" data-level="4" aria-labelledby="plat-title">
-    <p class="flag" data-enter><span>Level 4 &middot; Platforms and stores</span></p>
+  <!-- Level 5: platforms and stores -->
+  <section class="level level--light plat" data-level="5" aria-labelledby="plat-title">
     <div class="level__head">
+      <p class="flag" data-enter><span>Level 5 &middot; Platforms and stores</span></p>
       <h2 id="plat-title" class="level__title" data-enter="wipe">Where the build has to work</h2>
-      <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead">Four consoles, multiple PC stores. Each with its own rules, each checked before submission.</p>
-      </div>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">Four consoles and three PC stores, each with its own rules, each checked before submission.</p>
     </div>
-    <div class="plat__board">
+    <div class="plat__board level__body">
       {
         platforms.map(([name, text], i) => (
           <div class:list={['plat__panel', i % 3 === 1 ? 'plat__panel--light' : i % 3 === 2 ? 'plat__panel--cyan' : 'plat__panel--navy']} data-enter="place" style={`--enter-delay: ${i * 50}ms`}>
@@ -165,83 +185,60 @@ const platforms = [
         <PixelTile name="controller" tone="navy" />
       </div>
     </div>
-    <Bug id="services-4" style="right: 14%; top: 7.5rem" tablet="right: 10%; top: 23rem" walk="x 2rem" />
+    <Bug id="services-5" style="right: 10%; bottom: 1rem" tablet="right: 30%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 5: the ask -->
-  <section class="level level--light ask" data-level="5" aria-labelledby="ask-title">
-    <p class="flag" data-enter><span>Level 5 &middot; Final level</span></p>
-    <div class="ask__grid">
-      <div>
-        <h2 id="ask-title" class="level__title" data-enter="wipe">
-          <span class="mask__line">Want to talk</span>
-          <span class="mask__line">testing?</span>
-        </h2>
-        <div class="ask__actions" data-enter style="--enter-delay: 80ms">
-          <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
-          <a class="ask__mail" href={`mailto:${contact.email}`}>{contact.email}</a>
-        </div>
-      </div>
-      <div class="ask__photos">
-        <div class="ask__photo" data-enter="place">
-          <PixelTile name="check" tone="navy" />
-        </div>
+  <!-- Level 6: a short way on -->
+  <section class="level level--navy level--tight next" data-level="6" aria-labelledby="next-title">
+    <div class="level__head">
+      <p class="flag" data-enter><span>Level 6 &middot; Next</span></p>
+      <h2 id="next-title" class="level__title level__title--small" data-enter="wipe">The proof</h2>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">The titles these skills shipped, and the suite that tests this site.</p>
+      <div class="level__actions" data-enter style="--enter-delay: 160ms">
+        <a class="button" href="/portfolio">See the games</a>
+        <a class="textlink" href="/quality">How I test this site</a>
       </div>
     </div>
-    <Bug id="services-5" style="right: 6%; top: 50%" tablet="right: 12%; top: 26rem" phone="right: 1rem; bottom: 0.25rem" walk="y 2rem" />
+    <Bug id="services-6" style="right: 12%; top: 40%" tablet="right: 8%; top: 2rem" phone="right: 1rem; top: 0.25rem" walk="y 1.5rem" />
   </section>
 </Base>
 
 <style>
   .svc {
-    padding-top: var(--s-2);
-  }
-  .svc__grid {
-    display: grid;
-    grid-template-columns: 7fr 5fr;
-    gap: var(--s-5);
-    align-items: end;
-    margin-top: var(--s-5);
+    padding-top: var(--s-3);
   }
   .svc__lead {
-    margin-top: var(--s-4);
-    max-width: 36ch;
+    max-width: 40ch;
   }
   .svc__jump {
     list-style: none;
-    margin: 0;
     padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-4);
     font-family: var(--font-display);
     font-size: 1.5rem;
     line-height: 1.2;
   }
-  .svc__jump li + li {
-    margin-top: 0.4em;
-  }
   .svc__jump a {
     text-decoration-color: var(--accent-2);
   }
-
-  .six__grid {
-    display: grid;
-    grid-template-columns: 5fr 7fr;
-    gap: var(--s-5);
-    align-items: start;
-    margin-top: var(--s-5);
+  .level__title--small {
+    font-size: var(--step-head);
+    font-size: round(var(--step-head), 16px);
   }
-  .six__intro {
-    position: sticky;
-    top: var(--s-4);
+
+  /* Level 2: each row uses the full width: the name and the terms on the left, the text on the right. */
+  .six__row {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: var(--s-5);
+    align-items: start;
+  }
+  .six__name {
     display: flex;
     flex-direction: column;
-    gap: var(--s-4);
-    color: var(--pr-navy);
-  }
-  .six__lead {
-    color: var(--pr-navy);
-  }
-  .six__photo {
-    aspect-ratio: 4 / 3;
+    gap: var(--s-1);
   }
   .six__get {
     font-family: var(--font-display);
@@ -252,14 +249,55 @@ const platforms = [
     margin-top: var(--s-2);
     max-width: none;
   }
+  .six__text {
+    max-width: 60ch;
+    margin-top: 0.25rem;
+  }
   .row:target {
     outline: 3px solid var(--accent-2);
     outline-offset: -3px;
   }
 
+  /* Level 3: four navy panels */
+  .bring__board {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gap);
+  }
+  .bring__panel {
+    position: relative;
+    padding: var(--s-3);
+    padding-right: var(--s-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+    min-width: 0;
+    background: var(--bg);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
+    color: var(--ink);
+  }
+  .bring__panel :global(.bring__mark) {
+    position: absolute;
+    top: var(--s-3);
+    right: var(--s-3);
+    font-size: 2rem;
+    color: var(--accent);
+  }
+  .bring__title {
+    font-size: 2rem;
+  }
+  .bring__list {
+    font-size: 1rem;
+    color: var(--muted);
+  }
+  .bring__list li + li {
+    margin-top: 0.3em;
+  }
+
+  /* Level 4: the seven states */
   .run__track {
     list-style: none;
-    margin: var(--s-5) 0 0;
     padding: 0;
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -321,12 +359,12 @@ const platforms = [
     color: var(--muted);
   }
 
+  /* Level 5: the platforms */
   .plat__board {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     grid-auto-rows: minmax(13rem, auto);
     gap: var(--gap);
-    margin-top: var(--s-5);
   }
   .plat__panel {
     padding: var(--s-3);
@@ -343,15 +381,14 @@ const platforms = [
     color: var(--ink);
   }
   .plat__panel--light {
-    background: var(--field-light);
+    background: var(--field-light-surface);
     color: var(--field-light-ink);
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
   }
   .plat__panel--cyan {
     background: var(--field-cyan);
     color: var(--field-cyan-ink);
-  }
-  .plat__panel--light,
-  .plat__panel--cyan {
     --sel-bg: var(--pr-navy);
     --sel-ink: var(--pr-light);
   }
@@ -370,53 +407,27 @@ const platforms = [
     min-height: 0;
   }
 
-  .ask__grid {
-    display: grid;
-    grid-template-columns: 7fr 5fr;
-    gap: var(--s-5);
-    align-items: end;
-    margin-top: var(--s-5);
-  }
-  .ask__actions {
-    display: flex;
-    align-items: center;
-    gap: var(--s-3);
-    flex-wrap: wrap;
-    margin-top: var(--s-5);
-  }
-  .ask__actions .button {
-    font-size: 1.5rem;
-    min-height: 3.5rem;
-    padding-inline: 2rem;
-  }
-  .ask__mail {
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    color: var(--pr-navy);
-  }
-  .ask__photos {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--gap);
-  }
-  .ask__photo {
-    aspect-ratio: 3 / 4;
-    min-width: 0;
-  }
-
   @media (max-width: 63.99rem) {
-    .svc__grid,
-    .six__grid,
-    .ask__grid {
-      grid-template-columns: 1fr;
-      gap: var(--s-4);
-      margin-top: var(--s-4);
-    }
     .svc__jump {
       font-size: 1.25rem;
     }
-    .six__intro {
-      position: static;
+    .six__row {
+      grid-template-columns: 1fr;
+      row-gap: var(--s-2);
+    }
+    .bring__board {
+      grid-template-columns: 1fr;
+      gap: 0.375rem;
+    }
+    .bring__panel {
+      padding: var(--s-3) var(--s-6) var(--s-3) var(--s-2);
+    }
+    .bring__panel :global(.bring__mark) {
+      top: var(--s-2);
+      right: var(--s-2);
+    }
+    .bring__title {
+      font-size: 1.75rem;
     }
     .run__track {
       grid-template-columns: 1fr 1fr;
@@ -437,9 +448,6 @@ const platforms = [
     .plat__photo {
       grid-column: span 2;
       aspect-ratio: 16 / 9;
-    }
-    .ask__photo {
-      aspect-ratio: 1;
     }
   }
   @media (max-width: 47.99rem) {

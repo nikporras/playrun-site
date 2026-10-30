@@ -1,13 +1,16 @@
 ---
 title: "Hello Sunshine"
-studio: "Red Thread Games, published by Megabit Publishing (Aonic)"
+studio: "Red Thread Games"
+publisher: "Megabit"
 platforms: ["PC (Steam)"]
-role: "Senior QA Tester at Aonic, in development"
 status: "in-development"
-summary: "A survival mystery RPG in the ruins of a corporate empire, travelling with a giant robot, solo or in co-op."
+summary: "A survival mystery RPG in the ruins of a corporate empire, with a giant robot for company."
+did: "Full feature passes, including showcase demo builds."
+tags: ["CQA", "Functional", "Save", "Localisation", "Soak"]
 url: "https://store.steampowered.com/app/3245140/Hello_Sunshine/"
-employer: "Aonic"
+employer: "aonic"
 icon: "sun"
+logoSource: "https://megabit-publishing.com/press/hello-sunshine"
 public: true
 ---
 

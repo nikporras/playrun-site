@@ -21,21 +21,17 @@ const steps = [
 <Base title="Contact" description="Get in touch with Nicolás Porras of PlayRun in London: networking, opportunities, a question about game QA, or just to say hello.">
   <!-- Level 1: the ask -->
   <section class="level level--navy contact" data-level="1" aria-labelledby="contact-title">
-    <p class="flag" data-load style="--d: 0ms"><span>Contact</span></p>
-    <div class="contact__grid">
-      <div class="contact__text">
-        <h1 id="contact-title" class="contact__title">
-          <span class="hero__mask"><span class="hero__line" style="--i: 0">Get in</span></span>
-          <span class="hero__mask"><span class="hero__line" style="--i: 1">touch</span></span>
-        </h1>
-        <p class="contact__lead statement" data-load style="--d: 360ms">
-          Networking, opportunities, a question about QA, or just hello. I read every message.
-        </p>
-      </div>
-      <div class="contact__side">
-      <div class="contact__photo" data-load style="--d: 200ms">
-        <PixelTile name="ship" tone="blue" />
-      </div>
+    <div class="level__head">
+      <p class="flag" data-load style="--d: 0ms"><span>Contact</span></p>
+      <h1 id="contact-title" class="contact__title">
+        <span class="hero__mask"><span class="hero__line" style="--i: 0">Get in</span></span>
+        <span class="hero__mask"><span class="hero__line" style="--i: 1">touch</span></span>
+      </h1>
+      <p class="contact__lead statement" data-load style="--d: 360ms">
+        Networking, opportunities, a question about QA, or just hello. I read every message.
+      </p>
+    </div>
+    <div class="contact__side level__body">
       <ul role="list" class="contact__direct" data-load style="--d: 480ms">
         <li>
           <span class="contact__key">Email</span>
@@ -46,17 +42,19 @@ const steps = [
           <span class="contact__big">{contact.location}</span>
         </li>
       </ul>
-      </div>
     </div>
-    <Bug id="contact-1" style="left: 30%; top: 9rem" tablet="right: 1.5rem; top: 24rem" walk="x 2rem" />
+    <Bug id="contact-1" style="left: 30%; top: 9rem" tablet="right: 10%; top: 0.75rem" walk="x 2rem" />
   </section>
 
   <!-- Level 2: the message, a form on a blue field -->
   <section class="level level--blue msg" data-level="2" aria-labelledby="message-title">
-    <p class="flag" data-enter><span>Level 2 &middot; The message</span></p>
-    <div class="msg__grid">
+    <div class="level__head">
+      <p class="flag" data-enter><span>Level 2 &middot; The message</span></p>
+      <h2 id="message-title" class="level__title" data-enter="wipe">Write to me</h2>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">Name, email, message. Nothing else, and no account.</p>
+    </div>
+    <div class="msg__grid level__body">
       <div class="msg__intro">
-        <h2 id="message-title" class="level__title" data-enter="wipe">Write to me</h2>
         <ul role="list" class="msg__list" data-enter style="--enter-delay: 80ms">
           {reasons.map((r) => <li>{r}</li>)}
         </ul>
@@ -114,9 +112,11 @@ const steps = [
 
   <!-- Level 3: what happens next, three panels on green -->
   <section class="level level--green next" data-level="3" aria-labelledby="next-title">
-    <p class="flag" data-enter><span>Level 3 &middot; What happens next</span></p>
-    <h2 id="next-title" class="level__title" data-enter="wipe">Then</h2>
-    <ol class="next__steps">
+    <div class="level__head">
+      <p class="flag" data-enter><span>Level 3 &middot; What happens next</span></p>
+      <h2 id="next-title" class="level__title" data-enter="wipe">Then</h2>
+    </div>
+    <ol class="next__steps level__body">
       {
         steps.map((s, i) => (
           <li class:list={['next__step', i === 1 ? 'next__step--light' : 'next__step--navy']} data-enter="place" style={`--enter-delay: ${i * 70}ms`}>
@@ -137,13 +137,6 @@ const steps = [
     padding-top: var(--s-2);
     padding-bottom: var(--s-7);
   }
-  .contact__grid {
-    display: grid;
-    grid-template-columns: 7fr 5fr;
-    gap: var(--s-5);
-    align-items: end;
-    margin-top: var(--s-5);
-  }
   .contact__title {
     font-size: var(--step-hero);
     font-size: round(var(--step-hero), 16px);
@@ -161,22 +154,12 @@ const steps = [
     display: block;
   }
   .contact__lead {
-    margin-top: var(--s-4);
-    max-width: 36ch;
-  }
-  .contact__side {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-4);
-    min-width: 0;
-  }
-  .contact__photo {
-    aspect-ratio: 4 / 3;
+    max-width: 40ch;
   }
   .contact__direct {
     display: flex;
-    flex-direction: column;
-    gap: var(--s-3);
+    flex-wrap: wrap;
+    gap: var(--s-3) var(--s-6);
     min-width: 0;
   }
   .contact__key {
@@ -241,7 +224,6 @@ const steps = [
     grid-template-columns: 5fr 7fr;
     gap: var(--s-5);
     align-items: start;
-    margin-top: var(--s-5);
   }
   .msg__intro {
     position: sticky;
@@ -457,7 +439,6 @@ const steps = [
     .contact {
       padding-bottom: var(--s-6);
     }
-    .contact__grid,
     .msg__grid {
       grid-template-columns: 1fr;
       gap: var(--s-5);

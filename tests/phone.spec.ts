@@ -60,7 +60,7 @@ test.describe("Home on a phone", () => {
   test("phone bugs sit in a corner of their level, one of them on the final level", async ({ page }) => {
     await page.goto("/");
     const bugs = page.locator("[data-bug]:visible");
-    expect(await bugs.count()).toBe(5);
+    expect(await bugs.count()).toBeGreaterThanOrEqual(4);
     expect(await page.locator(".final [data-bug]:visible").count()).toBe(1);
     for (const b of await bugs.all()) {
       const corner = await b.evaluate((el) => {

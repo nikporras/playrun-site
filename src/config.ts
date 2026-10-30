@@ -21,60 +21,94 @@ export const contact = {
 export const contactEndpoint =
   'https://script.google.com/macros/s/AKfycbxuVMg4V94B0QBAu-bLOox8zFTYRgZgWnPRiilkS7Sl0qt7w_R8dYw3gts3sy6Mk5CYMQ/exec';
 
-// Studio links for the footer. A link is rendered only when its URL is set.
-export const social: { label: string; href: string }[] = [
-  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/109504089/' },
-  { label: 'GitHub', href: '' },
-].filter((s) => s.href !== '');
+// Profiles linked from the footer. A link is rendered only when its URL is set. No link to a code
+// repository anywhere on the site.
+export const social: { label: string; href: string }[] = [{ label: 'LinkedIn', href: 'https://www.linkedin.com/in/nicolas-porras-918774116/' }].filter((s) => s.href !== '');
 
-// Nicolás's own profiles, for the About page.
-export const personal = {
-  linkedin: 'https://www.linkedin.com/in/nicolas-porras-918774116/',
+// PlayRun is a brand, not a post: the footer and the hero name it.
+export const playrun = { role: 'Founder & Lead QA', when: 'Oct 2025 to present' };
+
+export type Role = { title: string; when: string; contract?: boolean };
+export type Employer = {
+  id: string;
+  name: string;
+  accent: 'green' | 'cyan' | 'blue' | 'light';
+  roles: Role[];
+  lead: string;
+  note?: string;
+  via?: string;
 };
 
-// Where I have tested, newest first. The portfolio groups its cards by these and About tells the
-// longer story; each company keeps one accent colour on both. PlayRun is a brand, not a post.
-export const employers = [
+// Where I have tested, in the order the Portfolio shows them. Titles and dates match LinkedIn
+// exactly; each company keeps one accent colour. Projects point at a group through `employer`.
+export const employers: Employer[] = [
   {
-    id: 'Aonic',
+    id: 'aonic',
+    name: 'Aonic',
     accent: 'green',
-    role: 'Senior QA Tester',
-    when: 'July 2026 to now',
-    lead: 'The titles Megabit Publishing, part of Aonic, brings to console and PC.',
+    roles: [{ title: 'Senior Quality Assurance Tester', when: 'Jul 2026 to present' }],
+    lead:
+      "Embedded QA on several Megabit indie titles at once, from milestone builds to compliance (CQA), certification and release on Switch, Switch 2, Xbox, PS5 and the PC stores. Test cases, milestone build reports with severity and risk ratings, and bugs logged straight into the studios' own trackers.",
   },
   {
-    id: 'Historic VR',
+    id: 'hcltech',
+    name: 'HCLTech',
     accent: 'cyan',
-    role: 'QA Manager',
-    when: '2025 to 2026',
-    lead: 'Two VR reconstructions of real places, made in Guildford.',
+    roles: [{ title: 'VR Robotics Operator, client Google DeepMind', when: 'Apr 2026 to Jul 2026', contract: true }],
+    lead: 'Operated robots through VR teleoperation for an AI research project, following strict processes to produce clean, consistent data, and flagging issues with the robots, tools and workflows.',
   },
   {
-    id: 'nDreams',
+    id: 'nexus-studios',
+    name: 'Nexus Studios',
     accent: 'blue',
-    role: 'Senior QA Technician',
-    when: '2022 to 2024',
-    lead: 'Three VR titles on Meta Quest and PS VR2.',
-    note: 'Lead QA Technician on one cancelled project.',
+    roles: [{ title: 'Quality Assurance Tester', when: 'Oct 2025 to Dec 2025', contract: true }],
+    lead: 'QA on an Apple Vision Pro experience with the NBA.',
   },
   {
-    id: 'Universally Speaking',
+    id: 'universally-speaking-2025',
+    name: 'Universally Speaking',
     accent: 'light',
-    role: 'QA Technician',
-    when: '2021',
-    lead: 'Eight titles in my first year: six in VR, two on console.',
+    roles: [{ title: 'Build and Distribution Technician', when: 'Jun 2025 to Aug 2025', contract: true }],
+    lead: 'Prepared, configured and distributed consoles and builds across the studio to support game testing, and gave technical support to the test teams.',
+  },
+  {
+    id: 'historic-vr',
+    name: 'Historic VR',
+    accent: 'cyan',
+    roles: [{ title: 'QA Manager', when: 'Feb 2025 to Feb 2026', contract: true }],
+    lead: "Ran QA across the studio's VR projects: test strategy, compliance checks for each VR platform, schedules with development and production, the test hardware and low and recommended spec rigs, Unreal Engine profiling to hit performance targets, and an outsourced team scaled to 10 testers.",
+  },
+  {
+    id: 'ndreams',
+    name: 'nDreams',
+    accent: 'blue',
+    roles: [
+      { title: 'QA Tester', when: 'Mar 2022 to Sep 2022' },
+      { title: 'Senior QA Tester', when: 'Sep 2022 to Apr 2023' },
+      { title: 'Lead QA Tester', when: 'Apr 2023 to Oct 2024' },
+    ],
+    lead: 'Grew from tester to lead. Sole tester on a project, then led a QA team: test planning, the bug lifecycle in Jira and Confluence, QA in sprint planning and retrospectives, mentoring testers and managing an external QA vendor. Lead QA Tester on one cancelled project.',
+  },
+  {
+    id: 'universally-speaking-2021',
+    name: 'Universally Speaking',
+    accent: 'light',
+    roles: [{ title: 'Quality Assurance Tester', when: '2021 to 2022' }],
+    lead: 'Functional and compliance (CQA) testing for major studios on VR and console titles: test cases in TestRail, bugs in Jira, fix verification and build release notes.',
     via: 'via Universally Speaking',
   },
 ];
 
+/** The year the testing started: the hero and the stats count from it. */
+export const since = 2021;
+
 export const nav = [
   { label: 'Skills', href: '/skills' },
   { label: 'Portfolio', href: '/portfolio' },
-  { label: 'About', href: '/about' },
   { label: 'Quality', href: '/quality' },
-  { label: 'Contact', href: '/contact' },
 ];
 
+// The one action. It appears in the nav, in the hero and at the end of Home, nowhere else.
 export const primaryAction = { label: 'Get in touch', href: '/contact' };
 
 // Legal pages. Put the business address in `address` when there is one to show; while it is

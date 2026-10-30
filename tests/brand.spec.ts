@@ -11,13 +11,15 @@ test.describe('Brand assets', () => {
     expect(loaded).toEqual({ pixel: true, montserrat: true });
   });
 
-  test('the logo renders in the header and the hero', async ({ page }) => {
+  test('the logo renders in the header and the icon in the footer', async ({ page }) => {
     await page.goto('/');
     const header = page.locator('header svg').first();
     await expect(header).toBeVisible();
     const box = await header.boundingBox();
     expect(box?.height ?? 0).toBeGreaterThan(20);
-    await expect(page.getByRole('img', { name: 'PlayRun icon' })).toBeVisible();
+    const footer = page.locator('footer svg').first();
+    await expect(footer).toBeVisible();
+    expect((await footer.boundingBox())?.height ?? 0).toBeLessThanOrEqual(40);
   });
 
   test('favicon, touch icon and Open Graph image exist', async ({ page, request }) => {

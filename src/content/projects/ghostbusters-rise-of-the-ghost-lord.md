@@ -1,14 +1,17 @@
 ---
 title: "Ghostbusters: Rise of the Ghost Lord"
-studio: "nDreams, published by Sony Pictures Virtual Reality"
+studio: "nDreams"
+publisher: "Sony Pictures Virtual Reality"
 platforms: ["Meta Quest 2, 3 and Pro", "PS VR2"]
-role: "Senior QA Technician at nDreams"
 year: 2023
-summary: "A co-op VR Ghostbusters game for one to four players, set in San Francisco, with crossplay between PS VR2 and Meta Quest."
+summary: "A co-op VR Ghostbusters game for one to four players, set in San Francisco."
+did: "Co-op on Meta Quest and PS VR2, through to launch."
+tags: ["CQA", "Functional", "Multiplayer", "VR comfort", "Performance"]
 url: "https://www.meta.com/en-gb/experiences/ghostbusters-rise-of-the-ghost-lord/4746232908818706/"
-store: "On the Meta Quest Store"
-employer: "nDreams"
+store: "Meta Quest"
+employer: "ndreams"
 icon: "ghost"
+logoSource: "https://ndreams.com/games/ghostbustersvr"
 public: true
 ---
 

@@ -1,69 +1,50 @@
 ---
+/**
+ * The footer: one block for PlayRun (who, where, email, profile), the site links beside it, and
+ * one bottom line with the copyright, the credit and the legal links. No call to action here:
+ * "Get in touch" lives in the nav, the hero and the end of Home.
+ */
 import Icon from '../assets/logo/icon.svg';
 import ExternalLink from './ExternalLink.astro';
-import { contact, legalNav, nav, primaryAction, site, social } from '../config';
+import { contact, legalNav, nav, playrun, site, social } from '../config';
 
 const year = new Date().getFullYear();
 ---
 
 <footer class="footer">
   <div class="wrap">
-    <div class="footer__mark" aria-hidden="true">
-      <Icon class="footer__icon" role="presentation" />
-    </div>
-
     <div class="footer__grid">
-      <div class="footer__col">
-        <h2 class="footer__title">Site</h2>
+      <div class="footer__who">
+        <Icon class="footer__icon" aria-hidden="true" role="presentation" />
+        <p class="footer__name">{contact.name}</p>
+        <p>{playrun.role}, {site.name}. {contact.location}.</p>
+        <p class="footer__contact">
+          <a href={`mailto:${contact.email}`}>{contact.email}</a>
+          {social.map((s) => (
+            <>
+              <span class="footer__dot" aria-hidden="true">&middot;</span>
+              <ExternalLink href={s.href} rel="me">{s.label}</ExternalLink>
+            </>
+          ))}
+        </p>
+      </div>
+      <nav class="footer__site" aria-label="Footer">
         <ul role="list" class="footer__links">
           <li><a href="/">Home</a></li>
           {nav.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+          <li><a href="/contact">Contact</a></li>
           <li><a href="/credits">Credits</a></li>
         </ul>
-      </div>
-      <div class="footer__col">
-        <h2 class="footer__title">PlayRun</h2>
-        <p>{site.name}, {site.tagline}</p>
-        <p>{contact.name}</p>
-        <p>Founder &amp; Lead QA, PlayRun</p>
-        <p>{contact.location}</p>
-      </div>
-      <div class="footer__col">
-        <h2 class="footer__title">Contact</h2>
-        <p><a href={`mailto:${contact.email}`}>{contact.email}</a></p>
-      </div>
-      <div class="footer__col">
-        <h2 class="footer__title">Legal</h2>
-        <ul role="list" class="footer__links">
-          {legalNav.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
-        </ul>
-      </div>
-      {
-        social.length > 0 && (
-          <div class="footer__col">
-            <h2 class="footer__title">Elsewhere</h2>
-            <ul role="list" class="footer__links">
-              {social.map((s) => (
-                <li>
-                  <ExternalLink href={s.href} rel="me">{s.label}</ExternalLink>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )
-      }
+      </nav>
     </div>
 
-    <p class="footer__tested">
-      This site is tested with Playwright on every push. <a href="/quality">See how I test it</a>.
-    </p>
-
-    <div class="footer__bottom">
-      <p class="small muted">
-        © {year} {site.name}. Designed, built and tested by PlayRun. Typefaces and artwork are listed on the{' '}
-        <a href="/credits">credits page</a>.
+    <div class="footer__bottom small muted">
+      <p>
+        © {year} {site.name}. Designed, built and tested by PlayRun. <a href="/quality">Tested with Playwright on every push</a>.
       </p>
-      <a class="button footer__action" href={primaryAction.href}>{primaryAction.label}</a>
+      <ul role="list" class="footer__legal">
+        {legalNav.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+      </ul>
     </div>
   </div>
 </footer>
@@ -72,71 +53,75 @@ const year = new Date().getFullYear();
   .footer {
     background: var(--surface);
     padding-block: var(--s-5) var(--s-4);
-  }
-  .footer__mark {
-    height: 3rem;
-    display: flex;
-    justify-content: flex-start;
-    color: var(--field-blue);
-    margin-bottom: var(--s-4);
-  }
-  .footer__icon {
-    height: 100%;
-    width: auto;
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
   }
   .footer__grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: var(--s-3);
-    margin-top: var(--s-6);
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--s-4) var(--s-6);
+    align-items: start;
   }
-  .footer__col {
-    min-width: 0;
-  }
-  .footer__col p {
+  .footer__who p {
     max-width: none;
-  }
-  .footer__col a,
-  .footer__col p {
     overflow-wrap: anywhere;
   }
-  .footer__col p + p {
-    margin-top: 0.35em;
+  .footer__who p + p {
+    margin-top: 0.3em;
   }
-  .footer__title {
+  .footer__icon {
+    height: 2rem;
+    width: auto;
+    color: var(--field-blue);
+    margin-bottom: var(--s-3);
+  }
+  .footer__name {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+  .footer__contact {
+    margin-top: var(--s-2) !important;
+  }
+  .footer__dot {
+    margin-inline: 0.4em;
+    color: var(--muted);
+  }
+  .footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem var(--s-3);
+    font-family: var(--font-display);
     font-size: 1.25rem;
-    margin-bottom: var(--s-2);
-    color: var(--accent-2);
+    line-height: 1.2;
   }
-  .footer__links li + li {
-    margin-top: 0.35em;
+  .footer__links a {
+    text-decoration: none;
   }
-  .footer__tested {
-    margin-top: var(--s-5);
-    max-width: none;
+  .footer__links a:hover,
+  .footer__links a:focus-visible {
+    text-decoration: underline;
   }
   .footer__bottom {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: var(--s-3);
-    margin-top: var(--s-5);
+    align-items: baseline;
+    gap: var(--s-2) var(--s-4);
     flex-wrap: wrap;
+    margin-top: var(--s-5);
+    padding-top: var(--s-3);
+    border-top: 1px solid var(--surface-2);
   }
   .footer__bottom p {
-    max-width: 60ch;
+    max-width: none;
   }
-  .footer__action {
-    font-size: 1rem;
-    min-height: 2.5rem;
-    padding: 0.5rem 1rem;
+  .footer__legal {
+    display: flex;
+    gap: var(--s-3);
   }
   @media (max-width: 47.99rem) {
-    .footer__mark {
-      height: 2.5rem;
-    }
     .footer__grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: 1fr;
     }
     .footer__bottom {
       flex-direction: column;

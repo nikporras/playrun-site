@@ -1,0 +1,202 @@
+---
+/**
+ * One title on the portfolio: a navy tile with the game's official logo in one colour (or its
+ * pixel icon where no clean logo exists), the year and status, the title, the makers, one line
+ * on the game, what I did on it, the kinds of testing as labels, the platforms, and one button
+ * to its store page in a new tab. The company's accent colours the labels through --g-accent
+ * and --g-ink, set on the group around the card.
+ */
+import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import GameIcon from './GameIcon.astro';
+import ExternalLink from './ExternalLink.astro';
+import { logos } from '../data/logos';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  /** A tag under the title, such as "via Universally Speaking". */
+  via?: string;
+  delay?: number;
+}
+const { project: p, via, delay = 0 } = Astro.props;
+const logo = logos[p.id];
+const when = p.data.status === 'in-development' ? 'In development' : `${p.data.year} · Released`;
+const store = p.data.store ?? 'Steam';
+---
+
+<article class="card tile--live" data-enter="place" style={`--enter-delay: ${delay}ms`}>
+  <div class="card__top">
+    <span class="card__logo">
+      {logo ? <Image src={logo} alt="" height={56} densities={[1, 2]} loading="lazy" decoding="async" /> : <GameIcon name={p.data.icon} />}
+    </span>
+    <p class="card__when">{when}</p>
+  </div>
+  <h4 class="card__title">{p.data.title}</h4>
+  {via && <p class="card__via">{via}</p>}
+  <p class="card__makers">
+    {p.data.studio}
+    {p.data.publisher && (
+      <>
+        <span class="card__dot" aria-hidden="true">&middot;</span> {p.data.publisher}
+      </>
+    )}
+  </p>
+  <p class="card__summary">{p.data.summary}</p>
+  {
+    p.data.did && (
+      <p class="card__did">
+        <span class="card__didkey">What I did</span> {p.data.did}
+      </p>
+    )
+  }
+  {
+    p.data.tags.length > 0 && (
+      <ul role="list" class="card__tags" aria-label="Testing">
+        {p.data.tags.map((t) => (
+          <li>{t}</li>
+        ))}
+      </ul>
+    )
+  }
+  <p class="card__platforms">{p.data.platforms.join(', ')}</p>
+  {p.data.url && <ExternalLink class="button card__store" href={p.data.url}>View on {store}</ExternalLink>}
+</article>
+
+<style>
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+    padding: var(--s-3);
+    min-width: 0;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--ink);
+    border-top: 0.25rem solid var(--g-accent, var(--accent-2));
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
+  }
+  .card__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--s-2);
+    margin-bottom: var(--s-3);
+  }
+  .card__logo {
+    display: block;
+    height: 3.5rem;
+    max-width: 11rem;
+  }
+  .card__logo :global(img) {
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: left center;
+  }
+  .card__logo :global(.gameicon) {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+  /* The pixel icon takes the company's accent; its navy pixels stay navy. */
+  .card__logo :global(.gameicon rect:not(.px-navy)) {
+    fill: var(--g-accent, var(--accent-2));
+  }
+  .card__when {
+    flex: none;
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--g-ink, var(--accent-2));
+    max-width: none;
+    padding-top: 0.25rem;
+  }
+  .card__title {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 2rem;
+    line-height: 1;
+    text-wrap: balance;
+  }
+  .card__via {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--g-ink, var(--accent-2));
+    max-width: none;
+  }
+  .card__makers {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--g-ink, var(--accent-2));
+    max-width: none;
+  }
+  .card__dot {
+    margin-inline: 0.2em;
+  }
+  .card__summary {
+    font-size: 1rem;
+    max-width: none;
+    margin-top: var(--s-1);
+  }
+  .card__did {
+    font-size: 1rem;
+    max-width: none;
+    color: var(--muted);
+  }
+  .card__didkey {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-right: 0.3em;
+  }
+  /* The kinds of testing, as the labels a tracker would show them. */
+  .card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: var(--s-2);
+  }
+  .card__tags li {
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.4;
+    padding: 0.1em 0.5em;
+    border: 1px solid var(--g-ink, var(--accent-2));
+    border-radius: 0.3rem;
+    color: var(--g-ink, var(--accent-2));
+    background: color-mix(in srgb, var(--g-accent, var(--accent-2)) 12%, transparent);
+  }
+  .card__platforms {
+    font-size: 0.875rem;
+    color: var(--muted);
+    max-width: none;
+    margin-top: var(--s-2);
+  }
+  .card__store {
+    margin-top: var(--s-3);
+    align-self: flex-start;
+    font-size: 1.125rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 1.125rem;
+  }
+  .card__platforms {
+    margin-top: auto;
+    padding-top: var(--s-2);
+  }
+  @media (max-width: 63.99rem) {
+    .card {
+      padding: var(--s-2);
+    }
+    .card__title {
+      font-size: 1.75rem;
+    }
+  }
+</style>

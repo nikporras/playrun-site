@@ -45,7 +45,9 @@ test.describe('Home', () => {
     expect(response?.status()).toBe(200);
     await expect(page).toHaveTitle(/PlayRun/);
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('h1')).toHaveText(/I break\s*games\./);
+    await expect(page.locator('h1')).toHaveText(/Nicolás\s*Porras/);
+    await expect(page.locator('.hero__role')).toHaveText('Game QA, platform compliance & release testing');
+    await expect(page.locator('.hero__value')).toContainText('testing games since 2021 and leading QA teams since 2022');
     await page.waitForLoadState('networkidle');
     expect(errors, errors.join('\n')).toEqual([]);
   });
@@ -96,24 +98,80 @@ test.describe('Home', () => {
     expect(outline).not.toBe('none');
   });
 
-  test('menu toggle works on a phone', async ({ page }) => {
+  test('menu toggle works on a phone, and the nav holds only the three pages and the button', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
     const toggle = page.getByRole('button', { name: 'Menu' });
     await expect(toggle).toBeVisible();
     await toggle.click();
     await expect(page.getByRole('button', { name: 'Close' })).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Skills' })).toBeVisible();
+    const nav = page.getByRole('navigation', { name: 'Site' });
+    await expect(nav.getByRole('link')).toHaveText(['Skills', 'Portfolio', 'Quality', 'Get in touch']);
     await page.keyboard.press('Escape');
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });
 
-  test('the self test runs, reports and scores the page', async ({ page }) => {
+  test('the hero is pinned and the next level slides over it; it scrolls away under reduced motion', async ({ page, browser }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    const hero = page.locator('.hero');
+    expect(await hero.evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
+    const figure = page.locator('.hero__figure img');
+    await expect(figure).toBeVisible();
+    expect(await page.locator('main img:not([alt=""])').count(), 'the photo appears once on the site').toBe(1);
+    await page.evaluate(() => window.scrollTo(0, 600));
+    await page.waitForTimeout(100);
+    const after = await page.evaluate(() => {
+      const hero = document.querySelector('.hero')!.getBoundingClientRect();
+      const next = document.querySelector('.wall')!.getBoundingClientRect();
+      return { heroTop: hero.top, heroBottom: hero.bottom, nextTop: next.top };
+    });
+    expect(after.heroTop, 'the hero stays at the top of the screen').toBeGreaterThanOrEqual(-1);
+    expect(after.nextTop, 'the next level has climbed over the hero').toBeLessThan(after.heroBottom);
+
+    const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
+    const quiet = await context.newPage();
+    await quiet.goto('/');
+    expect(await quiet.locator('.hero').evaluate((el) => getComputedStyle(el).position)).not.toBe('sticky');
+    await context.close();
+  });
+
+  test('the wall shows every title as a logo or its icon, each linking to the portfolio', async ({ page }) => {
+    await page.goto('/');
+    const links = page.locator('.wall__link');
+    expect(await links.count()).toBe(20);
+    const names = await links.evaluateAll((as) => as.map((a) => a.getAttribute('aria-label') ?? ''));
+    expect(names).toContain("Lou's Lagoon");
+    expect(names).toContain('The Climb 2');
+    expect(new Set(names).size).toBe(20);
+    for (const href of await links.evaluateAll((as) => as.map((a) => a.getAttribute('href')))) expect(href).toBe('/portfolio');
+    expect(await page.locator('.wall__logo').count(), 'official logos').toBeGreaterThanOrEqual(16);
+    await expect(page.locator('.wall__grid')).not.toContainText(/stage|view on/i);
+  });
+
+  test('the stats are counted from the data and count up into view', async ({ page }) => {
+    await page.goto('/');
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    const nums = page.locator('.stat__num');
+    await expect(nums).toHaveCount(4);
+    const labels = await page.locator('.stat__label').allTextContents();
+    expect(labels).toEqual(['years in QA', 'companies', 'games', 'platforms']);
+    await page.locator('.stats').scrollIntoViewIfNeeded();
+    await expect(nums.nth(0)).toHaveText('5+', { timeout: 5000 });
+    await expect(nums.nth(1)).toHaveText('6');
+    await expect(nums.nth(2)).toHaveText('20');
+    await expect(nums.nth(3)).toHaveText('10+');
+  });
+
+  test('the self test runs, reports and scores the page, and the Quality link stays visible', async ({ page }) => {
     await page.goto('/');
     // Nothing is ticked before the test runs: idle boxes and blank counts, the last run as text only
     await expect(page.locator('.panel.is-idle')).toHaveCount(6);
     await expect(page.locator('.panel.is-pass, .panel.is-failed')).toHaveCount(0);
     await expect(page.locator('#selftest-status')).toHaveText(/\d+ (of \d+ checks passed in the last run|checks run before every deploy)/);
+    const quality = page.locator('.proof').getByRole('link', { name: 'How I test this site' });
+    await expect(quality).toHaveAttribute('href', '/quality');
     await page.getByRole('button', { name: 'Test this page' }).click();
     await expect(page.locator('#selftest-status')).toContainText(/on your device/, { timeout: 15_000 });
     await expect(page.getByRole('button', { name: 'Run again' })).toBeVisible();
@@ -121,25 +179,21 @@ test.describe('Home', () => {
     await expect(page.locator('#selftest-score [data-score]')).toHaveText(/^\d\/6$/);
     await expect(page.locator('.panel.is-idle')).toHaveCount(0);
     await expect(page.locator('.panel.is-pass, .panel.is-failed')).toHaveCount(6);
+    await expect(quality).toBeVisible();
   });
 
-  test('the ticker moves, pauses with its button and stands still under reduced motion', async ({ page, browser }) => {
+  test('Get in touch appears in the nav, the hero and the end of Home only', async ({ page }) => {
     await page.goto('/');
-    const lane = page.locator('.marquee__lane').first();
-    const state = () => lane.evaluate((el) => getComputedStyle(el).animationPlayState);
-    await page.locator('.marquee').scrollIntoViewIfNeeded();
-    await expect.poll(state).toBe('running');
-    await page.getByRole('button', { name: 'Pause' }).click();
-    await expect.poll(state).toBe('paused');
-    await expect(page.getByRole('button', { name: 'Play' })).toHaveAttribute('aria-pressed', 'true');
-
-    const context = await browser.newContext({ reducedMotion: 'reduce' });
-    const quiet = await context.newPage();
-    await quiet.goto('/');
-    const name = await quiet.locator('.marquee__lane').first().evaluate((el) => getComputedStyle(el).animationName);
-    expect(name).toBe('none');
-    await expect(quiet.getByRole('button', { name: 'Pause' })).toHaveCount(0);
-    await context.close();
+    const buttons = page.getByRole('link', { name: 'Get in touch' });
+    await expect(buttons).toHaveCount(3);
+    await expect(page.locator('header').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
+    await expect(page.locator('.hero').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
+    await expect(page.locator('.final').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
+    await expect(page.locator('footer').getByRole('link', { name: 'Get in touch' })).toHaveCount(0);
+    for (const path of ['/skills', '/portfolio', '/quality', '/contact', '/credits', '/privacy']) {
+      await page.goto(path);
+      await expect(page.locator('main').getByRole('link', { name: 'Get in touch' }), path).toHaveCount(0);
+    }
   });
 
   test('hero content is in the HTML before any script runs', async ({ browser }) => {
@@ -147,11 +201,10 @@ test.describe('Home', () => {
     const page = await context.newPage();
     await page.goto('/');
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('.hero__statement')).toBeVisible();
-    await expect(page.locator('.marquee__list').first()).toBeVisible();
-    await expect(page.locator('.services__row').first()).toBeVisible();
-    await expect(page.locator('.stage__via')).toHaveCount(5);
-    await expect(page.locator('.hero__badge')).toHaveCount(3);
+    await expect(page.locator('.hero__value')).toBeVisible();
+    await expect(page.locator('.wall__link')).toHaveCount(20);
+    await expect(page.locator('.stat__num').first()).toHaveText('5+');
+    await expect(page.locator('.final__text')).toContainText('Helldivers, The Witcher and God of War');
     await context.close();
   });
 

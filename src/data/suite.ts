@@ -42,13 +42,13 @@ export type Suite = {
 // The words for each file. The numbers never live here.
 const COPY: Record<string, [title: string, detail: string]> = {
   'brand.spec.ts': ['Brand assets', 'Both typefaces load, the logo renders, favicon and Open Graph image present.'],
-  'bugs.spec.ts': ['Bugs off the text', 'Every bug sits in empty field on six pages at four widths, all along its walk.'],
+  'bugs.spec.ts': ['Bugs off the text', 'Every bug sits in empty field on five pages at four widths, all along its walk.'],
   'contact.spec.ts': ['Contact form', 'Validation, every answer the script can give, and the mailto fallback.'],
   'credits.spec.ts': ['Credits', 'Every typeface, tool and sprite is credited, and the page passes axe.'],
   'games.spec.ts': ['The games', 'Runner, bug hunt, achievements and HUD by mouse, touch and keyboard, and off under reduced motion.'],
-  'home.spec.ts': ['Home', 'Loads clean, every link resolves, three widths, axe, the self test.'],
+  'home.spec.ts': ['Home', 'Loads clean, the curtain, the wall, the stats, three widths, axe, the self test.'],
   'links.spec.ts': ['Links', 'Links that leave the site open a new tab and say so. Internal links stay.'],
-  'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, no console errors, no stale facts, and passes axe.'],
+  'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, stacked level headers, labels that read, no stale facts, and passes axe.'],
   'phone.spec.ts': ['Home on a phone', 'A real device profile: nothing clipped, the button on the first screen, a slim HUD.'],
   'selection.spec.ts': ['Selectable text', 'A drag selects a paragraph on every page and the highlight reads on every field.'],
 };

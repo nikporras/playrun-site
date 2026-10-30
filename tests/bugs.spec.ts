@@ -1,16 +1,16 @@
 import { test, expect, type Page } from '@playwright/test';
 
 /**
- * The bugs to catch sit in empty field: never over text, a tile, a button or the photo, on any
- * page at any width, anywhere along their walk. Every visible bug's box is sampled along its
- * walk and checked, with a small margin, against every text block and tile on the page.
+ * The bugs to catch sit in empty field: never over text, a tile, a button, a logo or the photo,
+ * on any page at any width, anywhere along their walk. Every visible bug's box is sampled along
+ * its walk and checked, with a small margin, against every text block and tile on the page.
  */
-const PAGES = ['/', '/skills', '/portfolio', '/about', '/contact', '/quality'];
+const PAGES = ['/', '/skills', '/portfolio', '/contact', '/quality'];
 const WIDTHS = [390, 768, 1024, 1440];
 const MARGIN = 6;
 
 const TEXT = 'main :is(p, li, dt, dd, h1, h2, h3, h4, label, input, textarea, button:not(.bug), a, img, figure, picture, svg:not([aria-hidden="true"]), .flag)';
-const TILES = 'main :is(.stage, .row, .how__panel, .run__state, .plat__panel, .panel, .services__row, .group__head, .loop__step, .next__step, .pixtile, .tile, .hero__badge, .marquee, form, .who__figure, .hero__figure, .final__figure)';
+const TILES = 'main :is(.card, .row, .bring__panel, .run__state, .plat__panel, .panel, .stat, .wall__grid, .group__head, .loop__step, .next__step, .pixtile, .tile, form, .hero__figure)';
 
 async function settle(page: Page) {
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });

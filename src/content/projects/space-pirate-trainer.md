@@ -2,12 +2,13 @@
 title: "Space Pirate Trainer"
 studio: "I-Illusions"
 platforms: ["Meta Quest", "PC VR (Steam)", "PS VR"]
-role: "QA Technician, via Universally Speaking"
 year: 2017
-summary: "The VR arcade shooter: twin blasters and a shield against waves of droids. I tested it in 2021 as part of the Universally Speaking QA team."
+summary: "The VR arcade shooter: twin blasters and a shield against waves of droids."
+tags: ["CQA", "Functional", "Fix verification"]
 url: "https://store.steampowered.com/app/418650/Space_Pirate_Trainer/"
-employer: "Universally Speaking"
+employer: "universally-speaking-2021"
 icon: "drone"
+logoSource: "https://i-illusions.com/games/spacepiratetrainer"
 public: true
 ---
 

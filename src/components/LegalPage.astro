@@ -5,7 +5,7 @@
  * <section class="row"> blocks so each page keeps its own words.
  */
 import Base from '../layouts/Base.astro';
-import { contact, legal, primaryAction } from '../config';
+import { contact, legal } from '../config';
 
 interface Props {
   title: string;
@@ -40,16 +40,13 @@ const updatedText = new Date(updated).toLocaleDateString('en-GB', { day: 'numeri
   </section>
 
   <section class="level level--green legal__ask" data-level="3" aria-labelledby="legal-ask-title">
-    <p class="flag" data-enter><span>Level 3 &middot; Questions</span></p>
     <div class="level__head">
+      <p class="flag" data-enter><span>Level 3 &middot; Questions</span></p>
       <h2 id="legal-ask-title" class="level__title" data-enter="wipe">Ask me anything about this</h2>
-      <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="level__lead">
-          {legal.controller}{legal.address ? `, ${legal.address}` : `, ${contact.location}`}.
-        </p>
-        <a class="legal__mail" href={`mailto:${contact.email}`}>{contact.email}</a>
-        <a class="button button--navy" href={primaryAction.href}>{primaryAction.label}</a>
-      </div>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">
+        {legal.controller}{legal.address ? `, ${legal.address}` : `, ${contact.location}`}.
+      </p>
+      <a class="legal__mail" href={`mailto:${contact.email}`} data-enter style="--enter-delay: 160ms">{contact.email}</a>
     </div>
   </section>
 </Base>

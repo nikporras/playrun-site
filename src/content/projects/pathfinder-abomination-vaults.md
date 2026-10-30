@@ -1,13 +1,15 @@
 ---
 title: "Pathfinder: Abomination Vaults"
-studio: "BKOM Studios, published by Megabit Publishing (Aonic)"
+studio: "BKOM Studios"
+publisher: "Megabit"
 platforms: ["PC (Steam and Epic Games Store)"]
-role: "Senior QA Tester at Aonic, in development"
-employer: "Aonic"
 status: "in-development"
-summary: "A co-op hack-and-slash action RPG for up to four players, delving into Gauntlight Keep, the mega dungeon of Paizo's Pathfinder adventure path."
+summary: "A co-op action RPG for up to four players, delving into Gauntlight Keep."
+tags: ["CQA", "Functional", "Regression", "Accessibility", "Performance"]
 url: "https://store.steampowered.com/app/2666580/Pathfinder_Abomination_Vaults/"
+employer: "aonic"
 icon: "vault"
+logoSource: "https://www.bkom.com/pathfinder-abomination-vaults"
 public: true
 ---
 

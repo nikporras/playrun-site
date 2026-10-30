@@ -39,7 +39,7 @@
   --step-lead: clamp(1.25rem, 1.05rem + 1vw, 1.75rem); /* 20 to 28px, statements */
   --step-head: clamp(2rem, 1.2rem + 3.4vw, 4rem); /* 32 to 64px, section headings */
   --step-display: clamp(4rem, 2rem + 8vw, 8rem); /* 64 to 128px, giant titles */
-  --step-level: clamp(3rem, 1rem + 8vw, 9rem); /* 48 to 144px, the level headings */
+  --step-level: clamp(3rem, 1.5rem + 5vw, 7rem); /* 48 to 112px, the level headings */
   --step-hero: clamp(4rem, 10vw, 10rem); /* 64 to 160px, the first screen */
 
   /* Space, on an 8px scale */
@@ -53,8 +53,13 @@
   --s-8: 8rem;
   --section-gap: clamp(4.5rem, 4rem + 6vw, 11rem); /* 72px on a phone to 176px on desktop */
 
-  /* Board */
-  --margin: clamp(1rem, 2.5vw, 3rem); /* 16px on a phone, 32px at 1280, 36px at 1440, 48px at 1920 */
+  /* Frame: the content sits in a centred column of at most --content, with --margin either
+     side at least. --gutter is the resulting side padding, used by every full-bleed block. */
+  --content: 77.5rem; /* 1240px */
+  --margin: clamp(1.25rem, 5vw, 6rem); /* 20px on a phone, 64px at 1280, 72px at 1440, 96px at 1920 */
+  --gutter: max(var(--margin), calc((100% - var(--content)) / 2));
+  --level-pad: clamp(4rem, 2.5rem + 5vw, 7.5rem); /* the top and bottom of every level */
+  --block-gap: clamp(2.5rem, 1.5rem + 3vw, 4.5rem); /* between a level's header and its content */
   --gap: 0.5rem; /* 8px between tiles */
   --unit: 5.625rem; /* 90px board row unit */
   --radius: 0;

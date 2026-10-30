@@ -6,10 +6,9 @@ The website of **PlayRun**, the personal game QA portfolio of Nicolás Porras in
 
 ## What is on it
 
-- **Home**: who I am, what I test, a selection of titles, and a scoreboard of the site's own checks that visitors can run in their browser.
-- **Skills**: what I test and how, as experience from shipped games: functional testing, platforms and stores, performance, playtesting and bug reporting.
-- **Portfolio**: every title I can name in public, grouped by company, each linking to its store page.
-- **About**: the posts, the tools and how I work.
+- **Home**: who I am, a wall of the games I have tested (their official logos, in one colour), the numbers, a scoreboard of the site's own checks that visitors can run in their browser, and what I play after hours.
+- **Skills**: what I test and how, as experience from shipped games: functional testing, platforms and stores, performance, playtesting and bug reporting, plus the tools and the way I work.
+- **Portfolio**: every title I can name in public, grouped by post with the role and dates, each card with what I did, the kinds of testing and one button to its store page.
 - **Quality**: how this site is tested, with the suite read from the test files at build time.
 - **Contact**: a form for networking, opportunities and saying hello.
 
@@ -25,7 +24,9 @@ This site is held to the same standard as the games I test. Every push runs a Pl
 - accessibility scans with axe (WCAG 2.1 A and AA) on every page
 - the contact form validates and handles every answer the script can give
 - the mini games (runner, bug hunt, achievements) work by mouse, touch and keyboard, and switch off under reduced motion
-- the bugs to catch never sit over text, a tile or the photo, at any width, anywhere along their walk
+- the bugs to catch never sit over text, a tile, a logo or the photo, at any width, anywhere along their walk
+- every level header is one stacked block with a label that reads on its field, and the content sits in a centred column at 390, 1280, 1440 and 1920
+- the job titles and dates match LinkedIn, and the built HTML links to no code repository
 - links that leave the site open a new tab and say so; internal links stay in the same tab
 - text can be selected with the mouse everywhere, and the highlight reads on every field
 - the built HTML carries no stale facts and no sales language
@@ -57,7 +58,7 @@ PLAYWRIGHT_BASE_URL=http://127.0.0.1:4321 npx playwright test tests/bugs.spec.ts
 
 ## Credits
 
-Pixel Operator typeface by Jayvee Enaguas (CC0). Montserrat by Julieta Ulanovsky (SIL Open Font License). The tools and artwork are listed on the site's [credits page](https://playrunqa.com/credits).
+Pixel Operator typeface by Jayvee Enaguas (CC0). Montserrat by Julieta Ulanovsky (SIL Open Font License). The game logos are the trademarks of their owners, taken from each game's official press kit or page and shown in one colour to name the games I have tested; every source is listed on the site's [credits page](https://playrunqa.com/credits), with the tools and the pixel art. `scripts/logos.mjs` makes the one-colour files from the originals, which are not part of this repository.
 
 ## Rights
 

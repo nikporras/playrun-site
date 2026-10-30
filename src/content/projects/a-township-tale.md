@@ -2,13 +2,14 @@
 title: "A Township Tale"
 studio: "Alta"
 platforms: ["Meta Quest", "PC VR"]
-role: "QA Technician, via Universally Speaking"
 year: 2021
-summary: "A VR crafting RPG where players build and run a medieval township together. I tested it in 2021 as part of the Universally Speaking QA team."
+summary: "A VR crafting RPG where players build and run a medieval township together."
+tags: ["CQA", "Functional", "Fix verification"]
 url: "https://www.meta.com/en-gb/experiences/a-township-tale/2913958855307200/"
-store: "On the Meta Quest Store"
-employer: "Universally Speaking"
+store: "Meta Quest"
+employer: "universally-speaking-2021"
 icon: "hut"
+logoSource: "http://web.archive.org/web/20230223184920/http://presskit.townshiptale.com/townshiptale/index.html"
 public: true
 ---
 

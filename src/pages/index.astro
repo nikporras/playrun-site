@@ -1,25 +1,35 @@
 ---
 import { getCollection } from 'astro:content';
-import { Picture } from 'astro:assets';
+import { Image, Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import PixelTile from '../components/PixelTile.astro';
 import PassMark from '../components/PassMark.astro';
 import CrossMark from '../components/CrossMark.astro';
-import Marquee from '../components/Marquee.astro';
 import Bug from '../components/Bug.astro';
-import IconPrimary from '../assets/logo/icon-primary.svg';
 import GameIcon from '../components/GameIcon.astro';
-import ExternalLink from '../components/ExternalLink.astro';
 import { suite } from '../data/suite';
-import { contact, primaryAction, site } from '../config';
+import { logos } from '../data/logos';
+import { contact, employers, primaryAction, since, site } from '../config';
 
 import portrait from '../assets/photos/nicolas.png';
 
-const allProjects = await getCollection('projects');
-// Released titles first, newest first; titles in development last.
-// The biggest titles, in this order. The rest are on the portfolio page.
-const featured = ['cyberpunk-2077', 'nba-2k21', 'lous-lagoon', 'gang-of-frogs', 'beat-saber', 'walkabout-mini-golf', 'jurassic-world-aftermath'];
-const projects = featured.map((id) => allProjects.find((p) => p.id === id)).filter((p) => p !== undefined && (import.meta.env.DEV || p.data.public));
+// Every public title, in the order of the portfolio: by post, newest first.
+const all = await getCollection('projects');
+const shown = import.meta.env.DEV ? all : all.filter((p) => p.data.public);
+const order = employers.map((e) => e.id);
+const wall = [...shown].sort((a, b) => {
+  const g = order.indexOf(a.data.employer) - order.indexOf(b.data.employer);
+  const aDev = a.data.status === 'in-development' ? 1 : 0;
+  const bDev = b.data.status === 'in-development' ? 1 : 0;
+  return g || aDev - bDev || (b.data.year ?? 0) - (a.data.year ?? 0);
+});
+
+// The numbers, counted from the data so they stay right as it grows.
+const stats = [
+  { n: new Date().getFullYear() - since, suffix: '+', label: 'years in QA' },
+  { n: new Set(employers.map((e) => e.name)).size, suffix: '', label: 'companies' },
+  { n: shown.length, suffix: '', label: 'games' },
+  { n: 10, suffix: '+', label: 'platforms' },
+];
 
 // Routes that exist in this build. The self test only checks links to these, so pages that are not
 // built yet never count as failures; new pages join the list the moment they are built.
@@ -27,68 +37,11 @@ const builtRoutes = Object.keys(import.meta.glob('./**/*.astro'))
   .map((p) => p.replace(/^\.\//, '/').replace(/index\.astro$/, '').replace(/\.astro$/, '').replace(/\/$/, '') || '/')
   .filter((r) => !r.includes('['));
 
-const services = [
-  {
-    title: 'Functional testing',
-    text: 'I play every path a player can take and log what breaks, where, and how to reproduce it.',
-    terms: ['Test plans', 'Regression passes', 'Build acceptance'],
-  },
-  {
-    title: 'Platforms and stores',
-    text: 'The same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the rules of Steam, Epic Games Store and GOG.',
-    terms: ['Switch and Switch 2', 'Xbox and PS5', 'Steam, Epic, GOG'],
-  },
-  {
-    title: 'Performance and stress',
-    text: 'I profile frame rate, memory and load times on low spec and recommended spec rigs, then report exactly what gave.',
-    terms: ['Unreal Engine profiling', 'Low and recommended spec', 'Long sessions'],
-  },
-  {
-    title: 'Playtesting and UX',
-    text: 'I play as players do and report where they got lost, bored or stuck.',
-    terms: ['Onboarding', 'Difficulty', 'Readability'],
-  },
-  {
-    title: 'Bug reporting',
-    text: 'Every issue arrives with steps, severity, media and a build number, in the tracker the team already uses.',
-    terms: ['Jira and Confluence', 'TestRail', 'Milestone quality reports'],
-  },
-];
-
-// The run-sheet ticker: a build's journey, named as process states, never results or numbers.
-const runSheet = [
-  'Build received',
-  'Smoke test',
-  'Test plan',
-  'Functional pass',
-  'Regression',
-  'Compatibility',
-  'Performance',
-  'Localisation',
-  'Accessibility',
-  'CQA',
-  'TRC · XR · Lotcheck',
-  'Release candidate',
-  'Certified',
-  'Shipped',
-];
-
-// The scoreboard: six panels of unequal width in three tones, no two alike side by side.
-const badges = ['Testing games since 2021', 'Led QA teams since 2022', 'Multi-platform releases'];
-
 const ALT = 'Nicolás Porras wearing a VR headset pushed up on his head';
 
-const panelSpans = [5, 3, 4, 5, 3, 4];
-const panelTones = ['navy', 'light', 'cyan', 'light', 'cyan', 'navy'];
-
 // The run that built this page. GitHub Actions builds only after the suite has passed, so the
-// build time is the time of the run whose checks passed. Local builds carry no date.
-const ci = process.env.GITHUB_RUN_ID
-  ? {
-      date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
-      url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
-    }
-  : null;
+// numbers on the board are that run's. Local builds carry no run.
+const runDate = suite.run ? suite.run.startedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
 // The six live checks the button runs on this page, in the visitor's browser. Their counts are
 // filled in when they run; the line above the board carries the suite's own numbers.
 const checks = [
@@ -99,160 +52,119 @@ const checks = [
   { id: 'a11y', title: 'Accessibility scan', detail: 'axe-core finds no violations. Keyboard and screen readers get the whole page.' },
   { id: 'brand', title: 'Brand assets', detail: 'Both typefaces load, the logo renders, favicon and Open Graph image present.' },
 ];
+const panelTones = ['navy', 'light', 'cyan', 'cyan', 'navy', 'light'];
 ---
 
 <Base title="Home" fullTitle={`${site.name}, the game QA portfolio of Nicolás Porras, London`}>
-  <!-- Level 1: the start screen. The icon is the hero moment, the headline is the game's title. -->
+  <!-- Level 1: the start screen. It stays pinned while the next level slides up over it. -->
   <section class="level level--navy hero" data-level="1" aria-labelledby="hero-title">
-    <p class="flag" data-load style="--d: 0ms"><span>Level 1 &middot; Start</span></p>
-    <div class="hero__grid">
-      <div class="hero__iconwrap" data-boot="wipe">
-        <IconPrimary class="hero__icon" role="img" aria-label="PlayRun icon" />
-      </div>
-      <div class="hero__text">
-        <h1 id="hero-title" class="hero__title">
-          <span class="hero__mask"><span class="hero__line" style="--i: 0">I break</span></span>
-          <span class="hero__mask"><span class="hero__line" style="--i: 1">games.</span></span>
-        </h1>
-        <div class="hero__statement" data-load style="--d: 440ms">
-          <p class="statement hero__intro">I'm Nicolás Porras, founder of PlayRun.</p>
-          <p class="hero__role">Game QA, platform compliance &amp; release testing</p>
-          <p class="hero__value">
-            I've led QA at nDreams and Historic VR and tested indie titles through to their console and PC releases.
-            I plan the testing, run it on real hardware, and write reports developers can act on.
-          </p>
-        </div>
-        <div class="hero__actions" data-load style="--d: 560ms">
-          <p class="hero__ready" data-boot="pop">
-            <PassMark class="hero__readymark" />
-            <span>Ready</span>
-          </p>
-          <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
-          <a class="textlink hero__secondary" href="/quality">See how I test this site</a>
-        </div>
-        <ul role="list" class="hero__badges" data-load style="--d: 640ms">
-          {badges.map((b) => (
-            <li class="hero__badge">
-              <PassMark class="hero__badgemark" />
-              <span>{b}</span>
-            </li>
-          ))}
-        </ul>
+    <div class="level__head hero__head">
+      <p class="flag" data-load style="--d: 0ms"><span>Level 1 &middot; Start</span></p>
+      <h1 id="hero-title" class="hero__title">
+        <span class="hero__mask"><span class="hero__line" style="--i: 0">Nicolás</span></span>
+        <span class="hero__mask"><span class="hero__line" style="--i: 1">Porras</span></span>
+      </h1>
+      <p class="hero__role" data-load style="--d: 440ms">Game QA, platform compliance &amp; release testing</p>
+      <p class="hero__value" data-load style="--d: 500ms">
+        I've been testing games since 2021 and leading QA teams since 2022, at nDreams and Historic VR, and on indie
+        titles through to their multi-platform console and PC releases. I plan the testing, run it on real hardware,
+        and write reports developers can act on.
+      </p>
+      <div class="level__actions hero__actions" data-load style="--d: 560ms">
+        <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
+        <a class="textlink hero__secondary" href="/quality">See how I test this site</a>
       </div>
     </div>
-    <Bug id="hero-1" style="left: 6%; top: 10rem" walk="x 2rem" />
-  </section>
-
-  <!-- The run sheet: one band, two lanes -->
-  <Marquee run={runSheet} />
-
-  <!-- Level 2: what I test, a blue field with the heading sticky and six navy rows -->
-  <section class="level level--blue services" data-level="2" aria-labelledby="services-title">
-    <p class="flag" data-enter><span>Level 2 &middot; What I test</span></p>
-    <div class="services__grid">
-      <div class="services__intro">
-        <h2 id="services-title" class="services__heading" data-enter="wipe">What I test</h2>
-        <p class="services__lead" data-enter style="--enter-delay: 80ms">
-          Five things I check on every build, from the first test plan to the report at the milestone.
-        </p>
-        <a class="button button--navy" href="/skills" data-enter style="--enter-delay: 160ms">See the skills</a>
-      </div>
-      <ol class="services__rows">
-        {
-          services.map((s, i) => (
-            <li class="services__row" data-enter data-achieve="services" style={`--enter-delay: ${i * 70}ms; --row-delay: ${i * 70 + 160}ms`}>
-              <h3 class="services__rowtitle">{s.title}</h3>
-              <ul role="list" class="services__terms">
-                {s.terms.map((t) => (
-                  <li>{t}</li>
-                ))}
-              </ul>
-              <p class="services__rowtext">{s.text}</p>
-            </li>
-          ))
-        }
-      </ol>
+    <!-- The player character: the one photo on the site, standing on the bottom edge of the level -->
+    <div class="hero__figure" data-load style="--d: 200ms">
+      <Picture
+        src={portrait}
+        alt={ALT}
+        widths={[400, 640, 960, 1280]}
+        sizes="(max-width: 63.99rem) 70vw, 36vw"
+        formats={['avif']}
+        fallbackFormat="webp"
+        loading="eager"
+        decoding="async"
+      />
     </div>
-    <Bug id="services-1" style="left: 10%; bottom: 22%" tablet="right: 8%; top: 18rem" phone="left: 1rem; bottom: 0.25rem" walk="y 1.5rem" />
+    <Bug id="hero-1" style="right: 42%; top: 8rem" tablet="right: 6%; top: 8rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 3: work as a stage select on a cyan field -->
-  <section class="level level--cyan work" data-level="3" aria-labelledby="work-title">
-    <p class="flag" data-enter><span>Level 3 &middot; Work</span></p>
+  <!-- Level 2: the wall of titles, their official logos in one colour -->
+  <section class="level level--blue wall" data-level="2" aria-labelledby="wall-title">
     <div class="level__head">
-      <h2 id="work-title" class="level__title" data-enter="wipe">Select stage</h2>
-      <div class="level__aside">
-        <p class="level__lead" data-enter style="--enter-delay: 80ms">
-          Recent work: indie releases across Switch, Xbox, PS5 and PC stores.
-        </p>
-        <a class="button button--navy" href="/portfolio" data-enter style="--enter-delay: 160ms">See the portfolio</a>
-      </div>
+      <p class="flag" data-enter><span>Level 2 &middot; Portfolio</span></p>
+      <h2 id="wall-title" class="level__title" data-enter="wipe">Games I've tested</h2>
     </div>
-    <div class="work__stages">
+    <ul role="list" class="wall__grid level__body" data-enter style="--enter-delay: 120ms">
       {
-        projects.map((p, i) => (
-          <article class:list={['stage', 'tile--live', { 'stage--big': i === 0 }]} data-enter="place" style={`--enter-delay: ${i * 60}ms`}>
-            <p class="stage__num">Stage {i + 1}</p>
-            <span class="stage__mark"><GameIcon name={p.data.icon} /></span>
-            <h3 class="stage__title">
-              {p.data.url ? <ExternalLink class="stage__name" href={p.data.url}>{p.data.title}</ExternalLink> : <span>{p.data.title}</span>}
-            </h3>
-            {p.data.employer === 'Universally Speaking' && <p class="stage__via">via Universally Speaking</p>}
-            <p class="stage__meta">
-              {p.data.status === 'in-development' ? 'In development' : p.data.year}. {p.data.platforms.join(', ')}.
-            </p>
-          </article>
+        wall.map((p) => (
+          <li class="wall__item">
+            <a class="wall__link" href="/portfolio" aria-label={p.data.title}>
+              {logos[p.id] ? (
+                <Image class="wall__logo" src={logos[p.id]} alt="" height={72} densities={[1, 2]} loading="lazy" decoding="async" />
+              ) : (
+                <span class="wall__name" aria-hidden="true">
+                  <GameIcon name={p.data.icon} />
+                  <span>{p.data.title}</span>
+                </span>
+              )}
+            </a>
+          </li>
         ))
       }
+    </ul>
+    <Bug id="wall-1" style="right: 12%; top: 9rem" tablet="right: 10%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
+  </section>
+
+  <!-- Level 3: the numbers, counted from the portfolio -->
+  <section class="level level--cyan stats" data-level="3" aria-labelledby="stats-title">
+    <div class="level__head">
+      <p class="flag" data-enter><span>Level 3 &middot; Stats</span></p>
+      <h2 id="stats-title" class="level__title" data-enter="wipe">The score so far</h2>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">Counted from the portfolio, so they stay right as it grows.</p>
     </div>
-    <p class="work__also" data-enter>
-      <a class="textlink" href="/portfolio">Also: Thick as Thieves, CLAWPUNK, Ghostbusters: Rise of the Ghost Lord, Synapse, Fracked and more</a>
-    </p>
-    <Bug id="work-1" style="right: 6%; top: 17rem" phone="right: 1rem; bottom: 0.25rem" walk="x -1.5rem" />
-    <Bug id="work-2" style="left: 22%; bottom: 1rem" phone="none" walk="x 2rem" />
+    <ul role="list" class="stats__board level__body">
+      {
+        stats.map((s, i) => (
+          <li class="stat" data-enter="place" style={`--enter-delay: ${i * 70}ms`}>
+            <p class="stat__num num">
+              <span data-count-to={s.n}>{s.n}</span>{s.suffix}
+            </p>
+            <p class="stat__label">{s.label}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <Bug id="stats-1" style="right: 20%; bottom: 1rem" tablet="left: 40%; bottom: 1rem" phone="right: 1rem; top: 0.25rem" walk="x 2rem" />
   </section>
 
   <!-- Level 4: proof as a scoreboard on a green field -->
   <section class="level level--green proof" data-level="4" aria-labelledby="proof-title" data-routes={JSON.stringify(builtRoutes)}>
-    <p class="flag" data-enter><span>Level 4 &middot; Proof</span></p>
     <div class="level__head">
+      <p class="flag" data-enter><span>Level 4 &middot; Proof</span></p>
       <h2 id="proof-title" class="level__title" data-enter="wipe">Tested like my games</h2>
-      <div class="level__aside" data-enter style="--enter-delay: 80ms">
-        <p class="proof__text">
-          This site runs a Playwright suite on every push.{' '}
-          {ci ? (
-            <>
-              The scoreboard shows <ExternalLink href={ci.url}>the run that deployed this page</ExternalLink>, on {ci.date}.
-            </>
-          ) : (
-            'The scoreboard shows the checks every push runs.'
-          )}{' '}
-          Press the button to run the same kind of checks on this page, in your browser, right now.
-        </p>
-        <div class="proof__controls">
-          <button class="button button--navy" type="button" id="selftest" aria-describedby="selftest-status">
-            Test this page
-          </button>
-          <p id="selftest-status" class="proof__status" aria-live="polite">
-            {suite.run ? `${suite.passed} of ${suite.total} checks passed in the last run` : `${suite.total} checks run before every deploy`}
-          </p>
-        </div>
-        <p class="proof__score" id="selftest-score" hidden>
-          <span data-score-mark class="proof__scoremark"><PassMark /></span>
-          <span data-score>Not run yet</span>
-          <span data-score-word></span>
-        </p>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">
+        A Playwright suite runs on every push, and the site deploys only if it passes. Run the same kind of checks on this page now.
+      </p>
+      <div class="level__actions" data-enter style="--enter-delay: 160ms">
+        <button class="button button--navy" type="button" id="selftest" aria-describedby="selftest-status">Test this page</button>
+        <a class="textlink proof__link" href="/quality">How I test this site</a>
       </div>
+      <p id="selftest-status" class="proof__status" aria-live="polite" data-enter style="--enter-delay: 200ms">
+        {suite.run ? `${suite.passed} of ${suite.total} checks passed in the last run${runDate ? `, on ${runDate}` : ''}` : `${suite.total} checks run before every deploy`}
+      </p>
+      <p class="proof__score" id="selftest-score" hidden>
+        <span data-score-mark class="proof__scoremark"><PassMark /></span>
+        <span data-score>Not run yet</span>
+        <span data-score-word></span>
+      </p>
     </div>
-    <div class="proof__board">
+    <div class="proof__board level__body">
       {
         checks.map((g, i) => (
-          <div
-            class:list={['panel', 'is-idle', `panel--${panelTones[i]}`]}
-            style={`--span: ${panelSpans[i]}; --enter-delay: ${i * 60}ms`}
-            data-check={g.id}
-            data-enter="scan"
-          >
+          <div class:list={['panel', 'is-idle', `panel--${panelTones[i]}`]} style={`--enter-delay: ${i * 60}ms`} data-check={g.id} data-enter="scan">
             <div class="panel__mark" aria-hidden="true">
               <svg class="proof__idle" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M0 0h7v1H0zM0 6h7v1H0zM0 1h1v5H0zM6 1h1v5H6z" fill="currentColor" /></svg>
               <PassMark class="proof__pass" />
@@ -267,114 +179,56 @@ const checks = [
           </div>
         ))
       }
-      <div class="panel panel--photo" style="--span: 7" data-enter="place">
-        <PixelTile name="controller" tone="navy" />
-      </div>
-      <div class="panel panel--light panel--link" style="--span: 5; --enter-delay: 60ms" data-enter="place">
-        <p class="panel__linktext">Every push runs this suite before the site deploys.</p>
-        <a class="textlink panel__link" href="/quality">How I test this site</a>
-      </div>
     </div>
-    <Bug id="proof-1" style="left: 56%; bottom: 1.25rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <Bug id="proof-1" style="right: 12%; top: 10rem" tablet="right: 20%; top: 0.75rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 5: the final level, a light field with the one line that matters -->
-  <section class="level level--light final" data-level="5" aria-labelledby="cta-title">
-    <p class="flag" data-enter><span>Level 5 &middot; Final level</span></p>
-    <div class="final__grid">
-      <h2 id="cta-title" class="final__title" data-enter="wipe">
-        <span class="final__line">I find the bugs</span>
-        <span class="final__line">before</span>
-        <span class="final__line">players do.</span>
-      </h2>
-      <div class="final__text" data-enter>
-        <p class="final__lead">
-          Networking, opportunities, a question about QA, or just hello. I read every message.
-        </p>
-        <div class="final__actions">
-          <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
-          <a class="final__mail" href={`mailto:${contact.email}`}>{contact.email}</a>
-        </div>
+  <!-- Level 5: after hours, and the one last button -->
+  <section class="level level--light final" data-level="5" aria-labelledby="final-title">
+    <div class="level__head">
+      <p class="flag" data-enter><span>Level 5 &middot; Final level</span></p>
+      <h2 id="final-title" class="level__title" data-enter="wipe">After hours</h2>
+      <p class="final__text" data-enter style="--enter-delay: 80ms">
+        I play and pull apart games for the mechanics and the design choices, Helldivers, The Witcher and God of War
+        lately. I play instruments and dance, music is a big part of my culture, and I am learning the drums. I watch
+        and play most sports.
+      </p>
+      <div class="level__actions final__actions" data-enter style="--enter-delay: 160ms">
+        <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
+        <a class="final__mail" href={`mailto:${contact.email}`}>{contact.email}</a>
       </div>
     </div>
-    <!-- The player character: a cutout standing on the bottom edge of the level -->
-    <div class="final__figure" data-enter="place">
-      <Picture
-        src={portrait}
-        alt={ALT}
-        widths={[400, 640, 960, 1280]}
-        sizes="(max-width: 63.99rem) 80vw, 40vw"
-        formats={['avif']}
-        fallbackFormat="webp"
-        loading="lazy"
-        decoding="async"
-      />
-    </div>
-    <Bug id="final-1" style="right: 12%; top: 8.5rem" tablet="left: 2rem; bottom: 1rem" walk="x -1.5rem" />
+    <Bug id="final-1" style="right: 10%; top: 2rem" tablet="right: 8%; bottom: 1rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 </Base>
 
 <style>
-  /* Level 1: the icon beside the title, both as big as the screen allows */
+  /* Level 1: the text on the left, the figure on the right, the whole level a screen tall. When
+     motion is allowed it is pinned, and Level 2 slides up and covers it like a curtain. */
   .hero {
-    min-height: calc(100svh - 4.5rem);
+    min-height: calc(100svh - var(--hud-space, 0px));
     display: flex;
     flex-direction: column;
-    padding-top: var(--s-2);
-    padding-bottom: var(--s-5);
-  }
-  /* The flag is a flex item here; keep its box to its text so nothing sits "over" it. */
-  .hero .flag {
-    align-self: flex-start;
+    justify-content: center;
+    padding-top: var(--s-4);
+    padding-bottom: var(--s-6);
   }
   :global(.games) .hero {
-    min-height: calc(100svh - 4.5rem - var(--hud-h));
+    --hud-space: var(--hud-h);
   }
-  .hero__grid {
-    flex: 1;
-    display: grid;
-    grid-template-columns: 4fr 8fr;
-    grid-template-areas: 'icon text';
-    column-gap: var(--s-5);
-    row-gap: var(--s-4);
-    align-items: end;
-    margin-top: var(--s-4);
+  @media (prefers-reduced-motion: no-preference) {
+    .hero {
+      position: sticky;
+      top: var(--hero-top, 0px);
+      z-index: 0;
+    }
   }
-  .hero__iconwrap {
-    grid-area: icon;
-    align-self: center;
-    justify-self: center;
-    width: min(100%, 17rem);
+  .hero__head {
+    max-width: 58%;
+    gap: var(--s-4);
   }
-  .hero__icon {
-    width: 100%;
-    height: auto;
-  }
-  .hero__text {
-    grid-area: text;
-    min-width: 0;
-  }
-  .hero__badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-2);
-    margin-top: var(--s-4);
-  }
-  .hero__badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border: 2px solid var(--accent-2);
-    font-family: var(--font-display);
-    font-size: 1rem;
-    line-height: 1;
-    letter-spacing: 0.04em;
-    color: var(--accent-2);
-  }
-  :global(.hero__badgemark) {
-    font-size: 1rem;
-    color: var(--accent);
+  .hero__head .flag {
+    margin-bottom: 0;
   }
   .hero__title {
     font-size: var(--step-hero);
@@ -393,113 +247,99 @@ const checks = [
   .hero__line {
     display: block;
   }
-  .hero__statement {
-    margin-top: var(--s-4);
-    max-width: 60ch;
-  }
-  .hero__intro {
-    margin: 0;
-    max-width: none;
-  }
   .hero__role {
     font-family: var(--font-display);
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     line-height: 1.2;
     color: var(--accent-2);
     max-width: none;
-    margin: var(--s-2) 0 var(--s-3);
   }
   .hero__value {
-    max-width: 60ch;
+    max-width: 52ch;
+    font-size: var(--step-body);
   }
   .hero__actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--s-3);
-    margin-top: var(--s-4);
-  }
-  .hero__ready {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    line-height: 1;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--accent);
-    margin: 0;
-    max-width: none;
-  }
-  :global(.hero__readymark) {
-    font-size: 1.25rem;
+    margin-top: var(--s-2);
   }
   .hero__secondary {
     color: var(--ink);
   }
+  /* The figure stands on the bottom edge of the level, in the space the text leaves free. */
+  .hero__figure {
+    position: absolute;
+    right: var(--gutter);
+    bottom: 0;
+    width: min(36vw, 34rem);
+    line-height: 0;
+    z-index: 0;
+  }
+  .hero__figure::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 180%;
+    height: 95%;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse 55% 75% at 50% 100%, rgba(86, 189, 218, 0.4), rgba(81, 108, 179, 0.2) 55%, transparent 75%);
+    pointer-events: none;
+  }
+  .hero__figure :global(img) {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: auto;
+  }
 
   @media (max-width: 63.99rem) {
-    .hero__grid {
-      column-gap: var(--s-4);
+    .hero__head {
+      max-width: 62%;
     }
-    .hero__iconwrap {
-      width: 100%;
+    .hero__figure {
+      width: min(34vw, 20rem);
     }
   }
   @media (max-width: 47.99rem) {
     .hero {
       min-height: 0;
-      padding-bottom: var(--s-6);
+      justify-content: flex-start;
+      padding-top: var(--s-3);
+      padding-bottom: 0;
     }
     :global(.games) .hero {
       min-height: 0;
     }
-    .hero__grid {
-      grid-template-columns: 1fr;
-      grid-template-areas:
-        'icon'
-        'text';
-      row-gap: var(--s-2);
-      margin-top: var(--s-2);
-    }
-    .hero__iconwrap {
-      width: min(26%, 5.5rem);
-      justify-self: start;
+    .hero__head {
+      max-width: none;
+      gap: var(--s-3);
     }
     .hero__title {
       font-size: round(17vw, 8px);
     }
-    .hero__statement {
-      margin-top: var(--s-3);
-    }
     .hero__role {
-      margin: var(--s-1) 0 var(--s-2);
+      font-size: 1.25rem;
     }
     .hero__value {
       font-size: 1rem;
     }
     .hero__actions {
-      margin-top: var(--s-3);
       gap: var(--s-2);
     }
     .hero__actions .button {
       width: 100%;
     }
-    .hero__badges {
-      margin-top: var(--s-3);
-      gap: var(--s-1);
+    /* On a phone the photo comes under the text, still on the bottom edge. */
+    .hero__figure {
+      position: relative;
+      right: auto;
+      width: min(70vw, 20rem);
+      margin: var(--s-4) 0 0 auto;
     }
   }
 
   /* The boot: the one loud moment. Everything is in the HTML on the first frame; the sequence only
-     adds arrival and is over by 1.2s. The lock-up wipes in from the bottom like a load bar, the two
-     headline lines rise from their masks, the tiles follow, the figures roll, READY pops last. */
+     adds arrival and is over by 1.2s. The two name lines rise from their masks, the rest follows. */
   @media (prefers-reduced-motion: no-preference) {
-    :global(.js) [data-boot='wipe'] {
-      clip-path: inset(100% 0 0 0);
-      animation: boot-wipe 700ms var(--ease-in-out) 60ms forwards;
-    }
     :global(.js) .hero__line {
       transform: translateY(105%);
       animation: boot-line var(--dur-reveal) var(--ease-expo) forwards;
@@ -508,16 +348,6 @@ const checks = [
     :global(.js) .hero [data-load] {
       animation: load-rise 500ms var(--ease-out) both;
       animation-delay: var(--d, 0ms);
-    }
-    :global(.js) [data-boot='pop'] {
-      opacity: 0;
-      transform: scale(0.6);
-      animation: boot-pop 320ms var(--ease-out) 1000ms forwards;
-    }
-  }
-  @keyframes boot-wipe {
-    to {
-      clip-path: inset(0);
     }
   }
   @keyframes boot-line {
@@ -535,394 +365,146 @@ const checks = [
       transform: none;
     }
   }
-  @keyframes boot-pop {
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
 
-  /* Rolling figures: each digit rolls up to its value once. The real number stays in the text. */
-  :global(.roll__digits) {
-    display: inline-flex;
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    vertical-align: bottom;
+  /* Level 2: the wall. A navy board on the blue field, hairlines of the field between the cells,
+     every logo the same height and the same colour. */
+  .wall {
+    z-index: 1;
   }
-  :global(.roll__col) {
-    display: inline-block;
-    height: 1em;
-    overflow: clip;
-  }
-  :global(.roll__col)::before {
-    content: '0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9';
-    display: block;
-    white-space: pre;
-    line-height: 1;
-    transform: translateY(calc(var(--d) * -1em));
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    :global(.roll:not(.is-in) .roll__col)::before {
-      transform: none;
-    }
-    :global(.roll.is-in .roll__col)::before {
-      transition: transform var(--dur-slow) var(--ease-expo) calc(400ms + var(--i) * var(--stagger));
-    }
-  }
-
-  /* Level 2: the heading stays while the six rows pass */
-  .services__grid {
+  .wall__grid {
     display: grid;
-    grid-template-columns: 7fr 5fr;
-    gap: var(--s-5);
-    align-items: start;
-    margin-top: var(--s-5);
-  }
-  .services__intro {
-    position: sticky;
-    top: var(--s-4);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--s-4);
-    min-width: 0;
-  }
-  .services__heading {
-    font-size: var(--step-level);
-    font-size: round(var(--step-level), 16px);
-    line-height: 0.92;
-    color: var(--pr-navy);
-    text-wrap: initial;
-    margin-left: -0.03em;
-  }
-  .services__lead {
-    font-family: var(--font-display);
-    font-size: 2rem;
-    line-height: 1.1;
-    color: var(--pr-navy);
-    max-width: 34ch;
-  }
-  .services__rows {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 2px;
-    min-width: 0;
-  }
-  .services__row {
     background: var(--bg);
-    --sel-bg: var(--accent);
-    --sel-ink: var(--accent-ink);
-    color: var(--ink);
+    border: 2px solid var(--bg);
+  }
+  .wall__item {
+    min-width: 0;
+    background: var(--bg);
+  }
+  .wall__link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 9rem;
     padding: var(--s-3);
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-1);
+    color: var(--ink);
+    text-decoration: none;
+    transition: background-color var(--dur-fast) ease;
   }
-  .services__rowtext {
-    margin-top: var(--s-1);
+  .wall__link:hover,
+  .wall__link:focus-visible {
+    background: var(--surface-2);
+    color: var(--ink);
   }
-  .services__rowtitle {
-    font-size: 2rem;
+  .wall__link :global(.wall__logo) {
+    width: auto;
+    height: auto;
+    max-height: 4.5rem;
+    max-width: 100%;
+    object-fit: contain;
   }
-  .services__rowtext {
-    font-size: 1rem;
-    max-width: 40ch;
-  }
-  .services__terms {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0 0.4em;
+  /* A title without a clean official logo: its pixel icon and its name, set as a wordmark. */
+  .wall__name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
     font-family: var(--font-display);
-    font-size: 1rem;
-    color: var(--accent-2);
+    font-size: 1.5rem;
+    line-height: 1;
+    text-align: center;
+    text-wrap: balance;
   }
-  .services__terms li:not(:last-child)::after {
-    content: ',';
+  .wall__name :global(.gameicon) {
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: none;
   }
-  @media (prefers-reduced-motion: no-preference) {
-    :global(.js) .services__row .services__terms {
-      opacity: 0;
-      transition: opacity 400ms var(--ease-out) var(--row-delay, 0ms);
-    }
-    :global(.js) .services__row.is-in .services__terms {
-      opacity: 1;
-    }
+  .wall__name :global(.gameicon rect:not(.px-navy)) {
+    fill: var(--ink);
   }
   @media (max-width: 63.99rem) {
-    .services__grid {
-      grid-template-columns: 1fr;
-      gap: var(--s-5);
+    .wall__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
-    .services__intro {
-      position: static;
+    .wall__link {
+      height: 7rem;
+      padding: var(--s-2);
     }
-    .services__heading {
-      font-size: round(15vw, 8px);
+    .wall__link :global(.wall__logo) {
+      max-height: 3.5rem;
     }
-    .services__lead {
-      font-size: 1.5rem;
+    .wall__name {
+      font-size: 1.25rem;
     }
   }
   @media (max-width: 47.99rem) {
-    .services__row {
-      padding: var(--s-2);
-      gap: 0.25rem;
+    .wall__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .services__rowtitle {
-      font-size: 1.5rem;
+    .wall__link {
+      height: 6rem;
     }
-    .services__rowtext {
-      font-size: 0.9375rem;
+    .wall__link :global(.wall__logo) {
+      max-height: 2.75rem;
     }
-    .services__terms {
-      font-size: 0.75rem;
+    .wall__name {
+      font-size: 1rem;
+      gap: 0.5rem;
     }
-  }
-
-  /* Shared level furniture: the giant title with an aside beside it */
-  .level__head {
-    display: grid;
-    grid-template-columns: 7fr 5fr;
-    gap: var(--s-5);
-    align-items: end;
-    margin-top: var(--s-5);
-  }
-  .level__title {
-    font-size: var(--step-level);
-    font-size: round(var(--step-level), 16px);
-    line-height: 0.92;
-    text-wrap: initial;
-    margin-left: -0.03em;
-  }
-  .level__aside {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--s-3);
-    min-width: 0;
-  }
-  .level__lead {
-    font-family: var(--font-display);
-    font-size: 2rem;
-    line-height: 1.1;
-    max-width: 30ch;
-  }
-  @media (max-width: 63.99rem) {
-    .level__head {
-      grid-template-columns: 1fr;
-      gap: var(--s-4);
-      margin-top: var(--s-4);
-    }
-    .level__title {
-      font-size: round(15vw, 8px);
-    }
-    .level__lead {
-      font-size: 1.5rem;
+    .wall__name :global(.gameicon) {
+      width: 1.75rem;
+      height: 1.75rem;
     }
   }
 
-  /* Level 3: the stage select */
-  .work__also {
-    margin-top: var(--s-3);
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    line-height: 1.3;
-    max-width: none;
-  }
-  .work__also a {
-    color: var(--pr-navy);
-    text-decoration-color: var(--pr-navy);
-  }
-  .work__stages {
+  /* Level 3: four navy panels, a big pixel number in each, counted up as they come into view. */
+  .stats__board {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-auto-rows: minmax(19rem, auto);
     gap: var(--gap);
-    margin-top: var(--s-5);
   }
-  .stage {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    gap: var(--s-1);
-    padding: 5rem var(--s-3) var(--s-3);
+  .stat {
     background: var(--bg);
+    color: var(--ink);
     --sel-bg: var(--accent);
     --sel-ink: var(--accent-ink);
-    color: var(--ink);
+    padding: var(--s-4) var(--s-3) var(--s-3);
     min-width: 0;
-    overflow: hidden;
-  }
-  .stage--big {
-    grid-column: span 2;
-    background: var(--field-light);
-    color: var(--field-light-ink);
-    --sel-bg: var(--pr-navy);
-    --sel-ink: var(--pr-light);
-  }
-  .stage__num {
-    position: absolute;
-    top: var(--s-3);
-    left: var(--s-3);
-    font-family: var(--font-display);
-    font-size: 1rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent-2);
-    max-width: none;
-  }
-  .stage--big .stage__num {
-    color: var(--pr-navy);
-  }
-  .stage__mark {
-    position: absolute;
-    top: var(--s-3);
-    right: var(--s-3);
-    width: 3rem;
-    height: 3rem;
-  }
-  .stage__mark :global(.gameicon) {
-    width: 100%;
-    height: 100%;
-  }
-  .stage--big .stage__mark {
-    width: 3rem;
-  }
-  .stage__title {
-    font-size: 2.5rem;
-    padding-right: 1rem;
-  }
-  .stage--big .stage__title {
-    font-size: 3.5rem;
-  }
-  .stage__title--small {
-    font-size: 1.75rem;
-  }
-  .stage__meta {
-    font-size: 1rem;
-    color: var(--muted);
-    max-width: 40ch;
-  }
-  .stage--big .stage__meta {
-    color: var(--field-light-ink);
-    font-size: var(--step-body);
-  }
-  .stage__name {
-    color: inherit;
-    text-decoration-color: var(--accent-2);
-  }
-  .stage__name:hover,
-  .stage__name:focus-visible {
-    color: var(--accent-2);
-  }
-  .stage__via {
-    font-family: var(--font-display);
-    font-size: 0.875rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent-2);
-    max-width: none;
-  }
-  .stage--big .stage__via {
-    color: var(--pr-blue);
-  }
-  .stage__link {
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    color: var(--accent-2);
-    align-self: flex-start;
-  }
-  .stage--big .stage__link {
-    color: var(--pr-navy);
-  }
-  .stage--redacted {
-    background-color: var(--surface-2);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M0 0h8v1H0zM0 0h1v8H0z' fill='%230C152A'/%3E%3C/svg%3E");
-    background-size: 8px 8px;
-  }
-  .stage__bars {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: var(--s-2);
+    gap: var(--s-2);
+  }
+  .stat__num {
+    font-family: var(--font-display);
+    font-size: clamp(4rem, 2rem + 5vw, 7rem);
+    font-size: round(clamp(4rem, 2rem + 5vw, 7rem), 16px);
+    line-height: 0.9;
+    color: var(--accent);
     max-width: none;
   }
-  .stage__bars span {
-    display: block;
-    height: 1rem;
-    background: var(--ink);
-    opacity: 0.85;
-  }
-  .stage__tag {
-    color: var(--accent-2);
-  }
-  .stage__ask {
-    align-self: flex-start;
-  }
-  .work__photo {
-    min-width: 0;
-    min-height: 0;
-  }
-  .work__photo--wide {
-    grid-column: span 2;
+  .stat__label {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1.1;
+    max-width: none;
   }
   @media (max-width: 63.99rem) {
-    .work__stages {
+    .stats__board {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-auto-rows: auto;
       gap: 0.375rem;
     }
-    .stage {
-      min-height: 13rem;
-      padding: 4rem var(--s-2) var(--s-3);
+    .stat {
+      padding: var(--s-3) var(--s-2) var(--s-2);
     }
-    .stage--big {
-      min-height: 17rem;
-    }
-    .stage__num,
-    .stage__mark {
-      top: var(--s-2);
-    }
-    .stage__num {
-      left: var(--s-2);
-    }
-    .stage__mark {
-      right: var(--s-2);
-      width: 2.25rem;
-    }
-    .stage--big .stage__mark {
-      width: 3.5rem;
-    }
-    .stage__title {
-      font-size: 1.75rem;
-    }
-    .stage--big .stage__title {
-      font-size: 2.5rem;
-    }
-    .stage__title--small {
-      font-size: 1.5rem;
-    }
-    .work__photo {
-      aspect-ratio: 1;
-    }
-    .work__photo--wide {
-      aspect-ratio: 16 / 9;
+    .stat__label {
+      font-size: 1.25rem;
     }
   }
 
-  /* Level 4: the scoreboard, panels of unequal width */
-  .proof__text {
-    max-width: 44ch;
-  }
-  .proof__controls {
-    display: flex;
-    align-items: center;
-    gap: var(--s-3);
-    flex-wrap: wrap;
+  /* Level 4: the scoreboard */
+  .proof__link {
+    color: var(--pr-navy);
   }
   .proof__status {
     font-family: var(--font-display);
@@ -955,15 +537,23 @@ const checks = [
       animation: boot-pop 360ms var(--ease-out) both;
     }
   }
+  @keyframes boot-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
   .proof__board {
     display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    grid-auto-rows: 14rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: minmax(14rem, auto);
     gap: var(--gap);
-    margin-top: var(--s-5);
   }
   .panel {
-    grid-column: span var(--span, 4);
     position: relative;
     display: flex;
     flex-direction: column;
@@ -990,9 +580,6 @@ const checks = [
   .panel--cyan {
     --sel-bg: var(--pr-navy);
     --sel-ink: var(--pr-light);
-  }
-  .panel--photo {
-    padding: 0;
   }
   .panel__mark {
     font-size: 2.5rem;
@@ -1082,21 +669,6 @@ const checks = [
   .panel--cyan .panel__detail {
     color: inherit;
   }
-  .panel--link {
-    justify-content: flex-end;
-    gap: var(--s-2);
-  }
-  .panel__linktext {
-    max-width: 30ch;
-  }
-  .panel__link {
-    font-size: 2rem;
-    color: var(--pr-navy);
-    align-self: flex-start;
-  }
-  .panel__link:hover {
-    color: var(--pr-blue);
-  }
   @media (max-width: 63.99rem) {
     .proof__board {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1104,17 +676,8 @@ const checks = [
       gap: 0.375rem;
     }
     .panel {
-      grid-column: span 1;
       min-height: 12rem;
       padding: var(--s-2);
-    }
-    .panel--photo,
-    .panel--link {
-      grid-column: span 2;
-    }
-    .panel--photo {
-      aspect-ratio: 16 / 9;
-      min-height: 0;
     }
     .panel__num {
       font-size: 3rem;
@@ -1122,11 +685,7 @@ const checks = [
     .panel__title {
       font-size: 1.5rem;
     }
-    .panel__link {
-      font-size: 1.5rem;
-    }
   }
-
   @media (max-width: 47.99rem) {
     .panel {
       min-height: 8.5rem;
@@ -1141,62 +700,16 @@ const checks = [
     .panel__detail {
       font-size: 0.8125rem;
     }
-    .panel--photo {
-      aspect-ratio: 21 / 9;
-    }
-    .proof__board {
-      margin-top: var(--s-4);
-    }
-    .stage {
-      padding-top: 3.25rem;
-    }
-    .work__stages,
-    .services__grid {
-      margin-top: var(--s-4);
-    }
   }
 
-  /* Level 5: the last line, with the hardware beside it */
-  .final__grid {
-    display: grid;
-    grid-template-columns: 7fr 5fr;
-    grid-template-rows: auto 1fr;
-    grid-template-areas:
-      'title photos'
-      'text photos';
-    column-gap: var(--s-5);
-    row-gap: var(--s-5);
-    margin-top: var(--s-5);
-    min-height: 70svh;
-  }
-  .final__title {
-    grid-area: title;
-    font-size: var(--step-level);
-    font-size: round(var(--step-level), 16px);
-    line-height: 0.92;
-    text-wrap: initial;
-    margin-left: -0.03em;
-  }
-  .final__line {
-    display: block;
-  }
+  /* Level 5: after hours, then the last button */
   .final__text {
-    grid-area: text;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    gap: var(--s-4);
-  }
-  .final__lead {
     font-size: var(--step-lead);
-    line-height: 1.3;
-    max-width: 32ch;
+    line-height: 1.35;
+    max-width: 52ch;
   }
   .final__actions {
-    display: flex;
-    align-items: center;
-    gap: var(--s-3);
-    flex-wrap: wrap;
+    margin-top: var(--s-3);
   }
   .final__actions .button {
     font-size: 1.5rem;
@@ -1211,63 +724,54 @@ const checks = [
   .final__mail:hover {
     color: var(--pr-blue);
   }
-  .final {
-    padding-bottom: 0;
-  }
-  .final__grid {
-    padding-bottom: var(--s-7);
-  }
-  /* The figure stands on the bottom edge of the field, in the column the grid leaves free. */
-  .final__figure {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    width: min(40vw, 38rem);
-    line-height: 0;
-    z-index: 0;
-  }
-  .final__figure::before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    bottom: 0;
-    width: 180%;
-    height: 95%;
-    transform: translateX(-50%);
-    background: radial-gradient(ellipse 55% 75% at 50% 100%, rgba(86, 189, 218, 0.55), rgba(103, 193, 140, 0.2) 55%, transparent 75%);
-    pointer-events: none;
-  }
-  .final__figure :global(img) {
-    position: relative;
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-  @media (max-width: 63.99rem) {
-    .final__figure {
-      position: relative;
-      right: auto;
-      width: min(80vw, 24rem);
-      margin: var(--s-4) auto 0;
-    }
-    .final__grid {
-      padding-bottom: 0;
-    }
-    .final__grid {
-      grid-template-columns: 1fr;
-      grid-template-areas:
-        'title'
-        'text';
-      row-gap: var(--s-4);
-      min-height: 0;
-    }
-    .final__title {
-      font-size: round(15vw, 8px);
-    }
-  }
 </style>
 
 <script>
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // The curtain: the hero is pinned while the next level slides over it. A hero taller than the
+  // screen (a phone) pins with its bottom edge on the bottom of the screen instead of its top.
+  const hero = document.querySelector<HTMLElement>('.hero');
+  if (hero && !reduce) {
+    const pin = () => {
+      const hud = document.getElementById('hud')?.getBoundingClientRect().height ?? 0;
+      hero.style.setProperty('--hero-top', `${Math.min(0, innerHeight - hud - hero.offsetHeight)}px`);
+    };
+    pin();
+    addEventListener('resize', pin);
+    addEventListener('load', pin);
+    document.fonts?.ready.then(pin);
+  }
+
+  // The numbers count up once, as the stats come into view. The real number is in the HTML.
+  const counters = document.querySelectorAll<HTMLElement>('[data-count-to]');
+  if (counters.length && !reduce && 'IntersectionObserver' in window) {
+    const run = (el: HTMLElement) => {
+      const to = Number(el.dataset.countTo);
+      const t0 = performance.now();
+      const ms = 1400;
+      const tick = (t: number) => {
+        const k = Math.min(1, (t - t0) / ms);
+        const eased = 1 - Math.pow(1 - k, 3);
+        el.textContent = String(Math.round(to * eased));
+        if (k < 1) requestAnimationFrame(tick);
+      };
+      el.textContent = '0';
+      requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          run(e.target as HTMLElement);
+          io.unobserve(e.target);
+        }
+      },
+      { threshold: 0.5 },
+    );
+    counters.forEach((el) => io.observe(el));
+  }
+
   // The live thing: real checks on this page, run in the visitor's browser.
   type Check = { id: string; run: () => Promise<[number, number, string]> };
 
@@ -1356,7 +860,6 @@ const checks = [
   ];
 
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const score = document.getElementById('selftest-score');
 
   button?.addEventListener('click', async () => {
@@ -1406,30 +909,4 @@ const checks = [
     button.textContent = 'Run again';
     document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'selftest' }));
   });
-
-  // Rolling figures in the facts tile: digit columns roll up once as part of the boot.
-  (() => {
-    const els = Array.from(document.querySelectorAll<HTMLElement>('[data-roll]'));
-    if (!els.length || reduce) return;
-    els.forEach((el) => {
-      const value = el.textContent?.trim() ?? '';
-      const said = Object.assign(document.createElement('span'), { className: 'visually-hidden', textContent: value });
-      const shown = Object.assign(document.createElement('span'), { className: 'roll__digits' });
-      shown.setAttribute('aria-hidden', 'true');
-      let i = 0;
-      for (const ch of value) {
-        if (!/\d/.test(ch)) {
-          shown.append(ch);
-          continue;
-        }
-        const col = Object.assign(document.createElement('span'), { className: 'roll__col' });
-        col.style.setProperty('--d', ch);
-        col.style.setProperty('--i', String(i++));
-        shown.append(col);
-      }
-      el.classList.add('roll');
-      el.replaceChildren(said, shown);
-    });
-    requestAnimationFrame(() => requestAnimationFrame(() => els.forEach((el) => el.classList.add('is-in'))));
-  })();
 </script>

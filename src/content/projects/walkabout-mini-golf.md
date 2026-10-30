@@ -2,12 +2,14 @@
 title: "Walkabout Mini Golf"
 studio: "Mighty Coconut"
 platforms: ["Meta Quest", "PC VR"]
-role: "QA Technician, via Universally Speaking"
 year: 2020
-summary: "Multiplayer VR mini golf with courses that keep arriving. I tested it in 2021 as part of the Universally Speaking QA team."
+summary: "Multiplayer VR mini golf with courses that keep arriving."
+did: "New features and content updates as they shipped."
+tags: ["CQA", "Functional"]
 url: "https://store.steampowered.com/app/1408230/Walkabout_Mini_Golf_VR/"
-employer: "Universally Speaking"
+employer: "universally-speaking-2021"
 icon: "golf"
+logoSource: "https://www.mightycoconut.com/minigolf"
 public: true
 ---
 

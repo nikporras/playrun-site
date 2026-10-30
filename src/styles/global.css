@@ -137,7 +137,7 @@ p + p {
 
 /* Frame */
 .wrap {
-  padding-inline: var(--margin);
+  padding-inline: var(--gutter);
 }
 .board {
   display: grid;
@@ -190,11 +190,7 @@ p + p {
 
 @media (max-width: 47.99rem) {
   .level {
-    padding: var(--s-5) var(--margin) var(--s-6);
-  }
-  .level__head {
-    margin-top: var(--s-4);
-    gap: var(--s-3);
+    padding-block: var(--s-6);
   }
   .board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -263,7 +259,7 @@ p + p {
 /* Skip link */
 .skip {
   position: absolute;
-  left: var(--margin);
+  left: var(--gutter);
   top: -100%;
   z-index: 100;
   padding: 0.75rem 1rem;
@@ -274,7 +270,7 @@ p + p {
   text-decoration: none;
 }
 .skip:focus {
-  top: var(--margin);
+  top: var(--s-2);
 }
 
 .visually-hidden {
@@ -319,6 +315,12 @@ p + p {
   --sel-bg: var(--pr-navy);
   --sel-ink: var(--pr-light);
 }
+.level--cyan .flag span,
+.level--green .flag span,
+.level--light .flag span {
+  --sel-bg: var(--accent);
+  --sel-ink: var(--accent-ink);
+}
 .button.button--navy {
   --sel-bg: var(--accent);
   --sel-ink: var(--accent-ink);
@@ -346,8 +348,11 @@ p + p {
 /* Levels: every section is a full-bleed field with its own ink. The flag names the level. */
 .level {
   position: relative;
-  padding: var(--s-6) var(--margin) var(--s-7);
+  padding: var(--level-pad) var(--gutter);
   overflow: clip;
+}
+.level--tight {
+  padding-block: var(--s-6);
 }
 .level--navy {
   background: var(--bg);
@@ -391,22 +396,33 @@ p + p {
   background: var(--accent);
   padding: 0.5rem 0.625rem 0.375rem;
 }
-.level--green .flag {
-  color: var(--ink);
+.level--cyan .flag,
+.level--green .flag,
+.level--light .flag {
+  color: var(--pr-light);
 }
+.level--cyan .flag::before,
+.level--cyan .flag span,
 .level--green .flag::before,
-.level--green .flag span {
-  background: var(--bg);
+.level--green .flag span,
+.level--light .flag::before,
+.level--light .flag span {
+  background: var(--pr-navy);
 }
 
-/* Level furniture shared by the inner pages: the giant title with an aside, the lead set large,
-   the first screen's masked title lines and the load rise. */
+/* Level furniture: every level header is one stacked, left-aligned block (the flag, the title
+   under it, a lead of at most two lines, then the button), and the content follows it. */
 .level__head {
-  display: grid;
-  grid-template-columns: 7fr 5fr;
-  gap: var(--s-5);
-  align-items: end;
-  margin-top: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+.level__head .flag {
+  margin-bottom: var(--s-1);
+}
+.level__head .button {
+  margin-top: var(--s-1);
 }
 .level__title {
   font-size: var(--step-level);
@@ -415,18 +431,19 @@ p + p {
   text-wrap: initial;
   margin-left: -0.03em;
 }
-.level__aside {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s-3);
-  min-width: 0;
-}
 .level__lead {
   font-family: var(--font-display);
-  font-size: 2rem;
-  line-height: 1.1;
-  max-width: 30ch;
+  font-size: 1.75rem;
+  line-height: 1.15;
+  max-width: 60ch;
+  text-wrap: pretty;
+}
+.level__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  margin-top: var(--s-1);
 }
 .page__title {
   font-size: var(--step-hero);
@@ -443,6 +460,9 @@ p + p {
 }
 .mask__line {
   display: block;
+}
+.level .level__body {
+  margin-top: var(--block-gap);
 }
 .rows {
   list-style: none;
@@ -513,13 +533,8 @@ p + p {
   }
 }
 @media (max-width: 63.99rem) {
-  .level__head {
-    grid-template-columns: 1fr;
-    gap: var(--s-4);
-    margin-top: var(--s-4);
-  }
   .level__title {
-    font-size: round(15vw, 8px);
+    font-size: round(11vw, 8px);
   }
   .level__lead {
     font-size: 1.5rem;
