@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import sharp from 'sharp';
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -280,66 +281,164 @@ test.describe('Home', () => {
     await context.close();
   });
 
-  test('the headline breaks with the scroll and mends on the way back; the ticket reads Open, then Fixed; nothing under reduced motion', async ({ page, browser }) => {
+  test("the hero's exit: it fades in step with the curtain, the name breaks and its pixels land on the next title's top edge without covering it, the ticket reads Open with Scroll back up to fix for about two seconds, and everything mends on the way back", async ({ page }) => {
+    test.setTimeout(60_000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
     await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(600);
     const h1 = page.locator('h1');
     const canvas = page.locator('.hero__break');
     const ticket = page.locator('.hero__ticket');
     await expect(canvas).toBeHidden();
     await expect(ticket).toBeHidden();
-    // the centre of the drawn pixels, to see them move with the scroll
-    const centre = () =>
-      page.evaluate(() => {
-        const c = document.querySelector<HTMLCanvasElement>('.hero__break')!;
-        const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
-        let n = 0;
-        let sum = 0;
-        for (let i = 3; i < d.length; i += 4 * 7) {
-          if (d[i] > 100) {
-            n++;
-            sum += Math.floor(i / 4 / c.width);
-          }
-        }
-        return { n, y: sum / Math.max(1, n) };
+    // how far Level 2 covers the hero, and the hero's opacity, at a scroll position
+    const at = async (y: number) => {
+      await page.evaluate((y) => window.scrollTo(0, y), y);
+      await page.waitForTimeout(120);
+      return page.evaluate(() => {
+        const hero = document.querySelector('.hero')!.getBoundingClientRect();
+        const wall = document.querySelector('.wall')!;
+        const band = (wall.querySelector('.join--top') as HTMLElement).offsetHeight;
+        const edge = wall.getBoundingClientRect().top + band / 2;
+        const top = Math.max(0, hero.top);
+        const bottom = Math.min(innerHeight, hero.bottom);
+        return { covered: Math.min(1, Math.max(0, (bottom - edge) / (bottom - top))), opacity: Number(getComputedStyle(document.querySelector('.hero')!).opacity) };
       });
-    await page.evaluate(() => window.scrollTo(0, 120));
+    };
+    // the fade follows the slide: whole at the start, fading as it is covered, gone just before
+    let prev = 1.01;
+    for (const y of [0, 250, 450, 650, 850]) {
+      const s = await at(y);
+      expect(s.opacity, `at ${y}`).toBeLessThan(prev);
+      expect(Math.abs(s.opacity - (1 - Math.min(1, s.covered / 0.9))), `opacity follows the cover at ${y}`).toBeLessThan(0.03);
+      prev = s.opacity;
+    }
+    const nearly = await at(1000);
+    expect(nearly.opacity, 'gone just before it is covered').toBe(0);
+    expect(nearly.covered).toBeLessThan(1);
+    // the break: the copy is up, the h1 still in the page, the ticket open with the hint
     await expect(canvas).toBeVisible();
     await expect(h1).toHaveCSS('opacity', '0');
     await expect(h1).toHaveText(/Nicolás\s*Porras/);
+    // the pixels: landed on the tops of the title's letters, none on them, a heap along them. The
+    // letters are read from a screenshot with the copy hidden (the copy is the same colour)
+    await page.waitForTimeout(200);
+    const text = await page.locator('.wall__title').evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const r = range.getBoundingClientRect();
+      return { x: Math.floor(r.left), y: Math.floor(r.top), w: Math.ceil(r.width), h: Math.ceil(r.height) };
+    });
+    expect(text.y, 'the title is on screen').toBeGreaterThan(0);
+    await page.addStyleTag({ content: '.hero__break, .hero__ticket { visibility: hidden !important; }' }).then((h) => h.evaluate((el) => el.setAttribute('id', 'zz-hide')));
+    const png = await page.screenshot({ clip: { x: text.x, y: text.y, width: text.w, height: text.h } });
+    await page.evaluate(() => document.getElementById('zz-hide')!.remove());
+    const { data: shot, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+    const letters: boolean[] = [];
+    for (let i = 0; i < info.width * info.height; i++) letters.push(shot[i * info.channels] > 200 && shot[i * info.channels + 1] > 200 && shot[i * info.channels + 2] > 200);
+    const inkTop = text.y + Math.floor(letters.findIndex(Boolean) / info.width);
+    const land = await page.evaluate(
+      ({ text, letters, width, inkTop }) => {
+        const c = document.querySelector<HTMLCanvasElement>('.hero__break')!;
+        const k = c.width / innerWidth;
+        const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+        const lit = (vx: number, vy: number) => d[(Math.floor(vy * k) * c.width + Math.floor(vx * k)) * 4 + 3] > 0;
+        let onLetters = 0;
+        for (let y = 0; y < text.h; y++) for (let x = 0; x < width; x++) if (letters[y * width + x] && lit(text.x + x, text.y + y)) onLetters++;
+        let onEdge = 0;
+        let below = 0;
+        for (let y = 0; y < c.height; y += 2) {
+          for (let x = 0; x < c.width; x += 2) {
+            if (d[(y * c.width + x) * 4 + 3] < 128) continue;
+            const vy = y / k;
+            if (vy >= inkTop - 16 && vy <= inkTop) onEdge++;
+            if (vy > inkTop + 0.5) below++;
+          }
+        }
+        return { onLetters, onEdge, below };
+      },
+      { text, letters, width: info.width, inkTop },
+    );
+    expect(land.onLetters, 'no pixel on the letters').toBe(0);
+    expect(land.below, 'nothing drawn below their tops').toBe(0);
+    expect(land.onEdge, 'a heap along their tops').toBeGreaterThan(20);
+    // on the way back the pixels fly home and the name is whole again
+    await at(0);
+    await expect(canvas).toBeHidden();
+    await expect(h1).toHaveCSS('opacity', '1');
+    expect((await at(0)).opacity).toBe(1);
+    await expect(ticket).toContainText('Fixed');
+    await expect(ticket.locator('.ticket__hint')).toBeHidden();
+    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 5000 });
+    // the ticket on a fresh break: Open, the hint, about two seconds, over Level 2 as it rises
+    await at(300);
     await expect(ticket).toHaveClass(/is-in/);
     await expect(ticket).toContainText('BUG-001');
     await expect(ticket).toContainText('Open');
-    const near = await centre();
-    expect(near.n).toBeGreaterThan(20);
-    await page.evaluate(() => window.scrollTo(0, 400));
-    await page.waitForTimeout(100);
-    const far = await centre();
-    expect(far.y, 'the pixels have fallen further').toBeGreaterThan(near.y + 10);
-    await page.evaluate(() => window.scrollTo(0, 120));
-    await page.waitForTimeout(100);
-    expect((await centre()).y, 'and come back up').toBeLessThan(far.y - 10);
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(canvas).toBeHidden();
-    await expect(h1).toHaveCSS('opacity', '1');
-    await expect(ticket).toContainText('Fixed');
-    await expect(ticket).toHaveClass(/is-in/);
-    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 5000 });
-    // every time, not once a visit
-    await page.evaluate(() => window.scrollTo(0, 120));
-    await expect(ticket).toContainText('Open');
-    await expect(ticket).toHaveClass(/is-in/);
+    await expect(ticket.locator('.ticket__hint')).toHaveText('Scroll back up to fix');
+    await expect(ticket.locator('.ticket__hint')).toBeVisible();
+    const t0 = Date.now();
+    await at(700);
+    await page.waitForTimeout(Math.max(0, 1500 - (Date.now() - t0)));
+    await expect(ticket, 'still there after a second and a half, as Level 2 rises').toHaveClass(/is-in/);
+    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 1200 });
+    expect(Date.now() - t0).toBeLessThan(2900);
+  });
 
+  test("the hero's exit is off under reduced motion and with the games off: the name stays whole, the hero simply goes behind, no ticket", async ({ page, browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
     const quiet = await context.newPage();
     await quiet.goto('/');
-    await quiet.evaluate(() => window.scrollTo(0, 300));
-    await quiet.waitForTimeout(200);
+    await quiet.evaluate(() => window.scrollTo(0, 500));
+    await quiet.waitForTimeout(300);
     await expect(quiet.locator('.hero__break')).toBeHidden();
     await expect(quiet.locator('.hero__ticket')).toBeHidden();
     await expect(quiet.locator('h1')).toHaveCSS('opacity', '1');
+    await expect(quiet.locator('.hero')).toHaveCSS('opacity', '1');
+    await context.close();
+    // games off from the scoreboard
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    await page.getByRole('button', { name: /^Scoreboard/ }).click();
+    await page.getByRole('button', { name: 'Games on' }).click();
+    await page.mouse.click(700, 120);
+    await page.evaluate(() => document.fonts.ready);
+    for (const y of [200, 500, 800]) {
+      await page.evaluate((y) => window.scrollTo(0, y), y);
+      await page.waitForTimeout(250);
+      await expect(page.locator('.hero__break')).toBeHidden();
+      await expect(page.locator('.hero__ticket')).not.toHaveClass(/is-in/);
+      await expect(page.locator('h1')).toHaveCSS('opacity', '1');
+      await expect(page.locator('.hero')).toHaveCSS('opacity', '1');
+    }
+  });
+
+  test('on a phone the ticket sits in the lower third, above the bottom bar and clear of the headings', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 375, height: 780 }, hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    await page.goto('/');
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(600);
+    const wallTop = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
+    // the hero pins by its foot: Level 2 starts up from the bottom of the screen
+    await page.evaluate((y) => window.scrollTo(0, y), Math.round(wallTop - 780 + 260));
+    const ticket = page.locator('.hero__ticket');
+    await expect(ticket).toHaveClass(/is-in/);
+    await page.waitForTimeout(400);
+    const t = (await ticket.boundingBox())!;
+    const bar = (await page.locator('.tabbar').boundingBox())!;
+    expect(t.y, 'in the lower third').toBeGreaterThanOrEqual(780 / 3 * 2 - 40);
+    expect(t.y + t.height, 'above the bar and the ship').toBeLessThanOrEqual(bar.y - 24);
+    expect(t.x).toBeGreaterThanOrEqual(0);
+    expect(t.x + t.width).toBeLessThanOrEqual(375);
+    for (const sel of ['.wall__title', 'h1']) {
+      const h = (await page.locator(sel).boundingBox())!;
+      expect(h.y + h.height <= t.y || h.y >= t.y + t.height, `clear of ${sel}`).toBe(true);
+    }
     await context.close();
   });
 
