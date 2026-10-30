@@ -10,7 +10,8 @@ import sharp from 'sharp';
  * colour of what follows, so there is no seam and no box. On Home the clouds ride on the top of
  * Level 2: the cloud line is the edge that slides over the pinned hero, the photo showing through.
  * The back layers drift with the scroll where scroll-driven animations exist, never under reduced
- * motion.
+ * motion. On a phone each join is a mosaic of 16px blocks instead, flipping in once as it comes
+ * into view; a still dithered fade under reduced motion.
  */
 const PAGES = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
 const TEXT = 'main :is(p, li, dt, dd, h1, h2, h3, h4, a, button:not(.bug), img, picture, table, pre, input, textarea, label, .flag)';
@@ -39,7 +40,7 @@ for (const path of PAGES) {
             const top = el.classList.contains('join--top');
             // a band at the foot of a level goes into what follows it; one at the top (the curtain) into its own level
             const next = top ? level : (level.nextElementSibling ?? document.querySelector('footer'))!;
-            const layers = Array.from(el.querySelectorAll('svg'));
+            const layers = Array.from(el.querySelectorAll('svg.join__layer'));
             const covered = Array.from(document.querySelectorAll(text))
               .filter((t) => {
                 const b = t.getBoundingClientRect();
@@ -56,7 +57,20 @@ for (const path of PAGES) {
               flat = Math.max(flat, Math.min(run, cols.length));
             }
             const scale = Number(getComputedStyle(el.querySelector('.join__layer--front')!).scale) || 1;
+            // the phone's mosaic: which blocks of each row show across the visible width
+            const mosaic = el.querySelector('.join__mosaic')!;
+            const blocks = Array.from(mosaic.querySelectorAll('rect')).map((b) => ({ x: Number(b.getAttribute('x')), y: Number(b.getAttribute('y')) }));
+            const seen = Math.ceil(r.width / 16);
+            const rowsShown = [0, 16, 32, 48, 64].map((y) => blocks.filter((b) => b.y === y && b.x / 16 < seen).length);
             return {
+              mosaic: getComputedStyle(mosaic).display,
+              layersShown: layers.filter((s) => !s.classList.contains('join__mosaic') && s.getClientRects().length > 0).length,
+              mosaicFill: mosaic.querySelector('rect') ? getComputedStyle(mosaic.querySelector('rect')!).fill : '',
+              mosaicCrisp: mosaic.getAttribute('shape-rendering') === 'crispEdges',
+              mosaicHeight: mosaic.getBoundingClientRect().height,
+              rowsShown,
+              seen,
+              signature: blocks.map((b) => `${b.x},${b.y}`).join(' '),
               frontFlatPx: flat * 8 * scale,
               frontRisePx: (Math.max(...cols) - Math.min(...cols)) * scale,
               frontCols: cols.length,
@@ -89,16 +103,32 @@ for (const path of PAGES) {
         expect(j.left, 'full bleed').toBe(0);
         expect(j.width).toBe(width);
         expect(j.height).toBeGreaterThanOrEqual(width < 768 ? 64 : width < 1024 ? 100 : 128);
+        expect(j.band, 'the band is see-through: no box under the shapes').toBe(CLEAR);
+        expect(j.bandImage).toBe('none');
+        expect(j.room, 'the level made room for the band').toBeGreaterThanOrEqual(j.height);
+        expect(j.covered, 'covers no text or control').toEqual([]);
+        if (width < 768) {
+          // a phone: the mosaic instead of the layers, blocks of the next level's colour filling the
+          // band row by row, each row a mix of both colours, so the edge is never a straight line
+          expect(j.mosaic, 'the mosaic on a phone').toBe('block');
+          expect(j.layersShown, 'no clouds or terrain on a phone').toBe(0);
+          expect(j.mosaicCrisp).toBe(true);
+          expect(j.mosaicHeight, 'the mosaic fills the band').toBe(j.height);
+          expect(j.mosaicFill, 'the blocks are the colour of what follows').toBe(j.after);
+          for (const [r, n] of j.rowsShown.entries()) {
+            expect(n, `row ${r + 1} has blocks of the next colour`).toBeGreaterThan(0);
+            expect(n, `row ${r + 1} keeps gaps of the colour above`).toBeLessThan(j.seen);
+          }
+          expect(j.rowsShown[4], 'the next colour thickens row by row').toBeGreaterThan(j.rowsShown[0]);
+          continue;
+        }
+        expect(j.mosaic, 'no mosaic above a phone').toBe('none');
         expect(j.layers, 'two or three layers').toBeGreaterThanOrEqual(2);
         expect(j.layers).toBeLessThanOrEqual(3);
         expect(j.crisp, 'crisp pixels, hidden from assistive tech').toBe(true);
-        expect(j.band, 'the band is see-through: no box under the shapes').toBe(CLEAR);
-        expect(j.bandImage).toBe('none');
         expect(j.fills[j.fills.length - 1], 'the front layer is the colour of what follows').toBe(j.after);
         expect(new Set(j.fills).size, 'each layer its own tone').toBe(j.layers);
         if (j.kind === 'clouds') expect(j.highlights, 'lighter pixels on the cloud tops').toBeGreaterThan(0);
-        expect(j.room, 'the level made room for the band').toBeGreaterThanOrEqual(j.height);
-        expect(j.covered, 'covers no text or control').toEqual([]);
         // the edge between the two colours is the front layer's own silhouette: no flat run longer
         // than 64px on a desktop (scaled down with the art on tablets and phones), and bumps at
         // least a third of the band tall
@@ -106,6 +136,7 @@ for (const path of PAGES) {
         expect(j.frontFlatPx, `no straight run along the front edge (${j.kind})`).toBeLessThanOrEqual(64 * j.scale);
         expect(j.frontRisePx, 'bumps at least a third of the band').toBeGreaterThanOrEqual(48 * j.scale);
       }
+      expect(new Set(info.map((j) => j.signature)).size, 'no two mosaics the same').toBe(info.length);
       const kinds = new Set(info.map((j) => j.kind));
       if (path !== '/this-page-is-not-in-the-build/') expect(kinds.has('clouds'), 'clouds out of the sky').toBe(true);
       expect(kinds.has('terrain'), 'terrain into the bright levels or down to the footer').toBe(true);
@@ -165,6 +196,35 @@ test('the back layers drift with the scroll, the front layer stays, and nothing 
   await p2.locator('.join').first().evaluate((el) => el.scrollIntoView({ block: 'center' }));
   await p2.waitForTimeout(300);
   expect(await p2.locator('.join svg').evaluateAll((els) => els.every((s) => s.getAnimations().length === 0)), 'still under reduced motion').toBe(true);
+  await still.close();
+});
+
+test('on a phone each mosaic waits off screen, flips in block by block within about half a second as it arrives, once; still under reduced motion', async ({ page, browser }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/skills/');
+  await page.waitForTimeout(300);
+  const last = page.locator('.join').last();
+  // far below: armed, every block waiting
+  expect(await last.evaluate((el) => el.classList.contains('is-armed') && !el.classList.contains('is-flipped'))).toBe(true);
+  expect(await last.locator('.join__block').first().evaluate((b) => getComputedStyle(b).opacity)).toBe('0');
+  // the moments are spread over half a second, in no simple order
+  const delays = await last.locator('.join__block').evaluateAll((bs) => bs.map((b) => parseFloat((b as SVGElement).style.getPropertyValue('--d'))));
+  expect(Math.max(...delays)).toBeLessThanOrEqual(520);
+  expect(Math.max(...delays) - Math.min(...delays)).toBeGreaterThan(250);
+  expect(delays.slice(1).some((d, i) => d < delays[i]), 'a random order').toBe(true);
+  await last.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await expect(last).toHaveClass(/is-flipped/);
+  await page.waitForTimeout(700);
+  expect(await last.locator('.join__block').evaluateAll((bs) => bs.every((b) => getComputedStyle(b).opacity === '1')), 'every block in').toBe(true);
+  // once: scrolled away and back it stays in
+  await page.evaluate(() => scrollTo(0, 0));
+  await last.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  expect(await last.locator('.join__block').evaluateAll((bs) => bs.every((b) => getComputedStyle(b).opacity === '1'))).toBe(true);
+  const still = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 375, height: 812 } });
+  const p2 = await still.newPage();
+  await p2.goto('/skills/');
+  expect(await p2.locator('.join.is-armed').count(), 'nothing waits under reduced motion').toBe(0);
+  expect(await p2.locator('.join').last().locator('.join__block').evaluateAll((bs) => bs.every((b) => getComputedStyle(b).opacity === '1')), 'the dithered fade simply stands').toBe(true);
   await still.close();
 });
 

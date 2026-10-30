@@ -97,6 +97,6 @@
     --hud-h: 2.75rem; /* one slim row: the floor, the ship and the Games button */
     --floor-h: 0.5rem;
     --ship-w: 1.5rem;
-    --join-h: 4.5rem; /* the join art at 4px pixels */
+    --join-h: 5rem; /* the phone's mosaic join: five rows of 16px blocks */
   }
 }
