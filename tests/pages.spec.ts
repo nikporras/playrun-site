@@ -177,17 +177,28 @@ test('every card has a logo or its icon, the labels and one store button in a ne
   await page.goto('/portfolio');
   // seven posts, newest first, in LinkedIn's words, each with its own accent
   await expect(page.locator('.group__name')).toHaveText(['Aonic', 'HCLTech', 'Nexus Studios', 'Universally Speaking', 'Historic VR', 'nDreams', 'Universally Speaking']);
+  // the dates, large and in the accent, right under the name; a post with several roles keeps
+  // each role's own dates on its line
+  await expect(page.locator('.group__when')).toHaveText(['Jul 2026 to present', 'Apr 2026 to Jul 2026', 'Oct 2025 to Dec 2025', 'Jun 2025 to Aug 2025', 'Feb 2025 to Feb 2026', 'Mar 2022 to Oct 2024', '2021 to 2022']);
   await expect(page.locator('.group__role')).toHaveText([
-    'Senior Quality Assurance Tester · Jul 2026 to present',
-    'VR Robotics Operator, client Google DeepMind, contract · Apr 2026 to Jul 2026',
-    'Quality Assurance Tester, contract · Oct 2025 to Dec 2025',
-    'Build and Distribution Technician, contract · Jun 2025 to Aug 2025',
-    'QA Manager, contract · Feb 2025 to Feb 2026',
+    'Senior Quality Assurance Tester',
+    'VR Robotics Operator, client Google DeepMind, contract',
+    'Quality Assurance Tester, contract',
+    'Build and Distribution Technician, contract',
+    'QA Manager, contract',
     'QA Tester · Mar 2022 to Sep 2022',
     'Senior QA Tester · Sep 2022 to Apr 2023',
     'Lead QA Tester · Apr 2023 to Oct 2024',
-    'Quality Assurance Tester · 2021 to 2022',
+    'Quality Assurance Tester',
   ]);
+  const head = await page.locator('.group__head').first().evaluate((el) => {
+    const name = el.querySelector('.group__name')!.getBoundingClientRect();
+    const when = el.querySelector('.group__when')!;
+    const role = el.querySelector('.group__role')!;
+    return { nameBottom: name.bottom, whenTop: when.getBoundingClientRect().top, whenSize: parseFloat(getComputedStyle(when).fontSize), roleSize: parseFloat(getComputedStyle(role).fontSize), whenColor: getComputedStyle(when).color, accent: getComputedStyle(el).getPropertyValue('--g-ink').trim() || getComputedStyle(el).getPropertyValue('--g-accent').trim() };
+  });
+  expect(head.whenTop).toBeGreaterThanOrEqual(head.nameBottom - 2);
+  expect(head.whenSize).toBeGreaterThan(head.roleSize);
   const accents = await page.locator('.group').evaluateAll((gs) => gs.map((g) => getComputedStyle(g).getPropertyValue('--g-accent').trim()));
   expect(accents.every((a) => a.length > 0)).toBe(true);
   await expect(page.locator('.group').last().locator('.card__via')).toHaveCount(8);
@@ -208,6 +219,15 @@ test('every card has a logo or its icon, the labels and one store button in a ne
         wordmark: el.querySelectorAll('.card__wordmark').length,
         tags: [...el.querySelectorAll('.card__tags li')].map((t) => t.textContent?.trim()),
         did: el.querySelector('.card__did')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+        didUnderTitle: (() => {
+          const did = el.querySelector('.card__did');
+          if (!did) return true;
+          const kids = [...el.children];
+          return kids.indexOf(did) <= kids.indexOf(el.querySelector('.card__title')!) + 2 && kids.indexOf(did) < kids.indexOf(el.querySelector('.card__summary')!);
+        })(),
+        didSize: parseFloat(getComputedStyle(el.querySelector('.card__did') ?? el).fontSize),
+        summarySize: parseFloat(getComputedStyle(el.querySelector('.card__summary')!).fontSize),
+        platforms: el.querySelector('.card__platforms')?.textContent?.trim() ?? '',
         when: el.querySelector('.card__when')?.textContent?.trim() ?? '',
         stage: /stage/i.test(el.textContent ?? ''),
       };
@@ -226,7 +246,20 @@ test('every card has a logo or its icon, the labels and one store button in a ne
     expect(c.when).toMatch(/^(\d{4} · Released|In development)$/);
     expect(c.stage, `${c.title}: no stage numbers`).toBe(false);
     for (const t of c.tags) expect(c.did.toLowerCase(), `${c.title}: "${t}" is a label, not repeated in what I did`).not.toContain(t!.toLowerCase());
+    expect(c.didUnderTitle, `${c.title}: what I did comes right under the title, before the line on the game`).toBe(true);
+    if (c.did) expect(c.didSize, `${c.title}: what I did reads as the subtitle`).toBeGreaterThan(c.summarySize);
   }
+  // unreleased titles list only the platforms with a store page
+  const byTitle = Object.fromEntries(cards.map((c) => [c.title, c]));
+  expect(byTitle['Pathfinder: Abomination Vaults'].platforms).toBe('PC (Steam)');
+  expect(byTitle['Londinium: AD 215'].platforms).toBe('Steam');
+  expect(byTitle['Vaewolf'].platforms).not.toMatch(/Switch/);
+  expect(byTitle['Gang of Frogs'].platforms).toBe('PC (Steam)');
+  expect(byTitle['Hello Sunshine'].platforms).toBe('PC (Steam)');
+  expect(byTitle['Londinium: AD 215'].logo, 'Londinium carries the Historic VR logo').toBe(1);
+  expect(byTitle['Space Pirate Trainer'].tags).toEqual(['CQA', 'Functional', 'Multiplayer']);
+  expect(byTitle['Ghostbusters: Rise of the Ghost Lord'].did).toContain('Supported the main QA team near milestones, on Meta Quest and PS VR2, including co-op sessions.');
+  expect(byTitle['Synapse'].did).toContain('Supported the main QA team near milestones on PS VR2.');
   expect(cards.filter((c) => c.logo).length, 'official logos').toBeGreaterThanOrEqual(16);
   // the old pages are gone from the build and the sitemap; their addresses send visitors to the portfolio
   for (const slug of ['lous-lagoon', 'synapse', 'cyberpunk-2077', 'the-climb', 'pathfinder-abomination-vaults']) {

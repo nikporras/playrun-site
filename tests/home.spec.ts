@@ -46,7 +46,11 @@ test.describe('Home', () => {
     await expect(page).toHaveTitle(/PlayRun/);
     await expect(page.locator('h1')).toHaveCount(1);
     await expect(page.locator('h1')).toHaveText(/Nicolás\s*Porras/);
+    await expect(page.locator('.hero__post')).toHaveText('Founder & Lead QA, PlayRun');
     await expect(page.locator('.hero__role')).toHaveText('Game QA, platform compliance & release testing');
+    // the post sits between the name and the line on the work
+    const tops = await page.locator('h1, .hero__post, .hero__role, .hero__value').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+    expect(tops).toEqual([...tops].sort((a, b) => a - b));
     await expect(page.locator('.hero__value')).toContainText('testing games since 2021 and leading QA teams since 2022');
     await page.waitForLoadState('networkidle');
     expect(errors, errors.join('\n')).toEqual([]);
@@ -200,17 +204,66 @@ test.describe('Home', () => {
     await context.close();
   });
 
-  test('the wall shows every title as a logo or its icon, each linking to the portfolio', async ({ page }) => {
+  test('the ticker rolls every title left as a logo or its icon, the biggest names first, each linking to the portfolio; it pauses with the button and on focus', async ({ page }) => {
     await page.goto('/');
-    const links = page.locator('.wall__link');
-    expect(await links.count()).toBe(20);
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    const seq = page.locator('.ticker__seq').first();
+    const links = seq.locator('.wall__link');
+    expect(await links.count()).toBe(19);
     const names = await links.evaluateAll((as) => as.map((a) => a.getAttribute('aria-label') ?? ''));
-    expect(names).toContain("Lou's Lagoon");
+    expect(names.slice(0, 5)).toEqual(['Beat Saber', 'NBA 2K21', 'Cyberpunk 2077', 'Ghostbusters: Rise of the Ghost Lord', "Lou's Lagoon"]);
     expect(names).toContain('The Climb 2');
-    expect(new Set(names).size).toBe(20);
+    expect(names, 'Londinium shares the Historic VR logo, so it is not on the ticker').not.toContain('Londinium: AD 215');
+    expect(new Set(names).size).toBe(19);
     for (const href of await links.evaluateAll((as) => as.map((a) => a.getAttribute('href')))) expect(href).toBe('/portfolio');
-    expect(await page.locator('.wall__logo').count(), 'official logos').toBeGreaterThanOrEqual(16);
-    await expect(page.locator('.wall__grid')).not.toContainText(/stage|view on/i);
+    expect(await seq.locator('.wall__logo').count(), 'official logos').toBeGreaterThanOrEqual(16);
+    // the copy that makes the loop seamless is out of the accessibility tree and the tab order
+    const copy = page.locator('.ticker__copy');
+    await expect(copy).toHaveAttribute('aria-hidden', 'true');
+    expect(await copy.locator('a:not([tabindex="-1"])').count()).toBe(0);
+    await expect(page.locator('.ticker')).not.toContainText(/stage|view on/i);
+    // it moves left
+    const x = () => page.locator('.ticker__track').evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m41);
+    await page.locator('.wall').scrollIntoViewIfNeeded();
+    await page.mouse.move(10, 10);
+    const a = await x();
+    await page.waitForTimeout(700);
+    const b = await x();
+    expect(b, 'the logos roll left').toBeLessThan(a - 5);
+    // the button pauses it, and plays it again
+    const pause = page.getByRole('button', { name: 'Pause the logos' });
+    await pause.click();
+    await page.mouse.move(10, 10);
+    await expect(page.getByRole('button', { name: 'Play the logos' })).toBeVisible();
+    const c = await x();
+    await page.waitForTimeout(500);
+    expect(Math.abs((await x()) - c), 'paused').toBeLessThan(1);
+    await page.getByRole('button', { name: 'Play the logos' }).click();
+    await page.mouse.move(10, 10);
+    await page.waitForTimeout(500);
+    expect(await x(), 'rolling again').toBeLessThan(c - 5);
+    // a logo that takes keyboard focus is brought on screen and the ticker holds still
+    const last = links.last();
+    await last.focus();
+    const r = (await last.boundingBox())!;
+    const v = (await page.locator('.ticker__view').boundingBox())!;
+    expect(r.x).toBeGreaterThanOrEqual(v.x - 1);
+    expect(r.x + r.width).toBeLessThanOrEqual(v.x + v.width + 1);
+    const d = await x();
+    await page.waitForTimeout(400);
+    expect(Math.abs((await x()) - d), 'still while focused').toBeLessThan(1);
+  });
+
+  test('under reduced motion the ticker is a still row', async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto('/');
+    const track = page.locator('.ticker__track');
+    expect(await track.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+    await expect(page.locator('.ticker__copy')).toBeHidden();
+    await expect(page.getByRole('button', { name: /the logos/ })).toBeHidden();
+    expect(await page.locator('.ticker__view').evaluate((el) => getComputedStyle(el).overflowX)).toBe('auto');
+    await context.close();
   });
 
   test('the stats are counted from the data and count up into view', async ({ page }) => {
@@ -265,7 +318,8 @@ test.describe('Home', () => {
     await page.goto('/');
     await expect(page.locator('h1')).toBeVisible();
     await expect(page.locator('.hero__value')).toBeVisible();
-    await expect(page.locator('.wall__link')).toHaveCount(20);
+    await expect(page.locator('.ticker__seq').first().locator('.wall__link')).toHaveCount(19);
+    await expect(page.getByRole('button', { name: /the logos/ })).toBeHidden();
     await expect(page.locator('.stat__num').first()).toHaveText('5+');
     await expect(page.locator('.final__text')).toContainText('Helldivers, The Witcher and God of War');
     await context.close();

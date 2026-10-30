@@ -4,7 +4,8 @@ studio: "I-Illusions"
 platforms: ["Meta Quest", "PC VR (Steam)", "PS VR"]
 year: 2017
 summary: "The VR arcade shooter: twin blasters and a shield against waves of droids."
-tags: ["CQA", "Functional", "Fix verification"]
+did: "Tested the arena mode, where friends play together in a large physical space: a free-roam, laser-tag style shooter."
+tags: ["CQA", "Functional", "Multiplayer"]
 url: "https://store.steampowered.com/app/418650/Space_Pirate_Trainer/"
 employer: "universally-speaking-2021"
 icon: "drone"

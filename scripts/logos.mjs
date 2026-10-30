@@ -32,6 +32,7 @@ const LOGOS = {
   'guildford-castle-vr': 'HVR_secondary_white-gold.png',
   'hello-sunshine': 'HelloSunshine_logo.png',
   'jurassic-world-aftermath': ['JurassicWorldAftermath_Collection.png', { keepBands: 1, luma: [0.25, 0.7] }],
+  'londinium-ad-215': 'HVR_secondary_white-gold.png', // the studio logo, as on Guildford Castle VR
   'lous-lagoon': 'LOU-Logo-4K.png',
   'nba-2k21': 'NBA 2K21 Logo.png',
   'pathfinder-abomination-vaults': 'pav-logo.png',

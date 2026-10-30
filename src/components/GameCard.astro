@@ -2,8 +2,8 @@
 /**
  * One title on the portfolio: a navy tile with the game's official logo in one colour (or its
  * pixel icon where no clean logo exists), the year and status, the title, the makers, one line
- * on the game, what I did on it, the kinds of testing as labels, the platforms, and one button
- * to its store page in a new tab. The company's accent colours the labels through --g-accent
+ * on the game, what I did on it (the subtitle, right under the title), the kinds of testing as
+ * labels, the platforms, and one button to its store page in a new tab. The company's accent colours the labels through --g-accent
  * and --g-ink, set on the group around the card.
  */
 import type { CollectionEntry } from 'astro:content';
@@ -41,6 +41,14 @@ const store = p.data.store ?? 'Steam';
   </div>
   <h4 class="card__title">{p.data.title}</h4>
   {via && <p class="card__via">{via}</p>}
+  {
+    p.data.did && (
+      <p class="card__did">
+        <span class="card__didkey">What I did</span> {p.data.did}
+      </p>
+    )
+  }
+  <p class="card__summary">{p.data.summary}</p>
   <p class="card__makers">
     {p.data.studio}
     {p.data.publisher && (
@@ -49,14 +57,6 @@ const store = p.data.store ?? 'Steam';
       </>
     )}
   </p>
-  <p class="card__summary">{p.data.summary}</p>
-  {
-    p.data.did && (
-      <p class="card__did">
-        <span class="card__didkey">What I did</span> {p.data.did}
-      </p>
-    )
-  }
   {
     p.data.tags.length > 0 && (
       <ul role="list" class="card__tags" aria-label="Testing">
@@ -153,23 +153,31 @@ const store = p.data.store ?? 'Steam';
   .card__dot {
     margin-inline: 0.2em;
   }
-  .card__summary {
-    font-size: 1rem;
+  /* What I did is the subtitle: right under the title, a step larger than the rest of the card. */
+  .card__did {
+    font-size: 1.125rem;
+    line-height: 1.4;
     max-width: none;
+    color: var(--ink);
     margin-top: var(--s-1);
   }
-  .card__did {
-    font-size: 1rem;
-    max-width: none;
-    color: var(--muted);
-  }
   .card__didkey {
+    display: block;
     font-family: var(--font-display);
     font-size: 0.875rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--ink);
-    margin-right: 0.3em;
+    color: var(--g-ink, var(--accent-2));
+    margin-bottom: 0.15em;
+  }
+  .card__summary {
+    font-size: 1rem;
+    max-width: none;
+    color: var(--muted);
+    margin-top: var(--s-1);
+  }
+  .card__makers {
+    margin-top: var(--s-1);
   }
   /* The kinds of testing, as the labels a tracker would show them. */
   .card__tags {

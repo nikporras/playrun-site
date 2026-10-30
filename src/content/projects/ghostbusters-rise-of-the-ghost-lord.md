@@ -5,7 +5,7 @@ publisher: "Sony Pictures Virtual Reality"
 platforms: ["Meta Quest 2, 3 and Pro", "PS VR2"]
 year: 2023
 summary: "A co-op VR Ghostbusters game for one to four players, set in San Francisco."
-did: "Co-op on Meta Quest and PS VR2, through to launch."
+did: "Supported the main QA team near milestones, on Meta Quest and PS VR2, including co-op sessions."
 tags: ["CQA", "Functional", "Multiplayer", "VR comfort", "Performance"]
 url: "https://www.meta.com/en-gb/experiences/ghostbusters-rise-of-the-ghost-lord/4746232908818706/"
 store: "Meta Quest"

@@ -67,7 +67,7 @@
 
   /* The HUD bar at the foot of the viewport and the ship that runs on it */
   --hud-h: 4rem;
-  --track-w: 2.5rem; /* the vertical bar on desktop, inside the gutter */
+  --track-w: 1.75rem; /* the vertical rail on desktop, inside the gutter, as wide as the ship */
   --floor-h: 1rem;
   --ship-w: 3rem;
 

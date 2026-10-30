@@ -53,28 +53,38 @@ const year = new Date().getFullYear();
   .footer {
     background: var(--bg);
     border-top: 1px solid var(--surface-2);
-    padding-block: var(--s-5) var(--s-4);
+    padding-block: var(--s-4) var(--s-3);
     --sel-bg: var(--accent);
     --sel-ink: var(--accent-ink);
   }
   .footer__grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--s-4) var(--s-6);
+    gap: var(--s-3) var(--s-6);
     align-items: start;
+  }
+  /* The icon stands beside the text, large, the text in a short column next to it. */
+  .footer__who {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--s-3);
+    align-items: start;
+  }
+  .footer__who > :not(.footer__icon) {
+    grid-column: 2;
   }
   .footer__who p {
     max-width: none;
     overflow-wrap: anywhere;
   }
   .footer__who p + p {
-    margin-top: 0.3em;
+    margin-top: 0.2em;
   }
   .footer__icon {
-    height: 2rem;
+    grid-row: 1 / span 4;
+    height: 4rem;
     width: auto;
     color: var(--field-blue);
-    margin-bottom: var(--s-3);
   }
   .footer__name {
     font-family: var(--font-display);
@@ -82,7 +92,7 @@ const year = new Date().getFullYear();
     line-height: 1;
   }
   .footer__contact {
-    margin-top: var(--s-2) !important;
+    margin-top: var(--s-1) !important;
   }
   .footer__dot {
     margin-inline: 0.4em;
@@ -93,7 +103,7 @@ const year = new Date().getFullYear();
     flex-wrap: wrap;
     gap: 0.5rem var(--s-3);
     font-family: var(--font-display);
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     line-height: 1.2;
   }
   .footer__links a {
@@ -109,8 +119,8 @@ const year = new Date().getFullYear();
     align-items: baseline;
     gap: var(--s-2) var(--s-4);
     flex-wrap: wrap;
-    margin-top: var(--s-5);
-    padding-top: var(--s-3);
+    margin-top: var(--s-3);
+    padding-top: var(--s-2);
     border-top: 1px solid var(--surface-2);
   }
   .footer__bottom p {
@@ -127,6 +137,10 @@ const year = new Date().getFullYear();
     .footer__bottom {
       flex-direction: column;
       align-items: flex-start;
+      gap: var(--s-1);
+    }
+    .footer__icon {
+      height: 3rem;
     }
   }
 </style>

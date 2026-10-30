@@ -18,6 +18,13 @@ const count = shown.length;
 const companies = new Set(employers.map((e) => e.name)).size;
 const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty', 'Twenty-one', 'Twenty-two', 'Twenty-three', 'Twenty-four'];
 const role = (r: { title: string; contract?: boolean }) => (r.contract ? `${r.title}, contract` : r.title);
+// The whole span of a post, from the start of its first role to the end of its last: the big date
+// under the company name. A post with several roles keeps each role's own dates on its line.
+const span = (g: (typeof groups)[number]) => {
+  const first = g.roles[0].when.split(' to ')[0];
+  const last = g.roles[g.roles.length - 1].when.split(' to ').pop();
+  return `${first} to ${last}`;
+};
 // The year a post began, for the track: the earliest year in its dates.
 const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) => (r.when.match(/\b(20\d\d)\b/g) ?? []).map(Number)));
 ---
@@ -50,11 +57,20 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
         groups.map((g, gi) => (
           <div class:list={['group', `accent--${g.accent}`]} aria-labelledby={`group-${gi}`} data-year={yearOf(g)}>
             <div class="group__head" data-land>
-              <h3 id={`group-${gi}`} class="group__name">{g.name}</h3>
+              <div class="group__id">
+                <h3 id={`group-${gi}`} class="group__name">{g.name}</h3>
+                <p class="group__when">{span(g)}</p>
+              </div>
               <ul role="list" class="group__roles">
                 {g.roles.map((r) => (
                   <li class="group__role">
-                    {role(r)} <span class="group__dot" aria-hidden="true">&middot;</span> {r.when}
+                    {role(r)}
+                    {g.roles.length > 1 && (
+                      <>
+                        {' '}
+                        <span class="group__dot" aria-hidden="true">&middot;</span> {r.when}
+                      </>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -106,8 +122,8 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     grid-template-areas:
-      'name roles'
-      'name lead';
+      'id roles'
+      'id lead';
     column-gap: var(--s-5);
     row-gap: var(--s-2);
     align-items: start;
@@ -115,12 +131,29 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     border-top: 1px solid var(--rule);
     position: relative;
   }
+  .group__id {
+    grid-area: id;
+  }
   .group__name {
-    grid-area: name;
     font-size: var(--step-head);
     font-size: round(var(--step-head), 16px);
     line-height: 0.95;
     margin-left: -0.03em;
+  }
+  /* The dates: large, in the company's accent, right under the name. The accents do not read on
+     the cyan field, so the dates sit on a navy label, like the labels on the cards. */
+  .group__when {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    line-height: 1;
+    padding: 0.3em 0.5em;
+    background: var(--bg);
+    color: var(--g-ink, var(--accent-2));
+    max-width: none;
+    margin-top: var(--s-2);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
   }
   .group__roles {
     grid-area: roles;
@@ -166,10 +199,14 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     .group__head {
       grid-template-columns: 1fr;
       grid-template-areas:
-        'name'
+        'id'
         'roles'
         'lead';
       padding: var(--s-3) 0;
+    }
+    .group__when {
+      font-size: 1.5rem;
+      margin-top: var(--s-1);
     }
     .group__grid {
       grid-template-columns: 1fr;

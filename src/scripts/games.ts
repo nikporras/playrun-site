@@ -1,6 +1,6 @@
 /**
- * The games on the PlayRun site: the runner on the floor, the bug hunt and the achievements.
- * All of it is optional play. It is off under prefers-reduced-motion, off with the HUD button,
+ * The games on the PlayRun site: the runner on the track, the bug hunt and the achievements.
+ * All of it is optional play. It is off under prefers-reduced-motion, off with the Games button,
  * absent without script, and the page underneath never depends on it.
  */
 type State = { on: boolean; bugs: string[]; achievements: string[] };
@@ -33,28 +33,42 @@ const write = (s: State) => {
 
 export function startGames() {
   const hud = document.getElementById('hud');
+  const dock = document.getElementById('dock');
   const toast = document.querySelector<HTMLElement>('[data-toast]');
-  if (!hud) return;
+  if (!hud || !dock) return;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
     hud.remove();
-    toast?.remove();
+    dock.remove();
     return;
   }
 
   const html = document.documentElement;
   const state = read();
-  const pick = <T extends HTMLElement>(sel: string) => hud.querySelector<T>(sel)!;
-  const toggle = pick<HTMLButtonElement>('[data-hud-toggle]');
-  const reset = pick<HTMLButtonElement>('[data-hud-reset]');
-  const live = pick('[data-hud-live]');
-  const runner = pick('.hud__runner');
-  const levelsList = pick('.hud__levels');
-  const bugsOut = pick('[data-hud-bugs]');
-  const achOut = pick('[data-hud-ach]');
-  const levelOut = pick('[data-hud-level]');
-  const levelsOut = pick('[data-hud-levels]');
-  const yearStat = pick('[data-hud-year-stat]');
-  const yearOut = pick('[data-hud-year]');
+  const pick = <T extends HTMLElement>(root: HTMLElement, sel: string) => root.querySelector<T>(sel)!;
+  const live = pick(hud, '[data-hud-live]');
+  const runner = pick(hud, '.hud__runner');
+  const levelsList = pick(hud, '.hud__levels');
+  // The scoreboard: the pill (always on show) and the card it opens.
+  const score = pick(dock, '[data-score]');
+  const pill = pick<HTMLButtonElement>(dock, '[data-hud-more]');
+  const toggle = pick<HTMLButtonElement>(dock, '[data-hud-toggle]');
+  const reset = pick<HTMLButtonElement>(dock, '[data-hud-reset]');
+  const bugsOut = pick(dock, '[data-hud-bugs]');
+  const achOut = pick(dock, '[data-hud-ach]');
+  const levelOut = pick(dock, '[data-hud-level]');
+  const levelsOut = pick(dock, '[data-hud-levels]');
+  const levelStat = pick(dock, '[data-hud-level-stat]');
+  const panelLevel = pick(dock, '[data-panel-level]');
+  const panelLevels = pick(dock, '[data-panel-levels]');
+  const panelLevelStat = pick(dock, '[data-panel-level-stat]');
+  const panelBugs = pick(dock, '[data-panel-bugs]');
+  const panelAch = pick(dock, '[data-panel-ach]');
+  const panelTotal = pick(dock, '[data-panel-total]');
+  const yearSr = pick(dock, '[data-hud-year-sr]');
+  const offSr = pick(dock, '[data-hud-off-sr]');
+  const achList = pick(dock, '[data-ach-list]');
+  const yearStat = pick(dock, '[data-hud-year-stat]');
+  const yearOut = pick(dock, '[data-hud-year]');
   const laser = document.querySelector<HTMLElement>('[data-laser]');
   // On phones some bugs are left out, so they do not count towards catching every bug.
   if (matchMedia('(max-width: 47.99rem)').matches) document.querySelectorAll('[data-bug][data-phone="none"]').forEach((b) => b.remove());
@@ -68,15 +82,39 @@ export function startGames() {
     : sections.slice(1).map((el, i) => ({ el, label: String(i + 2) }));
   const total = Object.keys(ACHIEVEMENTS).length;
 
-  // HUD readouts
+  // The achievements list on the card: one row each, ticked when unlocked.
+  achList.replaceChildren(
+    ...Object.entries(ACHIEVEMENTS).map(([id, title]) => {
+      const li = document.createElement('li');
+      li.dataset.ach = id;
+      li.innerHTML =
+        '<svg class="score__box" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M0 0h7v1H0zM0 6h7v1H0zM0 1h1v5H0zM6 1h1v5H6z" fill="currentColor"/><path class="score__boxtick" d="M6 1h1v1H6zM5 2h1v1H5zM4 3h1v1H4zM3 4h1v1H3zM2 5h1v1H2zM1 4h1v1H1zM0 3h1v1H0z" fill="currentColor"/></svg>';
+      li.append(title);
+      return li;
+    }),
+  );
+
+  // Scoreboard readouts
   const pad = (n: number) => String(n).padStart(2, '0');
+  let level = 1;
   const render = () => {
-    bugsOut.textContent = pad(state.bugs.length);
-    achOut.textContent = `${state.achievements.length}/${total}`;
+    const nb = state.bugs.length;
+    const na = state.achievements.length;
+    bugsOut.textContent = pad(nb);
+    panelBugs.textContent = String(nb);
+    achOut.textContent = `${na}/${total}`;
+    panelAch.textContent = String(na);
+    panelTotal.textContent = String(total);
+    levelOut.textContent = String(level);
+    panelLevel.textContent = String(level);
+    achList.querySelectorAll<HTMLElement>('li').forEach((li) => li.classList.toggle('is-done', state.achievements.includes(li.dataset.ach!)));
+    yearSr.textContent = yearEls.length ? `year ${yearOut.textContent}` : '';
+    offSr.textContent = state.on ? '' : 'games off';
     toggle.setAttribute('aria-pressed', String(state.on));
     toggle.querySelector('b')!.textContent = state.on ? 'on' : 'off';
     toggle.setAttribute('aria-label', state.on ? 'Games on' : 'Games off');
     hud.classList.toggle('hud--off', !state.on);
+    dock.classList.toggle('dock--off', !state.on);
     html.classList.toggle('games', state.on);
     html.classList.toggle('games-off', !state.on);
     bugs().forEach((b) => (b.hidden = !state.on || state.bugs.includes(b.dataset.bug!)));
@@ -124,7 +162,7 @@ export function startGames() {
     write(state);
     window.setTimeout(() => {
       bug.hidden = true;
-      bugsOut.textContent = pad(state.bugs.length);
+      render();
       live.textContent = `Bug caught. ${state.bugs.length} found.`;
       achieve('first-bug');
       if (bugs().every((b) => state.bugs.includes(b.dataset.bug!))) achieve('all-bugs');
@@ -156,9 +194,13 @@ export function startGames() {
   }
   document.addEventListener('playrun:achieve', (e) => achieve((e as CustomEvent<string>).detail));
 
-  // Landings: the ship fires a short laser at each header or card as it comes into view, then
-  // the thing lands. Shots queue a beat apart so a row of cards lands one after the other.
+  // Landings: the ship fires a laser at each header or card as it comes into view, then the thing
+  // lands. Shots queue, one every SHOT_MS, so a row of cards is visibly shot in one by one; a
+  // target that has already left the screen (a fast scroll) lands at once without a shot.
+  const SHOT_MS = 360;
+  const HIT_MS = 260;
   const land = (el: HTMLElement) => el.classList.add('is-landed');
+  const onScreen = (r: DOMRect) => r.bottom > 0 && r.top < innerHeight;
   const shots: HTMLElement[] = [];
   let firing = false;
   const fire = () => {
@@ -168,12 +210,12 @@ export function startGames() {
       return;
     }
     firing = true;
-    if (!laser || !state.on || hud.classList.contains('hud--off')) {
+    const r = el.getBoundingClientRect();
+    if (!laser || !state.on || hud.classList.contains('hud--off') || !onScreen(r)) {
       land(el);
       fire();
       return;
     }
-    const r = el.getBoundingClientRect();
     const s = runner.getBoundingClientRect();
     const v = vertical.matches;
     // From the nose of the ship to the nearest edge of the target: its left edge on desktop (at
@@ -192,41 +234,43 @@ export function startGames() {
     laser.classList.remove('is-on');
     void laser.offsetWidth;
     laser.classList.add('is-on');
-    window.setTimeout(() => land(el), 170);
-    window.setTimeout(fire, 140);
+    window.setTimeout(() => land(el), HIT_MS);
+    window.setTimeout(fire, SHOT_MS);
   };
   document.addEventListener('playrun:land', (e) => {
+    // claimed: the page leaves the landing to the track instead of landing it itself
+    e.preventDefault();
     shots.push((e as CustomEvent<HTMLElement>).detail);
     if (!firing) fire();
   });
 
-  // The runner: scroll progress, set on scroll inside a frame, drives its place on the floor
-  // through one custom property. Level flags mark where each section starts along the same track.
+  // The runner: scroll progress, set on scroll inside a frame, drives its place on the track
+  // through one custom property. Level marks sit where each section starts along the same track.
   const docRange = () => Math.max(1, html.scrollHeight - innerHeight);
-  const panel = pick('.hud__panel');
-  const more = pick('.hud__more');
-  const stacked = matchMedia('(max-width: 47.99rem)');
   // On desktop the bar stands on the left edge and the ship runs down it; otherwise it lies
-  // along the bottom and the ship runs across.
+  // along the bottom and the ship runs across, with the scoreboard pill at the right end.
   const vertical = matchMedia('(min-width: 64rem)');
   const layout = () => {
-    // The ship runs the length the panel leaves free; on a phone that is the Games button.
-    const free = vertical.matches ? hud.clientHeight - panel.offsetHeight : hud.clientWidth - (stacked.matches ? more.offsetWidth : panel.offsetWidth);
+    const free = vertical.matches ? hud.clientHeight : hud.clientWidth - pill.offsetWidth;
     const ship = vertical.matches ? runner.offsetHeight : runner.offsetWidth;
     hud.style.setProperty('--track', `${Math.max(0, free - ship)}px`);
     levelsList.replaceChildren(
       ...marks.map((m) => {
         const li = document.createElement('li');
         li.style.setProperty('--at', String(Math.min(1, m.el.offsetTop / docRange())));
-        // The upright bar has room for two digits: a year shows its last two there.
-        li.textContent = vertical.matches && m.label.length > 2 ? m.label.slice(-2) : m.label;
+        const text = document.createElement('span');
+        // The upright rail has room for two digits: a year shows its last two there.
+        text.textContent = vertical.matches && m.label.length > 2 ? m.label.slice(-2) : m.label;
+        li.append(text);
         return li;
       }),
     );
     yearStat.hidden = yearEls.length === 0;
     levelsOut.textContent = String(sections.length);
+    panelLevels.textContent = String(sections.length);
     // Pages without levels (Credits) show no level count.
-    levelOut.closest<HTMLElement>('.hud__stat')!.hidden = sections.length === 0;
+    levelStat.hidden = sections.length === 0;
+    panelLevelStat.hidden = sections.length === 0;
   };
   let lastY = scrollY;
   let moveTimer = 0;
@@ -246,14 +290,15 @@ export function startGames() {
       lastY = y;
       hud.style.setProperty('--p', String(Math.min(1, y / docRange())));
       const line = y + innerHeight * 0.45;
-      let level = 1;
-      sections.forEach((s, i) => s.offsetTop <= line && (level = i + 1));
-      levelOut.textContent = String(level);
+      let now = 1;
+      sections.forEach((s, i) => s.offsetTop <= line && (now = i + 1));
       Array.from(levelsList.children).forEach((li, i) => li.classList.toggle('is-past', marks[i].el.offsetTop <= line));
-      if (yearEls.length) {
-        let year = yearEls[0].dataset.year!;
-        yearEls.forEach((el) => el.offsetTop <= line && (year = el.dataset.year!));
-        yearOut.textContent = year;
+      let year = yearEls[0]?.dataset.year ?? '';
+      yearEls.forEach((el) => el.offsetTop <= line && (year = el.dataset.year!));
+      if (now !== level || (yearEls.length && year !== yearOut.textContent)) {
+        level = now;
+        if (yearEls.length) yearOut.textContent = year;
+        render();
       }
     });
   };
@@ -261,23 +306,30 @@ export function startGames() {
   addEventListener('resize', layout);
   vertical.addEventListener('change', layout);
 
-  // Controls. On phones the panel opens from the Games button and closes with it, or when
-  // anything outside it is tapped.
-  more.addEventListener('click', () => {
-    const open = !hud.classList.contains('is-open');
-    hud.classList.toggle('is-open', open);
-    more.setAttribute('aria-expanded', String(open));
-  });
+  // Controls. The pill opens the card and closes it (a tap on a phone, a click or Enter anywhere);
+  // a click outside closes it too. Hover and focus open it without pinning it.
+  const open = (on: boolean) => {
+    score.classList.toggle('is-open', on);
+    pill.setAttribute('aria-expanded', String(on));
+  };
+  pill.addEventListener('click', () => open(!score.classList.contains('is-open')));
   document.addEventListener('click', (e) => {
-    if (hud.classList.contains('is-open') && !hud.contains(e.target as Node)) {
-      hud.classList.remove('is-open');
-      more.setAttribute('aria-expanded', 'false');
+    if (score.classList.contains('is-open') && !dock.contains(e.target as Node)) open(false);
+  });
+  dock.addEventListener('focusout', (e) => {
+    if (!dock.contains(e.relatedTarget as Node | null)) open(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && score.classList.contains('is-open')) {
+      open(false);
+      pill.focus();
     }
   });
   toggle.addEventListener('click', () => {
     state.on = !state.on;
     write(state);
     render();
+    layout();
     live.textContent = state.on ? 'Games on.' : 'Games off. The page is just the page.';
   });
   reset.addEventListener('click', () => {
@@ -293,10 +345,11 @@ export function startGames() {
   });
 
   hud.hidden = false;
+  dock.hidden = false;
   render();
   layout();
   onScroll();
-  // Fonts and lazy images change the page height after load; place the flags again when they do.
+  // Fonts and lazy images change the page height after load; place the marks again when they do.
   addEventListener('load', layout);
   document.fonts?.ready.then(layout);
 }

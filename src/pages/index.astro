@@ -8,20 +8,26 @@ import Bug from '../components/Bug.astro';
 import GameIcon from '../components/GameIcon.astro';
 import { suite } from '../data/suite';
 import { logos } from '../data/logos';
-import { contact, employers, primaryAction, since, site } from '../config';
+import { contact, employers, playrun, primaryAction, since, site } from '../config';
 
 import portrait from '../assets/photos/nicolas.png';
 
-// Every public title, in the order of the portfolio: by post, newest first.
+// Every public title on the ticker, apart from one whose logo would repeat another's (`wall`).
+// The biggest names lead the sequence, Cyberpunk 2077 in the middle of them, so they are on screen
+// at the start; the rest follow in the order of the portfolio, by post, newest first.
 const all = await getCollection('projects');
 const shown = import.meta.env.DEV ? all : all.filter((p) => p.data.public);
 const order = employers.map((e) => e.id);
-const wall = [...shown].sort((a, b) => {
-  const g = order.indexOf(a.data.employer) - order.indexOf(b.data.employer);
-  const aDev = a.data.status === 'in-development' ? 1 : 0;
-  const bDev = b.data.status === 'in-development' ? 1 : 0;
-  return g || aDev - bDev || (b.data.year ?? 0) - (a.data.year ?? 0);
-});
+const byPost = shown
+  .filter((p) => p.data.wall)
+  .sort((a, b) => {
+    const g = order.indexOf(a.data.employer) - order.indexOf(b.data.employer);
+    const aDev = a.data.status === 'in-development' ? 1 : 0;
+    const bDev = b.data.status === 'in-development' ? 1 : 0;
+    return g || aDev - bDev || (b.data.year ?? 0) - (a.data.year ?? 0);
+  });
+const FEATURED = ['beat-saber', 'nba-2k21', 'cyberpunk-2077', 'ghostbusters-rise-of-the-ghost-lord', 'lous-lagoon'];
+const wall = [...FEATURED.flatMap((id) => byPost.filter((p) => p.id === id)), ...byPost.filter((p) => !FEATURED.includes(p.id))];
 
 // The numbers, counted from the data so they stay right as it grows.
 const stats = [
@@ -71,6 +77,7 @@ const checks = [
           </dl>
         </aside>
       </div>
+      <p class="hero__post" data-load style="--d: 400ms">{playrun.role}, {site.name}</p>
       <p class="hero__role" data-load style="--d: 440ms">Game QA, platform compliance &amp; release testing</p>
       <p class="hero__value" data-load style="--d: 500ms">
         I've been testing games since 2021 and leading QA teams since 2022, at nDreams and Historic VR, and on indie
@@ -98,34 +105,47 @@ const checks = [
     <Bug id="hero-1" style="right: 42%; top: 8rem" tablet="right: 6%; top: 8rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 2: the wall of titles, their official logos in one colour -->
+  <!-- Level 2: the ticker of titles, their official logos in one colour, rolling slowly left -->
   <section class="level level--blue wall" data-level="2" aria-labelledby="wall-title">
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; Portfolio</span></p>
       <h2 id="wall-title" class="level__title" data-enter="wipe">Games I've tested</h2>
     </div>
-    <ul role="list" class="wall__grid level__body" data-enter style="--enter-delay: 120ms">
-      {
-        wall.map((p) => (
-          <li class="wall__item">
-            <a class="wall__link" href="/portfolio" aria-label={p.data.title}>
-              {logos[p.id] ? (
-                <Image class="wall__logo" src={logos[p.id]} alt="" height={72} densities={[1, 2]} loading="lazy" decoding="async" />
-              ) : (
-                p.data.wordmark ? (
-                <span class="wall__word" aria-hidden="true">{p.data.title}</span>
-              ) : (
-                <span class="wall__name" aria-hidden="true">
-                  <GameIcon name={p.data.icon} />
-                  <span>{p.data.title}</span>
-                </span>
-              )
-              )}
-            </a>
-          </li>
-        ))
-      }
-    </ul>
+    <div class="ticker level__body" data-ticker data-enter style="--enter-delay: 120ms">
+      <div class="ticker__view">
+        <div class="ticker__track" style={`--n: ${wall.length}`}>
+          {
+            [false, true].map((copy) => (
+              <ul role="list" class:list={['ticker__seq', copy && 'ticker__copy']} aria-hidden={copy ? 'true' : undefined}>
+                {wall.map((p) => (
+                  <li class="wall__item">
+                    <a class="wall__link" href="/portfolio" aria-label={p.data.title} tabindex={copy ? -1 : undefined}>
+                      {logos[p.id] ? (
+                        <Image class="wall__logo" src={logos[p.id]} alt="" height={64} densities={[1, 2]} loading="lazy" decoding="async" />
+                      ) : p.data.wordmark ? (
+                        <span class="wall__word" aria-hidden="true">
+                          {p.data.title}
+                        </span>
+                      ) : (
+                        <span class="wall__name" aria-hidden="true">
+                          <GameIcon name={p.data.icon} />
+                          <span>{p.data.title}</span>
+                        </span>
+                      )}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ))
+          }
+        </div>
+      </div>
+      <button type="button" class="ticker__pause" data-ticker-pause aria-label="Pause the logos">
+        <svg class="ticker__glyph ticker__glyph--pause" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 0h2v7H1zM4 0h2v7H4z" fill="currentColor" /></svg>
+        <svg class="ticker__glyph ticker__glyph--play" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 0h1v7H1zM2 1h1v5H2zM3 1h1v5H3zM4 2h1v3H4zM5 3h1v1H5z" fill="currentColor" /></svg>
+        <span data-ticker-word>Pause</span>
+      </button>
+    </div>
     <Bug id="wall-1" style="right: 12%; top: 9rem" tablet="right: 10%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
@@ -345,6 +365,16 @@ const checks = [
   .hero__ticket[data-status='fixed'] .ticket__status::before {
     content: '✓ ';
   }
+  /* The post, then the line on the work: one block, tighter than the rest of the head. */
+  .hero__post {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1.2;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    max-width: none;
+    margin-bottom: calc(var(--s-1) - var(--s-4));
+  }
   .hero__role {
     font-family: var(--font-display);
     font-size: 1.5rem;
@@ -414,8 +444,12 @@ const checks = [
     .hero__title {
       font-size: round(17vw, 8px);
     }
+    .hero__post,
     .hero__role {
       font-size: 1.25rem;
+    }
+    .hero__post {
+      margin-bottom: calc(var(--s-1) - var(--s-3));
     }
     .hero__value {
       font-size: 1rem;
@@ -474,27 +508,62 @@ const checks = [
     }
   }
 
-  /* Level 2: the wall. A navy board on the blue field, hairlines of the field between the cells,
-     every logo the same height and the same colour. */
+  /* Level 2: the ticker. A navy board on the blue field, the logos in equal cells divided by
+     hairlines of the field, rolling slowly to the left in a loop: the sequence twice, the copy
+     hidden from assistive tech, the track sliding half its width then starting over. It pauses
+     under the pointer, while a logo has focus, and with the button; a focused logo is brought
+     into view by the script. Under reduced motion it is a still row that scrolls by hand. */
   .wall {
     z-index: 1;
   }
-  .wall__grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 2px;
+  .ticker {
+    --cell: 15rem;
+    --cell-h: 8rem;
+  }
+  .ticker__view {
+    container-type: inline-size;
+    overflow: hidden;
     background: var(--bg);
     border: 2px solid var(--bg);
   }
+  .ticker__track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+    animation: ticker calc(var(--n, 20) * 5s) linear infinite;
+  }
+  .ticker.is-paused .ticker__track,
+  .ticker__view:focus-within .ticker__track {
+    animation-play-state: paused;
+  }
+  @media (hover: hover) {
+    .ticker__view:hover .ticker__track {
+      animation-play-state: paused;
+    }
+  }
+  @keyframes ticker {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .ticker__seq {
+    display: flex;
+    flex: none;
+  }
   .wall__item {
-    min-width: 0;
+    flex: none;
+    width: var(--cell);
     background: var(--bg);
+    border-left: 2px solid var(--field-blue);
+  }
+  .ticker__seq:first-child .wall__item:first-child {
+    border-left: 0;
   }
   .wall__link {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 9rem;
+    height: var(--cell-h);
     padding: var(--s-3);
     color: var(--ink);
     text-decoration: none;
@@ -505,12 +574,65 @@ const checks = [
     background: var(--surface-2);
     color: var(--ink);
   }
+  .wall__link:focus-visible {
+    outline-offset: -4px;
+  }
   .wall__link :global(.wall__logo) {
     width: auto;
     height: auto;
-    max-height: 4.5rem;
+    max-height: 4rem;
     max-width: 100%;
     object-fit: contain;
+  }
+  /* The pause button, small, under the board on its right. */
+  .ticker__pause {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    margin: var(--s-2) 0 0 auto;
+    min-height: 2.25rem;
+    padding: 0.4rem 0.75rem;
+    border: 2px solid var(--pr-navy);
+    background: transparent;
+    color: var(--pr-navy);
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition:
+      background-color var(--dur-fast) ease,
+      color var(--dur-fast) ease;
+  }
+  .ticker__pause:hover {
+    background: var(--pr-navy);
+    color: var(--ink);
+  }
+  .ticker__glyph {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+  .ticker__glyph--play,
+  .ticker.is-paused .ticker__glyph--pause {
+    display: none;
+  }
+  .ticker.is-paused .ticker__glyph--play {
+    display: block;
+  }
+  :global(html:not(.js)) .ticker__pause {
+    display: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ticker__track {
+      animation: none;
+    }
+    .ticker__copy,
+    .ticker__pause {
+      display: none;
+    }
+    .ticker__view {
+      overflow-x: auto;
+      scrollbar-color: var(--accent-2) var(--bg);
+    }
   }
   /* A title with no clean official logo: its name set in Pixel Operator at the logos' height. */
   .wall__word {
@@ -538,15 +660,15 @@ const checks = [
     fill: var(--ink);
   }
   @media (max-width: 63.99rem) {
-    .wall__grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+    .ticker {
+      --cell: 11rem;
+      --cell-h: 6.5rem;
     }
     .wall__link {
-      height: 7rem;
       padding: var(--s-2);
     }
     .wall__link :global(.wall__logo) {
-      max-height: 3.5rem;
+      max-height: 3.25rem;
     }
     .wall__name {
       font-size: 1.25rem;
@@ -556,14 +678,12 @@ const checks = [
     }
   }
   @media (max-width: 47.99rem) {
-    .wall__grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .wall__link {
-      height: 6rem;
+    .ticker {
+      --cell: 7.5rem;
+      --cell-h: 5rem;
     }
     .wall__link :global(.wall__logo) {
-      max-height: 2.75rem;
+      max-height: 2.5rem;
     }
     .wall__name {
       font-size: 1rem;
@@ -808,14 +928,43 @@ const checks = [
   const hero = document.querySelector<HTMLElement>('.hero');
   if (hero && !reduce) {
     const pin = () => {
-      // The room the bottom bar takes; the desktop track stands in the gutter and takes none.
-      const bar = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
+      // The room the bottom bar takes; the desktop track stands in the gutter and takes none (the
+      // body's bottom padding there is only a strip at the end of the page for the scoreboard).
+      const bar = matchMedia('(min-width: 64rem)').matches ? 0 : parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
       hero.style.setProperty('--hero-top', `${Math.min(0, innerHeight - bar - hero.offsetHeight)}px`);
     };
     pin();
     addEventListener('resize', pin);
     addEventListener('load', pin);
     document.fonts?.ready.then(pin);
+  }
+
+  // The ticker: the button pauses and plays it; a logo that gets keyboard focus is brought into
+  // view by jumping the animation to the moment it passes the middle of the board (the animation
+  // itself pauses while anything inside has focus). Static under reduced motion, so nothing to do.
+  const tick = document.querySelector<HTMLElement>('[data-ticker]');
+  if (tick && !reduce) {
+    const view = tick.querySelector<HTMLElement>('.ticker__view')!;
+    // Focus scrolls the hidden overflow itself; the transform does that job, so the scroll stays 0.
+    view.addEventListener('scroll', () => (view.scrollLeft = 0));
+    const track = tick.querySelector<HTMLElement>('.ticker__track')!;
+    const pause = tick.querySelector<HTMLButtonElement>('[data-ticker-pause]')!;
+    const word = pause.querySelector<HTMLElement>('[data-ticker-word]')!;
+    pause.addEventListener('click', () => {
+      const paused = tick.classList.toggle('is-paused');
+      word.textContent = paused ? 'Play' : 'Pause';
+      pause.setAttribute('aria-label', paused ? 'Play the logos' : 'Pause the logos');
+    });
+    tick.addEventListener('focusin', (e) => {
+      const item = (e.target as HTMLElement).closest<HTMLElement>('.wall__item');
+      const anim = track.getAnimations()[0];
+      view.scrollLeft = 0;
+      if (!item || !anim) return;
+      const half = track.scrollWidth / 2;
+      const want = Math.max(0, item.offsetLeft + item.offsetWidth / 2 - view.clientWidth / 2);
+      const duration = Number(anim.effect?.getComputedTiming().duration ?? 0);
+      if (duration) anim.currentTime = Math.min(0.999, want / half) * duration;
+    });
   }
 
   // The numbers count up once, as the stats come into view. The real number is in the HTML.

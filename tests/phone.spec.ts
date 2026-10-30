@@ -41,7 +41,7 @@ test.describe("Home on a phone", () => {
     }
   });
 
-  test("the HUD is one slim row and the Games button opens the panel", async ({
+  test("the HUD is one slim row and a tap on the scoreboard pill opens the card above it", async ({
     page,
   }) => {
     await page.goto("/");
@@ -49,12 +49,17 @@ test.describe("Home on a phone", () => {
     await expect(hud).toBeVisible();
     const h = await hud.evaluate((el) => el.getBoundingClientRect().height);
     expect(h).toBeLessThanOrEqual(48);
-    await expect(page.locator(".hud__panel")).toBeHidden();
-    await page.getByRole("button", { name: "Games", exact: true }).tap();
-    await expect(page.locator(".hud__panel")).toBeVisible();
-    await expect(page.locator("[data-hud-bugs]")).toBeVisible();
-    await page.getByRole("button", { name: "Games", exact: true }).tap();
-    await expect(page.locator(".hud__panel")).toBeHidden();
+    await expect(page.locator(".score__panel")).toBeHidden();
+    const pill = page.getByRole("button", { name: /^Scoreboard/ });
+    await pill.tap();
+    await expect(page.locator(".score__panel")).toBeVisible();
+    await expect(page.locator(".score__panel").getByText("Bugs caught")).toBeVisible();
+    const card = (await page.locator(".score__panel").boundingBox())!;
+    const bar = (await hud.boundingBox())!;
+    expect(card.y + card.height, "above the bar").toBeLessThanOrEqual(bar.y);
+    expect(card.x + card.width, "inside the screen").toBeLessThanOrEqual(390);
+    await pill.tap();
+    await expect(page.locator(".score__panel")).toBeHidden();
   });
 
   test("phone bugs sit in a corner of their level, one of them on the final level", async ({ page }) => {

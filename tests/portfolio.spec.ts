@@ -23,8 +23,10 @@ test.describe('The Portfolio journey', () => {
     await page.goto('/portfolio');
     await noSmooth(page);
     const year = page.locator('[data-hud-year]');
+    await page.getByRole('button', { name: /^Scoreboard/ }).click();
     await expect(year).toBeVisible();
     await expect(year).toHaveText('2026');
+    await expect(page.getByRole('button', { name: /^Scoreboard/ })).toHaveAccessibleName(/year 2026/);
     await expect(page.locator('.hud__levels li')).toHaveText(['26', '25', '22', '21']);
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await expect(year).toHaveText('2021');
@@ -34,7 +36,7 @@ test.describe('The Portfolio journey', () => {
     await expect(page.locator('.hud__levels li').first()).toHaveText('2026');
   });
 
-  test('every header and card lands once, from a laser fired by the ship', async ({ page }) => {
+  test('every header and card lands once, from a laser fired by the ship, one shot every third of a second', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/portfolio');
     await noSmooth(page);
@@ -44,13 +46,20 @@ test.describe('The Portfolio journey', () => {
     expect(await page.locator('[data-land].is-landed').count()).toBeLessThan(total);
     // count the shots and the landings as they happen
     await page.evaluate(() => {
-      const w = window as unknown as { __shots: number; __landings: number };
+      const w = window as unknown as { __shots: number; __landings: number; __times: number[] };
       w.__shots = 0;
       w.__landings = 0;
+      w.__times = [];
       new MutationObserver((muts) => {
         for (const m of muts) {
           const el = m.target as HTMLElement;
-          if (el.matches('.laser') && el.classList.contains('is-on')) w.__shots++;
+          if (el.matches('.laser') && el.classList.contains('is-on')) {
+            const t = performance.now();
+            if (!w.__times.length || t - w.__times[w.__times.length - 1] > 50) {
+              w.__times.push(t);
+              w.__shots++;
+            }
+          }
           if (el.hasAttribute('data-land') && el.classList.contains('is-landed') && !(el as HTMLElement).dataset.counted) {
             el.dataset.counted = '1';
             w.__landings++;
@@ -61,10 +70,13 @@ test.describe('The Portfolio journey', () => {
     await walk(page);
     await expect(page.locator('[data-land].is-landed')).toHaveCount(total);
     const counts = await page.evaluate(() => {
-      const w = window as unknown as { __shots: number; __landings: number };
-      return { shots: w.__shots, landings: w.__landings };
+      const w = window as unknown as { __shots: number; __landings: number; __times: number[] };
+      const gaps = w.__times.slice(1).map((t, i) => t - w.__times[i]);
+      return { shots: w.__shots, landings: w.__landings, gap: Math.min(...gaps) };
     });
     expect(counts.shots, 'the laser fired').toBeGreaterThan(5);
+    expect(counts.gap, 'one target at a time, a readable beat apart').toBeGreaterThanOrEqual(300);
+    expect(await page.locator('.laser').evaluate((el) => el.getAnimations().map((a) => a.effect?.getComputedTiming().duration)[0]), 'the beam holds for half a second').toBeGreaterThanOrEqual(500);
     const first = page.locator('[data-land]').first();
     const beam = await page.locator('.laser').evaluate((el) => ({ len: parseFloat(getComputedStyle(el).getPropertyValue('--len')), x: parseFloat(getComputedStyle(el).getPropertyValue('--x')) }));
     expect(beam.x, 'the beam starts at the bar').toBeLessThan(60);
@@ -83,7 +95,7 @@ test.describe('The Portfolio journey', () => {
     await page.goto('/portfolio');
     await noSmooth(page);
     await page.evaluate(() => window.scrollTo(0, 900));
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(900);
     const beam = await page.locator('.laser').evaluate((el) => ({ y: parseFloat(getComputedStyle(el).getPropertyValue('--y')), a: parseFloat(getComputedStyle(el).getPropertyValue('--a')) }));
     expect(beam.y, 'from the bar at the foot of the screen').toBeGreaterThan(780);
     expect(beam.a, 'pointing up').toBeLessThan(0);

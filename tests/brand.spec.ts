@@ -19,7 +19,7 @@ test.describe('Brand assets', () => {
     expect(box?.height ?? 0).toBeGreaterThan(20);
     const footer = page.locator('footer svg').first();
     await expect(footer).toBeVisible();
-    expect((await footer.boundingBox())?.height ?? 0).toBeLessThanOrEqual(40);
+    expect((await footer.boundingBox())?.height ?? 0).toBeLessThanOrEqual(64);
   });
 
   test('favicon, touch icon and Open Graph image exist', async ({ page, request }) => {

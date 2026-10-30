@@ -554,13 +554,14 @@ p + p {
   padding-bottom: var(--hud-h);
 }
 .games-off body {
-  padding-bottom: 3rem; /* the folded HUD panel */
+  padding-bottom: 3rem; /* the scoreboard pill in the corner */
 }
 @media (min-width: 64rem) {
-  /* The track stands in the left gutter: nothing to leave room for at the foot. */
+  /* The track stands in the left gutter; the scoreboard floats bottom right, so the page ends
+     with a strip of ground under the footer that it can sit on without covering anything. */
   .games body,
   .games-off body {
-    padding-bottom: 0;
+    padding-bottom: 4rem;
   }
 }
 .bug {
@@ -789,23 +790,24 @@ html:not(.games) .bug {
   background: var(--accent-2);
   opacity: 0;
   pointer-events: none;
-  animation: land-flash 420ms ease-out;
+  animation: land-flash 560ms ease-out;
 }
 @keyframes land-flash {
   from {
-    opacity: 0.45;
+    opacity: 0.5;
   }
   to {
     opacity: 0;
   }
 }
-/* The laser: a short beam from the ship to the thing that just came into view. */
+/* The laser: a beam from the ship to the thing that just came into view. It extends for the first
+   third of the shot, holds while the target lands, then fades. */
 .laser {
   position: fixed;
   left: 0;
   top: 0;
   z-index: 39;
-  height: 4px;
+  height: 5px;
   width: var(--len, 0px);
   background: var(--accent);
   box-shadow:
@@ -817,14 +819,18 @@ html:not(.games) .bug {
   pointer-events: none;
 }
 .laser.is-on {
-  animation: laser 300ms var(--ease-out) forwards;
+  animation: laser 520ms var(--ease-out) forwards;
 }
 @keyframes laser {
   0% {
     transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--a, 0rad)) scaleX(0);
     opacity: 1;
   }
-  55% {
+  35% {
+    transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--a, 0rad)) scaleX(1);
+    opacity: 1;
+  }
+  70% {
     transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--a, 0rad)) scaleX(1);
     opacity: 1;
   }
