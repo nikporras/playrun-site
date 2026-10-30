@@ -194,14 +194,17 @@ export function startGames() {
   }
   document.addEventListener('playrun:achieve', (e) => achieve((e as CustomEvent<string>).detail));
 
-  // The scan: a bonus on a game card that is already on screen. Once the scroll settles, the card
-  // wholly on screen nearest the middle gets one shot, one at a time, each card once per page
-  // view; a card that misses its moment is simply shown. On a desktop the ship fires a pixel bolt
-  // from its nose at the card's logo (a muzzle flash as it leaves, a burst of pixels where it
-  // lands), and only at a card with a clear line of fire: a path that crosses no other card and no
-  // company block, which in practice means the left column. On a phone the card's own reaction
-  // plays alone. The whole shot is done inside 1.2 s. Nothing is ever hidden.
+  // The scan: a bonus on a game card that is already on screen. Once the scroll settles, the row
+  // wholly on screen nearest the middle plays its cards left to right, one reaction at a time,
+  // each card once per page view; a card that misses its moment (scrolling fast) keeps its turn for
+  // the next time it settles on screen, so every card can end up stamped. Every card gets the
+  // reaction (the flash, the band, the Pass stamp); on a desktop a card with a clear line of fire
+  // (a path from the ship's nose to its logo that crosses no other card and no company block, in
+  // practice the left column) also gets the pixel bolt, a muzzle flash as it leaves and a burst
+  // where it lands. On a phone the reaction plays alone. A shot takes 1.2 s, a plain scan 0.8 s.
+  // Nothing is ever hidden.
   const SHOT_MS = 1200;
+  const SCAN_MS = 800;
   const FLIGHT_MS = 250;
   const shot = document.querySelector<HTMLElement>('[data-shot]');
   const boltPx = Array.from(shot?.querySelectorAll<HTMLElement>('.bolt__px') ?? []);
@@ -297,34 +300,36 @@ export function startGames() {
     scanned.add(card);
     shooting = true;
     card.style.setProperty('--card-h', `${card.offsetHeight}px`);
-    const bolt = vertical.matches && boltPx.length > 0;
+    const bolt = vertical.matches && boltPx.length > 0 && clear(card);
     if (bolt) fire(card);
-    // the card reacts as the bolt lands (at once on a phone, where there is no bolt)
+    // the card reacts as the bolt lands (at once where there is no bolt)
     window.setTimeout(() => card.classList.add('is-scanned'), bolt ? FLIGHT_MS : 0);
     window.setTimeout(() => {
       shooting = false;
       consider();
-    }, SHOT_MS);
+    }, bolt ? SHOT_MS : SCAN_MS);
   };
   const consider = () => {
     if (shooting || !state.on || hud.classList.contains('hud--off') || speed > 0.6) return;
     const mid = innerHeight / 2;
-    let best: HTMLElement | null = null;
-    let bestD = Infinity;
+    // the cards wholly on screen whose centre sits in the middle band, grouped by row
+    const rows = new Map<number, { card: HTMLElement; left: number; d: number }[]>();
     for (const card of targets) {
       if (scanned.has(card) || !card.classList.contains('is-in')) continue;
       const r = card.getBoundingClientRect();
       if (r.top < 0 || r.bottom > innerHeight) continue;
       const centre = (r.top + r.bottom) / 2;
       if (centre < innerHeight * 0.2 || centre > innerHeight * 0.8) continue;
-      if (vertical.matches && !clear(card)) continue;
-      const d = Math.abs(centre - mid);
-      if (d < bestD) {
-        bestD = d;
-        best = card;
-      }
+      const key = Math.round(r.top / 8);
+      if (!rows.has(key)) rows.set(key, []);
+      rows.get(key)!.push({ card, left: r.left, d: Math.abs(centre - mid) });
     }
-    if (best) shoot(best);
+    // the row nearest the middle, then its leftmost card: the row plays left to right
+    let best: { card: HTMLElement; left: number; d: number }[] | null = null;
+    for (const row of rows.values()) if (!best || row[0].d < best[0].d) best = row;
+    if (!best) return;
+    best.sort((a, b) => a.left - b.left);
+    shoot(best[0].card);
   };
   if (targets.length) {
     let speedY = scrollY;

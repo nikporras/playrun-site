@@ -63,6 +63,7 @@ test.describe('The Portfolio journey', () => {
   });
 
   test('a settled card with a clear line of fire gets one shot: a pixel bolt from the nose to its logo, a muzzle flash, a burst at the hit, then the card flashes, a scan band sweeps it and a PASS stamp stays; one at a time, cards only, each once', async ({ page }) => {
+    test.setTimeout(120_000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/portfolio');
     await noSmooth(page);
@@ -196,6 +197,78 @@ test.describe('The Portfolio journey', () => {
     await back();
     expect(await page.locator('.card.is-scanned').count(), 'no card scanned twice').toBe(scannedOnce);
     expect(await page.evaluate(() => (window as unknown as { __shots: number[] }).__shots.length), 'no second shot at a scanned card').toBe(shotsOnce);
+  });
+
+  test('every card gets the reaction and the stamp: a settled row plays left to right, the bolt only on the clear line, one reaction at a time, and a card skipped on a fast scroll gets its turn later', async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/portfolio');
+    await noSmooth(page);
+    await page.mouse.move(640, 300);
+    // the entrances first, so the cards' boxes are their settled ones
+    await page.evaluate(() => document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in')));
+    await page.waitForTimeout(800);
+    await page.evaluate(() => {
+      const w = window as unknown as { __scans: { title: string; t: number; left: number; top: number }[]; __shots: string[] };
+      w.__scans = [];
+      w.__shots = [];
+      new MutationObserver((muts) => {
+        for (const m of muts) {
+          const el = m.target as HTMLElement;
+          if (el.matches('.card') && el.classList.contains('is-scanned') && !el.dataset.seen) {
+            el.dataset.seen = '1';
+            const r = el.getBoundingClientRect();
+            w.__scans.push({ title: el.querySelector('.card__title')!.textContent!.trim(), t: performance.now(), left: r.left, top: r.top + scrollY });
+          }
+          if (el.matches('[data-shot]') && m.attributeName === 'data-to') w.__shots.push(el.getAttribute('data-to')!);
+        }
+      }).observe(document.body, { attributes: true, attributeFilter: ['class', 'data-to'], subtree: true });
+    });
+    // a fast scroll straight to the foot and back: nothing fires on the way
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(100);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(300);
+    // then row by row, settling on each long enough for three reactions
+    const rowTops = await page.locator('.card').evaluateAll((els) => [...new Set(els.map((el) => Math.round((el.getBoundingClientRect().top + scrollY) / 8) * 8))].sort((a, b) => a - b));
+    for (const top of rowTops) {
+      const h = await page.evaluate((top) => {
+        const el = [...document.querySelectorAll<HTMLElement>('.card')].find((c) => Math.abs(c.getBoundingClientRect().top + scrollY - top) < 8)!;
+        return el.offsetHeight;
+      }, top);
+      await page.evaluate(([top, h]) => window.scrollTo(0, top + h / 2 - innerHeight / 2), [top, h] as const);
+      await page.waitForTimeout(3600);
+    }
+    const total = await page.locator('.card').count();
+    await expect(page.locator('.card.is-scanned')).toHaveCount(total);
+    expect(await page.locator('.card .card__pass').evaluateAll((els) => els.every((el) => getComputedStyle(el).opacity === '1')), 'every card carries the stamp').toBe(true);
+    const log = await page.evaluate(() => {
+      const w = window as unknown as { __scans: { title: string; t: number; left: number; top: number }[]; __shots: string[] };
+      return { __scans: w.__scans, __shots: w.__shots };
+    });
+    expect(log.__scans.length).toBe(total);
+    // one reaction at a time: never two within a plain scan's length
+    const times = log.__scans.map((s) => s.t);
+    for (let i = 1; i < times.length; i++) expect(times[i] - times[i - 1], `${log.__scans[i].title} waited its turn`).toBeGreaterThanOrEqual(750);
+    // a row plays left to right
+    const byRow = new Map<number, typeof log.__scans>();
+    for (const s of log.__scans) {
+      const key = Math.round(s.top / 8);
+      if (!byRow.has(key)) byRow.set(key, []);
+      byRow.get(key)!.push(s);
+    }
+    for (const row of byRow.values()) {
+      const inOrder = [...row].sort((a, b) => a.t - b.t);
+      for (let i = 1; i < inOrder.length; i++) expect(inOrder[i].left, `${inOrder[i].title} came after ${inOrder[i - 1].title}`).toBeGreaterThan(inOrder[i - 1].left);
+    }
+    // bolts only flew on clear lines: one per row at most, each ending in a left-column logo
+    const contentLeft = await page.locator('.group__grid').first().evaluate((el) => el.getBoundingClientRect().left);
+    expect(log.__shots.length).toBeGreaterThan(0);
+    expect(log.__shots.length).toBeLessThanOrEqual(byRow.size);
+    for (const to of log.__shots) {
+      const x = Number(to.split(',')[0]);
+      expect(x, 'a bolt ends in the left column').toBeLessThan(contentLeft + 200);
+    }
   });
 
   test('with the games off there is no laser and no scan, and everything still shows', async ({ page }) => {
