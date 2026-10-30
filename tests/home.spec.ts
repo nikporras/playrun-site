@@ -466,6 +466,7 @@ test.describe('Home', () => {
   });
 
   test('the stats turn on a drum: five rows, the active one centred in green, the drum turning on its own, by the arrows, resting on hover, focus and pause, each stat announced once', async ({ page }) => {
+    test.setTimeout(60_000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
@@ -562,8 +563,8 @@ test.describe('Home', () => {
     expect(fit.labelLeft).toBeGreaterThanOrEqual(fit.numRight);
     expect(fit.labelRight).toBeLessThan(fit.buttonsLeft);
     const first = s.shown[2].text;
-    // it turns on its own, one row every 2.5 s
-    await page.waitForTimeout(3300);
+    // it turns on its own, one row every 3.5 s
+    await page.waitForTimeout(4300);
     s = await state();
     expect(s.shown[2].text, 'the drum turned').not.toBe(first);
     expect(s.shown[2].d).toBe('0');
@@ -582,7 +583,7 @@ test.describe('Home', () => {
     // hovered: it rests
     await drum.hover();
     const held = (await state()).shown[2].text;
-    await page.waitForTimeout(3300);
+    await page.waitForTimeout(4300);
     expect((await state()).shown[2].text, 'rests under the pointer').toBe(held);
     await page.mouse.move(10, 10);
     // focus inside: it rests; the buttons show their focus
@@ -591,7 +592,7 @@ test.describe('Home', () => {
     await expect(next).toBeFocused();
     expect(await next.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
     const focusedText = (await state()).shown[2].text;
-    await page.waitForTimeout(3300);
+    await page.waitForTimeout(4300);
     expect((await state()).shown[2].text, 'rests while a button has focus').toBe(focusedText);
     await page.mouse.click(10, 10);
     // the pause control
@@ -600,7 +601,7 @@ test.describe('Home', () => {
     await page.mouse.click(10, 10);
     await expect(page.getByRole('button', { name: 'Play the stats' })).toHaveAttribute('aria-pressed', 'true');
     const pausedText = (await state()).shown[2].text;
-    await page.waitForTimeout(3300);
+    await page.waitForTimeout(4300);
     expect((await state()).shown[2].text, 'paused').toBe(pausedText);
     await page.getByRole('button', { name: 'Play the stats' }).click();
     await page.mouse.click(10, 10);
@@ -618,9 +619,73 @@ test.describe('Home', () => {
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(400);
     const away = await page.locator('.drum__list').evaluate((el) => el.style.getPropertyValue('--i'));
-    await page.waitForTimeout(3300);
+    await page.waitForTimeout(4300);
     expect(await page.locator('.drum__list').evaluate((el) => el.style.getPropertyValue('--i')), 'still while off screen').toBe(away);
   });
+
+  test('the drum turns one stat every 3.5 s, the slide still 0.6 s', async ({ page }) => {
+    test.setTimeout(45_000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.locator('[data-drum]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await page.mouse.move(5, 5);
+    // every turn of the drum, timed in the page (a jump back a copy is not a turn)
+    await page.evaluate(() => {
+      const list = document.querySelector<HTMLElement>('.drum__list')!;
+      const w = window as unknown as { turns: number[] };
+      w.turns = [];
+      let last = Number(list.style.getPropertyValue('--i'));
+      new MutationObserver(() => {
+        const i = Number(list.style.getPropertyValue('--i'));
+        if (Math.abs(i - last) === 1) w.turns.push(performance.now());
+        last = i;
+      }).observe(list, { attributes: true, attributeFilter: ['style'] });
+    });
+    await page.waitForTimeout(12_500);
+    const turns = await page.evaluate(() => (window as unknown as { turns: number[] }).turns);
+    expect(turns.length, 'three turns or so in 12.5 s').toBeGreaterThanOrEqual(3);
+    for (let k = 1; k < turns.length; k++) {
+      expect(turns[k] - turns[k - 1]).toBeGreaterThan(3300);
+      expect(turns[k] - turns[k - 1]).toBeLessThan(3800);
+    }
+    const slide = await page.locator('.drum__list').evaluate((el) => getComputedStyle(el).transitionDuration);
+    expect(slide.split(',').map((d) => parseFloat(d))).toContain(0.6);
+  });
+
+  for (const width of [375, 360]) {
+    test(`on a touch phone (${width}px) the drum turns on its own, and a tap on it or on its arrows only rests it a moment`, async ({ browser }) => {
+      test.setTimeout(60_000);
+      const context = await browser.newContext({ viewport: { width, height: 780 }, hasTouch: true, isMobile: true });
+      const page = await context.newPage();
+      await page.goto('/');
+      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+      const drum = page.locator('[data-drum]');
+      await expect(drum).toHaveClass(/is-live/);
+      await drum.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      const at = () => page.locator('.drum__list').evaluate((el) => Number(el.style.getPropertyValue('--i')));
+      // untouched, it turns
+      const start = await at();
+      await expect.poll(at, { timeout: 5000, message: 'it turns on its own' }).not.toBe(start);
+      // a tap on the drum: a short rest, then it turns again
+      const box = (await drum.boundingBox())!;
+      await page.touchscreen.tap(box.x + 30, box.y + box.height / 2);
+      const tapped = await at();
+      await expect.poll(at, { timeout: 10_000, message: 'it carries on after a tap' }).not.toBe(tapped);
+      // a tap on Next turns it at once, and it keeps turning on its own after (focus stays on the
+      // button, which used to hold it still for good)
+      await page.locator('[data-drum-next]').tap();
+      await page.waitForTimeout(800);
+      const after = await at();
+      await expect.poll(at, { timeout: 10_000, message: 'it carries on after a tap on Next' }).not.toBe(after);
+      // the Pause button still holds it until Play
+      await page.locator('[data-drum-pause]').tap();
+      await page.waitForTimeout(800);
+      const held = await at();
+      await page.waitForTimeout(8000);
+      expect(await at(), 'paused').toBe(held);
+      await context.close();
+    });
+  }
 
   test('on a phone the drum stacks under the title and nothing overflows; under reduced motion the four stats are a still list', async ({ browser }) => {
     const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });

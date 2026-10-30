@@ -1154,10 +1154,11 @@ const checks = [
   }
 
   // The drum: the four stats three times over; row --i (a float index into the list) sits in the
-  // centre. It turns one row every 2.5 s with a 0.6 s slide, and keeps turning after the arrows.
+  // centre. It turns one row every 3.5 s with a 0.6 s slide, and keeps turning after the arrows.
   // At the end of the middle copy it slides onto the next copy, then jumps back a copy with no
-  // transition, which looks the same. It rests while hovered or holding focus, when paused, and
-  // while the level is off screen. Still under reduced motion.
+  // transition, which looks the same. It rests under a mouse, while holding keyboard focus, when
+  // paused, for a few seconds after a tap, and while the level is off screen. Still under reduced
+  // motion.
   const drum = document.querySelector<HTMLElement>('[data-drum]');
   if (drum && !reduce) {
     const list = drum.querySelector<HTMLElement>('.drum__list')!;
@@ -1205,13 +1206,15 @@ const checks = [
         moving = false;
       }, 620);
     };
-    const resting = () => hovered || focused || paused || !seen;
+    // A tap rests it a moment, then it carries on.
+    let touchedUntil = 0;
+    const resting = () => hovered || focused || paused || !seen || performance.now() < touchedUntil;
     const tick = () => {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
         if (!resting()) go(1);
         tick();
-      }, 2500);
+      }, 3500);
     };
     drum.querySelector('[data-drum-next]')!.addEventListener('click', () => {
       go(1);
@@ -1228,9 +1231,14 @@ const checks = [
       pause.setAttribute('aria-pressed', String(paused));
     });
     pause.setAttribute('aria-pressed', 'false');
-    drum.addEventListener('pointerenter', () => (hovered = true));
+    // Hover is a mouse's: a finger on a phone fires the same pointer events and would hold the
+    // drum still for good. Focus counts when it is the keyboard's (a tapped button keeps focus too).
+    drum.addEventListener('pointerenter', (e) => (hovered = e.pointerType === 'mouse'));
     drum.addEventListener('pointerleave', () => (hovered = false));
-    drum.addEventListener('focusin', () => (focused = true));
+    drum.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse') touchedUntil = performance.now() + 4000;
+    });
+    drum.addEventListener('focusin', (e) => (focused = (e.target as HTMLElement).matches(':focus-visible')));
     drum.addEventListener('focusout', (e) => {
       if (!drum.contains(e.relatedTarget as Node | null)) focused = false;
     });
