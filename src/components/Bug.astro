@@ -45,7 +45,7 @@ const walkVars = (back: boolean, prefix: string) => {
 // On a tablet or a phone the bug hangs off an edge, so it walks in from that edge: left from a
 // right edge, up from a bottom edge.
 const inward = (sides: string) => (axis === 'x' ? /\bright\s*:/.test(sides) : /\bbottom\s*:/.test(sides));
-const phoneSides = phone && phone !== 'none' ? phone : 'right: 0.75rem; top: 0.75rem';
+const phoneSides = phone && phone !== 'none' ? phone : 'right: 0.75rem; top: 0.25rem';
 // A pace of its own per bug, so no two bugs on a page move in step.
 const seconds = 5 + ([...id].reduce((n, c) => n + c.charCodeAt(0), 0) % 7) * 0.5;
 const placed = [
@@ -96,7 +96,7 @@ const placed = [
       height: 2.75rem;
       left: var(--pl, auto);
       right: var(--pr, 0.75rem);
-      top: var(--pt, 0.75rem);
+      top: var(--pt, 0.25rem);
       bottom: var(--pb, auto);
       --kx: var(--pwx);
       --ky: var(--pwy);

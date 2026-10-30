@@ -59,7 +59,8 @@ const root = process.cwd();
 const runFile = path.join(root, 'tests', 'results', 'run.json');
 
 function load(): { report: Report; fromRun: boolean } {
-  if (existsSync(runFile)) return { report: JSON.parse(readFileSync(runFile, 'utf8')), fromRun: true };
+  // A run's report counts only in CI, where it is always the run just finished; a local one could be stale.
+  if (process.env.CI && existsSync(runFile)) return { report: JSON.parse(readFileSync(runFile, 'utf8')), fromRun: true };
   const require = createRequire(import.meta.url);
   const cli = path.join(path.dirname(require.resolve('@playwright/test/package.json')), 'cli.js');
   try {
