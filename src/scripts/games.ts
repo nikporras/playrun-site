@@ -203,9 +203,9 @@ export function startGames() {
   // practice the left column) also gets the pixel bolt, a muzzle flash as it leaves and a burst
   // where it lands. On a phone the reaction plays alone. A shot takes 1.2 s, a plain scan 0.8 s.
   // Nothing is ever hidden.
-  const SHOT_MS = 1200;
+  const SHOT_MS = 1300;
   const SCAN_MS = 800;
-  const FLIGHT_MS = 250;
+  const FLIGHT_MS = 350;
   const shot = document.querySelector<HTMLElement>('[data-shot]');
   const boltPx = Array.from(shot?.querySelectorAll<HTMLElement>('.bolt__px') ?? []);
   const muzzlePx = Array.from(shot?.querySelectorAll<HTMLElement>('.muzzle__px') ?? []);
@@ -266,33 +266,37 @@ export function startGames() {
     const b = logoOf(card);
     shot?.setAttribute('data-from', `${Math.round(a.x)},${Math.round(a.y)}`);
     shot?.setAttribute('data-to', `${Math.round(b.x)},${Math.round(b.y)}`);
-    // the bolt: head first, the trail squares a beat behind, fading as they go
+    // the bolt: the four head squares first, the trail a beat behind each, thinning as it goes
     boltPx.forEach((px, i) => {
-      const anim = fly(px, a, b, FLIGHT_MS, i * 16, i < 3 ? 1 : Math.max(0.15, 0.8 - i * 0.1));
-      anim.onfinish = () => px.animate([{ opacity: i < 3 ? 1 : 0.5 }, { opacity: 0 }], { duration: 60, fill: 'forwards' });
+      const head = i < 4;
+      const anim = fly(px, a, b, FLIGHT_MS, i * 14, head ? 1 : Math.max(0.1, 0.9 - (i - 4) * 0.1));
+      anim.onfinish = () => px.animate([{ opacity: head ? 1 : 0.5 }, { opacity: 0 }], { duration: 70, fill: 'forwards' });
     });
     // the muzzle: a cross of five at the nose, gone in a blink
     const cross = [
       [0, 0],
-      [-7, 0],
-      [7, 0],
-      [0, -7],
-      [0, 7],
+      [-11, 0],
+      [11, 0],
+      [0, -11],
+      [0, 11],
     ];
     muzzlePx.forEach((px, i) => {
       const [ox, oy] = cross[i];
-      px.animate([{ transform: at(a.x + ox, a.y + oy), opacity: 1 }, { transform: at(a.x + ox * 1.6, a.y + oy * 1.6), opacity: 0 }], { duration: 140, easing: 'steps(3, end)', fill: 'forwards' });
+      px.animate([{ transform: at(a.x + ox, a.y + oy), opacity: 1 }, { transform: at(a.x + ox * 1.8, a.y + oy * 1.8), opacity: 0 }], { duration: 160, easing: 'steps(3, end)', fill: 'forwards' });
     });
-    // the burst: eight squares scatter from the hit and fade
+    // the recoil: the ship kicks back 3px and returns, on top of its own pose
+    const sprite = runner.querySelector<HTMLElement>('.sprite');
+    sprite?.animate([{ transform: 'translateX(0px)' }, { transform: 'translateX(-3px)', offset: 0.35 }, { transform: 'translateX(0px)' }], { duration: 220, easing: 'steps(4, end)', composite: 'add' });
+    // the burst: twelve squares scatter from the hit and fade
     burstPx.forEach((px, i) => {
-      const angle = (i / burstPx.length) * Math.PI * 2 + (i % 2 ? 0.3 : 0);
-      const radius = 18 + (i % 3) * 7;
+      const angle = (i / burstPx.length) * Math.PI * 2 + (i % 2 ? 0.25 : 0);
+      const radius = 26 + (i % 3) * 8;
       px.animate(
         [
           { transform: at(b.x, b.y), opacity: 1 },
           { transform: at(b.x + Math.cos(angle) * radius, b.y + Math.sin(angle) * radius), opacity: 0 },
         ],
-        { duration: 300, delay: FLIGHT_MS, easing: 'steps(6, end)', fill: 'forwards' },
+        { duration: 320, delay: FLIGHT_MS, easing: 'steps(6, end)', fill: 'forwards' },
       );
     });
   };

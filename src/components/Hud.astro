@@ -21,18 +21,19 @@ import PassMark from './PassMark.astro';
   <div class="hud__floor" aria-hidden="true"></div>
   <p class="visually-hidden" aria-live="polite" data-hud-live></p>
 </div>
-<!-- The shot, in pixels: a bolt of eight squares (a bright head, a fading trail) that fly the same
-     path one after another, a muzzle flash of five at the ship's nose, a burst of eight at the hit.
-     Each square is moved by script (the Web Animations API, transform and opacity only). -->
+<!-- The shot, in pixels: a bolt of twelve squares (a bright glowing head of four, a cyan trail
+     thinning behind) that fly the same path one after another, a muzzle flash of five at the
+     ship's nose, a burst of twelve at the hit. Each square is moved by script (the Web Animations
+     API, transform and opacity only). -->
 <div class="shot" aria-hidden="true" data-shot>
   <div class="bolt" data-bolt>
-    {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => <i class={`px bolt__px bolt__px--${i}`} />)}
+    {Array.from({ length: 12 }, (_, i) => <i class:list={['px', 'bolt__px', i < 4 ? 'bolt__px--head' : 'bolt__px--trail', `bolt__px--${i}`]} />)}
   </div>
   <div class="muzzle" data-muzzle>
     {[0, 1, 2, 3, 4].map((i) => <i class={`px muzzle__px muzzle__px--${i}`} />)}
   </div>
   <div class="burst" data-burst>
-    {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => <i class={`px burst__px burst__px--${i}`} />)}
+    {Array.from({ length: 12 }, (_, i) => <i class={`px burst__px burst__px--${i % 3}`} />)}
   </div>
 </div>
 

@@ -812,15 +812,15 @@ html:not(.games) .bug {
   --e: 1;
 }
 
-/* The shot, in pixels (src/scripts/games.ts): every square is a 6px block fixed at the origin and
-   moved by script. The bolt's head is light, then green, its trail cyan thinning to nothing; the
-   muzzle is a cross of five at the nose; the burst eight squares that scatter from the hit. */
+/* The shot, in pixels (src/scripts/games.ts): every square is a 10px block fixed at the origin and
+   moved by script. The bolt's head is light then green with a square glow, its trail cyan thinning
+   to nothing; the muzzle is a cross of five at the nose; the burst twelve squares that scatter. */
 .shot .px {
   position: fixed;
-  left: -3px;
-  top: -3px;
-  width: 6px;
-  height: 6px;
+  left: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
   opacity: 0;
   pointer-events: none;
   z-index: 39;
@@ -829,37 +829,33 @@ html:not(.games) .bug {
 .bolt__px--0,
 .bolt__px--1 {
   background: var(--pr-light);
-  box-shadow: 0 0 6px var(--pr-light);
 }
 .bolt__px--2,
 .bolt__px--3 {
   background: var(--accent);
-  box-shadow: 0 0 6px var(--accent);
 }
-.bolt__px--4,
-.bolt__px--5,
-.bolt__px--6,
-.bolt__px--7 {
+.bolt__px--head {
+  box-shadow:
+    0 0 10px var(--accent),
+    0 0 22px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.bolt__px--trail {
   background: var(--accent-2);
 }
 .muzzle__px {
   background: var(--pr-light);
+  box-shadow: 0 0 10px var(--accent);
 }
 .muzzle__px--0 {
   background: var(--accent);
 }
-.burst__px--0,
-.burst__px--3,
-.burst__px--6 {
+.burst__px--0 {
   background: var(--pr-light);
 }
-.burst__px--1,
-.burst__px--4,
-.burst__px--7 {
+.burst__px--1 {
   background: var(--accent);
 }
-.burst__px--2,
-.burst__px--5 {
+.burst__px--2 {
   background: var(--accent-2);
 }
 

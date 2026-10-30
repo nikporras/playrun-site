@@ -81,8 +81,8 @@ test.describe('The Portfolio journey', () => {
     const first = page.locator('.card').first();
     const y = await first.evaluate((el) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
     await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
-    await expect(first).toHaveClass(/is-scanned/, { timeout: 2500 });
-    // the bolt: eight pixel squares, bright head and fading trail, each flying the path in a quarter of a second
+    await page.waitForFunction(() => document.querySelector('[data-shot]')?.getAttribute('data-to'), null, { timeout: 4000, polling: 16 });
+    // the bolt: twelve pixel squares, a bright glowing head and a thinning trail, each flying the path in a third of a second
     const bolt = await page.evaluate(() => {
       const px = [...document.querySelectorAll<HTMLElement>('.bolt__px')];
       return px.map((el) => {
@@ -91,18 +91,37 @@ test.describe('The Portfolio journey', () => {
         return { w: parseFloat(cs.width), h: parseFloat(cs.height), bg: cs.backgroundColor, duration: Number(a?.effect?.getComputedTiming().duration ?? 0), delay: Number(a?.effect?.getComputedTiming().delay ?? 0) };
       });
     });
-    expect(bolt.length).toBe(8);
+    expect(bolt.length).toBe(12);
     for (const p of bolt) {
-      expect(p.w, 'a 6px square').toBe(6);
-      expect(p.h).toBe(6);
-      expect(p.duration, 'a quarter of a second along the path').toBe(250);
+      expect(p.w, 'a 10px square').toBe(10);
+      expect(p.h).toBe(10);
+      expect(p.duration, 'a third of a second along the path').toBe(350);
     }
     expect(bolt.slice(0, 2).map((p) => p.bg)).toEqual(['rgb(229, 231, 234)', 'rgb(229, 231, 234)']);
-    expect(bolt[2].bg).toBe('rgb(103, 193, 140)');
-    expect(bolt[7].bg).toBe('rgb(86, 189, 218)');
-    expect(bolt[7].delay, 'the trail follows the head').toBeGreaterThan(bolt[0].delay);
+    expect(bolt.slice(2, 4).map((p) => p.bg)).toEqual(['rgb(103, 193, 140)', 'rgb(103, 193, 140)']);
+    for (const p of bolt.slice(4)) expect(p.bg).toBe('rgb(86, 189, 218)');
+    for (let i = 1; i < bolt.length; i++) expect(bolt[i].delay, 'each square a beat behind the last').toBeGreaterThan(bolt[i - 1].delay);
+    const glow = await page.locator('.bolt__px').evaluateAll((els) => els.map((el) => getComputedStyle(el).boxShadow));
+    for (const g of glow.slice(0, 4)) expect(g, 'a glow around the head').toContain('rgb(103, 193, 140)');
+    for (const g of glow.slice(4)) expect(g, 'none on the trail').toBe('none');
     expect(await page.locator('.muzzle__px').evaluateAll((els) => els.filter((el) => el.getAnimations().length).length), 'a muzzle flash').toBe(5);
-    expect(await page.locator('.burst__px').evaluateAll((els) => els.filter((el) => el.getAnimations().length).length), 'a burst at the hit').toBe(8);
+    expect(await page.locator('.burst__px').evaluateAll((els) => els.filter((el) => el.getAnimations().length).length), 'a burst at the hit').toBe(12);
+    expect(
+      await page.locator('.burst__px').evaluateAll((els) => {
+        const a = els[0].getAnimations()[0] as Animation;
+        const k = (a.effect as KeyframeEffect).getKeyframes();
+        const from = new DOMMatrix(String(k[0].transform));
+        const to = new DOMMatrix(String(k[k.length - 1].transform));
+        return Math.hypot(to.m41 - from.m41, to.m42 - from.m42);
+      }),
+      'the burst spreads',
+    ).toBeGreaterThanOrEqual(24);
+    // the recoil: the ship sprite kicks back 3px and returns, on top of its own pose
+    expect(
+      await page.locator('.hud__runner .sprite').evaluate((el) => el.getAnimations().some((a) => ((a.effect as KeyframeEffect).getKeyframes() as { transform?: string }[]).some((f) => /translateX\(-3px\)/.test(String(f.transform))) && (a.effect as KeyframeEffect).composite === 'add')),
+      'a 3px recoil composited onto the pose',
+    ).toBe(true);
+    await expect(first).toHaveClass(/is-scanned/, { timeout: 2500 });
     // the path: from the ship's nose to the card's logo, crossing no other card and no company block
     const path = await page.evaluate(() => {
       const shot = document.querySelector('[data-shot]')!;
@@ -179,7 +198,7 @@ test.describe('The Portfolio journey', () => {
     const shots = await page.evaluate(() => (window as unknown as { __shots: number[] }).__shots);
     // (only cards with a clear line of fire are shot, so a walk fires a few times, not at every card)
     expect(shots.length).toBeGreaterThanOrEqual(2);
-    for (let i = 1; i < shots.length; i++) expect(shots[i] - shots[i - 1], 'a shot at a time').toBeGreaterThanOrEqual(1150);
+    for (let i = 1; i < shots.length; i++) expect(shots[i] - shots[i - 1], 'a shot at a time').toBeGreaterThanOrEqual(1250);
     // every shot on the page kept a clear line of fire, and the stamps stayed
     expect(await page.locator('.card.is-scanned .card__pass').evaluateAll((els) => els.every((el) => getComputedStyle(el).opacity === '1'))).toBe(true);
     // each card at most once: coming back to a screen whose cards are all scanned fires nothing new
