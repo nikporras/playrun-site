@@ -71,7 +71,7 @@ for (const p of PAGES) {
       expect(res?.status()).toBe(200);
       await expect(page.locator('h1')).toHaveCount(1);
       await expect(page.locator('h1')).toHaveText(p.h1);
-      for (const text of p.must) await expect(page.getByText(text).first()).toBeVisible();
+      for (const text of p.must) await expect(page.getByText(text).filter({ visible: true }).first()).toBeVisible();
       await page.waitForLoadState('networkidle');
       expect(errors, errors.join('\n')).toEqual([]);
     });

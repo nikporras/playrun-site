@@ -5,7 +5,8 @@
  * the game, and the studio and publisher. A thin rule. My part: what I did on it (the most
  * prominent text on the card), the kinds of testing as labels right under it, the platforms, and
  * one outline button to its store page in a new tab. The company's accent colours the labels
- * through --g-accent and --g-ink, set on the group around the card.
+ * through --g-accent and --g-ink, set on the group around the card. On a phone, with script, the
+ * card folds to one row (a button) that opens the whole card in place.
  */
 import type { CollectionEntry } from 'astro:content';
 import { Image } from 'astro:assets';
@@ -21,57 +22,76 @@ interface Props {
   delay?: number;
   /** A target for the track's scan: once on screen and settled, the ship scans it (a bonus, never a gate). */
   scan?: boolean;
+  /** Open in a phone's folded list (the first game of each company); the desktop always shows it whole. */
+  open?: boolean;
 }
-const { project: p, via, delay = 0, scan = false } = Astro.props;
+const { project: p, via, delay = 0, scan = false, open = false } = Astro.props;
+const panel = `card-${p.id}`;
 const logo = logos[p.id];
 const when = p.data.status === 'in-development' ? 'In development' : `${p.data.year} · Released`;
 const store = p.data.store ?? 'Steam';
 ---
 
-<article class="card tile--live" data-enter="place" data-scan={scan ? '' : undefined} style={`--enter-delay: ${delay}ms`}>
+<article class:list={['card tile--live', open && 'is-open']} data-enter="place" data-scan={scan ? '' : undefined} data-card style={`--enter-delay: ${delay}ms`}>
   <span class="card__pass" aria-hidden="true"><PassMark /> Pass</span>
-  <div class="card__top">
-    <span class="card__logo">
-      {logo ? (
-        <Image src={logo} alt="" height={56} densities={[1, 2]} loading="lazy" decoding="async" />
-      ) : p.data.wordmark ? (
-        <span class="card__wordmark" aria-hidden="true">{p.data.title}</span>
-      ) : (
-        <GameIcon name={p.data.icon} />
-      )}
+  <!-- On a phone (with script) the card folds to this row: a small logo, the title, the year and
+       status, a chevron; it opens the whole card below it. -->
+  <button type="button" class="card__toggle" aria-expanded={open ? 'true' : 'false'} aria-controls={panel} data-card-toggle>
+    <span class="card__mini" aria-hidden="true">
+      {logo ? <Image src={logo} alt="" height={56} densities={[1, 2]} loading="lazy" decoding="async" /> : !p.data.wordmark && <GameIcon name={p.data.icon} />}
     </span>
-    <p class="card__when">{when}</p>
-  </div>
-  <h4 class="card__title">{p.data.title}</h4>
-  {via && <p class="card__via">{via}</p>}
-  <p class="card__summary">{p.data.summary}</p>
-  <p class="card__makers">
-    {p.data.studio}
-    {p.data.publisher && (
-      <>
-        <span class="card__dot" aria-hidden="true">&middot;</span> {p.data.publisher}
-      </>
-    )}
-  </p>
-  <div class="card__part">
-    {
-      p.data.did && (
-        <p class="card__did">
-          <span class="card__didkey">What I did</span> {p.data.did}
-        </p>
-      )
-    }
-    {
-      p.data.tags.length > 0 && (
-        <ul role="list" class="card__tags" aria-label="Testing">
-          {p.data.tags.map((t) => (
-            <li>{t}</li>
-          ))}
-        </ul>
-      )
-    }
-    <p class="card__platforms">{p.data.platforms.join(', ')}</p>
-    {p.data.url && <ExternalLink class="button button--outline card__store" href={p.data.url}>View on {store}</ExternalLink>}
+    <span class="card__name">{p.data.title}</span>
+    <span class="card__state">{when}</span>
+    <svg class="card__chevron" viewBox="0 0 7 5" shape-rendering="crispEdges" aria-hidden="true">
+      <path d="M0 0h2v1H0zM5 0h2v1H5zM1 1h2v1H1zM4 1h2v1H4zM2 2h3v1H2zM3 3h1v1H3z" fill="currentColor"></path>
+    </svg>
+  </button>
+  <div class="card__body" id={panel}>
+    <div class="card__inner">
+      <div class="card__top">
+        <span class="card__logo">
+          {logo ? (
+            <Image src={logo} alt="" height={56} densities={[1, 2]} loading="lazy" decoding="async" />
+          ) : p.data.wordmark ? (
+            <span class="card__wordmark" aria-hidden="true">{p.data.title}</span>
+          ) : (
+            <GameIcon name={p.data.icon} />
+          )}
+        </span>
+        <p class="card__when">{when}</p>
+      </div>
+      <h4 class="card__title">{p.data.title}</h4>
+      {via && <p class="card__via">{via}</p>}
+      <p class="card__summary">{p.data.summary}</p>
+      <p class="card__makers">
+        {p.data.studio}
+        {p.data.publisher && (
+          <>
+            <span class="card__dot" aria-hidden="true">&middot;</span> {p.data.publisher}
+          </>
+        )}
+      </p>
+      <div class="card__part">
+        {
+          p.data.did && (
+            <p class="card__did">
+              <span class="card__didkey">What I did</span> {p.data.did}
+            </p>
+          )
+        }
+        {
+          p.data.tags.length > 0 && (
+            <ul role="list" class="card__tags" aria-label="Testing">
+              {p.data.tags.map((t) => (
+                <li>{t}</li>
+              ))}
+            </ul>
+          )
+        }
+        <p class="card__platforms">{p.data.platforms.join(', ')}</p>
+        {p.data.url && <ExternalLink class="button button--outline card__store" href={p.data.url}>View on {store}</ExternalLink>}
+      </div>
+    </div>
   </div>
 </article>
 
@@ -89,6 +109,22 @@ const store = p.data.store ?? 'Steam';
     border-top: 0.25rem solid var(--g-accent, var(--accent-2));
     --sel-bg: var(--accent);
     --sel-ink: var(--accent-ink);
+  }
+  /* The whole card's content; a grid row so a phone can fold it (0fr) and open it (1fr). */
+  .card__body {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-rows: 1fr;
+  }
+  .card__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+    min-height: 0;
+    min-width: 0;
+  }
+  .card__toggle {
+    display: none;
   }
   .card__top {
     display: flex;
@@ -326,6 +362,101 @@ const store = p.data.store ?? 'Steam';
     }
     .card__title {
       font-size: 1.75rem;
+    }
+  }
+  /* A phone, with script: each card folds to a row, a button the width of the card. Open, the
+     whole card follows it in place, the same content in the same order as on a desktop. */
+  @media (max-width: 47.99rem) {
+    :global(.js) .card {
+      gap: 0;
+      padding-block: 0.5rem 0;
+    }
+    :global(.js) .card__toggle {
+      display: grid;
+      grid-template-columns: 2.5rem minmax(0, 1fr) auto 0.875rem;
+      align-items: center;
+      gap: 0.75rem;
+      width: calc(100% + 2 * var(--s-2));
+      min-height: 3rem;
+      margin: 0 calc(-1 * var(--s-2));
+      padding: 0.5rem var(--s-2) 0.75rem;
+      color: var(--ink);
+      text-align: left;
+      font: inherit;
+    }
+    :global(.js) .card__toggle:focus-visible {
+      outline-offset: -3px;
+    }
+    .card__mini {
+      display: block;
+      height: 1.5rem;
+    }
+    .card__mini :global(img) {
+      height: 100%;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      object-position: left center;
+    }
+    .card__mini :global(.gameicon) {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+    .card__mini :global(.gameicon rect:not(.px-navy)) {
+      fill: var(--g-accent, var(--accent-2));
+    }
+    .card__name {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      line-height: 1.1;
+    }
+    .card__state {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-align: right;
+      color: var(--g-ink, var(--accent-2));
+    }
+    .card__chevron {
+      width: 0.875rem;
+      height: 0.625rem;
+      color: var(--g-ink, var(--accent-2));
+    }
+    :global(.js) .card.is-open .card__chevron {
+      transform: rotate(180deg);
+    }
+    /* open, the card itself shows the logo and the year right below: the row keeps the title */
+    :global(.js) .card.is-open .card__mini,
+    :global(.js) .card.is-open .card__state {
+      visibility: hidden;
+    }
+    :global(.js) .card__body {
+      grid-template-rows: 0fr;
+      visibility: hidden;
+      transition:
+        grid-template-rows 260ms var(--ease-out),
+        visibility 0s linear 260ms;
+    }
+    :global(.js) .card.is-open .card__body {
+      grid-template-rows: 1fr;
+      visibility: visible;
+      transition-delay: 0s;
+    }
+    :global(.js) .card__inner {
+      overflow: hidden;
+    }
+    /* (spacing as margins inside the clip: padding on the folding row would keep it from closing) */
+    :global(.js) .card__top {
+      margin-top: var(--s-1);
+    }
+    :global(.js) .card__part {
+      margin-bottom: var(--s-2);
+    }
+  }
+  @media (max-width: 47.99rem) and (prefers-reduced-motion: reduce) {
+    :global(.js) .card__body {
+      transition: none;
     }
   }
 </style>
