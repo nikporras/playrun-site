@@ -54,7 +54,7 @@ async function settle(page: Page) {
     return Promise.all(
       document
         .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity && a.timeline instanceof DocumentTimeline) // (a scroll-driven join drift never finishes)
         .map((a) => a.finished.catch(() => null)),
     );
   });
@@ -147,7 +147,7 @@ for (const p of PAGES) {
         expect(f.spanBox, 'no filled box').toBe(none);
         expect(f.lineW, 'a short line before the text').toBeGreaterThanOrEqual(16);
         expect(f.size, 'small text').toBeLessThanOrEqual(16);
-        if (f.field === 'navy') expect(f, 'green on navy').toEqual(expect.objectContaining({ ink: green, line: green }));
+        if (f.field === 'navy' || f.field === 'field') expect(f, 'green on navy').toEqual(expect.objectContaining({ ink: green, line: green }));
         else if (f.field === 'blue') expect(f, 'white text, green line on blue').toEqual(expect.objectContaining({ ink: white, line: green }));
         else expect(f, `navy on ${f.field}`).toEqual(expect.objectContaining({ ink: navy, line: navy }));
       }
@@ -233,12 +233,10 @@ test('every card has a logo or its icon, the labels and one store button in a ne
         wordmark: el.querySelectorAll('.card__wordmark').length,
         tags: [...el.querySelectorAll('.card__tags li')].map((t) => t.textContent?.trim()),
         did: el.querySelector('.card__did')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
-        didUnderTitle: (() => {
-          const did = el.querySelector('.card__did');
-          if (!did) return true;
-          const kids = [...el.children];
-          return kids.indexOf(did) <= kids.indexOf(el.querySelector('.card__title')!) + 2 && kids.indexOf(did) < kids.indexOf(el.querySelector('.card__summary')!);
-        })(),
+        order: [...el.querySelectorAll('.card__title, .card__summary, .card__makers, .card__part, .card__did, .card__tags, .card__platforms, .card__store')].map((k) => [...k.classList].find((n) => n.startsWith('card__'))),
+        rule: parseFloat(getComputedStyle(el.querySelector('.card__part')!).borderTopWidth),
+        didColor: getComputedStyle(el.querySelector('.card__did') ?? el).color,
+        summaryColor: getComputedStyle(el.querySelector('.card__summary')!).color,
         didSize: parseFloat(getComputedStyle(el.querySelector('.card__did') ?? el).fontSize),
         summarySize: parseFloat(getComputedStyle(el.querySelector('.card__summary')!).fontSize),
         platforms: el.querySelector('.card__platforms')?.textContent?.trim() ?? '',
@@ -260,8 +258,15 @@ test('every card has a logo or its icon, the labels and one store button in a ne
     expect(c.when).toMatch(/^(\d{4} · Released|In development)$/);
     expect(c.stage, `${c.title}: no stage numbers`).toBe(false);
     for (const t of c.tags) expect(c.did.toLowerCase(), `${c.title}: "${t}" is a label, not repeated in what I did`).not.toContain(t!.toLowerCase());
-    expect(c.didUnderTitle, `${c.title}: what I did comes right under the title, before the line on the game`).toBe(true);
-    if (c.did) expect(c.didSize, `${c.title}: what I did reads as the subtitle`).toBeGreaterThan(c.summarySize);
+    // two blocks: the game (title, the line on it, the makers), a thin rule, then my part (what I
+    // did, its labels right under it, the platforms, the button)
+    expect(c.order, `${c.title}: the game first, then my part`).toEqual(['card__title', 'card__summary', 'card__makers', 'card__part', ...(c.did ? ['card__did'] : []), 'card__tags', 'card__platforms', 'card__store']);
+    expect(c.rule, `${c.title}: a thin rule between the blocks`).toBe(1);
+    if (c.did) {
+      expect(c.didSize, `${c.title}: what I did is the most prominent text`).toBeGreaterThan(c.summarySize);
+      expect(c.didColor, `${c.title}: what I did is brighter than the line on the game`).toBe('rgb(229, 231, 234)');
+      expect(c.summaryColor).not.toBe('rgb(229, 231, 234)');
+    }
   }
   // unreleased titles list only the platforms with a store page
   const byTitle = Object.fromEntries(cards.map((c) => [c.title, c]));
@@ -275,6 +280,32 @@ test('every card has a logo or its icon, the labels and one store button in a ne
   expect(byTitle['Ghostbusters: Rise of the Ghost Lord'].did).toContain('Supported the main QA team near milestones, on Meta Quest and PS VR2, including co-op sessions.');
   expect(byTitle['Synapse'].did).toContain('Supported the main QA team near milestones on PS VR2.');
   expect(cards.filter((c) => c.logo).length, 'official logos').toBeGreaterThanOrEqual(16);
+  // the store button is an outline: green edge and text on the navy tile, pixel-notched corners,
+  // at least 44px tall, smaller than the solid button; filled green with navy text on hover and
+  // focus, with a ring inside the fill
+  const store = page.locator('.card__store').first();
+  await store.scrollIntoViewIfNeeded();
+  // (the card's entrance scales it for a moment; measure once it has settled)
+  await expect.poll(() => store.evaluate((el) => el.getBoundingClientRect().height), { timeout: 4000 }).toBeGreaterThanOrEqual(44);
+  const outline = await store.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    const fill = getComputedStyle(el, '::before');
+    return { h: el.getBoundingClientRect().height, color: cs.color, edge: cs.backgroundColor, fill: fill.backgroundColor, clip: cs.clipPath, size: parseFloat(cs.fontSize), radius: cs.borderTopLeftRadius };
+  });
+  expect(outline.h).toBeGreaterThanOrEqual(44);
+  expect(outline.color).toBe('rgb(103, 193, 140)');
+  expect(outline.edge, 'the green edge').toBe('rgb(103, 193, 140)');
+  expect(outline.fill, 'navy inside').toBe('rgb(12, 21, 42)');
+  expect(outline.clip, 'notched corners').toMatch(/^polygon\(/);
+  expect(outline.radius).toBe('0px');
+  expect(outline.size).toBeLessThan(parseFloat(await page.locator('.next .button').first().evaluate((el) => getComputedStyle(el).fontSize)));
+  await store.hover();
+  await expect.poll(() => store.evaluate((el) => getComputedStyle(el, '::before').backgroundColor)).toBe('rgb(103, 193, 140)');
+  expect(await store.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(12, 21, 42)');
+  await page.mouse.move(0, 0);
+  await store.focus();
+  await expect.poll(() => store.evaluate((el) => getComputedStyle(el, '::before').backgroundColor)).toBe('rgb(103, 193, 140)');
+  expect(await store.evaluate((el) => [getComputedStyle(el).color, getComputedStyle(el, '::after').opacity, getComputedStyle(el, '::after').boxShadow])).toEqual(['rgb(12, 21, 42)', '1', expect.stringContaining('rgb(12, 21, 42)')]);
   // the old pages are gone from the build and the sitemap; their addresses send visitors to the portfolio
   for (const slug of ['lous-lagoon', 'synapse', 'cyberpunk-2077', 'the-climb', 'pathfinder-abomination-vaults']) {
     const res = await request.get(`/portfolio/${slug}/`);

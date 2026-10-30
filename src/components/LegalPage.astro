@@ -5,6 +5,7 @@
  * <section class="row"> blocks so each page keeps its own words.
  */
 import Base from '../layouts/Base.astro';
+import Join from './Join.astro';
 import { contact, legal } from '../config';
 
 interface Props {
@@ -19,7 +20,7 @@ const updatedText = new Date(updated).toLocaleDateString('en-GB', { day: 'numeri
 ---
 
 <Base title={title} description={description}>
-  <section class="level level--navy legal" data-level="1" aria-labelledby="legal-title">
+  <section class="level level--navy level--sky has-join-bottom legal" data-level="1" aria-labelledby="legal-title">
     <p class="flag" data-load style="--d: 0ms"><span>{kicker}</span></p>
     <div class="legal__head">
       <h1 id="legal-title" class="page__title legal__title">
@@ -30,16 +31,19 @@ const updatedText = new Date(updated).toLocaleDateString('en-GB', { day: 'numeri
         <p class="legal__updated">Last updated {updatedText}</p>
       </div>
     </div>
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-blue)" seed={`legal-${title}`} />
   </section>
 
-  <section class="level level--blue legal__body" data-level="2" aria-label={`${title}, the details`}>
+  <section class="level level--blue has-join-bottom legal__body" data-level="2" aria-label={`${title}, the details`}>
+    <Join kind="terrain" from="var(--field-blue)" to="var(--field-green)" seed={`legal-ask-${title}`} />
     <p class="flag" data-enter><span>Level 2 &middot; The details</span></p>
     <div class="legal__rows rows">
       <slot />
     </div>
   </section>
 
-  <section class="level level--green legal__ask" data-level="3" aria-labelledby="legal-ask-title">
+  <section class="level level--green has-join-bottom legal__ask" data-level="3" aria-labelledby="legal-ask-title">
+    <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed={`legal-foot-${title}`} />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 3 &middot; Questions</span></p>
       <h2 id="legal-ask-title" class="level__title" data-enter="wipe">Ask me anything about this</h2>

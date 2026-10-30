@@ -28,6 +28,10 @@
   --field-cyan-ink: var(--pr-navy);
   --field-green: var(--pr-green);
   --field-green-ink: var(--pr-navy);
+  --field-2: #16244d; /* the lighter navy of the levels after the first: the light ink is 12:1 on it, green 7.3:1, cyan 7.6:1 */
+  --grid-img: linear-gradient(to right, rgb(229 231 234 / 0.045) 1px, transparent 1px), linear-gradient(to bottom, rgb(229 231 234 / 0.045) 1px, transparent 1px); /* the faint pixel grid on the navy fields */
+  --grid-size: 32px;
+  --join-h: 9rem; /* the pixel join between two levels: 144px, the art in 8px pixels */
   --rule: color-mix(in srgb, currentColor 24%, transparent); /* the thin divider on every field */
 
   /* Type */
@@ -83,10 +87,16 @@
   --stagger: 70ms;
 }
 
+@media (max-width: 63.99rem) {
+  :root {
+    --join-h: 6.75rem; /* the join art at 6px pixels */
+  }
+}
 @media (max-width: 47.99rem) {
   :root {
     --hud-h: 2.75rem; /* one slim row: the floor, the ship and the Games button */
     --floor-h: 0.5rem;
     --ship-w: 1.5rem;
+    --join-h: 4.5rem; /* the join art at 4px pixels */
   }
 }

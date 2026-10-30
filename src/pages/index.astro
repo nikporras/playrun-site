@@ -5,6 +5,7 @@ import Base from '../layouts/Base.astro';
 import PassMark from '../components/PassMark.astro';
 import CrossMark from '../components/CrossMark.astro';
 import Bug from '../components/Bug.astro';
+import Join from '../components/Join.astro';
 import GameIcon from '../components/GameIcon.astro';
 import { suite } from '../data/suite';
 import { logos } from '../data/logos';
@@ -48,13 +49,14 @@ const wall = [...FEATURED.flatMap((id) => byPost.filter((p) => p.id === id)), ..
 // platform line names a headset, or one flagged `vr` (Londinium, whose platform line is Steam
 // alone); a lead role is one flagged `lead` in the employers.
 const isVR = (p: (typeof shown)[number]) => p.data.vr || p.data.platforms.some((name) => /VR|Quest/i.test(name));
+// Each stat carries a short caption, shown under it while it is the active row: light, and true.
 const stats = [
-  { n: new Date().getFullYear() - since, suffix: '+', label: 'years in QA' },
-  { n: new Set(employers.map((e) => e.name)).size, suffix: '', label: 'companies' },
-  { n: shown.length, suffix: '', label: 'games' },
-  { n: shown.filter(isVR).length, suffix: '', label: 'VR games' },
-  { n: 10, suffix: '+', label: 'platforms' },
-  { n: employers.flatMap((e) => e.roles).filter((r) => r.lead).length, suffix: '', label: 'QA lead roles' },
+  { n: new Date().getFullYear() - since, suffix: '+', label: 'years in QA', cap: 'Started in 2021. Still finding things.' },
+  { n: new Set(employers.map((e) => e.name)).size, suffix: '', label: 'companies', cap: 'Six sets of house rules learned.' },
+  { n: shown.length, suffix: '', label: 'games', cap: 'Every one played to the credits.' },
+  { n: shown.filter(isVR).length, suffix: '', label: 'VR games', cap: 'Headset tan included.' },
+  { n: 10, suffix: '+', label: 'platforms', cap: 'Each one with its own cable.' },
+  { n: employers.flatMap((e) => e.roles).filter((r) => r.lead).length, suffix: '', label: 'QA lead roles', cap: 'Test plans, rotas and the odd pep talk.' },
 ];
 
 const ALT = 'Nicolás Porras wearing a VR headset pushed up on his head';
@@ -76,7 +78,7 @@ const checks = [
 
 <Base title="Home" fullTitle={`${site.name}, the game QA portfolio of Nicolás Porras, London`}>
   <!-- Level 1: the start screen. It stays pinned while the next level slides up over it. -->
-  <section class="level level--navy hero" data-level="1" aria-labelledby="hero-title">
+  <section class="level level--navy level--sky hero" data-level="1" aria-labelledby="hero-title">
     <div class="level__head hero__head">
       <p class="flag" data-load style="--d: 0ms"><span>Level 1 &middot; Start</span></p>
       <div class="hero__name">
@@ -121,7 +123,9 @@ const checks = [
   </section>
 
   <!-- Level 2: the ticker of titles, their official logos in one colour, rolling slowly left -->
-  <section class="level level--blue level--tight wall" data-level="2" aria-labelledby="wall-title">
+  <section class="level level--blue level--tight has-join-top has-join-bottom wall" data-level="2" aria-labelledby="wall-title">
+    <Join kind="clouds" at="top" from="var(--pr-navy)" to="var(--field-blue)" seed="home-wall" />
+    <Join kind="terrain" from="var(--field-blue)" to="var(--pr-navy)" seed="home-stats" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; Portfolio</span></p>
       <h2 id="wall-title" class="level__title wall__title" data-enter="wipe">Games I've tested</h2>
@@ -166,7 +170,8 @@ const checks = [
        the active one in the centre, the six stats three times over so the loop never ends and no
        stat shows twice at once (the outer copies hidden from assistive tech). A still list
        without script or under reduced motion. -->
-  <section class="level level--navy stats" data-level="3" aria-labelledby="stats-title">
+  <section class="level level--navy has-join-bottom stats" data-level="3" aria-labelledby="stats-title">
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-green)" seed="home-proof" />
     <div class="stats__grid">
       <div class="level__head stats__head">
         <p class="flag" data-enter><span>Level 3 &middot; Stats</span></p>
@@ -184,7 +189,10 @@ const checks = [
                       {s.n}
                       {s.suffix}
                     </span>
-                    <span class="drum__label">{s.label}</span>
+                    <span class="drum__text">
+                      <span class="drum__label">{s.label}</span>
+                      <span class="drum__cap">{s.cap}</span>
+                    </span>
                   </li>
                 )),
               )
@@ -206,11 +214,12 @@ const checks = [
         <p class="visually-hidden" aria-live="polite" data-drum-live></p>
       </div>
     </div>
-    <Bug id="stats-1" style="left: 42%; bottom: 1.5rem" tablet="right: 8%; top: 0.75rem" phone="right: 1rem; top: 0.25rem" walk="x 2rem" />
+    <Bug id="stats-1" style="left: 42%; bottom: 1.5rem" tablet="right: 8%; bottom: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x 2rem" />
   </section>
 
   <!-- Level 4: proof as a scoreboard on a green field -->
-  <section class="level level--green proof" data-level="4" aria-labelledby="proof-title">
+  <section class="level level--green has-join-bottom proof" data-level="4" aria-labelledby="proof-title">
+    <Join kind="terrain" from="var(--field-green)" to="var(--field-light)" seed="home-final" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 4 &middot; Proof</span></p>
       <h2 id="proof-title" class="level__title" data-enter="wipe">Tested like my games</h2>
@@ -253,7 +262,8 @@ const checks = [
   </section>
 
   <!-- Level 5: after hours, and the one last button -->
-  <section class="level level--light final" data-level="5" aria-labelledby="final-title">
+  <section class="level level--light has-join-bottom final" data-level="5" aria-labelledby="final-title">
+    <Join kind="terrain" from="var(--field-light)" to="var(--pr-navy)" seed="home-foot" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 5 &middot; Final level</span></p>
       <h2 id="final-title" class="level__title" data-enter="wipe">After hours</h2>
@@ -722,6 +732,10 @@ const checks = [
      half strength and shifted right; the outer rows at a quarter and shifted twice as far, the
      stepped offsets giving the curve of a drum. The same type size on every row: the emphasis is
      only colour, opacity and offset, and all three move smoothly as the drum turns. */
+  /* The terrain at the foot of the ticker is the breathing room above the stats: less padding here. */
+  .stats {
+    padding-top: var(--s-5);
+  }
   .stats__grid {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
@@ -772,12 +786,28 @@ const checks = [
     letter-spacing: 0.02em;
     white-space: nowrap;
   }
-  .drum__label {
+  .drum__text {
     flex: 1 1 auto;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+  }
+  .drum__label {
     font-family: var(--font-text);
     font-size: clamp(1rem, 0.5rem + 1.1vw, 1.5rem);
     line-height: 1.2;
+  }
+  /* The caption: a short line of personality under the stat, Montserrat italic in cyan, 17px on a
+     desktop and 15px on a phone. On the turning drum only the active row's shows, fading in as
+     the row arrives; the still list shows every caption under its stat. */
+  .drum__cap {
+    font-family: var(--font-text);
+    font-style: italic;
+    font-size: clamp(0.9375rem, 0.875rem + 0.2vw, 1.0625rem);
+    line-height: 1.3;
+    color: var(--accent-2);
+    max-width: 30ch;
   }
   .drum__controls {
     display: none;
@@ -872,6 +902,14 @@ const checks = [
   .drum.is-live .drum__row[data-d='0'] .drum__num {
     color: var(--accent);
   }
+  .drum.is-live .drum__cap {
+    opacity: 0;
+    transition: opacity 300ms ease;
+  }
+  .drum.is-live .drum__row[data-d='0'] .drum__cap {
+    opacity: 1;
+    transition-delay: 200ms;
+  }
   .drum.is-live .drum__controls {
     display: flex;
   }
@@ -884,6 +922,8 @@ const checks = [
   @media (max-width: 47.99rem) {
     .drum {
       column-gap: var(--s-2);
+      /* a caption wraps to two lines on a phone: the row grows to hold label and caption */
+      --row: max(calc(var(--num) * 1.25), 4.75rem);
     }
     .drum__button {
       width: 2.5rem;
@@ -1136,7 +1176,7 @@ const checks = [
     };
     const announce = () => {
       const row = rows[i];
-      live.textContent = `${row.querySelector('.drum__num')?.textContent?.trim()} ${row.querySelector('.drum__label')?.textContent?.trim()}`;
+      live.textContent = `${row.querySelector('.drum__num')?.textContent?.trim()} ${row.querySelector('.drum__label')?.textContent?.trim()}. ${row.querySelector('.drum__cap')?.textContent?.trim() ?? ''}`;
     };
     const go = (dir: 1 | -1) => {
       if (moving) return;

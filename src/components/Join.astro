@@ -1,0 +1,291 @@
+---
+/**
+ * A pixel join between two levels: instead of a straight edge, two or three layered silhouettes
+ * (stepped pixel clouds, or stepped hills like the ground in a platformer) sit across the boundary,
+ * so the colour change happens behind them. The band is transparent and sits at the foot of the
+ * upper level (the level adds the band's height to its padding), so the upper level's own field
+ * shows above the shapes and the front layer, the lower level's colour, meets the lower level: no
+ * seam, and no box. On Home the first join sits at the top of Level 2 instead (`at="top"`), so the
+ * clouds slide up over the pinned hero with the level, the hero and the photo showing through above
+ * them. Everything is inline SVG in brand colours, drawn at build time from a seeded random walk
+ * so no two joins repeat, in 8px pixels (scaled to 6px on tablets and 4px on phones). On scroll
+ * the back layers drift a little (scroll-driven CSS where supported, still under reduced motion).
+ * Decorative: hidden from assistive tech, no pointer events, no layout shift.
+ */
+interface Props {
+  /** clouds for the dark sky into the next level; terrain into a bright highlight and down again */
+  kind: 'clouds' | 'terrain';
+  /** the upper level's colour (the back layers are mixes of the two) */
+  from: string;
+  /** the lower level's colour (the front layer) */
+  to: string;
+  /** a word that seeds the shapes, different on every join */
+  seed: string;
+  /** at the foot of the upper level (default), or at the top of the lower one (the Home curtain) */
+  at?: 'top' | 'bottom';
+}
+const { kind, from, to, seed, at = 'bottom' } = Astro.props;
+
+// a small seeded generator (mulberry32), so the shapes are the same on every build
+let state = [...`${kind}:${seed}`].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 2654435761) >>> 0, 2166136261);
+const rand = () => {
+  state = (state + 0x6d2b79f5) >>> 0;
+  let t = Math.imul(state ^ (state >>> 15), 1 | state);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const pick = (lo: number, hi: number) => lo + Math.floor(rand() * (hi - lo + 1));
+
+const P = 8; // one pixel of the art, in CSS px at desktop
+const TH = 144; // the tile (and the band at desktop), in px
+const id = `join-${kind}-${seed}`.replace(/[^a-z0-9-]/gi, '-').toLowerCase();
+
+// The longest flat run along a profile (the tile repeats, so a run may wrap round the end).
+const longestFlat = (h: number[]) => {
+  let best = 0;
+  let run = 0;
+  for (let c = 0; c < h.length * 2; c++) {
+    run = h[c % h.length] === h[(c - 1 + h.length) % h.length] ? run + 1 : 1;
+    best = Math.max(best, Math.min(run, h.length));
+  }
+  return best;
+};
+const span = (h: number[]) => Math.max(...h) - Math.min(...h);
+
+// Terrain: the ground of a platformer, as column heights in pixels of the art: a plateau of a
+// few columns, then a ramp of one pixel a column up or down to the next, bent back to its start
+// over the last columns so the tile repeats without a jump. No plateau runs longer than `flat`
+// columns, and the ground rises and falls at least `rise` pixels.
+const terrain = (cols: number, lo: number, hi: number, flat: number, rise: number) => {
+  const clamp = (v: number) => Math.max(lo, Math.min(hi, v));
+  let best: number[] = [];
+  let bestFlat = Infinity;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const h: number[] = [];
+    let cur = pick(lo, hi);
+    const start = cur;
+    while (h.length < cols) {
+      for (let k = pick(3, flat); k > 0 && h.length < cols; k--) h.push(cur);
+      // the next plateau is always a different height: at the top or the foot the walk turns round
+      const dir = rand() < 0.5 ? -1 : 1;
+      const step = pick(2, 5);
+      let target = clamp(cur + dir * step);
+      if (target === cur) target = clamp(cur - dir * step);
+      while (cur !== target && h.length < cols) {
+        cur += Math.sign(target - cur);
+        h.push(cur);
+      }
+    }
+    // the last columns step back toward the start, one pixel a column
+    for (let c = cols - Math.abs(h[cols - 1] - start) - 1; c < cols - 1; c++) h[c + 1] = h[c] + Math.sign(start - h[c]);
+    h[cols - 1] = start;
+    const f = longestFlat(h);
+    if (f <= flat && span(h) >= rise) return h;
+    if (f < bestFlat) {
+      bestFlat = f;
+      best = h;
+    }
+  }
+  return best; // the flattest-free attempt (the test on the front edge would say if it fell short)
+};
+
+// Clouds: domes rising from the foot of the tile (a stepped quarter-circle profile each), their
+// union a bank; a dome that crosses the tile's edge wraps round, so the bank repeats cleanly.
+// Wherever the bank still runs flat for longer than `flat` columns another dome goes in, so the
+// top edge is bumps all the way along, and the bank rises and falls at least `rise` pixels.
+const clouds = (cols: number, lo: number, hi: number, count: number, flat: number, rise: number) => {
+  const h = new Array<number>(cols).fill(2); // a base two pixels deep, so the bank is never broken
+  const dome = (cx: number, half: number, top: number) => {
+    for (let dx = -half; dx <= half; dx++) {
+      const c = (((cx + dx) % cols) + cols) % cols;
+      const r = Math.round(top * Math.sqrt(Math.max(0, 1 - (dx / (half + 0.5)) ** 2)));
+      h[c] = Math.max(h[c], r);
+    }
+  };
+  for (let k = 0; k < count; k++) dome(pick(0, cols - 1), pick(5, 11), pick(lo, hi));
+  for (let guard = 0; guard < 80 && (longestFlat(h) > flat || span(h) < rise); guard++) {
+    // the middle of the longest flat run gets a dome of its own
+    let bestStart = 0;
+    let bestLen = 0;
+    let run = 0;
+    for (let c = 0; c < cols * 2; c++) {
+      run = h[c % cols] === h[(c - 1 + cols) % cols] ? run + 1 : 1;
+      if (run > bestLen) {
+        bestLen = run;
+        bestStart = c - run + 1;
+      }
+    }
+    dome((bestStart + Math.floor(bestLen / 2)) % cols, pick(3, 7), pick(Math.max(lo, 7), hi));
+  }
+  return h;
+};
+
+// the silhouette as one path (bottom-anchored), and the highlights: one pixel on the top of every
+// column where the profile rises or starts a plateau, a lighter touch on the cloud tops
+const silhouette = (h: number[]) => {
+  let d = `M0 ${TH}`;
+  h.forEach((v, c) => {
+    d += `V${TH - v * P}H${(c + 1) * P}`;
+  });
+  return `${d}V${TH}Z`;
+};
+const highlights = (h: number[], every: number) => {
+  let d = '';
+  h.forEach((v, c) => {
+    const prev = h[(c - 1 + h.length) % h.length];
+    const rises = v > prev;
+    const plateauStart = v === prev && h[(c - 2 + h.length) % h.length] < v;
+    if (v > 2 && (rises || plateauStart || c % every === 0)) d += `M${c * P} ${TH - v * P}h${P}v${P}h-${P}Z`;
+  });
+  return d;
+};
+
+// three layers, back to front, each with its own tile width so the composite hardly ever repeats.
+// The front layer is the edge between the two colours, so it is bumps all along: its silhouette
+// rises and falls at least six pixels of the art (a third of the band) and never runs flat for
+// more than seven columns (56px on a desktop, 28px on a phone); the taller layers stand behind and
+// between its bumps.
+const spec = [
+  { name: 'back', tile: 1152, lo: 11, hi: 16, count: 9, every: 7, flat: 12, rise: 3 },
+  { name: 'mid', tile: 896, lo: 8, hi: 13, count: 8, every: 5, flat: 10, rise: 3 },
+  { name: 'front', tile: 1024, lo: 5, hi: 12, count: 14, every: 4, flat: 7, rise: 6 },
+];
+const layers = spec.map((s) => {
+  const cols = s.tile / P;
+  const h = kind === 'terrain' ? terrain(cols, s.lo, s.hi, s.flat, s.rise) : clouds(cols, s.lo, s.hi, s.count, s.flat, s.rise);
+  return { ...s, path: silhouette(h), light: kind === 'clouds' ? highlights(h, s.every) : '' };
+});
+---
+
+<div class={`join join--${kind} join--${at}`} aria-hidden="true" style={`--from: ${from}; --to: ${to}`}>
+  {
+    layers.map((l) => (
+      <svg class={`join__layer join__layer--${l.name}`} height={TH} aria-hidden="true" focusable="false" shape-rendering="crispEdges">
+        <defs>
+          <pattern id={`${id}-${l.name}`} width={l.tile} height={TH} patternUnits="userSpaceOnUse">
+            <path d={l.path} class="join__fill" />
+            {l.light && <path d={l.light} class="join__light" />}
+          </pattern>
+        </defs>
+        <rect width="100%" height={TH} fill={`url(#${id}-${l.name})`} />
+      </svg>
+    ))
+  }
+</div>
+
+<style is:global>
+  /* The band: transparent, the layers standing on its foot, so whatever is behind it (the level's
+     own field, or the hero under the curtain) shows above the shapes. In flow: the level it belongs
+     to adds its height to its padding (has-join-top or has-join-bottom), so nothing is ever covered
+     and nothing shifts. */
+  .join {
+    --join-s: 1;
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: var(--join-h);
+    overflow: hidden;
+    background: transparent;
+    pointer-events: none;
+    z-index: 0;
+    --join-back: color-mix(in srgb, var(--to) 50%, var(--from));
+    --join-mid: color-mix(in srgb, var(--to) 76%, var(--from));
+  }
+  .join--top {
+    top: 0;
+  }
+  .join--bottom {
+    bottom: 0;
+  }
+  .join__layer {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: calc(100% / var(--join-s));
+    max-width: none;
+    height: 144px;
+    scale: var(--join-s);
+    transform-origin: 0 100%;
+    overflow: visible;
+  }
+  .join__layer--back .join__fill {
+    fill: var(--join-back);
+  }
+  .join__layer--mid .join__fill {
+    fill: var(--join-mid);
+  }
+  .join__layer--front .join__fill {
+    fill: var(--to);
+  }
+  .join__layer--back .join__light {
+    fill: color-mix(in srgb, var(--join-back) 84%, var(--pr-light));
+  }
+  .join__layer--mid .join__light {
+    fill: color-mix(in srgb, var(--join-mid) 84%, var(--pr-light));
+  }
+  .join__layer--front .join__light {
+    fill: color-mix(in srgb, var(--to) 86%, var(--pr-light));
+  }
+  /* The level under a bottom join keeps a little of its own padding above the band (the band reads
+     as space too). A level with a top join (the curtain) paints its field only below the band, so
+     the band stays see-through. */
+  .level.has-join-bottom {
+    padding-bottom: calc(var(--s-5) + var(--join-h));
+  }
+  .level--tight.has-join-bottom {
+    padding-bottom: calc(var(--s-3) + var(--join-h));
+  }
+  .level.has-join-top {
+    padding-top: calc(var(--s-6) + var(--join-h));
+    background-color: transparent;
+    background-image: linear-gradient(var(--level-bg), var(--level-bg));
+    background-size: 100% calc(100% - var(--join-h));
+    background-position: 0 var(--join-h);
+    background-repeat: no-repeat;
+  }
+  .level--tight.has-join-top {
+    padding-top: calc(var(--s-5) + var(--join-h));
+  }
+  /* The drift: as the band crosses the screen the back layers slide a little, the front one stays
+     put on the level it belongs to. Only where scroll-driven animations exist, never under reduced
+     motion; elsewhere the layers are still. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .join__layer--back,
+      .join__layer--mid {
+        animation: join-drift linear both;
+      }
+      /* the timeline in a rule of its own: folded into the shorthand by the minifier, the browser
+         would drop the whole declaration */
+      .join .join__layer--back,
+      .join .join__layer--mid {
+        animation-timeline: view();
+        animation-range: entry 0% exit 100%;
+      }
+      .join__layer--back {
+        --drift: 28px;
+      }
+      .join__layer--mid {
+        --drift: 12px;
+      }
+    }
+  }
+  @keyframes join-drift {
+    from {
+      translate: 0 var(--drift);
+    }
+    to {
+      translate: 0 calc(-1 * var(--drift));
+    }
+  }
+  @media (max-width: 63.99rem) {
+    .join {
+      --join-s: 0.75;
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .join {
+      --join-s: 0.5;
+    }
+  }
+</style>

@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
 import GameCard from '../components/GameCard.astro';
+import Join from '../components/Join.astro';
 import { employers } from '../config';
 
 const all = await getCollection('projects');
@@ -31,7 +32,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
 
 <Base title="Portfolio" description="Games Nicolás Porras has tested, by company: the Megabit titles at Aonic, Guildford Castle VR and Londinium at Historic VR, the nDreams VR titles, and Cyberpunk 2077, NBA 2K21 and the VR titles via Universally Speaking.">
   <!-- Level 1 -->
-  <section class="level level--navy work" data-level="1" aria-labelledby="work-title">
+  <section class="level level--navy level--sky has-join-bottom work" data-level="1" aria-labelledby="work-title">
     <div class="level__head">
       <p class="flag" data-load style="--d: 0ms"><span>Portfolio</span></p>
       <h1 id="work-title" class="page__title">
@@ -42,11 +43,13 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
         {words[count] ?? count} titles across {words[companies]?.toLowerCase() ?? companies} companies, from where I started in 2021 to the latest indie releases.
       </p>
     </div>
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-cyan)" seed="portfolio-titles" />
     <Bug id="portfolio-1" style="right: 12%; top: 9rem" tablet="right: 10%; bottom: 0.75rem" walk="x -2rem" />
   </section>
 
   <!-- Level 2: every post, newest first, with its titles -->
-  <section class="level level--cyan titles" data-level="2" aria-labelledby="titles-title">
+  <section class="level level--cyan has-join-bottom titles" data-level="2" aria-labelledby="titles-title">
+    <Join kind="terrain" from="var(--field-cyan)" to="var(--field-green)" seed="portfolio-next" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; By company</span></p>
       <h2 id="titles-title" class="level__title" data-enter="wipe">Where I tested them</h2>
@@ -77,10 +80,15 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
               <p class="group__lead">{g.lead}</p>
             </div>
             {g.projects.length > 0 && (
-              <div class="group__grid">
-                {g.projects.map((p, i) => (
-                  <GameCard project={p} via={g.via} delay={i * 60} scan />
-                ))}
+              <div class="group__row" data-row role="region" aria-label={`${g.name} games, ${span(g)}`}>
+                <ul role="list" class="group__grid">
+                  {g.projects.map((p, i) => (
+                    <li class="group__cell">
+                      <GameCard project={p} via={g.via} delay={i * 60} scan />
+                    </li>
+                  ))}
+                </ul>
+                <p class="group__pos" data-row-pos aria-live="polite" hidden></p>
               </div>
             )}
           </div>
@@ -92,7 +100,8 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
   </section>
 
   <!-- Level 3: a short way on -->
-  <section class="level level--green level--tight next" data-level="3" aria-labelledby="next-title">
+  <section class="level level--green level--tight has-join-bottom next" data-level="3" aria-labelledby="next-title">
+    <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="portfolio-foot" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 3 &middot; Next</span></p>
       <h2 id="next-title" class="level__title level__title--small" data-enter="wipe">How I test</h2>
@@ -169,23 +178,29 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     font-size: 1rem;
     max-width: 70ch;
   }
-  /* Three tiles a row on a six-column grid, so the last row always fills: a lone last tile
-     spans the row, a pair splits it. */
+  /* The cards are a list at every width. On a desktop, three a row on a six-column grid, so the
+     last row always fills: a lone last tile spans the row, a pair splits it. */
   .group__grid {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: var(--gap);
-    margin-top: var(--gap);
+    margin: var(--gap) 0 0;
+    padding: 0;
   }
-  .group__grid > :global(.card) {
+  .group__cell {
+    display: grid;
+    min-width: 0;
     grid-column: span 2;
   }
-  .group__grid > :global(.card:last-child:nth-child(3n + 1)) {
+  .group__cell:last-child:nth-child(3n + 1) {
     grid-column: span 6;
   }
-  .group__grid > :global(.card:nth-last-child(2):nth-child(3n + 1)),
-  .group__grid > :global(.card:last-child:nth-child(3n + 2)) {
+  .group__cell:nth-last-child(2):nth-child(3n + 1),
+  .group__cell:last-child:nth-child(3n + 2) {
     grid-column: span 3;
+  }
+  .group__pos {
+    display: none;
   }
   .level__title--small {
     font-size: var(--step-head);
@@ -212,11 +227,104 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
       grid-template-columns: 1fr;
       gap: 0.375rem;
     }
-    .group__grid > :global(.card),
-    .group__grid > :global(.card:last-child:nth-child(3n + 1)),
-    .group__grid > :global(.card:nth-last-child(2):nth-child(3n + 1)),
-    .group__grid > :global(.card:last-child:nth-child(3n + 2)) {
+    .group__cell,
+    .group__cell:last-child:nth-child(3n + 1),
+    .group__cell:nth-last-child(2):nth-child(3n + 1),
+    .group__cell:last-child:nth-child(3n + 2) {
       grid-column: 1 / -1;
     }
   }
+  /* On a phone each company's cards are a swipe row: the list scrolls sideways and snaps a card
+     to the left edge, the next card peeking in; a count under it says where you are; the list
+     takes keyboard focus (the script sets it when the row scrolls) so the arrow keys scroll it,
+     with the ring drawn inside its edges. The row runs edge to edge; the cards keep the column. */
+  @media (max-width: 47.99rem) {
+    .group__row {
+      position: relative;
+    }
+    .group__grid {
+      position: relative;
+      display: flex;
+      gap: 0.5rem;
+      margin-inline: calc(-1 * var(--gutter));
+      padding: 4px var(--gutter);
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline-start: var(--gutter);
+      scrollbar-width: none;
+    }
+    .group__grid::-webkit-scrollbar {
+      display: none;
+    }
+    .group__grid:focus-visible {
+      outline: 3px solid var(--accent-2);
+      outline-offset: -3px;
+    }
+    .group__cell,
+    .group__cell:last-child:nth-child(3n + 1),
+    .group__cell:nth-last-child(2):nth-child(3n + 1),
+    .group__cell:last-child:nth-child(3n + 2) {
+      flex: 0 0 86%;
+      max-width: 20rem;
+      scroll-snap-align: start;
+    }
+    .group__pos {
+      display: block;
+      margin-top: 0.5rem;
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      max-width: none;
+    }
+    .group__pos[hidden] {
+      display: none;
+    }
+  }
 </style>
+
+<script>
+  // The swipe rows: where a company's list scrolls sideways (a phone), the list takes keyboard
+  // focus, the count under it follows the card snapped to the left edge, and a settled swipe tells
+  // the games script to look at the cards again (so the scan reaches every card in the row).
+  document.querySelectorAll<HTMLElement>('[data-row]').forEach((row) => {
+    const list = row.querySelector<HTMLElement>('.group__grid')!;
+    const pos = row.querySelector<HTMLElement>('[data-row-pos]')!;
+    const cells = Array.from(list.children) as HTMLElement[];
+    let timer = 0;
+    const update = () => {
+      if (list.scrollWidth <= list.clientWidth + 2) {
+        list.removeAttribute('tabindex');
+        pos.hidden = true;
+        return;
+      }
+      list.tabIndex = 0;
+      const origin = cells[0].offsetLeft;
+      let at = 0;
+      let best = Infinity;
+      cells.forEach((cell, k) => {
+        const d = Math.abs(cell.offsetLeft - origin - list.scrollLeft);
+        if (d < best) {
+          best = d;
+          at = k;
+        }
+      });
+      pos.textContent = `${at + 1} / ${cells.length}`;
+      pos.hidden = false;
+    };
+    list.addEventListener(
+      'scroll',
+      () => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
+          update();
+          document.dispatchEvent(new CustomEvent('playrun:rowsettle'));
+        }, 120);
+      },
+      { passive: true },
+    );
+    addEventListener('resize', update);
+    update();
+  });
+</script>

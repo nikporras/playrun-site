@@ -29,6 +29,58 @@ test.describe('The Portfolio journey', () => {
     await expect(page.locator('.hud__levels li').first()).toHaveText('2026');
   });
 
+  test("on a phone each company's cards are a swipe row: a labelled region holding the list, scroll snap with the next card peeking in, a count that follows the swipe, keyboard scrolling with a visible ring, and the scan reaching the swiped cards; the desktop keeps the grid", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/portfolio/');
+    await noSmooth(page);
+    const row = page.locator('[data-row]').first();
+    const list = row.locator('.group__grid');
+    const cells = list.locator('> li');
+    await expect(row).toHaveAttribute('role', 'region');
+    await expect(row).toHaveAttribute('aria-label', /^Aonic games, Jul 2026 to present$/);
+    await expect(list).toHaveAttribute('role', 'list');
+    await expect(cells).toHaveCount(7);
+    await expect(list).toHaveAttribute('tabindex', '0');
+    const st = await list.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { overflow: cs.overflowX, snap: cs.scrollSnapType, w: el.clientWidth, scrollW: el.scrollWidth };
+    });
+    expect(st.overflow).toBe('auto');
+    expect(st.snap).toMatch(/^x/);
+    expect(st.scrollW, 'the row scrolls').toBeGreaterThan(st.w);
+    const boxes = await cells.evaluateAll((els) => els.map((e) => e.getBoundingClientRect()));
+    expect(boxes[0].width, 'a card leaves room for the next to peek').toBeLessThan(375 - 40);
+    expect(boxes[1].left, 'the next card peeks in').toBeLessThan(375);
+    expect(boxes[1].right).toBeGreaterThan(375);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), 'no sideways page scroll').toBeLessThanOrEqual(0);
+    const pos = row.locator('[data-row-pos]');
+    await expect(pos).toHaveText('1 / 7');
+    await expect(pos).toBeVisible();
+    // the scan reaches the first card once the row has settled in the middle of the screen
+    await row.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await expect(cells.nth(0).locator('.card')).toHaveClass(/is-scanned/, { timeout: 4000 });
+    // a swipe: the count follows, and the next card gets its turn
+    await list.evaluate((el) => el.scrollBy({ left: (el.querySelector('li') as HTMLElement).getBoundingClientRect().width + 8, behavior: 'instant' as ScrollBehavior }));
+    await expect(pos).toHaveText('2 / 7');
+    await expect(cells.nth(1).locator('.card')).toHaveClass(/is-scanned/, { timeout: 4000 });
+    // keyboard: the list takes focus with a ring inside its edges, and the arrow keys scroll it
+    await list.evaluate((el) => el.scrollTo({ left: 0, behavior: 'instant' as ScrollBehavior }));
+    await list.focus();
+    const ring = await list.evaluate((el) => ({ style: getComputedStyle(el).outlineStyle, offset: parseFloat(getComputedStyle(el).outlineOffset) }));
+    expect(ring.style).not.toBe('none');
+    expect(ring.offset).toBeLessThan(0);
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(() => list.evaluate((el) => el.scrollLeft), 'the arrow key moves the row a card').toBeGreaterThan(0);
+    await expect(pos).toHaveText('2 / 7');
+    // a desktop keeps the grid: no scrolling, no count, no tab stop
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.waitForTimeout(300);
+    expect(await list.evaluate((el) => getComputedStyle(el).display)).toBe('grid');
+    await expect(pos).toBeHidden();
+    await expect(list).not.toHaveAttribute('tabindex', /.*/);
+    await expect(row).toHaveAttribute('role', 'region');
+  });
+
   test('nothing waits for the laser: every header and card shows as it enters the screen, and a fast scroll to the foot shows them all at once', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/portfolio/');
@@ -47,7 +99,9 @@ test.describe('The Portfolio journey', () => {
     // on the way back up every screen is shown as soon as it is reached
     // (a card still peeking into the bottom strip, below the entrance line, is not counted yet)
     const onScreen = () => page.locator('.card').evaluateAll((els) => els.filter((el) => el.getBoundingClientRect().bottom > 0 && el.getBoundingClientRect().top < innerHeight * 0.9).map((el) => el.classList.contains('is-in') && parseFloat(getComputedStyle(el).opacity) > 0.5));
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    // (the foot of the page is the closing level and the footer, so the jump lands on the last card)
+    const lastY = await page.locator('.card').last().evaluate((el) => el.getBoundingClientRect().top + scrollY);
+    await page.evaluate((y) => window.scrollTo(0, y - innerHeight * 0.5), lastY);
     await page.waitForTimeout(1200);
     let seen = await onScreen();
     expect(seen.length).toBeGreaterThan(0);

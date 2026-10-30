@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
+import Join from '../components/Join.astro';
 import PassMark from '../components/PassMark.astro';
 import CrossMark from '../components/CrossMark.astro';
 import { spell, suite, versions } from '../data/suite';
@@ -109,7 +110,7 @@ const computerNote = 'The computer steps are folded under Checking on a computer
 
 <Base title="Quality" description="Let's test this page together: five steps, each run live on this page in your browser, then how to check it yourself. The same rigour I bring to the games I test.">
   <!-- Level 1 -->
-  <section class="level level--navy qa" data-level="1" aria-labelledby="quality-title">
+  <section class="level level--navy level--sky has-join-bottom qa" data-level="1" aria-labelledby="quality-title">
     <div class="level__head">
       <p class="flag" data-load style="--d: 0ms"><span>Quality</span></p>
       <h1 id="quality-title" class="page__title">
@@ -124,6 +125,7 @@ const computerNote = 'The computer steps are folded under Checking on a computer
         <p id="run-status" class="qa__status" aria-live="polite">Each step runs as you reach it.</p>
       </div>
     </div>
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-blue)" seed="quality-plan" />
     <Bug id="quality-1" style="right: 12%; top: 9rem" tablet="right: 10%; bottom: 0.75rem" walk="x -2rem" />
   </section>
 
@@ -131,7 +133,8 @@ const computerNote = 'The computer steps are folded under Checking on a computer
        and they are dealt in one by one with the scroll, like drawing the next test case
        (src/scripts/deck.ts adds is-deck). On phones they slide in one at a time; under reduced
        motion and without script they stand still. -->
-  <section class="level level--blue plan" data-level="2" aria-labelledby="plan-title">
+  <section class="level level--blue has-join-bottom plan" data-level="2" aria-labelledby="plan-title">
+    <Join kind="terrain" from="var(--field-blue)" to="var(--field-green)" seed="quality-report" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; The test plan</span></p>
       <h2 id="plan-title" class="level__title" data-enter="wipe">Five steps</h2>
@@ -256,7 +259,8 @@ const computerNote = 'The computer steps are folded under Checking on a computer
   </section>
 
   <!-- Level 3: the test report -->
-  <section class="level level--green report" data-level="3" aria-labelledby="report-title">
+  <section class="level level--green has-join-bottom report" data-level="3" aria-labelledby="report-title">
+    <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="quality-foot" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 3 &middot; The report</span></p>
       <h2 id="report-title" class="level__title" data-enter="wipe">Test report</h2>
@@ -772,8 +776,11 @@ Attachments: [screenshot or video]</pre>
     .devtools {
       display: block;
     }
-    .report__table thead {
-      display: none;
+    /* the same table on a phone: every row a small grid, the header row too (nothing is dropped) */
+    .report__table,
+    .report__table thead,
+    .report__table tbody {
+      display: block;
     }
     .report__table tr {
       display: grid;
@@ -781,6 +788,13 @@ Attachments: [screenshot or video]</pre>
       gap: 0.25rem 1rem;
       padding: 0.75rem 0;
       border-top: 1px solid var(--rule);
+    }
+    .report__table thead tr {
+      border-top: 0;
+      padding-top: 0;
+    }
+    .report__table thead th:last-child {
+      grid-column: 1 / -1;
     }
     .report__table th,
     .report__table td {
