@@ -350,6 +350,43 @@ test.describe('Home', () => {
     await context.close();
   });
 
+  test('every stat carries a caption: Montserrat italic in cyan under the active row, fading in with it, the six all shown in the still list', async ({ page, browser }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    const drum = page.locator('[data-drum]');
+    await drum.scrollIntoViewIfNeeded();
+    await expect(drum).toHaveClass(/is-live/);
+    const caps = drum.locator('.drum__row:not(.drum__clone) .drum__cap');
+    await expect(caps).toHaveText(['Started in 2021. Still finding things.', 'Six sets of house rules learned.', 'Every one played to the credits.', 'Headset tan included.', 'Each one with its own cable.', 'Test plans, rotas and the odd pep talk.']);
+    const active = drum.locator('.drum__row[data-d="0"] .drum__cap');
+    await expect(active).toHaveCSS('opacity', '1', { timeout: 2000 });
+    const style = await active.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { family: cs.fontFamily, style: cs.fontStyle, color: cs.color, size: parseFloat(cs.fontSize), top: el.getBoundingClientRect().top, labelBottom: el.parentElement!.querySelector('.drum__label')!.getBoundingClientRect().bottom };
+    });
+    expect(style.family).toMatch(/Montserrat/);
+    expect(style.style).toBe('italic');
+    expect(style.color).toBe('rgb(86, 189, 218)');
+    expect(style.size).toBeGreaterThanOrEqual(16.5);
+    expect(style.size).toBeLessThanOrEqual(17.5);
+    expect(style.top, 'under its stat').toBeGreaterThanOrEqual(style.labelBottom - 1);
+    // the neighbours' captions are not shown; the next turn fades the next one in
+    expect(await drum.locator('.drum__row[data-d="1"] .drum__cap').first().evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
+    const before = await active.textContent();
+    await page.getByRole('button', { name: 'Next stat' }).click();
+    await expect(drum.locator('.drum__row[data-d="0"] .drum__cap')).not.toHaveText(before!);
+    await expect(drum.locator('.drum__row[data-d="0"] .drum__cap')).toHaveCSS('opacity', '1', { timeout: 2000 });
+    // without script: a still list, every caption under its stat
+    const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+    const still = await context.newPage();
+    await still.goto('/');
+    const stillCaps = still.locator('.drum__row:not(.drum__clone) .drum__cap');
+    await expect(stillCaps).toHaveCount(6);
+    for (let i = 0; i < 6; i++) await expect(stillCaps.nth(i)).toBeVisible();
+    expect(await stillCaps.first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize)), '15px on a phone').toBeLessThanOrEqual(15.5);
+    await context.close();
+  });
+
   test('the stats turn on a drum: five rows, the active one centred in green, the drum turning on its own, by the arrows, resting on hover, focus and pause, each stat announced once', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
