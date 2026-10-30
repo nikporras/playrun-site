@@ -11,7 +11,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   // In CI the JSON report is handed to the build, which reads its numbers into the Quality page.
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'tests/results/run.json' }]] : [['list']],
+  // The GitHub reporter turns each failure into an annotation on the run.
+  reporter: process.env.CI ? [['list'], ['github'], ['html', { open: 'never' }], ['json', { outputFile: 'tests/results/run.json' }]] : [['list']],
   use: {
     baseURL: external ?? `http://127.0.0.1:${port}`,
     trace: 'on-first-retry',
