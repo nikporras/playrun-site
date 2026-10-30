@@ -88,17 +88,22 @@ const steps = [
     <Bug id="quality-1" style="right: 12%; top: 9rem" tablet="right: 10%; bottom: 0.75rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 2: the test plan -->
+  <!-- Level 2: the test plan. The five steps are cards; on a desktop with motion the level pins
+       and they are dealt in one by one with the scroll, like drawing the next test case
+       (src/scripts/deck.ts adds is-deck). On phones they slide in one at a time; under reduced
+       motion and without script they stand still. -->
   <section class="level level--blue plan" data-level="2" aria-labelledby="plan-title">
-    <div class="level__head">
-      <p class="flag" data-enter><span>Level 2 &middot; The test plan</span></p>
-      <h2 id="plan-title" class="level__title" data-enter="wipe">Five steps</h2>
-      <p class="level__lead" data-enter style="--enter-delay: 80ms">Smoke, responsive, accessibility, links, performance. Pass or fail, live, on your device.</p>
-    </div>
-    <ol class="steps level__body">
+    <div class="deck" data-deck>
+      <div class="deck__pin">
+        <div class="level__head">
+          <p class="flag" data-enter><span>Level 2 &middot; The test plan</span></p>
+          <h2 id="plan-title" class="level__title" data-enter="wipe">Five steps</h2>
+          <p class="level__lead" data-enter style="--enter-delay: 80ms">Smoke, responsive, accessibility, links, performance. Pass or fail, live, on your device.</p>
+        </div>
+        <ol class="steps level__body deck__stage">
       {
         steps.map((s, i) => (
-          <li class="step is-idle" id={`step-${s.id}`} data-step={s.id} data-checks={JSON.stringify(s.checks)} data-enter style={`--enter-delay: ${i * 60}ms`}>
+          <li class="step is-idle deck__card" id={`step-${s.id}`} data-step={s.id} data-checks={JSON.stringify(s.checks)} data-enter style={`--enter-delay: ${i * 60}ms; --i: ${i}; --tilt: ${[-2.5, 2, -1.5, 2.5, -2][i]}deg`}>
             <div class="step__head">
               <p class="step__num">Step {i + 1}</p>
               <h3 class="step__title">{s.title}</h3>
@@ -136,7 +141,9 @@ const steps = [
           </li>
         ))
       }
-    </ol>
+        </ol>
+      </div>
+    </div>
 
     <!-- Pocket DevTools: on a phone, what F12 would show, from the page's own records -->
     <section class="devtools" aria-labelledby="devtools-title" data-enter>
@@ -245,21 +252,28 @@ Attachments: [screenshot or video]</pre>
     max-width: none;
   }
 
-  /* Level 2: five steps, each a full-width row: the name, the live result, the way to see it. */
+  /* Level 2: five steps, each a navy card: the name, the live result, the way to see it. In the
+     deck (global.css) the cards stack on one stage; here they stand in a column. */
   .steps {
     list-style: none;
     padding: 0;
     margin: 0;
+    display: grid;
+    gap: var(--s-3);
   }
   .step {
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 5fr);
     column-gap: var(--s-4);
-    padding: var(--s-4) 0;
-    border-top: 1px solid var(--rule);
-  }
-  .step:last-child {
-    border-bottom: 1px solid var(--rule);
+    padding: var(--s-4);
+    background: var(--bg);
+    color: var(--pr-light);
+    --muted-2: var(--muted);
+    --ink-2: var(--accent-2);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
+    border: 2px solid var(--surface-2);
+    border-top: 0.25rem solid var(--accent);
   }
   .step__num {
     font-family: var(--font-display);
@@ -536,6 +550,7 @@ Attachments: [screenshot or video]</pre>
     .step {
       grid-template-columns: 1fr;
       row-gap: var(--s-3);
+      padding: var(--s-3);
     }
     .step__result {
       max-width: 60ch;
@@ -577,6 +592,8 @@ Attachments: [screenshot or video]</pre>
 
 <script>
   import { checks, errorsSinceLoad, kb, timings, type Result } from '../scripts/checks';
+  import { startDeck } from '../scripts/deck';
+  startDeck();
 
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const steps = Array.from(document.querySelectorAll<HTMLElement>('.step'));
@@ -720,6 +737,14 @@ Attachments: [screenshot or video]</pre>
   };
   if (document.readyState === 'complete') fillDevtools();
   else addEventListener('load', () => setTimeout(fillDevtools, 50));
+  // The first paint entry can land after load on a slow or busy device: fill the panel again then.
+  if ('PerformanceObserver' in window) {
+    try {
+      new PerformanceObserver(() => fillDevtools()).observe({ type: 'paint', buffered: true });
+    } catch {
+      /* no paint timing here */
+    }
+  }
 
   // The template: to the clipboard, or selected for a manual copy where the clipboard is refused.
   const copy = document.querySelector<HTMLButtonElement>('[data-copy]');

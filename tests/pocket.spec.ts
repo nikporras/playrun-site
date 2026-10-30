@@ -21,11 +21,11 @@ test('the phone steps replace the computer ones, and the panel shows the console
   await expect.poll(() => page.locator('[data-dev-network] tr').count()).toBeGreaterThan(5);
   await expect(page.locator('[data-dev-network] td.is-ok').first()).toBeVisible();
   await expect(page.locator('[data-dev-network] td.is-bad')).toHaveCount(0);
-  const perf = await page.locator('[data-dev-perf]').textContent();
-  expect(perf).toMatch(/First paint\s*\d+ ms/);
-  expect(perf).toMatch(/Loaded\s*\d+ ms/);
-  expect(perf).toMatch(/Requests\s*\d+/);
-  expect(perf).toMatch(/Transferred\s*\d+ KB/);
+  const perf = page.locator('[data-dev-perf]');
+  await expect(perf).toContainText(/First paint\s*\d+ ms/);
+  await expect(perf).toContainText(/Loaded\s*\d+ ms/);
+  await expect(perf).toContainText(/Requests\s*\d+/);
+  await expect(perf).toContainText(/Transferred\s*\d+ KB/);
   // the steps run on the phone too
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
   for (let y = 0; y < height; y += 400) {

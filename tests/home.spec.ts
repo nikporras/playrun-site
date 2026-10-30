@@ -125,6 +125,27 @@ test.describe('Home', () => {
     const figure = page.locator('.hero__figure img');
     await expect(figure).toBeVisible();
     expect(await page.locator('main img:not([alt=""])').count(), 'the photo appears once on the site').toBe(1);
+    // the bottom of the cutout fades into the navy, glow and all: a gradient mask on the figure
+    const mask = await page.locator('.hero__figure').evaluate((el) => {
+      const cs = getComputedStyle(el) as CSSStyleDeclaration & { webkitMaskImage?: string };
+      return { mask: cs.maskImage || cs.webkitMaskImage || '', glow: getComputedStyle(el, '::before').backgroundImage };
+    });
+    expect(mask.mask).toContain('linear-gradient');
+    expect(mask.glow).toContain('radial-gradient');
+    // the photo keeps its full height on screen at every desktop width (nothing is cut off above the hero's foot)
+    for (const width of [768, 1280, 1440, 1920]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(150);
+      const fit = await page.evaluate(() => {
+        const hero = document.querySelector('.hero')!.getBoundingClientRect();
+        const fig = document.querySelector('.hero__figure')!.getBoundingClientRect();
+        return { heroBottom: hero.bottom, figBottom: fig.bottom, figTop: fig.top, heroTop: hero.top };
+      });
+      expect(fit.figBottom, `${width}: the figure ends inside the hero`).toBeLessThanOrEqual(fit.heroBottom + 1);
+      expect(fit.figTop, `${width}: the figure starts inside the hero`).toBeGreaterThanOrEqual(fit.heroTop - 1);
+    }
+    await page.setViewportSize({ width: 1440, height: 900 });
     // the photo is centred on the text block, at 1280, 1440 and 1920
     for (const width of [1280, 1440, 1920]) {
       await page.setViewportSize({ width, height: 900 });
@@ -346,12 +367,13 @@ test.describe('Home', () => {
     await expect(quality).toBeVisible();
   });
 
-  test('Get in touch appears in the nav, the hero and the end of Home only', async ({ page }) => {
+  test('Get in touch appears in the nav and the end of Home only; the hero has no buttons', async ({ page }) => {
     await page.goto('/');
     const buttons = page.getByRole('link', { name: 'Get in touch' });
-    await expect(buttons).toHaveCount(3);
+    await expect(buttons).toHaveCount(2);
     await expect(page.locator('header').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
-    await expect(page.locator('.hero').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
+    await expect(page.locator('.hero').getByRole('link')).toHaveCount(0);
+    await expect(page.locator('.hero button:not([data-bug])')).toHaveCount(0);
     await expect(page.locator('.final').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
     await expect(page.locator('footer').getByRole('link', { name: 'Get in touch' })).toHaveCount(0);
     for (const path of ['/skills', '/portfolio', '/quality', '/contact', '/terms', '/privacy']) {

@@ -118,6 +118,27 @@ test.describe('Games', () => {
       expect(rail.bg).not.toBe('rgb(28, 42, 72)');
       expect(rail.shadow).toContain('rgb(12, 21, 42)');
       expect(await page.locator('.hud__levels li span').first().evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid');
+      // the ship hides the rail entirely: at its centre and across its width the top element is the ship
+      for (const at of [0, 0.5, 1]) {
+        await page.evaluate((at) => window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * at), at);
+        await page.waitForTimeout(250);
+        const hits = await page.evaluate(() => {
+          const ship = document.querySelector('.hud__runner')!.getBoundingClientRect();
+          const cx = ship.left + ship.width / 2;
+          const cy = ship.top + ship.height / 2;
+          return [-11, -6, -2, 0, 2, 6, 11].map((dx) => {
+            const el = document.elementFromPoint(cx + dx, cy);
+            return { dx, onShip: !!el?.closest('.hud__runner'), rail: !!el?.closest('.hud__floor'), what: `${el?.tagName}.${el?.getAttribute('class') ?? ''}` };
+          });
+        });
+        for (const h of hits) {
+          expect(h.rail, `${path} at ${at}: the rail shows at ${h.dx}px from the ship's centre (${h.what})`).toBe(false);
+          expect(h.onShip, `${path} at ${at}: the ship at ${h.dx}px from its centre (${h.what})`).toBe(true);
+        }
+      }
+      await expect(page.locator('.hud__ship')).toHaveCSS('background-color', 'rgb(12, 21, 42)');
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(200);
       // one marker per level after the first, or one per year where the page carries years,
       // each beside the rail and wholly on screen
       const levels = await page.locator('[data-level]').count();

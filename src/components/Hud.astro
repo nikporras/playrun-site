@@ -160,11 +160,14 @@ import PassMark from './PassMark.astro';
     transform: translateX(calc(var(--p, 0) * var(--track, 0px)));
     transition: transform 120ms linear;
   }
+  /* The ship on a solid navy plate: the sprite is hollow down its middle, so without the plate
+     the rail (and the floor) would show through it. */
   .hud__ship {
     width: 100%;
     height: 100%;
     display: grid;
     place-items: center;
+    background: var(--bg);
     transition: transform 160ms var(--ease-out);
   }
   .hud__runner[data-dir='-1'] .hud__ship {

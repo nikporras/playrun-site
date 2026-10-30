@@ -800,6 +800,48 @@ html:not(.games) .bug {
     opacity: 0;
   }
 }
+/* The dealt deck (src/scripts/deck.ts): on a desktop with motion the deck is several screens
+   tall and its content pins for all but the first; the cards sit on one stage. Card 0 lies in
+   place; each next card rises from below the screen as --e goes 0 to 1 with the scroll, landing
+   a little lower than the last and tilted its own few degrees. Transform only; the card's own
+   entrance (opacity, a transition) is off. Without is-deck the cards stand in flow. */
+.deck.is-deck {
+  height: calc(100vh + (var(--n, 5) - 1) * 70vh);
+  overflow: clip;
+}
+.deck.is-deck .deck__pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: var(--s-4);
+}
+.deck.is-deck .deck__stage {
+  position: relative;
+  height: var(--stage-h, 28rem);
+  margin-top: var(--s-4);
+  display: block;
+}
+/* .js ahead so the rule outranks the entrance rules below (same class count, later in the file) */
+.js .deck.is-deck .deck__card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: min(100%, 64rem);
+  margin-inline: auto;
+  opacity: 1;
+  transition: none;
+  transform-origin: 50% 100%;
+  transform: translate3d(0, calc((1 - var(--e, 0)) * 110vh + var(--i, 0) * 0.75rem), 0) rotate(calc(var(--tilt, 0deg) * var(--e, 0)));
+  will-change: transform;
+}
+.js .deck.is-deck .deck__card:first-child {
+  --e: 1;
+}
+
 /* The laser: a beam from the ship to the thing that just came into view. It extends for the first
    third of the shot, holds while the target lands, then fades. */
 .laser {

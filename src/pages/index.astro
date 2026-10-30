@@ -83,10 +83,6 @@ const checks = [
         titles through to their multi-platform console and PC releases. I plan the testing, run it on real hardware,
         and write reports developers can act on.
       </p>
-      <div class="level__actions hero__actions" data-load style="--d: 560ms">
-        <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
-        <a class="textlink hero__secondary" href="/quality">See how I test this site</a>
-      </div>
     </div>
     <!-- The player character: the one photo on the site, standing on the bottom edge of the level -->
     <div class="hero__figure" data-load style="--d: 200ms">
@@ -377,12 +373,6 @@ const checks = [
     max-width: 52ch;
     font-size: var(--step-body);
   }
-  .hero__actions {
-    margin-top: var(--s-2);
-  }
-  .hero__secondary {
-    color: var(--ink);
-  }
   /* The figure floats in the space the text leaves free, centred on the text block (the head is
      centred in the level, so the level's middle is the block's middle). `translate` keeps clear
      of the load animation's transform. */
@@ -395,6 +385,9 @@ const checks = [
     width: min(36vw, 34rem);
     line-height: 0;
     z-index: 0;
+    /* the bottom quarter fades into the navy, the glow with it: no hard edge where the cutout ends */
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 74%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 74%, transparent 100%);
   }
   .hero__figure::before {
     content: '';
@@ -444,12 +437,6 @@ const checks = [
     }
     .hero__value {
       font-size: 1rem;
-    }
-    .hero__actions {
-      gap: var(--s-2);
-    }
-    .hero__actions .button {
-      width: 100%;
     }
     /* On a phone the ticket pins to the top of the screen, where the toast goes too. */
     .hero__ticket {

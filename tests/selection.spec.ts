@@ -21,7 +21,11 @@ async function settle(page: Page) {
   });
 }
 
-/** Paragraphs and list items with real text, not ones that are a single link. Up to six, spread over the page. */
+/**
+ * Paragraphs and list items with real text, not ones that are a single link. Up to six, spread
+ * over the page, picked once and tagged: a page whose text changes while the test runs (the
+ * Quality steps write their results) must not hand back a different list on the next look.
+ */
 const pick = () => {
   const all = [...document.querySelectorAll<HTMLElement>('main p, main li, main dd')].filter((e) => {
     const text = (e.textContent ?? '').trim();
@@ -30,19 +34,35 @@ const pick = () => {
     return !(link && (link.textContent ?? '').trim().length >= text.length - 2);
   });
   const step = Math.max(1, Math.floor(all.length / 6));
-  return all.filter((_, i) => i % step === 0).slice(0, 6);
+  const chosen = all.filter((_, i) => i % step === 0).slice(0, 6);
+  chosen.forEach((e, i) => e.setAttribute('data-sel-pick', String(i)));
+  return chosen.length;
 };
+
+/**
+ * The Quality page runs each step as it scrolls into view and rewrites that step's result line
+ * and the report, the very text a drag might be crossing. Run every step first and wait for the
+ * last result, so the page is still before the first drag.
+ */
+async function quiet(page: Page, path: string) {
+  if (path !== '/quality') return;
+  await page.mouse.move(640, 300);
+  await page.getByRole('button', { name: 'Run every step' }).click();
+  await expect(page.locator('#run-status')).toHaveText('Every step has run. The report is at the end.', { timeout: 20_000 });
+  await expect(page.locator('.step.is-running')).toHaveCount(0);
+}
 
 for (const path of PAGES) {
   test(`${path}: a drag across a paragraph selects its text, and the highlight shows`, async ({ page }) => {
     await page.goto(path);
+    await quiet(page, path);
     await settle(page);
-    const count = await page.evaluate(`(${pick})().length`);
+    const count: number = await page.evaluate(`(${pick})()`);
     expect(count).toBeGreaterThan(0);
     for (let i = 0; i < count; i++) {
       const line = await page.evaluate(
-        ([i, fn]) => {
-          const el = (eval(fn) as () => HTMLElement[])()[i];
+        (i) => {
+          const el = document.querySelector<HTMLElement>(`[data-sel-pick="${i}"]`)!;
           el.scrollIntoView({ block: 'center' });
           // The first line of the element's own text, as the mouse would see it.
           const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
@@ -74,7 +94,7 @@ for (const path of PAGES) {
             highlight: getComputedStyle(el, '::selection').backgroundColor,
           };
         },
-        [i, `(${pick})`] as const,
+        i,
       );
       await page.evaluate(() => getSelection()?.removeAllRanges());
       await page.mouse.move(line.x1, line.y);

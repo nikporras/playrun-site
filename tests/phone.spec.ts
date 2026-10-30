@@ -7,20 +7,21 @@ import { test, expect, devices } from "@playwright/test";
 test.use({ ...devices["Pixel 7"], viewport: { width: 390, height: 844 } });
 
 test.describe("Home on a phone", () => {
-  test("every level heading is revealed on a phone, and the first screen holds the button", async ({
+  test("every level heading is revealed on a phone, and the first screen holds the hero paragraph", async ({
     page,
   }) => {
     await page.goto("/");
-    const button = page.getByRole("link", { name: "Get in touch" }).first();
-    const box = await button.boundingBox();
+    const para = page.locator(".hero__value");
+    const box = await para.boundingBox();
     const hud = await page.evaluate(
       () => document.querySelector("#hud")?.getBoundingClientRect().height ?? 0,
     );
-    expect(box, "the hero button has a box").not.toBeNull();
+    expect(box, "the hero paragraph has a box").not.toBeNull();
     expect(
       box!.y + box!.height,
-      "Get in touch sits on the first screen above the HUD",
+      "the paragraph sits on the first screen above the HUD",
     ).toBeLessThanOrEqual(844 - hud);
+    await expect(page.locator(".hero").getByRole("link")).toHaveCount(0);
 
     const heads = page.locator("[data-level] h1, [data-level] h2");
     const n = await heads.count();
