@@ -199,6 +199,11 @@ const layers = spec.map((s) => {
       .join__layer--back,
       .join__layer--mid {
         animation: join-drift linear both;
+      }
+      /* the timeline in a rule of its own: folded into the shorthand by the minifier, the browser
+         would drop the whole declaration */
+      .join .join__layer--back,
+      .join .join__layer--mid {
         animation-timeline: view();
         animation-range: entry 0% exit 100%;
       }

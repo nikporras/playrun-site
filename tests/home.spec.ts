@@ -21,7 +21,7 @@ async function settle(page: Page) {
     Promise.all(
       document
         .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity && a.timeline instanceof DocumentTimeline) // (a scroll-driven join drift never finishes)
         .map((a) => a.finished.catch(() => null)),
     ),
   );

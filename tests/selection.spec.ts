@@ -15,7 +15,7 @@ async function settle(page: Page) {
     return Promise.all(
       document
         .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity && a.timeline instanceof DocumentTimeline) // (a scroll-driven join drift never finishes)
         .map((a) => a.finished.catch(() => null)),
     );
   });
@@ -30,6 +30,8 @@ const pick = () => {
   const all = [...document.querySelectorAll<HTMLElement>('main p, main li, main dd')].filter((e) => {
     const text = (e.textContent ?? '').trim();
     if (text.length < 40 || e.querySelector('p, li') || !e.getClientRects().length) return false;
+    // (a row on the turning stats drum moves between the pick and the drag; the still list is a plain list)
+    if (e.closest('.drum.is-live')) return false;
     const link = e.querySelector('a');
     return !(link && (link.textContent ?? '').trim().length >= text.length - 2);
   });
