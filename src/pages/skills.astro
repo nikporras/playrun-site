@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
+import Join from '../components/Join.astro';
 import PassMark from '../components/PassMark.astro';
 
 const services = [
@@ -67,7 +68,7 @@ const platforms = [
 
 <Base title="Skills" description="What Nicolás Porras tests and how: functional testing, platforms and stores, performance and stress, playtesting and UX, and bug reporting, learned on shipped games since 2021.">
   <!-- Level 1 -->
-  <section class="level level--navy svc" data-level="1" aria-labelledby="services-title">
+  <section class="level level--navy level--sky svc" data-level="1" aria-labelledby="services-title">
     <div class="level__head">
       <p class="flag" data-load style="--d: 0ms"><span>Skills</span></p>
       <h1 id="services-title" class="page__title">
@@ -91,7 +92,8 @@ const platforms = [
   </section>
 
   <!-- Level 2: the five areas, each a full-width row -->
-  <section class="level level--blue six" data-level="2" aria-labelledby="six-title">
+  <section class="level level--field has-join-top six" data-level="2" aria-labelledby="six-title">
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-2)" seed="skills-six" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; The five</span></p>
       <h2 id="six-title" class="level__title" data-enter="wipe">Five areas</h2>
@@ -119,7 +121,7 @@ const platforms = [
   </section>
 
   <!-- Level 3: what I bring -->
-  <section class="level level--cyan bring" data-level="3" aria-labelledby="bring-title">
+  <section class="level level--field bring" data-level="3" aria-labelledby="bring-title">
     <div class="level__head">
       <p class="flag" data-enter><span>Level 3 &middot; Kit and method</span></p>
       <h2 id="bring-title" class="level__title" data-enter="wipe">What I bring</h2>
@@ -144,7 +146,8 @@ const platforms = [
   </section>
 
   <!-- Level 4: the run -->
-  <section class="level level--green run" data-level="4" aria-labelledby="run-title">
+  <section class="level level--green has-join-top run" data-level="4" aria-labelledby="run-title">
+    <Join kind="terrain" from="var(--field-2)" to="var(--field-green)" seed="skills-run" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 4 &middot; The run</span></p>
       <h2 id="run-title" class="level__title" data-enter="wipe">A build, start to finish</h2>
@@ -165,7 +168,8 @@ const platforms = [
   </section>
 
   <!-- Level 5: platforms and stores -->
-  <section class="level level--light plat" data-level="5" aria-labelledby="plat-title">
+  <section class="level level--field has-join-top plat" data-level="5" aria-labelledby="plat-title">
+    <Join kind="terrain" from="var(--field-green)" to="var(--field-2)" seed="skills-plat" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 5 &middot; Platforms and stores</span></p>
       <h2 id="plat-title" class="level__title" data-enter="wipe">Where the build has to work</h2>
@@ -185,7 +189,8 @@ const platforms = [
   </section>
 
   <!-- Level 6: a short way on -->
-  <section class="level level--navy level--tight next" data-level="6" aria-labelledby="next-title">
+  <section class="level level--field level--tight has-join-bottom next" data-level="6" aria-labelledby="next-title">
+    <Join kind="terrain" at="bottom" from="var(--field-2)" to="var(--pr-navy)" seed="skills-foot" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 6 &middot; Next</span></p>
       <h2 id="next-title" class="level__title level__title--small" data-enter="wipe">The proof</h2>

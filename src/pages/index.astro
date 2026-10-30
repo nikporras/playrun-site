@@ -5,6 +5,7 @@ import Base from '../layouts/Base.astro';
 import PassMark from '../components/PassMark.astro';
 import CrossMark from '../components/CrossMark.astro';
 import Bug from '../components/Bug.astro';
+import Join from '../components/Join.astro';
 import GameIcon from '../components/GameIcon.astro';
 import { suite } from '../data/suite';
 import { logos } from '../data/logos';
@@ -76,7 +77,7 @@ const checks = [
 
 <Base title="Home" fullTitle={`${site.name}, the game QA portfolio of Nicolás Porras, London`}>
   <!-- Level 1: the start screen. It stays pinned while the next level slides up over it. -->
-  <section class="level level--navy hero" data-level="1" aria-labelledby="hero-title">
+  <section class="level level--navy level--sky hero" data-level="1" aria-labelledby="hero-title">
     <div class="level__head hero__head">
       <p class="flag" data-load style="--d: 0ms"><span>Level 1 &middot; Start</span></p>
       <div class="hero__name">
@@ -121,7 +122,8 @@ const checks = [
   </section>
 
   <!-- Level 2: the ticker of titles, their official logos in one colour, rolling slowly left -->
-  <section class="level level--blue level--tight wall" data-level="2" aria-labelledby="wall-title">
+  <section class="level level--field level--tight has-join-top wall" data-level="2" aria-labelledby="wall-title">
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-2)" seed="home-wall" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; Portfolio</span></p>
       <h2 id="wall-title" class="level__title wall__title" data-enter="wipe">Games I've tested</h2>
@@ -166,7 +168,7 @@ const checks = [
        the active one in the centre, the six stats three times over so the loop never ends and no
        stat shows twice at once (the outer copies hidden from assistive tech). A still list
        without script or under reduced motion. -->
-  <section class="level level--navy stats" data-level="3" aria-labelledby="stats-title">
+  <section class="level level--field stats" data-level="3" aria-labelledby="stats-title">
     <div class="stats__grid">
       <div class="level__head stats__head">
         <p class="flag" data-enter><span>Level 3 &middot; Stats</span></p>
@@ -210,7 +212,8 @@ const checks = [
   </section>
 
   <!-- Level 4: proof as a scoreboard on a green field -->
-  <section class="level level--green proof" data-level="4" aria-labelledby="proof-title">
+  <section class="level level--cyan has-join-top proof" data-level="4" aria-labelledby="proof-title">
+    <Join kind="terrain" from="var(--field-2)" to="var(--field-cyan)" seed="home-proof" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 4 &middot; Proof</span></p>
       <h2 id="proof-title" class="level__title" data-enter="wipe">Tested like my games</h2>
@@ -253,7 +256,9 @@ const checks = [
   </section>
 
   <!-- Level 5: after hours, and the one last button -->
-  <section class="level level--light final" data-level="5" aria-labelledby="final-title">
+  <section class="level level--field has-join-top has-join-bottom final" data-level="5" aria-labelledby="final-title">
+    <Join kind="terrain" from="var(--field-cyan)" to="var(--field-2)" seed="home-final" />
+    <Join kind="terrain" at="bottom" from="var(--field-2)" to="var(--pr-navy)" seed="home-foot" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 5 &middot; Final level</span></p>
       <h2 id="final-title" class="level__title" data-enter="wipe">After hours</h2>
@@ -1059,10 +1064,10 @@ const checks = [
   .final__mail {
     font-family: var(--font-display);
     font-size: 1.25rem;
-    color: var(--pr-navy);
+    color: var(--ink);
   }
   .final__mail:hover {
-    color: var(--pr-blue);
+    color: var(--accent-2);
   }
 </style>
 

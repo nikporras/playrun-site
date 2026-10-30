@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
 import GameCard from '../components/GameCard.astro';
+import Join from '../components/Join.astro';
 import { employers } from '../config';
 
 const all = await getCollection('projects');
@@ -31,7 +32,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
 
 <Base title="Portfolio" description="Games Nicolás Porras has tested, by company: the Megabit titles at Aonic, Guildford Castle VR and Londinium at Historic VR, the nDreams VR titles, and Cyberpunk 2077, NBA 2K21 and the VR titles via Universally Speaking.">
   <!-- Level 1 -->
-  <section class="level level--navy work" data-level="1" aria-labelledby="work-title">
+  <section class="level level--navy level--sky work" data-level="1" aria-labelledby="work-title">
     <div class="level__head">
       <p class="flag" data-load style="--d: 0ms"><span>Portfolio</span></p>
       <h1 id="work-title" class="page__title">
@@ -46,7 +47,8 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
   </section>
 
   <!-- Level 2: every post, newest first, with its titles -->
-  <section class="level level--cyan titles" data-level="2" aria-labelledby="titles-title">
+  <section class="level level--field has-join-top titles" data-level="2" aria-labelledby="titles-title">
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-2)" seed="portfolio-titles" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; By company</span></p>
       <h2 id="titles-title" class="level__title" data-enter="wipe">Where I tested them</h2>
@@ -92,7 +94,9 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
   </section>
 
   <!-- Level 3: a short way on -->
-  <section class="level level--green level--tight next" data-level="3" aria-labelledby="next-title">
+  <section class="level level--green level--tight has-join-top has-join-bottom next" data-level="3" aria-labelledby="next-title">
+    <Join kind="terrain" from="var(--field-2)" to="var(--field-green)" seed="portfolio-next" />
+    <Join kind="terrain" at="bottom" from="var(--field-green)" to="var(--pr-navy)" seed="portfolio-foot" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 3 &middot; Next</span></p>
       <h2 id="next-title" class="level__title level__title--small" data-enter="wipe">How I test</h2>

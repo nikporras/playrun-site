@@ -1,0 +1,231 @@
+---
+/**
+ * A pixel join between two levels: instead of a straight edge, two or three layered silhouettes
+ * (stepped pixel clouds, or stepped hills like the ground in a platformer) sit across the boundary,
+ * so the colour change happens behind them. The band is in normal flow at the top (or the foot) of
+ * the lower level and is the upper level's colour; the front layer is the lower level's colour, so
+ * there is no seam. Everything is inline SVG in brand colours, drawn at build time from a seeded
+ * random walk so no two joins repeat, in 8px pixels (scaled to 6px on tablets and 4px on phones).
+ * On scroll the back layers drift a little (scroll-driven CSS where supported, still under reduced
+ * motion). Decorative: hidden from assistive tech, no pointer events, no layout shift.
+ */
+interface Props {
+  /** clouds for the dark sky into the next level; terrain into a bright highlight and down again */
+  kind: 'clouds' | 'terrain';
+  /** the upper level's colour (the band) */
+  from: string;
+  /** the lower level's colour (the front layer) */
+  to: string;
+  /** a word that seeds the shapes, different on every join */
+  seed: string;
+  /** at the top of the level the band belongs to (default), or at its foot, going into what follows */
+  at?: 'top' | 'bottom';
+}
+const { kind, from, to, seed, at = 'top' } = Astro.props;
+
+// a small seeded generator (mulberry32), so the shapes are the same on every build
+let state = [...`${kind}:${seed}`].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 2654435761) >>> 0, 2166136261);
+const rand = () => {
+  state = (state + 0x6d2b79f5) >>> 0;
+  let t = Math.imul(state ^ (state >>> 15), 1 | state);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const pick = (lo: number, hi: number) => lo + Math.floor(rand() * (hi - lo + 1));
+
+const P = 8; // one pixel of the art, in CSS px at desktop
+const TH = 144; // the tile (and the band at desktop), in px
+const id = `join-${kind}-${seed}`.replace(/[^a-z0-9-]/gi, '-').toLowerCase();
+
+// Terrain: the ground of a platformer, as column heights in pixels of the art: a plateau of a
+// few columns, then a ramp of one pixel a column up or down to the next, bent back to its start
+// over the last columns so the tile repeats without a jump.
+const terrain = (cols: number, lo: number, hi: number) => {
+  const h: number[] = [];
+  let cur = pick(lo, hi);
+  const start = cur;
+  while (h.length < cols) {
+    for (let k = pick(3, 9); k > 0 && h.length < cols; k--) h.push(cur);
+    const target = Math.max(lo, Math.min(hi, cur + (rand() < 0.5 ? -1 : 1) * pick(1, 4)));
+    while (cur !== target && h.length < cols) {
+      cur += Math.sign(target - cur);
+      h.push(cur);
+    }
+  }
+  // the last columns step back toward the start, one pixel a column
+  for (let c = cols - Math.abs(h[cols - 1] - start) - 1; c < cols - 1; c++) h[c + 1] = h[c] + Math.sign(start - h[c]);
+  h[cols - 1] = start;
+  return h;
+};
+
+// Clouds: domes rising from the foot of the tile (a stepped quarter-circle profile each), their
+// union a bank; a dome that crosses the tile's edge wraps round, so the bank repeats cleanly.
+const clouds = (cols: number, lo: number, hi: number, count: number) => {
+  const h = new Array<number>(cols).fill(2); // a base two pixels deep, so the bank is never broken
+  for (let k = 0; k < count; k++) {
+    const cx = pick(0, cols - 1);
+    const half = pick(5, 11);
+    const top = pick(lo, hi);
+    for (let dx = -half; dx <= half; dx++) {
+      const c = (((cx + dx) % cols) + cols) % cols;
+      const rise = Math.round(top * Math.sqrt(Math.max(0, 1 - (dx / (half + 0.5)) ** 2)));
+      h[c] = Math.max(h[c], rise);
+    }
+  }
+  return h;
+};
+
+// the silhouette as one path (bottom-anchored), and the highlights: one pixel on the top of every
+// column where the profile rises or starts a plateau, a lighter touch on the cloud tops
+const silhouette = (h: number[]) => {
+  let d = `M0 ${TH}`;
+  h.forEach((v, c) => {
+    d += `V${TH - v * P}H${(c + 1) * P}`;
+  });
+  return `${d}V${TH}Z`;
+};
+const highlights = (h: number[], every: number) => {
+  let d = '';
+  h.forEach((v, c) => {
+    const prev = h[(c - 1 + h.length) % h.length];
+    const rises = v > prev;
+    const plateauStart = v === prev && h[(c - 2 + h.length) % h.length] < v;
+    if (v > 2 && (rises || plateauStart || c % every === 0)) d += `M${c * P} ${TH - v * P}h${P}v${P}h-${P}Z`;
+  });
+  return d;
+};
+
+// three layers, back to front: wider and taller behind, the front low so the lower level's colour
+// carries straight on; each with its own tile width so the composite hardly ever repeats
+const spec = [
+  { name: 'back', tile: 1152, lo: 9, hi: 15, count: 9, every: 7 },
+  { name: 'mid', tile: 896, lo: 5, hi: 10, count: 7, every: 5 },
+  { name: 'front', tile: 1024, lo: 2, hi: 6, count: 6, every: 4 },
+];
+const layers = spec.map((s) => {
+  const cols = s.tile / P;
+  const h = kind === 'terrain' ? terrain(cols, s.lo, s.hi) : clouds(cols, s.lo, s.hi, s.count);
+  return { ...s, path: silhouette(h), light: kind === 'clouds' ? highlights(h, s.every) : '' };
+});
+---
+
+<div class={`join join--${kind} join--${at}`} aria-hidden="true" style={`--from: ${from}; --to: ${to}`}>
+  {
+    layers.map((l) => (
+      <svg class={`join__layer join__layer--${l.name}`} height={TH} aria-hidden="true" focusable="false" shape-rendering="crispEdges">
+        <defs>
+          <pattern id={`${id}-${l.name}`} width={l.tile} height={TH} patternUnits="userSpaceOnUse">
+            <path d={l.path} class="join__fill" />
+            {l.light && <path d={l.light} class="join__light" />}
+          </pattern>
+        </defs>
+        <rect width="100%" height={TH} fill={`url(#${id}-${l.name})`} />
+      </svg>
+    ))
+  }
+</div>
+
+<style is:global>
+  /* The band: the upper colour, with the same faint grid as the fields, the layers standing on
+     its foot. In flow: the level it belongs to adds its height to its padding (has-join-top or
+     has-join-bottom), so nothing is ever covered and nothing shifts. */
+  .join {
+    --join-s: 1;
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: var(--join-h);
+    overflow: hidden;
+    background-color: var(--from);
+    background-image: var(--grid-img);
+    background-size: var(--grid-size) var(--grid-size);
+    pointer-events: none;
+    z-index: 0;
+    --join-back: color-mix(in srgb, var(--to) 50%, var(--from));
+    --join-mid: color-mix(in srgb, var(--to) 76%, var(--from));
+  }
+  .join--top {
+    top: 0;
+  }
+  .join--bottom {
+    bottom: 0;
+  }
+  .join__layer {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: calc(100% / var(--join-s));
+    max-width: none;
+    height: 144px;
+    scale: var(--join-s);
+    transform-origin: 0 100%;
+    overflow: visible;
+  }
+  .join__layer--back .join__fill {
+    fill: var(--join-back);
+  }
+  .join__layer--mid .join__fill {
+    fill: var(--join-mid);
+  }
+  .join__layer--front .join__fill {
+    fill: var(--to);
+  }
+  .join__layer--back .join__light {
+    fill: color-mix(in srgb, var(--join-back) 84%, var(--pr-light));
+  }
+  .join__layer--mid .join__light {
+    fill: color-mix(in srgb, var(--join-mid) 84%, var(--pr-light));
+  }
+  .join__layer--front .join__light {
+    fill: color-mix(in srgb, var(--to) 86%, var(--pr-light));
+  }
+  .level.has-join-top {
+    padding-top: calc(var(--level-pad) + var(--join-h));
+  }
+  .level.has-join-bottom {
+    padding-bottom: calc(var(--level-pad) + var(--join-h));
+  }
+  .level--tight.has-join-top {
+    padding-top: calc(var(--s-6) + var(--join-h));
+  }
+  .level--tight.has-join-bottom {
+    padding-bottom: calc(var(--s-6) + var(--join-h));
+  }
+  /* The drift: as the band crosses the screen the back layers slide a little, the front one stays
+     put on the level it belongs to. Only where scroll-driven animations exist, never under reduced
+     motion; elsewhere the layers are still. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .join__layer--back,
+      .join__layer--mid {
+        animation: join-drift linear both;
+        animation-timeline: view();
+        animation-range: entry 0% exit 100%;
+      }
+      .join__layer--back {
+        --drift: 28px;
+      }
+      .join__layer--mid {
+        --drift: 12px;
+      }
+    }
+  }
+  @keyframes join-drift {
+    from {
+      translate: 0 var(--drift);
+    }
+    to {
+      translate: 0 calc(-1 * var(--drift));
+    }
+  }
+  @media (max-width: 63.99rem) {
+    .join {
+      --join-s: 0.75;
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .join {
+      --join-s: 0.5;
+    }
+  }
+</style>

@@ -380,7 +380,7 @@ test.describe('Home', () => {
     const head = (await page.locator('.stats__head').boundingBox())!;
     const box = (await drum.boundingBox())!;
     expect(box.x).toBeGreaterThan(head.x + head.width - 1);
-    expect(await page.locator('.stats').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(12, 21, 42)');
+    expect(await page.locator('.stats').evaluate((el) => getComputedStyle(el).backgroundColor), 'the stats stand on the navy field').toBe('rgb(22, 36, 77)');
     // five rows on show, the active one in the middle: green number, white label, no offset;
     // the neighbours white at half strength and 32px right; the outer rows at a quarter and 64px
     await drum.scrollIntoViewIfNeeded();

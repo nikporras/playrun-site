@@ -297,6 +297,7 @@ p + p {
    green highlight would vanish. Tiles that are navy again inside those fields go back to green. */
 :root,
 .level--navy,
+.level--field,
 .level--blue,
 .tile--ground,
 .tile--blue,
@@ -337,7 +338,11 @@ p + p {
   --g-ink: var(--pr-light);
 }
 
-/* Levels: every section is a full-bleed field with its own ink. The flag names the level. */
+/* Levels: every section is a full-bleed field with its own ink. The flag names the level. The
+   page is one continuous navy world: the first level is the sky, the darkest navy with a faint
+   pixel grid and a few pixel stars; the levels after it stand on a slightly lighter navy field
+   with the same grid, set apart by space and their labels rather than by colour. The bright
+   fields are kept for one or two highlights a page, each reached through a pixel join. */
 .level {
   position: relative;
   padding: var(--level-pad) var(--gutter);
@@ -346,11 +351,31 @@ p + p {
 .level--tight {
   padding-block: var(--s-6);
 }
-.level--navy {
-  background: var(--bg);
+.level--navy,
+.level--field {
+  background-color: var(--bg);
+  background-image: var(--grid-img);
+  background-size: var(--grid-size) var(--grid-size);
   color: var(--ink);
   --ink-2: var(--accent-2);
   --muted-2: var(--muted);
+}
+.level--field {
+  background-color: var(--field-2);
+}
+/* The stars: a sparse tile of 2px and 3px squares, light at a third and one in cyan, behind the sky. */
+.level--sky::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='960' height='720' shape-rendering='crispEdges'%3E%3Cg fill='%23e5e7ea' fill-opacity='.34'%3E%3Crect x='88' y='64' width='2' height='2'/%3E%3Crect x='312' y='138' width='3' height='3'/%3E%3Crect x='540' y='40' width='2' height='2'/%3E%3Crect x='742' y='210' width='2' height='2'/%3E%3Crect x='186' y='330' width='2' height='2'/%3E%3Crect x='880' y='392' width='3' height='3'/%3E%3Crect x='430' y='470' width='2' height='2'/%3E%3Crect x='640' y='600' width='2' height='2'/%3E%3Crect x='60' y='560' width='2' height='2'/%3E%3C/g%3E%3Crect x='402' y='256' width='2' height='2' fill='%2356bdda' fill-opacity='.6'/%3E%3C/svg%3E");
+  background-size: 960px 720px;
+}
+.level--sky > * {
+  position: relative;
+  z-index: 1;
 }
 .level--blue {
   background: var(--field-blue);
@@ -589,6 +614,7 @@ html:not(.games) .bug {
   display: none;
 }
 .level--navy,
+.level--field,
 .level--blue {
   --bug-body: var(--pr-green);
   --bug-leg: var(--pr-cyan);

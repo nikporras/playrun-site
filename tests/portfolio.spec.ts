@@ -47,7 +47,9 @@ test.describe('The Portfolio journey', () => {
     // on the way back up every screen is shown as soon as it is reached
     // (a card still peeking into the bottom strip, below the entrance line, is not counted yet)
     const onScreen = () => page.locator('.card').evaluateAll((els) => els.filter((el) => el.getBoundingClientRect().bottom > 0 && el.getBoundingClientRect().top < innerHeight * 0.9).map((el) => el.classList.contains('is-in') && parseFloat(getComputedStyle(el).opacity) > 0.5));
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    // (the foot of the page is the closing level and the footer, so the jump lands on the last card)
+    const lastY = await page.locator('.card').last().evaluate((el) => el.getBoundingClientRect().top + scrollY);
+    await page.evaluate((y) => window.scrollTo(0, y - innerHeight * 0.5), lastY);
     await page.waitForTimeout(1200);
     let seen = await onScreen();
     expect(seen.length).toBeGreaterThan(0);

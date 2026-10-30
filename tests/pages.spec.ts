@@ -147,7 +147,7 @@ for (const p of PAGES) {
         expect(f.spanBox, 'no filled box').toBe(none);
         expect(f.lineW, 'a short line before the text').toBeGreaterThanOrEqual(16);
         expect(f.size, 'small text').toBeLessThanOrEqual(16);
-        if (f.field === 'navy') expect(f, 'green on navy').toEqual(expect.objectContaining({ ink: green, line: green }));
+        if (f.field === 'navy' || f.field === 'field') expect(f, 'green on navy').toEqual(expect.objectContaining({ ink: green, line: green }));
         else if (f.field === 'blue') expect(f, 'white text, green line on blue').toEqual(expect.objectContaining({ ink: white, line: green }));
         else expect(f, `navy on ${f.field}`).toEqual(expect.objectContaining({ ink: navy, line: navy }));
       }
