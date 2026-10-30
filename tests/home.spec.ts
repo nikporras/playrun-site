@@ -51,7 +51,9 @@ test.describe('Home', () => {
     // the post sits between the name and the paragraph
     const tops = await page.locator('h1, .hero__post, .hero__value').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
     expect(tops).toEqual([...tops].sort((a, b) => a - b));
-    await expect(page.locator('.hero__value')).toContainText('testing games since 2021 and leading QA teams since 2022');
+    await expect(page.locator('.hero__value')).toHaveText(
+      "I've been testing games since 2021, on consoles, PC and VR. I've led QA teams at nDreams and Historic VR, and taken games all the way to release on several platforms. I plan the testing, run it on real hardware, and write reports developers can act on.",
+    );
     await page.waitForLoadState('networkidle');
     expect(errors, errors.join('\n')).toEqual([]);
   });
@@ -125,13 +127,19 @@ test.describe('Home', () => {
     const figure = page.locator('.hero__figure img');
     await expect(figure).toBeVisible();
     expect(await page.locator('main img:not([alt=""])').count(), 'the photo appears once on the site').toBe(1);
-    // the bottom of the cutout fades into the navy, glow and all: a gradient mask on the figure
+    // the cutout fades at the top (a short fade) and the bottom (a long one); the glow behind it is
+    // an ellipse that ends inside its own box, so neither has a hard edge
     const mask = await page.locator('.hero__figure').evaluate((el) => {
-      const cs = getComputedStyle(el) as CSSStyleDeclaration & { webkitMaskImage?: string };
-      return { mask: cs.maskImage || cs.webkitMaskImage || '', glow: getComputedStyle(el, '::before').backgroundImage };
+      const pic = el.querySelector('picture')!;
+      const cs = getComputedStyle(pic) as CSSStyleDeclaration & { webkitMaskImage?: string };
+      const glow = getComputedStyle(el, '::before');
+      return { mask: cs.maskImage || cs.webkitMaskImage || '', figMask: getComputedStyle(el).maskImage, glow: glow.backgroundImage, glowW: parseFloat(glow.width), figW: el.getBoundingClientRect().width };
     });
-    expect(mask.mask).toContain('linear-gradient');
+    expect(mask.mask).toMatch(/linear-gradient\((to bottom, )?rgba\(0, 0, 0, 0\) 0%, rgb\(0, 0, 0\) 7%, rgb\(0, 0, 0\) 74%, rgba\(0, 0, 0, 0\) 100%\)/);
+    expect(mask.figMask, 'the figure itself is not masked, so the glow is not cut at its edges').toBe('none');
     expect(mask.glow).toContain('radial-gradient');
+    expect(mask.glow, 'the glow reaches transparent inside its box').toMatch(/rgba\(0, 0, 0, 0\) 72%/);
+    expect(mask.glowW, 'the glow is wider than the figure').toBeGreaterThan(mask.figW * 1.5);
     // the photo keeps its full height on screen at every desktop width (nothing is cut off above the hero's foot)
     for (const width of [768, 1280, 1440, 1920]) {
       await page.setViewportSize({ width, height: 900 });
@@ -265,7 +273,27 @@ test.describe('Home', () => {
     // no boxes: the logos float on the field
     expect(await page.locator('.ticker__view').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
     expect(await links.first().evaluate((el) => [getComputedStyle(el.parentElement!).borderLeftWidth, getComputedStyle(el.parentElement!).backgroundColor])).toEqual(['0px', 'rgba(0, 0, 0, 0)']);
-    expect((await page.locator('.ticker__view').boundingBox())!.height, 'a short row').toBeLessThanOrEqual(96);
+    const viewBox = (await page.locator('.ticker__view').boundingBox())!;
+    expect(viewBox.height, 'the logos are the content of the section').toBeGreaterThanOrEqual(120);
+    expect(viewBox.height).toBeLessThanOrEqual(200);
+    // the title is the section-head size, smaller than the next level's title
+    const sizes = await page.evaluate(() => [parseFloat(getComputedStyle(document.querySelector('#wall-title')!).fontSize), parseFloat(getComputedStyle(document.querySelector('#stats-title')!).fontSize)]);
+    expect(sizes[0]).toBeLessThan(sizes[1]);
+    // logos sized by eye: a tall stacked mark is taller and narrower than a wide wordmark
+    const dims = await seq.locator('.wall__logo').evaluateAll((imgs) => imgs.map((img) => ({ name: img.closest('a')!.getAttribute('aria-label'), w: img.getBoundingClientRect().width, h: img.getBoundingClientRect().height })));
+    const by = Object.fromEntries(dims.map((d) => [d.name, d]));
+    expect(by["Lou's Lagoon"].h).toBeGreaterThan(by['NBA 2K21'].h * 1.5);
+    expect(by["Lou's Lagoon"].w).toBeLessThan(by['NBA 2K21'].w);
+    expect(new Set(dims.map((d) => Math.round(d.h))).size, 'not one height for all').toBeGreaterThan(3);
+    expect(Math.max(...dims.map((d) => d.h)), 'about twice the old size').toBeGreaterThanOrEqual(96);
+    // the strip fades at both ends; the pause button is small with a thin light outline
+    expect(await page.locator('.ticker__view').evaluate((el) => (getComputedStyle(el) as CSSStyleDeclaration & { webkitMaskImage?: string }).maskImage || (getComputedStyle(el) as CSSStyleDeclaration & { webkitMaskImage?: string }).webkitMaskImage || '')).toMatch(/linear-gradient\((to right|90deg), rgba\(0, 0, 0, 0\), rgb\(0, 0, 0\) 8%, rgb\(0, 0, 0\) 92%, rgba\(0, 0, 0, 0\)\)/);
+    const pauseStyle = await page.getByRole('button', { name: 'Pause the logos' }).evaluate((el) => ({ border: getComputedStyle(el).borderTopWidth, color: getComputedStyle(el).borderTopColor, h: el.getBoundingClientRect().height }));
+    expect(pauseStyle.border).toBe('1px');
+    expect(pauseStyle.color).not.toBe('rgb(12, 21, 42)');
+    expect(pauseStyle.h).toBeLessThanOrEqual(36);
+    await page.getByRole('button', { name: 'Pause the logos' }).focus();
+    expect(await page.getByRole('button', { name: 'Pause the logos' }).evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
     // the copy that makes the loop seamless is out of the accessibility tree and the tab order
     const copy = page.locator('.ticker__copy');
     await expect(copy).toHaveAttribute('aria-hidden', 'true');

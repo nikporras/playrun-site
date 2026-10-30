@@ -14,6 +14,9 @@ test('the phone steps replace the computer ones, and the panel shows the console
   await expect(page.locator('.step__desktop').first()).toBeHidden();
   await expect(page.locator('.step__phone').first()).toBeVisible();
   for (const text of ['Rotate the phone', 'Pinch to zoom', 'VoiceOver', 'TalkBack', 'Reduce motion']) await expect(page.getByText(text).first()).toBeVisible();
+  await expect(page.locator('.step__note').first()).toBeVisible();
+  await expect(page.locator('.step__note').first()).toContainText('need a keyboard and the developer tools');
+  await expect(page.locator('.step__note').first()).toContainText('Pocket DevTools');
   const dev = page.locator('.devtools');
   await dev.scrollIntoViewIfNeeded();
   await expect(dev).toBeVisible();

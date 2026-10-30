@@ -7,31 +7,31 @@ const services = [
   {
     id: 'functional',
     title: 'Functional testing',
-    text: 'I play every path a player can take and log what breaks, where, and how to reproduce it. A new feature gets a test plan before the build lands, and every later build gets a regression pass against it.',
+    text: 'I play every path a player can take and log what breaks, where, and how to reproduce it. I write a test plan for each new feature before the build lands, and I run a regression pass against it on every later build.',
     get: ['Test plans the team can read', 'Regression passes on every build', 'Build acceptance before a milestone'],
   },
   {
     id: 'platforms',
     title: 'Platforms and stores',
-    text: 'The same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the rules of Steam, Epic Games Store and GOG. I check what each platform and store requires before submission, so the submission is not the first time anyone looks.',
+    text: 'I test the same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the requirements of Steam, Epic Games Store and GOG. Each platform and store has its own rules, so I check them before submission, not after a rejection.',
     get: ['Platform requirement checks', 'Store rule checks', 'One report per platform build'],
   },
   {
     id: 'performance',
     title: 'Performance and stress',
-    text: 'I profile frame rate, memory and load times on low spec and recommended spec rigs with Unreal Engine tools and long sessions, then report exactly what gave and where.',
+    text: 'I profile frame rate, memory and load times on low spec and recommended spec rigs, with Unreal Engine tools and long sessions. Then I report exactly what gave, and where.',
     get: ['Unreal Engine profiling', 'Low and recommended spec rigs', 'Long session and soak tests'],
   },
   {
     id: 'playtesting',
     title: 'Playtesting and UX',
-    text: 'I play as players do and report where they got lost, bored or stuck: onboarding, difficulty, readability, the first ten minutes.',
+    text: 'I play the way players do and report where they get lost, bored or stuck. I look at the onboarding, the difficulty, the readability of every screen and the first ten minutes.',
     get: ['Onboarding notes', 'Difficulty and pacing notes', 'Readability on every screen'],
   },
   {
     id: 'reporting',
     title: 'Bug reporting',
-    text: 'Every issue arrives with steps, severity, media and a build number, in the tracker the team already uses. At each milestone, a quality report: what was tested, what was found, what is left.',
+    text: 'I log every issue with steps, severity, media and a build number, in the tracker the team already uses. At each milestone I write a quality report: what I tested, what I found and what is left.',
     get: ['Jira, Confluence or TestRail', 'Steps, severity, media, build number', 'Milestone quality reports'],
   },
 ];
@@ -104,7 +104,7 @@ const platforms = [
             <div class="six__name">
               <h3 class="row__title">{s.title}</h3>
               <p class="six__get">In practice</p>
-              <ul role="list" class="row__terms">
+              <ul role="list" class="six__tags" aria-label="In practice">
                 {s.get.map((t) => (
                   <li>{t}</li>
                 ))}
@@ -248,6 +248,26 @@ const platforms = [
   .six__text {
     max-width: 60ch;
     margin-top: 0.25rem;
+  }
+  /* The In practice items as labels, the way the Portfolio cards show the kinds of testing, at a
+     size that reads: navy on the blue field, light text (15:1). */
+  .six__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .six__tags li {
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    padding: 0.2em 0.65em;
+    border: 1px solid var(--pr-light);
+    border-radius: 0.3rem;
+    color: var(--pr-light);
+    background: var(--bg);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
   }
   .row:target {
     outline: 3px solid var(--accent-2);

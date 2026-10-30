@@ -5,7 +5,19 @@ import { join } from 'node:path';
 
 /** The inner pages: Skills, Portfolio, Quality, and the legal pages. */
 const PAGES = [
-  { path: '/skills', h1: /What I test\s*and how/, must: ['Functional testing', 'Bug reporting', 'GOG', 'What I bring', 'TestRail', 'Swinburne University of Technology'] },
+  {
+    path: '/skills',
+    h1: /What I test\s*and how/,
+    must: [
+      'Functional testing',
+      'Bug reporting',
+      'GOG',
+      'What I bring',
+      'TestRail',
+      'Swinburne University of Technology',
+      'I test the same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the requirements of Steam, Epic Games Store and GOG. Each platform and store has its own rules, so I check them before submission, not after a rejection.',
+    ],
+  },
   {
     path: '/portfolio',
     h1: /Games I've\s*tested/,
@@ -282,6 +294,39 @@ test('every card has a logo or its icon, the labels and one store button in a ne
   expect(sitemap).toContain('/portfolio<');
   expect(sitemap).not.toContain('/portfolio/');
   expect(sitemap).not.toContain('/about');
+});
+
+test('every Skills paragraph is full first-person sentences, and the In practice items are readable labels', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/skills');
+  const texts = await page.locator('.six__text').allTextContents();
+  expect(texts).toHaveLength(5);
+  for (const t of texts) {
+    for (const sentence of t.split(/(?<=[.!?])\s+/)) {
+      expect(sentence, `${sentence}: starts with a capital and ends with a full stop`).toMatch(/^[A-Z].*[.!?]$/);
+      expect(sentence, `${sentence}: has a subject, I or a noun phrase with a verb`).toMatch(/\b(I|I've|I'm|Each|Then|Every)\b/);
+    }
+  }
+  const tags = page.locator('.six__tags li');
+  expect(await tags.count()).toBe(15);
+  const style = await tags.first().evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { size: parseFloat(cs.fontSize), border: cs.borderTopWidth, radius: cs.borderTopLeftRadius, bg: cs.backgroundColor, color: cs.color, family: cs.fontFamily };
+  });
+  expect(style.size, 'readable').toBeGreaterThanOrEqual(16);
+  expect(style.border).toBe('1px');
+  expect(style.radius).not.toBe('0px');
+  expect(style.bg).toBe('rgb(12, 21, 42)');
+  expect(style.color).toBe('rgb(229, 231, 234)');
+  expect(style.family).toMatch(/mono|Consolas|Courier/i);
+  // on a phone the labels wrap into rows inside the column, none cut off
+  await page.setViewportSize({ width: 375, height: 812 });
+  const rows = await tags.evaluateAll((els) => els.slice(0, 3).map((el) => ({ left: el.getBoundingClientRect().left, right: el.getBoundingClientRect().right, top: Math.round(el.getBoundingClientRect().top) })));
+  for (const r of rows) {
+    expect(r.right).toBeLessThanOrEqual(375);
+    expect(r.left).toBeGreaterThanOrEqual(16);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
 });
 
 test('the skills jump list lands on each skill', async ({ page }) => {

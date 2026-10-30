@@ -10,7 +10,18 @@ import { spell, suite, versions } from '../data/suite';
 const runDate = suite.run ? suite.run.startedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
 
 // The test plan: five steps, each a set of live checks from the engine, then how to see the
-// same thing yourself on a computer, or on this phone.
+// same thing yourself. On a computer: numbered steps, one action each, with the shortcut or menu
+// for Chrome and Edge, Firefox and Safari on a Mac where they differ, a mark on the steps only
+// Chrome and Edge can do, and what you should see when all is well. On a phone: what the phone
+// itself can show, and a pointer to Pocket DevTools for the rest.
+type How = { do: string; chromeEdge?: string; firefox?: string; safari?: string; only?: string; see: string };
+const openTools: How = {
+  do: 'Open the developer tools.',
+  chromeEdge: 'Press F12, or Ctrl+Shift+I (Cmd+Option+I on a Mac).',
+  firefox: 'Press F12, or Ctrl+Shift+I (Cmd+Option+I on a Mac).',
+  safari: 'First turn the Develop menu on once: Safari menu, Settings, Advanced, tick Show features for web developers. Then press Cmd+Option+I.',
+  see: 'A panel opens at the side or the foot of the window.',
+};
 const steps = [
   {
     id: 'smoke',
@@ -18,9 +29,8 @@ const steps = [
     ask: 'Does the page load clean?',
     checks: ['pages', 'console'],
     desktop: [
-      'Press F12 (Ctrl+Shift+I on Windows, Cmd+Option+I on a Mac) to open the DevTools.',
-      'Open the Console tab and reload the page.',
-      'Red lines are errors. There should be none.',
+      openTools,
+      { do: 'Click the Console tab, then reload the page with Ctrl+R (Cmd+R on a Mac).', see: 'No red error lines in the Console.' },
     ],
     phone: ['Pocket DevTools, further down, lists the console errors this page has caught since it loaded. It should say none.'],
   },
@@ -30,8 +40,15 @@ const steps = [
     ask: 'Does it fit the screen?',
     checks: ['viewports'],
     desktop: [
-      'In the DevTools press Ctrl+Shift+M (Cmd+Shift+M) for the device toolbar.',
-      'Try 375 and 768 wide: no sideways scroll, nothing cut off, the button still on the first screen.',
+      { do: 'Open the developer tools, as in Step 1.', see: 'The panel is open.' },
+      {
+        do: 'Turn on the phone-sized view.',
+        chromeEdge: 'Press Ctrl+Shift+M (Cmd+Shift+M on a Mac).',
+        firefox: 'Press Ctrl+Shift+M (Cmd+Option+M on a Mac).',
+        safari: 'Develop menu, Enter Responsive Design Mode.',
+        see: 'The page sits in a phone-sized frame with a width box above it.',
+      },
+      { do: 'Type 375 into the width box, then 768.', see: 'No sideways scrollbar, nothing cut off, the menu button in the corner.' },
     ],
     phone: ['Rotate the phone: the page should reflow with no sideways scroll.', 'Pinch to zoom: the text should scale and nothing should stop you.'],
   },
@@ -41,8 +58,13 @@ const steps = [
     ask: 'Can everyone use it?',
     checks: ['a11y', 'focus'],
     desktop: [
-      'Click in the address bar, then press Tab: a visible outline lands on Skip to content, then moves through every link and button in order.',
-      'The Lighthouse tab in the DevTools scores accessibility too; the target here is 100.',
+      { do: 'Click in the address bar, then press Tab.', see: 'An outline on Skip to content. Keep pressing Tab: it moves through every link and button, in reading order.' },
+      {
+        do: 'Run the accessibility audit.',
+        only: 'Chrome and Edge only. Firefox and Safari have no Lighthouse; the Tab check above is the one to trust there.',
+        chromeEdge: 'In the developer tools open the Lighthouse tab, tick Accessibility, then click Analyze page load.',
+        see: 'A score of 100.',
+      },
     ],
     phone: [
       'Turn on VoiceOver (iPhone: Settings, Accessibility) or TalkBack (Android) and swipe right through the page: every image and control is named.',
@@ -54,7 +76,10 @@ const steps = [
     title: 'Links',
     ask: 'Does every link go somewhere?',
     checks: ['links'],
-    desktop: ['Open the Network tab in the DevTools and reload.', 'Every row should show 200 (or 304, from the cache). A red row is a broken link or a missing file.'],
+    desktop: [
+      { do: 'Open the developer tools, as in Step 1, and click the Network tab.', see: 'An empty list, waiting for requests.' },
+      { do: 'Reload the page with Ctrl+R (Cmd+R on a Mac).', see: 'A row per file, each with status 200, or 304 from the cache. No red rows.' },
+    ],
     phone: ['Pocket DevTools lists every request this page made, with its status and size.'],
   },
   {
@@ -62,10 +87,18 @@ const steps = [
     title: 'Performance',
     ask: 'Is it fast?',
     checks: ['performance'],
-    desktop: ['Open the Lighthouse tab in the DevTools, tick Performance and run it. The target here is 95 or more.'],
+    desktop: [
+      {
+        do: 'Run the performance audit.',
+        only: 'Chrome and Edge only. In Firefox or Safari, open the Network tab, reload, and read the load time in the bar at the foot of the panel: under two seconds is the target here.',
+        chromeEdge: 'In the developer tools open the Lighthouse tab, tick Performance, then click Analyze page load.',
+        see: 'A score of 95 or more.',
+      },
+    ],
     phone: ['Pocket DevTools shows the load timings from this phone: time to first byte, first paint, loaded.'],
   },
 ];
+const computerNote = 'The computer steps need a keyboard and the developer tools. On this phone, Pocket DevTools below shows the same records.';
 ---
 
 <Base title="Quality" description="Let's test this page together: five steps, each run live on this page in your browser, then how to check it yourself. The same rigour I bring to the games I test.">
@@ -124,8 +157,36 @@ const steps = [
               <div class="step__desktop">
                 <h4 class="step__howtitle">Check it yourself on a computer</h4>
                 <ol class="step__list">
-                  {s.desktop.map((line) => (
-                    <li>{line}</li>
+                  {s.desktop.map((h) => (
+                    <li class="how">
+                      <p class="how__do">{h.do}</p>
+                      {h.only && <p class="how__only">{h.only}</p>}
+                      {(h.chromeEdge || h.firefox || h.safari) && (
+                        <dl class="how__browsers">
+                          {h.chromeEdge && (
+                            <>
+                              <dt>Chrome and Edge</dt>
+                              <dd>{h.chromeEdge}</dd>
+                            </>
+                          )}
+                          {h.firefox && (
+                            <>
+                              <dt>Firefox</dt>
+                              <dd>{h.firefox}</dd>
+                            </>
+                          )}
+                          {h.safari && (
+                            <>
+                              <dt>Safari on a Mac</dt>
+                              <dd>{h.safari}</dd>
+                            </>
+                          )}
+                        </dl>
+                      )}
+                      <p class="how__see">
+                        <span class="how__seekey">You should see</span> {h.see}
+                      </p>
+                    </li>
                   ))}
                 </ol>
               </div>
@@ -136,6 +197,7 @@ const steps = [
                     <li>{line}</li>
                   ))}
                 </ol>
+                <p class="step__note">{computerNote}</p>
               </div>
             </div>
           </li>
@@ -373,6 +435,58 @@ Attachments: [screenshot or video]</pre>
   }
   .step__list li + li {
     margin-top: 0.4em;
+  }
+  /* One action a step, the browsers that differ, then what you should see. */
+  .how + .how {
+    margin-top: var(--s-2);
+  }
+  .how__do {
+    max-width: none;
+  }
+  .how__only {
+    margin-top: 0.3em;
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    letter-spacing: 0.03em;
+    color: var(--accent-2);
+    max-width: none;
+  }
+  .how__browsers {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.25em 0.75em;
+    margin: 0.4em 0 0;
+    font-size: 0.9375rem;
+  }
+  .how__browsers dt {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .how__browsers dd {
+    margin: 0;
+  }
+  .how__see {
+    margin-top: 0.4em;
+    font-size: 0.9375rem;
+    color: var(--muted);
+    max-width: none;
+  }
+  .how__seekey {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-right: 0.3em;
+  }
+  .step__note {
+    margin-top: var(--s-2);
+    font-size: 0.9375rem;
+    color: var(--muted);
+    max-width: 48ch;
   }
   .step__phone {
     display: none;

@@ -40,6 +40,34 @@ test.describe('Quality, the guided test run', () => {
     await expect(page.locator('.report__suite')).toContainText(/Playwright 1\./);
   });
 
+  test('the computer steps are one action each, name every browser where they differ, mark the Chrome and Edge only ones, and say what to expect', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/quality');
+    await page.mouse.move(640, 300);
+    const hows = page.locator('.step__desktop .how');
+    expect(await hows.count()).toBeGreaterThanOrEqual(9);
+    for (const how of await hows.all()) {
+      await expect(how.locator('.how__do')).toHaveText(/\S/);
+      await expect(how.locator('.how__see')).toContainText(/You should see\s*\S/);
+    }
+    const first = hows.first();
+    await expect(first.locator('.how__browsers dt')).toHaveText(['Chrome and Edge', 'Firefox', 'Safari on a Mac']);
+    await expect(first).toContainText('Press F12');
+    await expect(first).toContainText('Show features for web developers');
+    await expect(first).toContainText('Cmd+Option+I');
+    const only = page.locator('.how__only');
+    await expect(only).toHaveCount(2);
+    for (const o of await only.all()) await expect(o).toContainText('Chrome and Edge only');
+    await expect(page.locator('#step-a11y .how__only')).toContainText(/Firefox and Safari/);
+    await expect(page.locator('#step-performance .how__only')).toContainText(/Firefox or Safari/);
+    await expect(page.locator('#step-responsive')).toContainText('Enter Responsive Design Mode');
+    await expect(page.locator('.step__note').first()).toBeHidden();
+    // UK spelling in the copy, apart from the names of buttons quoted as the browsers spell them
+    const text = (await page.locator('.step__desktop').allTextContents()).join(' ');
+    expect(text).not.toMatch(/\u2014/);
+    expect(text).not.toMatch(/\bcolor\b|\bcenter\b|\boptimiz/);
+  });
+
   test('Run every step runs them all again, in order', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));

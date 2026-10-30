@@ -27,6 +27,21 @@ const byPost = shown
     return g || aDev - bDev || (b.data.year ?? 0) - (a.data.year ?? 0);
   });
 const FEATURED = ['beat-saber', 'nba-2k21', 'cyberpunk-2077', 'ghostbusters-rise-of-the-ghost-lord', 'lous-lagoon'];
+// Each logo's size on the ticker, by eye rather than by one height: the same visual weight for a
+// wide wordmark (shorter) and a tall stacked mark (narrower). From the file's own aspect ratio,
+// in rem at desktop; the CSS scales the whole set down on tablets and phones.
+const size = (id: string) => {
+  const img = logos[id];
+  if (!img) return '--lw: 12rem; --lh: 4rem';
+  const ratio = img.width / img.height;
+  let h = Math.min(7, Math.max(2, 7.9 / Math.sqrt(ratio)));
+  let w = h * ratio;
+  if (w > 18) {
+    w = 18;
+    h = w / ratio;
+  }
+  return `--lw: ${w.toFixed(2)}rem; --lh: ${h.toFixed(2)}rem`;
+};
 const wall = [...FEATURED.flatMap((id) => byPost.filter((p) => p.id === id)), ...byPost.filter((p) => !FEATURED.includes(p.id))];
 
 // The numbers, counted from the data so they stay right as it grows.
@@ -79,9 +94,9 @@ const checks = [
       </div>
       <p class="hero__post" data-load style="--d: 400ms">{playrun.role}, {site.name}</p>
       <p class="hero__value" data-load style="--d: 500ms">
-        I've been testing games since 2021 and leading QA teams since 2022, at nDreams and Historic VR, and on indie
-        titles through to their multi-platform console and PC releases. I plan the testing, run it on real hardware,
-        and write reports developers can act on.
+        I've been testing games since 2021, on consoles, PC and VR. I've led QA teams at nDreams and Historic VR, and
+        taken games all the way to release on several platforms. I plan the testing, run it on real hardware, and
+        write reports developers can act on.
       </p>
     </div>
     <!-- The player character: the one photo on the site, standing on the bottom edge of the level -->
@@ -104,7 +119,7 @@ const checks = [
   <section class="level level--blue level--tight wall" data-level="2" aria-labelledby="wall-title">
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; Portfolio</span></p>
-      <h2 id="wall-title" class="level__title" data-enter="wipe">Games I've tested</h2>
+      <h2 id="wall-title" class="level__title wall__title" data-enter="wipe">Games I've tested</h2>
     </div>
     <div class="ticker level__body" data-ticker data-enter style="--enter-delay: 120ms">
       <div class="ticker__view">
@@ -114,9 +129,9 @@ const checks = [
               <ul role="list" class:list={['ticker__seq', copy && 'ticker__copy']} aria-hidden={copy ? 'true' : undefined}>
                 {wall.map((p) => (
                   <li class="wall__item">
-                    <a class="wall__link" href="/portfolio" aria-label={p.data.title} tabindex={copy ? -1 : undefined}>
+                    <a class="wall__link" href="/portfolio" aria-label={p.data.title} tabindex={copy ? -1 : undefined} style={size(p.id)}>
                       {logos[p.id] ? (
-                        <Image class="wall__logo" src={logos[p.id]} alt="" height={64} densities={[1, 2]} loading="lazy" decoding="async" />
+                        <Image class="wall__logo" src={logos[p.id]} alt="" height={120} densities={[1, 2]} loading="lazy" decoding="async" />
                       ) : p.data.wordmark ? (
                         <span class="wall__word" aria-hidden="true">
                           {p.data.title}
@@ -141,7 +156,7 @@ const checks = [
         <span data-ticker-word>Pause</span>
       </button>
     </div>
-    <Bug id="wall-1" style="right: 12%; top: 9rem" tablet="right: 10%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <Bug id="wall-1" style="right: 12%; top: 5rem" tablet="right: 10%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
   <!-- Level 3: the numbers, counted from the portfolio -->
@@ -385,19 +400,25 @@ const checks = [
     width: min(36vw, 34rem);
     line-height: 0;
     z-index: 0;
-    /* the bottom quarter fades into the navy, the glow with it: no hard edge where the cutout ends */
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 74%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 0%, #000 74%, transparent 100%);
   }
+  /* The cutout fades at both ends: a short fade at the top so the headset softens into the navy
+     without going, and the bottom quarter into the navy. The mask sits on the picture, not the
+     figure, so the glow behind it is not cut at the figure's edges. */
+  .hero__figure :global(picture) {
+    display: block;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 7%, #000 74%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 7%, #000 74%, transparent 100%);
+  }
+  /* The glow: an ellipse that reaches transparent well inside its own box, so it has no edge. */
   .hero__figure::before {
     content: '';
     position: absolute;
     left: 50%;
-    bottom: 0;
-    width: 180%;
-    height: 95%;
-    transform: translateX(-50%);
-    background: radial-gradient(ellipse 55% 75% at 50% 100%, rgba(86, 189, 218, 0.4), rgba(81, 108, 179, 0.2) 55%, transparent 75%);
+    top: 50%;
+    width: 200%;
+    height: 150%;
+    transform: translate(-50%, -46%);
+    background: radial-gradient(ellipse 42% 40% at 50% 50%, rgba(86, 189, 218, 0.36), rgba(81, 108, 179, 0.18) 50%, transparent 72%);
     pointer-events: none;
   }
   .hero__figure :global(img) {
@@ -499,19 +520,27 @@ const checks = [
   .wall .level__body {
     margin-top: var(--s-4);
   }
-  .ticker {
-    --cell: 13rem;
-    --cell-h: 5rem;
+  /* The title is an introduction to the logos, not a second hero: the section-head size. */
+  .wall__title {
+    font-size: var(--step-head);
+    font-size: round(var(--step-head), 16px);
   }
+  .ticker {
+    --k: 1; /* the scale of every logo: smaller on tablets and phones */
+    --cell-h: 9rem;
+  }
+  /* The row fades out at both ends, so the logos glide in and out. */
   .ticker__view {
     container-type: inline-size;
     overflow: hidden;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
   }
   .ticker__track {
     display: flex;
     width: max-content;
     will-change: transform;
-    animation: ticker calc(var(--n, 20) * 5s) linear infinite;
+    animation: ticker calc(var(--n, 20) * 7s) linear infinite;
   }
   .ticker.is-paused .ticker__track,
   .ticker__view:focus-within .ticker__track {
@@ -533,14 +562,13 @@ const checks = [
   }
   .wall__item {
     flex: none;
-    width: var(--cell);
   }
   .wall__link {
     display: flex;
     align-items: center;
     justify-content: center;
     height: var(--cell-h);
-    padding: 0 var(--s-3);
+    padding: 0 calc(var(--s-4) * var(--k));
     color: var(--ink);
     text-decoration: none;
     transition: opacity var(--dur-fast) ease;
@@ -553,38 +581,35 @@ const checks = [
     outline-offset: 2px;
   }
   .wall__link :global(.wall__logo) {
-    width: auto;
-    height: auto;
-    max-height: 3.25rem;
-    max-width: 100%;
+    width: calc(var(--lw) * var(--k));
+    height: calc(var(--lh) * var(--k));
     object-fit: contain;
   }
-  /* The pause button, small, under the row. */
+  /* The pause button: small and light, a thin outline in the field's ink. */
   .ticker__pause {
     display: inline-flex;
     align-items: center;
     gap: 0.5em;
-    margin: var(--s-3) 0 0;
-    min-height: 2.25rem;
-    padding: 0.4rem 0.75rem;
-    border: 2px solid var(--pr-navy);
+    margin: var(--s-2) 0 0;
+    min-height: 2rem;
+    padding: 0.3rem 0.625rem;
+    border: 1px solid color-mix(in srgb, var(--ink) 55%, transparent);
     background: transparent;
-    color: var(--pr-navy);
+    color: var(--ink);
     font-family: var(--font-display);
-    font-size: 0.875rem;
-    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     transition:
-      background-color var(--dur-fast) ease,
+      border-color var(--dur-fast) ease,
       color var(--dur-fast) ease;
   }
   .ticker__pause:hover {
-    background: var(--pr-navy);
-    color: var(--ink);
+    border-color: var(--ink);
   }
   .ticker__glyph {
-    width: 0.875rem;
-    height: 0.875rem;
+    width: 0.75rem;
+    height: 0.75rem;
   }
   .ticker__glyph--play,
   .ticker.is-paused .ticker__glyph--pause {
@@ -612,7 +637,7 @@ const checks = [
   /* A title with no clean official logo: its name set in Pixel Operator at the logos' height. */
   .wall__word {
     font-family: var(--font-display);
-    font-size: 2.5rem;
+    font-size: calc(3.5rem * var(--k));
     line-height: 1;
   }
   /* Or its pixel icon and its name. */
@@ -636,14 +661,8 @@ const checks = [
   }
   @media (max-width: 63.99rem) {
     .ticker {
-      --cell: 10rem;
-      --cell-h: 4.5rem;
-    }
-    .wall__link {
-      padding: 0 var(--s-2);
-    }
-    .wall__link :global(.wall__logo) {
-      max-height: 2.75rem;
+      --k: 0.72;
+      --cell-h: 7rem;
     }
     .wall__name {
       font-size: 1.25rem;
@@ -654,11 +673,8 @@ const checks = [
   }
   @media (max-width: 47.99rem) {
     .ticker {
-      --cell: 7rem;
-      --cell-h: 3.5rem;
-    }
-    .wall__link :global(.wall__logo) {
-      max-height: 2.25rem;
+      --k: 0.5;
+      --cell-h: 5rem;
     }
     .wall__name {
       font-size: 1rem;
