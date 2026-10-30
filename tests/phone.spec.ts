@@ -2,7 +2,8 @@ import { test, expect, devices } from "@playwright/test";
 
 /**
  * Home on a phone: a real device profile (touch, mobile viewport, 390 by 844). The reveals must
- * never leave a heading clipped, the first screen must hold the button, the HUD must stay slim.
+ * never leave a heading clipped, the first screen must hold the button, the bottom bar holds the pages
+ * and the scoreboard's counter.
  */
 test.use({ ...devices["Pixel 7"], viewport: { width: 390, height: 844 } });
 
@@ -42,21 +43,21 @@ test.describe("Home on a phone", () => {
     }
   });
 
-  test("the HUD is one slim row and a tap on the scoreboard pill opens the card above it", async ({
+  test("the track is a thin line on the bottom bar and a tap on the scoreboard's counter opens the card above the bar", async ({
     page,
   }) => {
     await page.goto("/");
     const hud = page.locator("#hud");
     await expect(hud).toBeVisible();
     const h = await hud.evaluate((el) => el.getBoundingClientRect().height);
-    expect(h).toBeLessThanOrEqual(48);
+    expect(h).toBeLessThanOrEqual(4);
     await expect(page.locator(".score__panel")).toBeHidden();
     const pill = page.getByRole("button", { name: /^Scoreboard/ });
     await pill.tap();
     await expect(page.locator(".score__panel")).toBeVisible();
     await expect(page.locator(".score__panel").getByText("Bugs caught")).toBeVisible();
     const card = (await page.locator(".score__panel").boundingBox())!;
-    const bar = (await hud.boundingBox())!;
+    const bar = (await page.locator(".tabbar").boundingBox())!;
     expect(card.y + card.height, "above the bar").toBeLessThanOrEqual(bar.y);
     expect(card.x + card.width, "inside the screen").toBeLessThanOrEqual(390);
     await pill.tap();

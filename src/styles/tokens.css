@@ -61,7 +61,7 @@
   /* Frame: the content sits in a centred column of at most --content, with --margin either
      side at least. --gutter is the resulting side padding, used by every full-bleed block. */
   --content: 77.5rem; /* 1240px */
-  --margin: clamp(1.25rem, 5vw, 6rem); /* 20px on a phone, 64px at 1280, 72px at 1440, 96px at 1920 */
+  --margin: max(clamp(1.25rem, 5vw, 6rem), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); /* 20px on a phone, 64px at 1280, 72px at 1440, 96px at 1920; clear of a notch */
   --gutter: max(var(--margin), calc((100% - var(--content)) / 2));
   --level-pad: clamp(4rem, 2.5rem + 5vw, 7.5rem); /* the top and bottom of every level */
   --block-gap: clamp(2.5rem, 1.5rem + 3vw, 4.5rem); /* between a level's header and its content */
@@ -94,7 +94,8 @@
 }
 @media (max-width: 47.99rem) {
   :root {
-    --hud-h: 2.75rem; /* one slim row: the floor, the ship and the Games button */
+    --bar-h: 3.5rem; /* the bottom bar's row: the five pages and the scoreboard's counter */
+    --hud-h: calc(var(--bar-h) + 2px + env(safe-area-inset-bottom, 0px)); /* the room it takes, its edge and the home indicator */
     --floor-h: 0.5rem;
     --ship-w: 1.5rem;
     --join-h: 5rem; /* the phone's mosaic join: five rows of 16px blocks */

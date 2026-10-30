@@ -663,6 +663,16 @@ p + p {
     padding-bottom: 4rem;
   }
 }
+@media (max-width: 47.99rem) {
+  /* A phone always has the bottom bar (games or not, script or not): the page ends above it, with
+     room for the ship that rides on its top edge. The scoreboard's counter takes its right end. */
+  :root body {
+    padding-bottom: calc(var(--hud-h) + var(--ship-w) + 0.5rem);
+  }
+  .has-dock {
+    --counter-w: 3.75rem;
+  }
+}
 .bug {
   position: absolute;
   z-index: 3;

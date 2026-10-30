@@ -38,6 +38,12 @@ import Join from '../components/Join.astro';
   :global(.games) .gameover {
     min-height: calc(100svh - 4.5rem - var(--hud-h));
   }
+  /* (a phone's bottom bar is there with the games on or off) */
+  @media (max-width: 47.99rem) {
+    .gameover {
+      min-height: calc(100svh - 4.5rem - var(--hud-h));
+    }
+  }
   .gameover__body {
     margin-block: auto;
     width: 100%;

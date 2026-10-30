@@ -110,18 +110,92 @@ test.describe('Home', () => {
     expect(outline).not.toBe('none');
   });
 
-  test('menu toggle works on a phone, and the nav holds Home, the three pages and the button', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+  for (const width of [375, 360]) {
+    test(`on a phone (${width}px) the pages are in a bottom bar: Home, Skills, Portfolio, Quality, Contact as real links with pixel icons and labels of 16px, the current page in green, at least 44px tall with a visible focus; the header keeps the logo and has no Menu`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 780 });
+      await page.goto('/portfolio/');
+      await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
+      await expect(page.locator('.header__nav')).toBeHidden();
+      await expect(page.locator('.header__brand')).toBeVisible();
+      const bar = page.getByRole('navigation', { name: 'Site' });
+      await expect(bar).toHaveCount(1);
+      const links = bar.getByRole('link');
+      await expect(links).toHaveText(['Home', 'Skills', 'Portfolio', 'Quality', 'Contact']);
+      expect(await links.evaluateAll((els) => els.map((a) => a.getAttribute('href')))).toEqual(['/', '/skills/', '/portfolio/', '/quality/', '/contact/']);
+      await expect(bar.getByRole('link', { name: 'Portfolio' })).toHaveAttribute('aria-current', 'page');
+      await expect(bar.locator('[aria-current]')).toHaveCount(1);
+      const box = (await bar.boundingBox())!;
+      expect(box.x).toBe(0);
+      expect(box.width).toBe(width);
+      expect(box.y + box.height, 'on the foot of the screen').toBe(780);
+      const cells = await links.evaluateAll((els) =>
+        els.map((a) => {
+          const r = a.getBoundingClientRect();
+          const label = a.querySelector('.tabbar__label') as HTMLElement;
+          return { h: r.height, w: r.width, labelW: label.getBoundingClientRect().width, size: parseFloat(getComputedStyle(label).fontSize), color: getComputedStyle(a).color, icon: a.querySelectorAll('svg path').length, current: a.hasAttribute('aria-current') };
+        }),
+      );
+      for (const c of cells) {
+        expect(c.h, 'a 44px target').toBeGreaterThanOrEqual(44);
+        expect(c.size, 'a label of 16px').toBe(16);
+        expect(c.labelW, 'the whole label fits its cell').toBeLessThanOrEqual(c.w);
+        expect(c.icon, 'a pixel icon').toBe(1);
+        expect(c.color).toBe(c.current ? 'rgb(103, 193, 140)' : 'rgb(170, 179, 197)');
+      }
+      // the counter takes the right end, after the five
+      const pill = (await page.locator('.score__pill').boundingBox())!;
+      expect(pill.x + pill.width).toBe(width);
+      expect(pill.y).toBeGreaterThanOrEqual(box.y);
+      for (const c of await links.evaluateAll((els) => els.map((a) => a.getBoundingClientRect().right))) expect(c).toBeLessThanOrEqual(pill.x + 1);
+      // focus: a ring on the link
+      await page.keyboard.press('Tab');
+      await links.first().focus();
+      await page.keyboard.press('Shift+Tab');
+      await page.keyboard.press('Tab');
+      await expect(links.first()).toBeFocused();
+      expect(await links.first().evaluate((a) => getComputedStyle(a).outlineStyle)).not.toBe('none');
+      // a real link: Quality loads with Quality marked
+      await bar.getByRole('link', { name: 'Quality' }).click();
+      await expect(page).toHaveURL(/\/quality\/$/);
+      await expect(page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Quality' })).toHaveAttribute('aria-current', 'page');
+    });
+  }
+
+  test('on a phone the bottom bar covers nothing: the last button and the footer end above it and the ship, the achievement toast rises above it, and it is there without script and under reduced motion', async ({ page, browser }) => {
+    await page.setViewportSize({ width: 375, height: 780 });
     await page.goto('/');
-    const toggle = page.getByRole('button', { name: 'Menu' });
-    await expect(toggle).toBeVisible();
-    await toggle.click();
-    await expect(page.getByRole('button', { name: 'Close' })).toHaveAttribute('aria-expanded', 'true');
-    const nav = page.getByRole('navigation', { name: 'Site' });
-    await expect(nav.getByRole('link')).toHaveText(['Home', 'Skills', 'Portfolio', 'Quality', 'Get in touch']);
-    await expect(nav.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
-    await page.keyboard.press('Escape');
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(300);
+    const top = (await page.locator('.tabbar').boundingBox())!.y;
+    const ship = (await page.locator('.hud__runner').boundingBox())!;
+    expect(ship.y + ship.height, 'the ship rides on the bar').toBeLessThanOrEqual(top + 1);
+    const last = (await page.locator('.footer__legal').boundingBox())!;
+    expect(last.y + last.height, 'the footer ends above the ship').toBeLessThanOrEqual(ship.y);
+    const button = (await page.getByRole('link', { name: 'Get in touch' }).last().boundingBox())!;
+    expect(button.y + button.height).toBeLessThanOrEqual(ship.y);
+    // a toast: above the bar and the ship, never over them
+    await page.evaluate(() => document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'selftest' })));
+    const toast = page.locator('[data-toast]');
+    await expect(toast).toHaveClass(/is-in/);
+    await page.waitForTimeout(400);
+    const t = (await toast.boundingBox())!;
+    expect(t.y + t.height).toBeLessThanOrEqual(ship.y);
+    expect(t.x).toBeGreaterThanOrEqual(0);
+    expect(t.x + t.width).toBeLessThanOrEqual(375);
+    // without script and under reduced motion the pages are still in the bar (no counter, no line)
+    for (const options of [{ javaScriptEnabled: false }, { reducedMotion: 'reduce' as const }]) {
+      const context = await browser.newContext({ ...options, viewport: { width: 375, height: 780 } });
+      const p = await context.newPage();
+      await p.goto('/skills/');
+      await expect(p.getByRole('navigation', { name: 'Site' }).getByRole('link')).toHaveText(['Home', 'Skills', 'Portfolio', 'Quality', 'Contact']);
+      await expect(p.locator('.hud__runner')).toHaveCount(options.reducedMotion ? 0 : 1);
+      const links = await p.locator('.tabbar__link').evaluateAll((els) => els.map((a) => a.getBoundingClientRect().right));
+      expect(links[4], 'the five take the whole bar').toBeGreaterThan(370);
+      await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      const legal = (await p.locator('.footer__legal').boundingBox())!;
+      expect(legal.y + legal.height).toBeLessThanOrEqual((await p.locator('.tabbar').boundingBox())!.y);
+      await context.close();
+    }
   });
 
   test('the hero is pinned and the next level slides over it; it scrolls away under reduced motion', async ({ page, browser }) => {

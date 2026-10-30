@@ -5,12 +5,12 @@ import { test, expect, type Page } from '@playwright/test';
  * card, tag, image and link that shows at 1440 shows at 375, in the same order; only the layout
  * changes. The few things that are phone-specific by design are listed here and nowhere else: on
  * Quality, the phone steps, Pocket DevTools and the computer steps folded under "Checking on a
- * computer?"; the Menu button; the bottom bar; the rows of the Portfolio's folded list. Decorations
+ * computer?"; the bottom bar; the rows of the Portfolio's folded list. Decorations
  * (bugs, joins, the shot) are not content. The folded cards are all in the page, one tap away: the
  * phone's read opens every one of them first.
  */
 const PAGES = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
-const EXCEPT = '.step__fold, .step__phone, .step__desktop, .devtools, .header__toggle, .hud, .dock, [data-shot], .card__toggle, .bug, .join';
+const EXCEPT = '.step__fold, .step__phone, .step__desktop, .devtools, .tabbar, .hud, .dock, [data-shot], .card__toggle, .bug, .join';
 
 const content = (page: Page) =>
   page.evaluate((except) => {

@@ -303,6 +303,12 @@ const checks = [
       --hud-space: var(--hud-h);
     }
   }
+  /* a phone's bottom bar is there with the games on or off */
+  @media (max-width: 47.99rem) {
+    .hero {
+      --hud-space: var(--hud-h);
+    }
+  }
   @media (prefers-reduced-motion: no-preference) {
     .hero {
       position: sticky;

@@ -372,8 +372,10 @@ export function startGames() {
   // On desktop the bar stands on the left edge and the ship runs down it; otherwise it lies
   // along the bottom and the ship runs across, with the scoreboard pill at the right end.
   const vertical = matchMedia('(min-width: 64rem)');
+  // (on a phone the line runs the whole width, over the bottom bar; the pill sits in the bar)
+  const phone = matchMedia('(max-width: 47.99rem)');
   const layout = () => {
-    const free = vertical.matches ? hud.clientHeight : hud.clientWidth - pill.offsetWidth;
+    const free = vertical.matches ? hud.clientHeight : phone.matches ? hud.clientWidth : hud.clientWidth - pill.offsetWidth;
     const ship = vertical.matches ? runner.offsetHeight : runner.offsetWidth;
     hud.style.setProperty('--track', `${Math.max(0, free - ship)}px`);
     levelsList.replaceChildren(
@@ -427,6 +429,7 @@ export function startGames() {
   addEventListener('scroll', onScroll, { passive: true });
   addEventListener('resize', layout);
   vertical.addEventListener('change', layout);
+  phone.addEventListener('change', layout);
 
   // Controls. The pill opens the card and closes it (a tap on a phone, a click or Enter anywhere);
   // a click outside closes it too. Hover and focus open it without pinning it.
@@ -468,6 +471,8 @@ export function startGames() {
 
   hud.hidden = false;
   dock.hidden = false;
+  // (a phone's bottom bar leaves its right end for the counter)
+  html.classList.add('has-dock');
   render();
   layout();
   onScroll();
