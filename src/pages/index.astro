@@ -31,12 +31,6 @@ const stats = [
   { n: 10, suffix: '+', label: 'platforms' },
 ];
 
-// Routes that exist in this build. The self test only checks links to these, so pages that are not
-// built yet never count as failures; new pages join the list the moment they are built.
-const builtRoutes = Object.keys(import.meta.glob('./**/*.astro'))
-  .map((p) => p.replace(/^\.\//, '/').replace(/index\.astro$/, '').replace(/\.astro$/, '').replace(/\/$/, '') || '/')
-  .filter((r) => !r.includes('['));
-
 const ALT = 'Nicolás Porras wearing a VR headset pushed up on his head';
 
 // The run that built this page. GitHub Actions builds only after the suite has passed, so the
@@ -158,7 +152,7 @@ const checks = [
   </section>
 
   <!-- Level 4: proof as a scoreboard on a green field -->
-  <section class="level level--green proof" data-level="4" aria-labelledby="proof-title" data-routes={JSON.stringify(builtRoutes)}>
+  <section class="level level--green proof" data-level="4" aria-labelledby="proof-title">
     <div class="level__head">
       <p class="flag" data-enter><span>Level 4 &middot; Proof</span></p>
       <h2 id="proof-title" class="level__title" data-enter="wipe">Tested like my games</h2>
@@ -805,6 +799,7 @@ const checks = [
 
 <script>
   import { startBreak } from '../scripts/break';
+  import { checks as engine } from '../scripts/checks';
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   startBreak();
 
@@ -852,92 +847,13 @@ const checks = [
     counters.forEach((el) => io.observe(el));
   }
 
-  // The live thing: real checks on this page, run in the visitor's browser.
-  type Check = { id: string; run: () => Promise<[number, number, string]> };
-
+  // The live thing: real checks on this page, run in the visitor's browser, from the shared engine
+  // the Quality page uses too.
   const button = document.getElementById('selftest') as HTMLButtonElement | null;
   const status = document.getElementById('selftest-status');
   const tiles = new Map<string, HTMLElement>();
   document.querySelectorAll<HTMLElement>('[data-check]').forEach((t) => tiles.set(t.dataset.check!, t));
-
-  // Only links to routes that exist in this build are checked, so unbuilt pages never fail the test.
-  const builtRoutes: string[] = JSON.parse(document.querySelector('.proof')?.getAttribute('data-routes') ?? '[]');
-  const routeOf = (href: string) => new URL(href).pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
-  const internalLinks = () =>
-    Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]'))
-      .map((a) => a.href)
-      .filter((h) => h.startsWith(location.origin) && !h.includes('#') && builtRoutes.includes(routeOf(h)))
-      .filter((h, i, arr) => arr.indexOf(h) === i);
-
-  const checks: Check[] = [
-    {
-      id: 'pages',
-      run: async () => {
-        const h1 = document.querySelectorAll('h1').length;
-        return [h1 === 1 ? 1 : 0, h1 === 1 ? 0 : 1, h1 === 1 ? 'This page has exactly one h1' : `Found ${h1} h1 elements`];
-      },
-    },
-    {
-      id: 'console',
-      run: async () => {
-        const errors = (window as unknown as { __playrunErrors: string[] }).__playrunErrors ?? [];
-        return [errors.length ? 0 : 1, errors.length ? 1 : 0, errors.length ? `${errors.length} script errors since load` : 'No script errors since this page loaded'];
-      },
-    },
-    {
-      id: 'links',
-      run: async () => {
-        const links = internalLinks();
-        const results = await Promise.all(
-          links.map(async (href) => {
-            try {
-              const r = await fetch(href, { method: 'HEAD', cache: 'no-store' });
-              return r.ok;
-            } catch {
-              return false;
-            }
-          }),
-        );
-        const ok = results.filter(Boolean).length;
-        return [ok, links.length - ok, `${ok} of ${links.length} links to built pages answered 200`];
-      },
-    },
-    {
-      id: 'viewports',
-      run: async () => {
-        const over = document.documentElement.scrollWidth > document.documentElement.clientWidth;
-        return [over ? 0 : 1, over ? 1 : 0, over ? `Sideways overflow at ${innerWidth}px` : `No sideways overflow at ${innerWidth}px wide`];
-      },
-    },
-    {
-      id: 'a11y',
-      run: async () => {
-        const problems: string[] = [];
-        if (!document.documentElement.lang) problems.push('missing lang');
-        if (document.querySelectorAll('main').length !== 1) problems.push('main landmark');
-        document.querySelectorAll('img').forEach((img) => {
-          if (!img.hasAttribute('alt')) problems.push('image without alt');
-        });
-        document.querySelectorAll<HTMLElement>('a, button').forEach((el) => {
-          const name = (el.getAttribute('aria-label') || el.textContent || '').trim();
-          if (!name) problems.push('control without a name');
-        });
-        const n = problems.length;
-        return [n ? 0 : 1, n ? 1 : 0, n ? `${n} problems: ${problems.slice(0, 2).join(', ')}` : 'Language set, one main landmark, every image and control named'];
-      },
-    },
-    {
-      id: 'brand',
-      run: async () => {
-        await document.fonts.ready;
-        const pixel = document.fonts.check('16px "Pixel Operator"');
-        const mont = document.fonts.check('16px Montserrat');
-        const favicon = !!document.querySelector('link[rel="icon"]');
-        const passed = [pixel, mont, favicon].filter(Boolean).length;
-        return [passed, 3 - passed, passed === 3 ? 'Pixel Operator and Montserrat loaded, favicon present' : 'A brand asset did not load'];
-      },
-    },
-  ];
+  const checks = ['pages', 'console', 'links', 'viewports', 'a11y', 'brand'].map((id) => engine[id]);
 
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
   const score = document.getElementById('selftest-score');
@@ -958,7 +874,7 @@ const checks = [
     let tilesPassed = 0;
     for (const check of checks) {
       const tile = tiles.get(check.id);
-      const [passed, failed, detail] = await check.run();
+      const { passed, failed, detail } = await check.run();
       if (!reduce) await wait(260);
       passedAll += passed;
       failedAll += failed;

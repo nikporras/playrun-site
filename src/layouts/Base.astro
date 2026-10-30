@@ -22,6 +22,11 @@ const pageTitle = fullTitle ?? `${title} | ${site.name}, ${site.tagline}`;
 // The build writes file routes (/about.html); the public address is the clean one (/about).
 const canonical = new URL(Astro.url.pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, ''), Astro.site);
 const ogUrl = new URL(ogImage, Astro.site);
+// Routes that exist in this build. The live link checks only test links to these, so pages that
+// are not built yet never count as failures; new pages join the list the moment they are built.
+const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
+  .map((p) => p.replace(/^\.\.\/pages/, '').replace(/index\.astro$/, '').replace(/\.astro$/, '').replace(/\/$/, '') || '/')
+  .filter((r) => !r.includes('['));
 ---
 
 <!doctype html>
@@ -34,6 +39,7 @@ const ogUrl = new URL(ogImage, Astro.site);
     <link rel="canonical" href={canonical} />
     <meta name="theme-color" content={site.themeColor} />
     <meta name="color-scheme" content="dark" />
+    <meta name="playrun-routes" content={JSON.stringify(builtRoutes)} />
 
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />

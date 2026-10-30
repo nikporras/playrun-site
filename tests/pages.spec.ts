@@ -29,7 +29,7 @@ const PAGES = [
       'The Climb 2',
     ],
   },
-  { path: '/quality', h1: /This site is\s*a test subject/, must: ['checks, read from the code', 'Deploy only if green', 'Playwright 1.'] },
+  { path: '/quality', h1: /Let's test this\s*page together/, must: ['Smoke test', 'Responsive', 'Accessibility', 'Links', 'Performance', 'Bug report template', 'Playwright 1.'] },
   { path: '/privacy', h1: /Privacy notice/, must: ['Nicolás Porras (PlayRun)', 'deleted after 24 months', 'ico.org.uk'] },
   { path: '/terms', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales'] },
   { path: '/accessibility', h1: /Accessibility/, must: ['WCAG', 'reduced motion', 'Report a problem'] },

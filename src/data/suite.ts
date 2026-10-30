@@ -51,6 +51,8 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, stacked level headers, labels that read, no stale facts, and passes axe.'],
   'portfolio.spec.ts': ['The Portfolio journey', 'The year on the track as you scroll, each header and card landing once from the laser, nothing under reduced motion.'],
   'phone.spec.ts': ['Home on a phone', 'A real device profile: nothing clipped, the button on the first screen, a slim HUD.'],
+  'pocket.spec.ts': ['Pocket DevTools', 'On a phone: the phone steps instead of the computer ones, and the console, the requests and the timings from the page itself.'],
+  'quality.spec.ts': ['The guided test run', 'Five live steps, the report, the template, the phone steps and Pocket DevTools, without script and under reduced motion.'],
   'selection.spec.ts': ['Selectable text', 'A drag selects a paragraph on every page and the highlight reads on every field.'],
 };
 

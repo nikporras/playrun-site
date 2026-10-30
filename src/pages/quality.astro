@@ -2,146 +2,233 @@
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
 import PassMark from '../components/PassMark.astro';
+import CrossMark from '../components/CrossMark.astro';
 import { spell, suite, versions } from '../data/suite';
 
-// The names in the suite, read from the spec files at build time; the counts come from
-// Playwright's own list of the suite (see src/data/suite.ts).
-const specs = import.meta.glob<string>('../../tests/*.spec.ts', { query: '?raw', import: 'default', eager: true });
-const suites = Object.entries(specs)
-  .map(([path, src]) => {
-    const file = path.split('/').pop() ?? path;
-    const describe = src.match(/test\.describe\(\s*(['"`])(.*?)\1/)?.[2] ?? file;
-    const tests = Array.from(src.matchAll(/\btest\(\s*(['"`])(.*?)\1/g)).map((m) => m[2].replace(/\$\{[^}]+\}/g, '…'));
-    const count = suite.groups.find((g) => g.file === file)?.total ?? 0;
-    return { file, describe, tests, count };
-  })
-  .sort((a, b) => a.file.localeCompare(b.file));
-
-// The run that built this page: GitHub Actions builds only after the suite has passed, and hands
-// the build that run's report, so the date is the run's own. Local builds carry no run.
+// The run that deployed this page: GitHub Actions builds only after the suite has passed and
+// hands the build that run's report (src/data/suite.ts). A local build has no run.
 const runDate = suite.run ? suite.run.startedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
 
-const loop = [
-  ['Push', 'Every push and pull request starts the workflow on GitHub Actions.'],
-  ['Install', `A clean Node ${versions.node} install and a fresh Chromium for Playwright ${versions.playwright}.`],
-  ['Build and serve', 'The site is built with Astro and served exactly as it will be deployed.'],
-  [`${suite.total} checks`, `${suite.files} spec files: pages, console, links, viewports, forms, the games, the bugs, selection, and axe-core on every page.`],
-  ['Deploy only if green', 'A failing check stops the deploy. The live site is always a build that passed, and this page shows that run.'],
+// The test plan: five steps, each a set of live checks from the engine, then how to see the
+// same thing yourself on a computer, or on this phone.
+const steps = [
+  {
+    id: 'smoke',
+    title: 'Smoke test',
+    ask: 'Does the page load clean?',
+    checks: ['pages', 'console'],
+    desktop: [
+      'Press F12 (Ctrl+Shift+I on Windows, Cmd+Option+I on a Mac) to open the DevTools.',
+      'Open the Console tab and reload the page.',
+      'Red lines are errors. There should be none.',
+    ],
+    phone: ['Pocket DevTools, further down, lists the console errors this page has caught since it loaded. It should say none.'],
+  },
+  {
+    id: 'responsive',
+    title: 'Responsive',
+    ask: 'Does it fit the screen?',
+    checks: ['viewports'],
+    desktop: [
+      'In the DevTools press Ctrl+Shift+M (Cmd+Shift+M) for the device toolbar.',
+      'Try 375 and 768 wide: no sideways scroll, nothing cut off, the button still on the first screen.',
+    ],
+    phone: ['Rotate the phone: the page should reflow with no sideways scroll.', 'Pinch to zoom: the text should scale and nothing should stop you.'],
+  },
+  {
+    id: 'a11y',
+    title: 'Accessibility',
+    ask: 'Can everyone use it?',
+    checks: ['a11y', 'focus'],
+    desktop: [
+      'Click in the address bar, then press Tab: a visible outline lands on Skip to content, then moves through every link and button in order.',
+      'The Lighthouse tab in the DevTools scores accessibility too; the target here is 100.',
+    ],
+    phone: [
+      'Turn on VoiceOver (iPhone: Settings, Accessibility) or TalkBack (Android) and swipe right through the page: every image and control is named.',
+      'Turn on Reduce motion in the same settings and come back: the games, the curtain and every animation stop.',
+    ],
+  },
+  {
+    id: 'links',
+    title: 'Links',
+    ask: 'Does every link go somewhere?',
+    checks: ['links'],
+    desktop: ['Open the Network tab in the DevTools and reload.', 'Every row should show 200 (or 304, from the cache). A red row is a broken link or a missing file.'],
+    phone: ['Pocket DevTools lists every request this page made, with its status and size.'],
+  },
+  {
+    id: 'performance',
+    title: 'Performance',
+    ask: 'Is it fast?',
+    checks: ['performance'],
+    desktop: ['Open the Lighthouse tab in the DevTools, tick Performance and run it. The target here is 95 or more.'],
+    phone: ['Pocket DevTools shows the load timings from this phone: time to first byte, first paint, loaded.'],
+  },
 ];
 ---
 
-<Base title="Quality" description="How playrunqa.com is tested: a Playwright suite with axe-core runs on every push, and the site deploys only when it passes. The same rigour I bring to the games I test.">
+<Base title="Quality" description="Let's test this page together: five steps, each run live on this page in your browser, then how to check it yourself. The same rigour I bring to the games I test.">
   <!-- Level 1 -->
   <section class="level level--navy qa" data-level="1" aria-labelledby="quality-title">
     <div class="level__head">
       <p class="flag" data-load style="--d: 0ms"><span>Quality</span></p>
       <h1 id="quality-title" class="page__title">
-        <span class="mask"><span class="mask__line" style="--i: 0">This site is</span></span>
-        <span class="mask"><span class="mask__line" style="--i: 1">a test subject</span></span>
+        <span class="mask"><span class="mask__line" style="--i: 0">Let's test this</span></span>
+        <span class="mask"><span class="mask__line" style="--i: 1">page together</span></span>
       </h1>
       <p class="qa__lead statement" data-load style="--d: 360ms">
-        A Playwright suite runs against every push before the site can deploy. If I would not ship an untested build
-        of a game, I will not ship one of my own site.
+        Five steps, the way I would test a build. Each one runs live on this page, then you can check it yourself.
       </p>
+      <div class="level__actions" data-load style="--d: 440ms">
+        <button class="button" type="button" id="run-all" aria-describedby="run-status">Run every step</button>
+        <p id="run-status" class="qa__status" aria-live="polite">Each step runs as you reach it.</p>
+      </div>
     </div>
     <Bug id="quality-1" style="right: 12%; top: 9rem" tablet="right: 10%; bottom: 0.75rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 2: the scoreboard -->
-  <section class="level level--green score" data-level="2" aria-labelledby="score-title">
+  <!-- Level 2: the test plan -->
+  <section class="level level--blue plan" data-level="2" aria-labelledby="plan-title">
     <div class="level__head">
-      <p class="flag" data-enter><span>Level 2 &middot; Latest run</span></p>
-      <h2 id="score-title" class="level__title" data-enter="wipe">The last run</h2>
-      <p class="level__lead" data-enter style="--enter-delay: 80ms">
-        {suite.run
-          ? `${suite.passed} of ${suite.total} passed in the run that deployed this page: ${runDate}, ${spell(suite.run.seconds)}.`
-          : `${suite.total} checks across ${suite.files} spec files run before every deploy.`}
-      </p>
-      <a class="button button--navy" href="/#selftest" data-enter style="--enter-delay: 160ms">Test the home page</a>
+      <p class="flag" data-enter><span>Level 2 &middot; The test plan</span></p>
+      <h2 id="plan-title" class="level__title" data-enter="wipe">Five steps</h2>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">Smoke, responsive, accessibility, links, performance. Pass or fail, live, on your device.</p>
     </div>
-    <div class="score__board level__body">
+    <ol class="steps level__body">
       {
-        suite.groups.map((g, i) => (
-          <div class="panel" style={`--enter-delay: ${i * 50}ms`} data-enter="scan">
-            <p class="panel__num num">
-              {suite.run ? g.passed : g.total}
-              <span class="panel__of"> {suite.run ? `of ${g.total} passed` : `check${g.total === 1 ? '' : 's'}`}</span>
-            </p>
-            <h3 class="panel__title">{g.title}</h3>
-            <p class="panel__detail">{g.detail}</p>
-          </div>
-        ))
-      }
-    </div>
-    <Bug id="quality-4" style="right: 12%; top: 9rem" tablet="right: 8%; top: 8rem" walk="x -2rem" />
-  </section>
-
-  <!-- Level 3: the suite -->
-  <section class="level level--blue suite" data-level="3" aria-labelledby="suite-title">
-    <div class="level__head">
-      <p class="flag" data-enter><span>Level 3 &middot; The suite</span></p>
-      <h2 id="suite-title" class="level__title" data-enter="wipe">{suite.total} checks, read from the code</h2>
-      <p class="level__lead" data-enter style="--enter-delay: 80ms">
-        The names come from the test files and the counts from Playwright's own list, so nothing here can drift.
-      </p>
-    </div>
-    <ul role="list" class="rows level__body">
-      {
-        suites.map((s, i) => (
-          <li class="row suite__row" data-enter style={`--enter-delay: ${i * 70}ms`}>
-            <div class="suite__name">
-              <p class="row__meta">
-                {s.file} <span class="row__dot" aria-hidden="true">&middot;</span> {s.count} check{s.count === 1 ? '' : 's'}
-              </p>
-              <h3 class="row__title">{s.describe}</h3>
+        steps.map((s, i) => (
+          <li class="step is-idle" id={`step-${s.id}`} data-step={s.id} data-checks={JSON.stringify(s.checks)} data-enter style={`--enter-delay: ${i * 60}ms`}>
+            <div class="step__head">
+              <p class="step__num">Step {i + 1}</p>
+              <h3 class="step__title">{s.title}</h3>
+              <p class="step__ask">{s.ask}</p>
             </div>
-            <ul role="list" class="suite__tests">
-              {s.tests.map((t) => (
-                <li>
-                  <PassMark class="suite__mark" />
-                  <span>{t}</span>
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))
-      }
-    </ul>
-    <Bug id="quality-2" style="right: 10%; top: 1.5rem" tablet="right: 30%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
-  </section>
-
-  <!-- Level 4: the loop -->
-  <section class="level level--cyan loop" data-level="4" aria-labelledby="loop-title">
-    <div class="level__head">
-      <p class="flag" data-enter><span>Level 4 &middot; Every push</span></p>
-      <h2 id="loop-title" class="level__title" data-enter="wipe">The loop</h2>
-      <p class="level__lead" data-enter style="--enter-delay: 80ms">Five steps between a commit and the live site.</p>
-    </div>
-    <ol class="loop__track level__body">
-      {
-        loop.map(([step, text], i) => (
-          <li class:list={['loop__step', i % 2 ? 'loop__step--light' : 'loop__step--navy']} data-enter="place" style={`--enter-delay: ${i * 50}ms`}>
-            <h3 class="loop__title">{step}</h3>
-            <p class="loop__text">{text}</p>
+            <div class="step__run">
+              <p class="step__state">
+                <span class="step__mark" aria-hidden="true">
+                  <svg class="step__idle" viewBox="0 0 7 7" shape-rendering="crispEdges"><path d="M0 0h7v1H0zM0 6h7v1H0zM0 1h1v5H0zM6 1h1v5H6z" fill="currentColor" /></svg>
+                  <PassMark class="step__pass" />
+                  <CrossMark class="step__cross" />
+                </span>
+                <span data-step-word>Not run yet</span>
+              </p>
+              <p class="step__result" data-step-result>This step runs in your browser, with script on. The checks below work either way.</p>
+            </div>
+            <div class="step__how">
+              <div class="step__desktop">
+                <h4 class="step__howtitle">Check it yourself on a computer</h4>
+                <ol class="step__list">
+                  {s.desktop.map((line) => (
+                    <li>{line}</li>
+                  ))}
+                </ol>
+              </div>
+              <div class="step__phone">
+                <h4 class="step__howtitle">Check it yourself on this phone</h4>
+                <ol class="step__list">
+                  {s.phone.map((line) => (
+                    <li>{line}</li>
+                  ))}
+                </ol>
+              </div>
+            </div>
           </li>
         ))
       }
     </ol>
-    <Bug id="quality-3" style="right: 12%; top: 9rem" tablet="right: 8%; top: 8rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
+
+    <!-- Pocket DevTools: on a phone, what F12 would show, from the page's own records -->
+    <section class="devtools" aria-labelledby="devtools-title" data-enter>
+      <h3 id="devtools-title" class="devtools__title">Pocket DevTools</h3>
+      <p class="devtools__lead">What F12 would show on a computer, read from this page's own records.</p>
+      <div class="devtools__tabs">
+        <section class="devtools__pane" aria-labelledby="dev-console">
+          <h4 id="dev-console" class="devtools__tab">Console</h4>
+          <ul role="list" class="devtools__list" data-dev-console>
+            <li class="devtools__muted">Needs script.</li>
+          </ul>
+        </section>
+        <section class="devtools__pane" aria-labelledby="dev-network">
+          <h4 id="dev-network" class="devtools__tab">Network</h4>
+          <table class="devtools__table">
+            <thead>
+              <tr><th scope="col">File</th><th scope="col">Type</th><th scope="col">Status</th><th scope="col">Size</th></tr>
+            </thead>
+            <tbody data-dev-network>
+              <tr><td colspan="4" class="devtools__muted">Needs script.</td></tr>
+            </tbody>
+          </table>
+        </section>
+        <section class="devtools__pane" aria-labelledby="dev-perf">
+          <h4 id="dev-perf" class="devtools__tab">Performance</h4>
+          <dl class="devtools__perf" data-dev-perf>
+            <dt>Timings</dt>
+            <dd class="devtools__muted">Needs script.</dd>
+          </dl>
+        </section>
+      </div>
+    </section>
+    <Bug id="quality-2" style="right: 10%; top: 1.5rem" tablet="right: 30%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 5: a short way on -->
-  <section class="level level--light level--tight ask" data-level="5" aria-labelledby="ask-title">
+  <!-- Level 3: the test report -->
+  <section class="level level--green report" data-level="3" aria-labelledby="report-title">
     <div class="level__head">
-      <p class="flag" data-enter><span>Level 5 &middot; Next</span></p>
-      <h2 id="ask-title" class="level__title level__title--small" data-enter="wipe">The same rigour, on every game</h2>
-      <p class="level__lead" data-enter style="--enter-delay: 80ms">The games this came from, and how I test them.</p>
-      <div class="level__actions" data-enter style="--enter-delay: 160ms">
-        <a class="button" href="/portfolio">See the games</a>
-        <a class="textlink ask__link" href="/skills">See the skills</a>
+      <p class="flag" data-enter><span>Level 3 &middot; The report</span></p>
+      <h2 id="report-title" class="level__title" data-enter="wipe">Test report</h2>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">Your run on this device, and the suite that deployed this page.</p>
+    </div>
+    <div class="level__body report__body">
+      <p class="report__score" data-report-score data-enter>Not run yet. Scroll through the steps, or press Run every step.</p>
+      <table class="report__table" data-enter style="--enter-delay: 60ms">
+        <thead>
+          <tr><th scope="col">Step</th><th scope="col">Result</th><th scope="col">What it saw</th></tr>
+        </thead>
+        <tbody>
+          {
+            steps.map((s, i) => (
+              <tr data-report-row={s.id}>
+                <th scope="row">
+                  {i + 1}. {s.title}
+                </th>
+                <td data-report-result>Not run</td>
+                <td data-report-detail></td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+      <p class="report__suite" data-enter style="--enter-delay: 120ms">
+        {suite.run
+          ? `Before this page deployed, its own suite ran: ${suite.passed} of ${suite.total} checks in ${suite.files} spec files passed on ${runDate}, in ${spell(suite.run.seconds)}, on Node ${versions.node} and Playwright ${versions.playwright}. A failing check stops the deploy.`
+          : `Before every deploy, this page's own suite runs: ${suite.total} checks in ${suite.files} spec files, on Node ${versions.node} and Playwright ${versions.playwright}. A failing check stops the deploy.`}
+      </p>
+      <div class="report__template" data-enter style="--enter-delay: 180ms">
+        <h3 class="report__subtitle">Bug report template</h3>
+        <p class="report__hint">Found something? This is the shape of a report I can act on. Fill it in your head, or copy it.</p>
+        <pre class="report__pre" data-template tabindex="0">Title: [what broke, in one line]
+Build: playrunqa.com, {runDate ?? 'this build'}
+Device: [browser, OS, screen size]
+Steps to reproduce:
+  1.
+  2.
+  3.
+Expected:
+Actual:
+Severity: [Blocker / Major / Minor / Cosmetic]
+Attachments: [screenshot or video]</pre>
+        <div class="level__actions">
+          <button class="button button--navy" type="button" data-copy>Copy the template</button>
+          <span class="report__copied" data-copy-status aria-live="polite"></span>
+        </div>
+      </div>
+      <div class="level__actions report__next" data-enter style="--enter-delay: 240ms">
+        <a class="button button--navy" href="/portfolio">See the games</a>
+        <a class="textlink report__link" href="/skills">See the skills</a>
       </div>
     </div>
-    <Bug id="quality-5" style="right: 12%; top: 40%" tablet="right: 8%; top: 2rem" phone="right: 1rem; top: 0.25rem" walk="y 1.5rem" />
+    <Bug id="quality-3" style="right: 10%; top: 1.5rem" tablet="right: 25%; top: 0.75rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 </Base>
 
@@ -152,151 +239,499 @@ const loop = [
   .qa__lead {
     max-width: 40ch;
   }
-  .level__title--small {
-    font-size: var(--step-head);
-    font-size: round(var(--step-head), 16px);
+  .qa__status {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    max-width: none;
   }
-  .ask__link {
+
+  /* Level 2: five steps, each a full-width row: the name, the live result, the way to see it. */
+  .steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 5fr);
+    column-gap: var(--s-4);
+    padding: var(--s-4) 0;
+    border-top: 1px solid var(--rule);
+  }
+  .step:last-child {
+    border-bottom: 1px solid var(--rule);
+  }
+  .step__num {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    max-width: none;
+  }
+  .step__title {
+    font-size: 2rem;
+    margin-top: var(--s-1);
+  }
+  .step__ask {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    margin-top: var(--s-1);
+    max-width: none;
+  }
+  .step__state {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    max-width: none;
+  }
+  .step__mark {
+    display: inline-grid;
+    place-items: center;
+    font-size: 1.5rem;
+    line-height: 0;
+  }
+  .step__idle {
+    width: 1em;
+    height: 1em;
+  }
+  .step__mark :global(.step__pass),
+  .step__mark :global(.step__cross),
+  .step__idle {
+    display: none;
+  }
+  .step.is-idle .step__idle,
+  .step.is-running .step__idle {
+    display: block;
+  }
+  .step.is-pass .step__mark :global(.step__pass) {
+    display: block;
+  }
+  .step.is-fail .step__mark :global(.step__cross) {
+    display: block;
+  }
+  .step.is-pass .step__state {
+    color: var(--accent);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .step.is-pass .step__mark,
+    .step.is-fail .step__mark {
+      animation: mark-pop 320ms var(--ease-out);
+    }
+    .step.is-running .step__idle {
+      animation: blink 700ms steps(2) infinite;
+    }
+  }
+  @keyframes mark-pop {
+    from {
+      transform: scale(0.6);
+    }
+    to {
+      transform: none;
+    }
+  }
+  @keyframes blink {
+    to {
+      opacity: 0.3;
+    }
+  }
+  .step__result {
+    font-size: 1rem;
+    margin-top: var(--s-2);
+    max-width: 44ch;
+  }
+  .step__howtitle {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0 0 var(--s-2);
+  }
+  .step__list {
+    padding-left: 1.25rem;
+    font-size: 1rem;
+    max-width: 48ch;
+  }
+  .step__list li + li {
+    margin-top: 0.4em;
+  }
+  .step__phone {
+    display: none;
+  }
+
+  /* Pocket DevTools: phones only, three panes, set like the tool it stands in for. */
+  .devtools {
+    display: none;
+    margin-top: var(--s-6);
+    border-top: 1px solid var(--rule);
+    padding-top: var(--s-4);
+  }
+  .devtools__title {
+    font-size: 2rem;
+  }
+  .devtools__lead {
+    font-size: 1rem;
+    margin-top: var(--s-1);
+  }
+  .devtools__tabs {
+    display: grid;
+    gap: var(--s-3);
+    margin-top: var(--s-3);
+  }
+  .devtools__pane {
+    background: var(--bg);
+    color: var(--ink);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
+    padding: var(--s-2);
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+  .devtools__tab {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    margin: 0 0 var(--s-1);
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--surface-2);
+  }
+  .devtools__list li {
+    overflow-wrap: anywhere;
+  }
+  .devtools__list li.is-error {
+    color: #f29a9a;
+  }
+  .devtools__muted {
+    color: var(--muted);
+  }
+  .devtools__table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .devtools__table th,
+  .devtools__table td {
+    text-align: left;
+    padding: 0.2rem 0.4rem 0.2rem 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .devtools__table th {
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .devtools__table th:nth-child(1) {
+    width: 46%;
+  }
+  .devtools__table td:nth-child(3).is-ok {
+    color: var(--accent);
+  }
+  .devtools__table td:nth-child(3).is-bad {
+    color: #f29a9a;
+  }
+  .devtools__perf {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.2rem 1rem;
+    margin: 0;
+  }
+  .devtools__perf dt {
+    color: var(--muted);
+  }
+  .devtools__perf dd {
+    margin: 0;
+  }
+
+  /* Level 3: the report */
+  .report__body {
+    display: grid;
+    gap: var(--s-4);
+  }
+  .report__score {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    line-height: 1.1;
+    max-width: none;
+  }
+  .report__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+  }
+  .report__table th,
+  .report__table td {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.75rem 1rem 0.75rem 0;
+    border-top: 1px solid var(--rule);
+  }
+  .report__table thead th {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 0.9375rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-top: 0;
+  }
+  .report__table tbody th {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.25rem;
+    white-space: nowrap;
+  }
+  .report__table td[data-report-result] {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+  .report__suite {
+    max-width: 70ch;
+  }
+  .report__template {
+    border-top: 1px solid var(--rule);
+    padding-top: var(--s-4);
+  }
+  .report__subtitle {
+    font-size: 2rem;
+  }
+  .report__hint {
+    margin-top: var(--s-1);
+    max-width: 60ch;
+  }
+  .report__pre {
+    margin: var(--s-3) 0;
+    padding: var(--s-3);
+    background: var(--bg);
+    color: var(--ink);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-width: 60ch;
+  }
+  .report__copied {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+  }
+  .report__link {
     color: var(--pr-navy);
   }
 
-  /* One block per spec file, three a row on the field, a rule above each. */
-  .score__board {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: var(--s-4);
-  }
-  .panel {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-1);
-    padding: var(--s-3) 0 var(--s-4);
-    min-width: 0;
-    overflow: hidden;
-    border-top: 1px solid var(--rule);
-  }
-  .panel__num {
-    font-family: var(--font-display);
-    font-size: 4rem;
-    line-height: 0.9;
-    max-width: none;
-  }
-  .panel__of {
-    font-size: 1.25rem;
-  }
-  .panel__title {
-    font-size: 1.75rem;
-  }
-  .panel__detail {
-    font-size: 1rem;
-    max-width: none;
-  }
-
-  /* Level 3: each spec file a full-width row, its name on the left and its checks on the right. */
-  .suite__row {
-    display: grid;
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    column-gap: var(--s-5);
-    align-items: start;
-  }
-  .suite__name {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-1);
-  }
-  .row__dot {
-    margin-inline: 0.2em;
-  }
-  .suite__tests {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    font-size: 1rem;
-  }
-  .suite__tests li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  :global(.suite__mark) {
-    flex: none;
-    font-size: 1rem;
-    color: var(--ink-2);
-    margin-top: 0.3em;
-  }
-
-  /* Level 4: five steps side by side, a rule between them */
-  .loop__track {
-    list-style: none;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    counter-reset: step;
-  }
-  .loop__step {
-    position: relative;
-    padding: 3.5rem var(--s-2) var(--s-2) var(--s-2);
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-1);
-    counter-increment: step;
-    border-left: 1px solid var(--rule);
-  }
-  .loop__step:first-child {
-    border-left: 0;
-    padding-left: 0;
-  }
-  .loop__step:first-child::before {
-    left: 0;
-  }
-  .loop__step::before {
-    content: counter(step);
-    position: absolute;
-    top: 0;
-    left: var(--s-2);
-    font-family: var(--font-display);
-    font-size: 2rem;
-    line-height: 1;
-  }
-  .loop__title {
-    font-size: 1.5rem;
-  }
-  .loop__text {
-    font-size: 1rem;
-  }
-
   @media (max-width: 63.99rem) {
-    .score__board {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      column-gap: var(--s-3);
-    }
-    .panel__num {
-      font-size: 3rem;
-    }
-    .panel__title {
-      font-size: 1.5rem;
-    }
-    .suite__row {
+    .step {
       grid-template-columns: 1fr;
-      row-gap: var(--s-2);
+      row-gap: var(--s-3);
     }
-    .loop__track {
-      grid-template-columns: 1fr;
+    .step__result {
+      max-width: 60ch;
     }
-    .loop__step {
-      border-left: 0;
-      border-top: 1px solid var(--rule);
-      padding: var(--s-3) 0 var(--s-3) 3.5rem;
-    }
-    .loop__step::before {
-      top: var(--s-3);
-      left: 0;
+    .report__table th,
+    .report__table td {
+      padding-right: 0.5rem;
     }
   }
   @media (max-width: 47.99rem) {
-    .score__board {
-      grid-template-columns: 1fr;
+    .step__desktop {
+      display: none;
+    }
+    .step__phone,
+    .devtools {
+      display: block;
+    }
+    .report__table thead {
+      display: none;
+    }
+    .report__table tr {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.25rem 1rem;
+      padding: 0.75rem 0;
+      border-top: 1px solid var(--rule);
+    }
+    .report__table th,
+    .report__table td {
+      border: 0;
+      padding: 0;
+    }
+    .report__table td[data-report-detail] {
+      grid-column: 1 / -1;
+      font-size: 0.9375rem;
     }
   }
 </style>
+
+<script>
+  import { checks, errorsSinceLoad, kb, timings, type Result } from '../scripts/checks';
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const steps = Array.from(document.querySelectorAll<HTMLElement>('.step'));
+  const status = document.getElementById('run-status');
+  const runAll = document.getElementById('run-all') as HTMLButtonElement | null;
+  const score = document.querySelector<HTMLElement>('[data-report-score]');
+  const results = new Map<string, Result & { details: string[] }>();
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  const report = () => {
+    let pass = 0;
+    for (const step of steps) {
+      const id = step.dataset.step!;
+      const row = document.querySelector<HTMLElement>(`[data-report-row="${id}"]`);
+      const r = results.get(id);
+      if (!row) continue;
+      row.querySelector('[data-report-result]')!.textContent = r ? (r.failed ? 'Fail' : 'Pass') : 'Not run';
+      row.querySelector('[data-report-detail]')!.textContent = r ? r.details.join('. ') : '';
+      if (r && !r.failed) pass++;
+    }
+    if (score && results.size) {
+      const done = results.size === steps.length;
+      score.textContent = done ? `${pass} of ${steps.length} steps passed on your device.` : `${pass} of ${results.size} steps passed so far. ${steps.length - results.size} to go.`;
+    }
+  };
+
+  const runStep = async (step: HTMLElement) => {
+    if (step.dataset.done) return;
+    step.dataset.done = '1';
+    const id = step.dataset.step!;
+    const ids: string[] = JSON.parse(step.dataset.checks ?? '[]');
+    const word = step.querySelector<HTMLElement>('[data-step-word]')!;
+    const out = step.querySelector<HTMLElement>('[data-step-result]')!;
+    step.classList.remove('is-idle', 'is-pass', 'is-fail');
+    step.classList.add('is-running');
+    word.textContent = 'Running';
+    if (!reduce) await wait(320);
+    let passed = 0;
+    let failed = 0;
+    const details: string[] = [];
+    for (const c of ids) {
+      const r = await checks[c].run();
+      passed += r.passed;
+      failed += r.failed;
+      details.push(r.detail);
+    }
+    step.classList.remove('is-running');
+    step.classList.add(failed ? 'is-fail' : 'is-pass');
+    word.textContent = failed ? 'Fail' : 'Pass';
+    out.textContent = `${details.join('. ')}.`;
+    results.set(id, { passed, failed, detail: details.join('. '), details });
+    report();
+    if (status) status.textContent = results.size === steps.length ? 'Every step has run. The report is at the end.' : `${results.size} of ${steps.length} steps run.`;
+    if (results.size === steps.length) document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'selftest' }));
+  };
+
+  // Each step runs as it comes into view; under reduced motion, or without the observer, all at once.
+  if (reduce || !('IntersectionObserver' in window)) {
+    (async () => {
+      for (const s of steps) await runStep(s);
+    })();
+  } else {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          io.unobserve(e.target);
+          runStep(e.target as HTMLElement);
+        }
+      },
+      { threshold: 0.3 },
+    );
+    steps.forEach((s) => io.observe(s));
+  }
+
+  runAll?.addEventListener('click', async () => {
+    runAll.disabled = true;
+    results.clear();
+    for (const s of steps) {
+      delete s.dataset.done;
+      s.classList.remove('is-pass', 'is-fail');
+      s.classList.add('is-idle');
+      s.querySelector('[data-step-word]')!.textContent = 'Not run yet';
+    }
+    report();
+    for (const s of steps) await runStep(s);
+    runAll.disabled = false;
+    runAll.textContent = 'Run again';
+  });
+
+  // Pocket DevTools: the console, the network and the timings, from the page's own records.
+  const fillDevtools = () => {
+    const con = document.querySelector<HTMLElement>('[data-dev-console]');
+    const net = document.querySelector<HTMLElement>('[data-dev-network]');
+    const perf = document.querySelector<HTMLElement>('[data-dev-perf]');
+    const t = timings();
+    if (con) {
+      const errors = errorsSinceLoad();
+      con.replaceChildren(
+        ...(errors.length
+          ? errors.map((e) => Object.assign(document.createElement('li'), { className: 'is-error', textContent: e }))
+          : [Object.assign(document.createElement('li'), { textContent: 'No errors since this page loaded.' })]),
+      );
+    }
+    if (net) {
+      const rows = t.resources.slice(0, 40).map((r) => {
+        const tr = document.createElement('tr');
+        const name = r.name.split('/').pop()?.split('?')[0] || r.name;
+        const st = (r as PerformanceResourceTiming & { responseStatus?: number }).responseStatus;
+        const cells = [name, r.initiatorType, st ? String(st) : r.transferSize === 0 ? 'cache' : '200', r.transferSize ? kb(r.transferSize) : 'cache'];
+        cells.forEach((text, i) => {
+          const td = document.createElement('td');
+          td.textContent = text;
+          if (i === 2) td.className = st && st >= 400 ? 'is-bad' : 'is-ok';
+          tr.append(td);
+        });
+        return tr;
+      });
+      net.replaceChildren(...rows);
+    }
+    if (perf) {
+      const ms = (n: number | null) => (n === null ? 'n/a' : `${n} ms`);
+      const pairs: [string, string][] = [
+        ['Time to first byte', ms(t.ttfb)],
+        ['First paint', ms(t.fcp)],
+        ['DOM ready', ms(t.domReady)],
+        ['Loaded', ms(t.loaded)],
+        ['Requests', String(t.requests)],
+        ['Transferred', kb(t.bytes)],
+      ];
+      perf.replaceChildren(
+        ...pairs.flatMap(([k, v]) => [Object.assign(document.createElement('dt'), { textContent: k }), Object.assign(document.createElement('dd'), { textContent: v })]),
+      );
+    }
+  };
+  if (document.readyState === 'complete') fillDevtools();
+  else addEventListener('load', () => setTimeout(fillDevtools, 50));
+
+  // The template: to the clipboard, or selected for a manual copy where the clipboard is refused.
+  const copy = document.querySelector<HTMLButtonElement>('[data-copy]');
+  const pre = document.querySelector<HTMLElement>('[data-template]');
+  const copied = document.querySelector<HTMLElement>('[data-copy-status]');
+  copy?.addEventListener('click', async () => {
+    const text = pre?.textContent ?? '';
+    try {
+      await navigator.clipboard.writeText(text);
+      if (copied) copied.textContent = 'Copied.';
+    } catch {
+      if (pre) {
+        const range = document.createRange();
+        range.selectNodeContents(pre);
+        getSelection()?.removeAllRanges();
+        getSelection()?.addRange(range);
+      }
+      if (copied) copied.textContent = 'Selected: press Ctrl+C or Cmd+C.';
+    }
+  });
+</script>
