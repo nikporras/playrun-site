@@ -402,6 +402,33 @@ test.describe('Home', () => {
     expect(s.shown[2].label).toBe('rgb(255, 255, 255)');
     expect(s.shown[1].num).toBe('rgb(255, 255, 255)');
     expect(new Set(s.shown.map((r) => r.size)).size, 'one number size').toBe(1);
+    // the numbers are the biggest thing in the level: about 96px, the labels about 24px, the title about 48px
+    const sizes = await page.evaluate(() => ({
+      num: parseFloat(getComputedStyle(document.querySelector('.drum__num')!).fontSize),
+      label: parseFloat(getComputedStyle(document.querySelector('.drum__label')!).fontSize),
+      title: parseFloat(getComputedStyle(document.querySelector('#stats-title')!).fontSize),
+      lead: parseFloat(getComputedStyle(document.querySelector('.stats__head .level__lead')!).fontSize),
+    }));
+    expect(sizes.num).toBeGreaterThanOrEqual(94);
+    expect(sizes.num).toBeLessThanOrEqual(98);
+    expect(sizes.label).toBeGreaterThanOrEqual(22);
+    expect(sizes.title).toBeGreaterThanOrEqual(44);
+    expect(sizes.title).toBeLessThanOrEqual(50);
+    expect(sizes.num).toBeGreaterThan(sizes.title);
+    expect(sizes.lead).toBeGreaterThanOrEqual(16);
+    // number and label on one line, clear of the buttons
+    const fit = await page.evaluate(() => {
+      const row = document.querySelector<HTMLElement>('.drum__row[data-d="0"]')!;
+      const num = row.querySelector('.drum__num')!.getBoundingClientRect();
+      const label = row.querySelector('.drum__label')!.getBoundingClientRect();
+      const buttons = document.querySelector('.drum__controls')!.getBoundingClientRect();
+      const lines = Math.round(label.height / (parseFloat(getComputedStyle(row.querySelector('.drum__label')!).lineHeight) || 1));
+      return { oneLine: lines <= 1, labelLeft: label.left, numRight: num.right, labelRight: label.right, buttonsLeft: buttons.left, sameLine: Math.abs(num.bottom - label.bottom) < 12 };
+    });
+    expect(fit.oneLine).toBe(true);
+    expect(fit.sameLine).toBe(true);
+    expect(fit.labelLeft).toBeGreaterThanOrEqual(fit.numRight);
+    expect(fit.labelRight).toBeLessThan(fit.buttonsLeft);
     const first = s.shown[2].text;
     // it turns on its own, one row every 2.5 s
     await page.waitForTimeout(3300);
@@ -476,6 +503,24 @@ test.describe('Home', () => {
     await p1.waitForTimeout(500);
     const xs = await p1.locator('.drum__row').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().right));
     expect(Math.max(...xs), 'the shifted rows stay inside the screen').toBeLessThanOrEqual(375);
+    // the label never runs under the number or the buttons, even if it wraps
+    const fit = await p1.evaluate(() => {
+      const buttons = document.querySelector('.drum__controls')!.getBoundingClientRect();
+      return [...document.querySelectorAll<HTMLElement>('.drum__row:not([data-d="3"]):not([data-d="4"]):not([data-d="5"]):not([data-d="6"]):not([data-d="7"])')].map((row) => {
+        const num = row.querySelector('.drum__num')!.getBoundingClientRect();
+        const label = row.querySelector('.drum__label')!.getBoundingClientRect();
+        return { clearOfNumber: label.left >= num.right - 1, clearOfButtons: label.right <= buttons.left + 1 || label.width === 0 };
+      });
+    });
+    for (const f of fit) {
+      expect(f.clearOfNumber).toBe(true);
+      expect(f.clearOfButtons).toBe(true);
+    }
+    for (const width of [768, 1280, 1920]) {
+      await p1.setViewportSize({ width, height: 900 });
+      await p1.waitForTimeout(200);
+      expect(await p1.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), `${width}: no sideways scroll`).toBeLessThanOrEqual(0);
+    }
     expect(await p1.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     await expect(p1.getByRole('button', { name: 'Next stat' })).toBeVisible();
     await phone.close();
