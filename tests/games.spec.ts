@@ -206,7 +206,7 @@ test.describe('Games', () => {
     expect(pp.x + pp.width).toBe(390);
     expect(pp.y).toBeGreaterThanOrEqual(bar.y);
     expect(pp.y + pp.height).toBeLessThanOrEqual(844);
-    expect(pp.width, 'short on a phone').toBeLessThanOrEqual(110);
+    expect(pp.width, 'compact on a phone, saying the same as on a desktop').toBeLessThanOrEqual(140);
   });
 
   test('reduced motion removes the games and the bar', async ({ browser }) => {

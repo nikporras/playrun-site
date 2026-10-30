@@ -776,8 +776,11 @@ Attachments: [screenshot or video]</pre>
     .devtools {
       display: block;
     }
-    .report__table thead {
-      display: none;
+    /* the same table on a phone: every row a small grid, the header row too (nothing is dropped) */
+    .report__table,
+    .report__table thead,
+    .report__table tbody {
+      display: block;
     }
     .report__table tr {
       display: grid;
@@ -785,6 +788,13 @@ Attachments: [screenshot or video]</pre>
       gap: 0.25rem 1rem;
       padding: 0.75rem 0;
       border-top: 1px solid var(--rule);
+    }
+    .report__table thead tr {
+      border-top: 0;
+      padding-top: 0;
+    }
+    .report__table thead th:last-child {
+      grid-column: 1 / -1;
     }
     .report__table th,
     .report__table td {
