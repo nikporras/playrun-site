@@ -76,6 +76,8 @@ function load(): { report: Report; fromRun: boolean } {
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
       stdio: ['ignore', 'pipe', 'pipe'],
+      // (the list goes to stdout, whatever report file the run around this build may be writing)
+      env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: '', PLAYWRIGHT_JSON_OUTPUT_FILE: '' },
     });
     return { report: JSON.parse(out), fromRun: false };
   } catch (e) {

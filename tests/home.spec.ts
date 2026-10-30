@@ -847,7 +847,7 @@ test.describe('Home', () => {
     // tagged tests, counted here from Playwright's own list. A build from a run ticks them with that
     // run's passes; a local build (no run) shows the count unticked.
     const cli = path.join(path.dirname(require.resolve('@playwright/test/package.json')), 'cli.js');
-    const list = JSON.parse(execFileSync(process.execPath, [cli, 'test', '--list', '--reporter=json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }));
+    const list = JSON.parse(execFileSync(process.execPath, [cli, 'test', '--list', '--reporter=json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: '', PLAYWRIGHT_JSON_OUTPUT_FILE: '' } }));
     const tagged: Record<string, number> = {};
     const walk = (s: { specs?: { tags?: string[]; tests: unknown[] }[]; suites?: unknown[] }) => {
       for (const sp of s.specs ?? []) for (const t of sp.tags ?? []) tagged[t.replace(/^@/, '')] = (tagged[t.replace(/^@/, '')] ?? 0) + sp.tests.length;
