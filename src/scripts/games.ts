@@ -507,6 +507,12 @@ export function startGames() {
     state.bugs = [];
     state.achievements = [];
     write(state);
+    // the bug ticket on Home starts over too: the next break is its first again
+    try {
+      sessionStorage.removeItem('playrun.ticket');
+    } catch {
+      /* storage off: nothing was kept */
+    }
     bugs().forEach((b) => {
       b.classList.remove('is-caught');
       b.removeAttribute('aria-disabled');
