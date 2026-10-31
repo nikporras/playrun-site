@@ -126,3 +126,21 @@ export const legalNav = [
   { label: 'Terms', href: '/terms/' },
   { label: 'Accessibility', href: '/accessibility/' },
 ];
+
+// The platforms and stores I test on (Skills, the About page and the structured data), then the VR
+// headsets: a headset is listed only when a public title in the project data names it.
+export const platforms: [name: string, text: string][] = [
+  ['Nintendo Switch', 'Docked and handheld, Joy-Con and Pro Controller, sleep and resume.'],
+  ['Nintendo Switch 2', 'The same, plus the new hardware paths.'],
+  ['Xbox', 'Series X and S, Quick Resume, achievements, the Xbox app on PC.'],
+  ['PS5', 'Trophies, activities, the DualSense, suspend and resume.'],
+  ['Steam', 'Steam Deck, cloud saves, achievements, Steam Input.'],
+  ['Epic Games Store', 'Store requirements, achievements, launcher paths.'],
+  ['GOG', 'DRM-free build, Galaxy features, offline play.'],
+];
+export const vrPlatforms: { name: string; match: RegExp; text: string }[] = [
+  { name: 'Meta Quest 2, 3 and Pro', match: /Meta Quest/, text: 'Standalone builds against the Meta store requirements, comfort and tracking.' },
+  { name: 'PC VR', match: /PC VR/, text: 'SteamVR headsets on PC, seated and room scale.' },
+  { name: 'PS VR', match: /^PS VR$/, text: 'PlayStation VR, its Move controllers and the camera.' },
+  { name: 'PS VR2', match: /PS VR2/, text: "PS VR2 on PS5, the Sense controllers and the console's own checks." },
+];

@@ -503,3 +503,15 @@ test('every page has its own title and description, the same in the og and Twitt
   const cards = await page.locator('.card').count();
   expect(expected['/portfolio/'][1]).toContain(`The ${cards} games`);
 });
+
+test('Skills lists the VR headsets the games were tested on beside the consoles and stores, and Home links from the logo ticker to every game', { tag: ['@pages'] }, async ({ page }) => {
+  await page.goto('/skills/');
+  await expect(page.locator('#plat-title')).toHaveText('Platforms I test on');
+  await expect(page.locator('#plat-title ~ .level__lead')).toHaveText("Flat screen and VR. Every build has to pass its platform's own checks, from console certification to the VR store requirements.");
+  await expect(page.locator('.plat__title')).toHaveText(['Nintendo Switch', 'Nintendo Switch 2', 'Xbox', 'PS5', 'Steam', 'Epic Games Store', 'GOG', 'Meta Quest 2, 3 and Pro', 'PC VR', 'PS VR', 'PS VR2']);
+  await page.goto('/');
+  const more = page.locator('.wall').getByRole('link', { name: "See every game I've tested" });
+  await expect(more).toHaveAttribute('href', '/portfolio/');
+  // the logos themselves stay pictures, not links
+  await expect(page.locator('.ticker a')).toHaveCount(0);
+});

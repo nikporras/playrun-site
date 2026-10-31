@@ -204,6 +204,8 @@ const checks = [
         <span data-ticker-word>Pause</span>
       </button>
     </div>
+    <!-- the logos are pictures only; the way on to the games is this link -->
+    <p class="wall__more"><a class="textlink" href="/portfolio/">See every game I've tested</a></p>
     <Bug id="wall-1" style="right: 12%; top: 5rem" tablet="right: 10%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
@@ -958,6 +960,10 @@ const checks = [
   :global(.motion-off) .hero {
     position: relative;
     top: auto;
+  }
+  .wall__more {
+    margin-top: var(--s-3);
+    max-width: none;
   }
   /* A title with no clean official logo: its name set in Pixel Operator at the logos' height. */
   .wall__word {

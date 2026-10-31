@@ -1,5 +1,7 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import { platforms as basePlatforms, vrPlatforms } from '../config';
 import Bug from '../components/Bug.astro';
 import Join from '../components/Join.astro';
 import PassMark from '../components/PassMark.astro';
@@ -55,15 +57,9 @@ const run = [
   ['Shipped', 'The team submits with the report in hand.'],
 ];
 
-const platforms = [
-  ['Nintendo Switch', 'Docked and handheld, Joy-Con and Pro Controller, sleep and resume.'],
-  ['Nintendo Switch 2', 'The same, plus the new hardware paths.'],
-  ['Xbox', 'Series X and S, Quick Resume, achievements, the Xbox app on PC.'],
-  ['PS5', 'Trophies, activities, the DualSense, suspend and resume.'],
-  ['Steam', 'Steam Deck, cloud saves, achievements, Steam Input.'],
-  ['Epic Games Store', 'Store requirements, achievements, launcher paths.'],
-  ['GOG', 'DRM-free build, Galaxy features, offline play.'],
-];
+// The platforms and stores, then the VR headsets the public titles were tested on.
+const titles = (await getCollection('projects')).filter((p) => p.data.public);
+const platforms = [...basePlatforms, ...vrPlatforms.filter((v) => titles.some((t) => t.data.platforms.some((n) => v.match.test(n)))).map((v) => [v.name, v.text])];
 ---
 
 <Base
@@ -179,7 +175,7 @@ const platforms = [
     <div class="level__head">
       <p class="flag" data-enter><span>Level 5 &middot; Platforms and stores</span></p>
       <h2 id="plat-title" class="level__title" data-enter="wipe">Platforms I test on</h2>
-      <p class="level__lead" data-enter style="--enter-delay: 80ms">Four consoles and three PC stores, each with its own rules, each checked before submission.</p>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">Flat screen and VR. Every build has to pass its platform's own checks, from console certification to the VR store requirements.</p>
     </div>
     <div class="plat__board level__body">
       {
