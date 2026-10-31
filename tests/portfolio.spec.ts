@@ -1,4 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 
 /**
  * The Portfolio journey: newest first, the track shows the year of the post on screen, and the
@@ -467,3 +469,50 @@ for (const [width, height] of [
     await expect(page.locator('.group').last().locator('.group__level')).toHaveText('Level 1');
   });
 }
+
+test('every game carries a tracker ID like the bug ticket’s (PR-001...), the same on its card and its phone row, numbered from the data in a stable order, and hidden from assistive tech and snippets', async ({ page }) => {
+  // the expected IDs, worked out here from the content files and the posts' order: the first post
+  // first, then by year (titles in development last), then by slug
+  const { employers } = await import('../src/config');
+  const dir = path.join(process.cwd(), 'src', 'content', 'projects');
+  const projects = readdirSync(dir)
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => {
+      const text = readFileSync(path.join(dir, f), 'utf8');
+      const field = (k: string) =>
+        text
+          .split('\n')
+          .find((l) => l.startsWith(`${k}:`))
+          ?.slice(k.length + 1)
+          .trim()
+          .replace(/^"|"$/g, '');
+      return { id: f.replace(/\.md$/, ''), title: field('title')!, employer: field('employer')!, year: Number(field('year')) || Infinity, dev: field('status') === 'in-development', public: field('public') === 'true' };
+    })
+    .filter((p) => p.public);
+  const post = (p: (typeof projects)[number]) => employers.length - 1 - employers.findIndex((e) => e.id === p.employer);
+  projects.sort((a, b) => post(a) - post(b) || (a.dev ? Infinity : a.year) - (b.dev ? Infinity : b.year) || a.id.localeCompare(b.id));
+  const expected = new Map(projects.map((p, i) => [p.title, `PR-${String(i + 1).padStart(3, '0')}`]));
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/portfolio/');
+  const cards = await page.locator('.card').evaluateAll((els) =>
+    els.map((el) => {
+      const id = el.querySelector('.card__inner .card__id')!;
+      const row = el.querySelector('.card__toggle .card__id')!;
+      return { title: el.querySelector('.card__title')!.textContent!.trim(), id: id.textContent!.trim(), row: row.textContent!.trim(), hidden: id.getAttribute('aria-hidden'), snippet: id.hasAttribute('data-nosnippet'), rowHidden: row.getAttribute('aria-hidden'), rowSnippet: row.hasAttribute('data-nosnippet') };
+    }),
+  );
+  expect(cards).toHaveLength(expected.size);
+  for (const c of cards) {
+    expect(c.id, c.title).toBe(expected.get(c.title));
+    expect(c.row, `${c.title}: the row carries the same ID`).toBe(c.id);
+    expect(c.hidden).toBe('true');
+    expect(c.rowHidden).toBe('true');
+    expect(c.snippet && c.rowSnippet).toBe(true);
+  }
+  expect(new Set(cards.map((c) => c.id)).size, 'no two alike').toBe(cards.length);
+  // the row's name is still the game's own
+  await page.setViewportSize({ width: 375, height: 780 });
+  await expect(page.locator('.card').nth(1).locator('[data-card-toggle]')).not.toHaveAccessibleName(/PR-/);
+  await expect(page.locator('.card').nth(1).locator('[data-card-toggle] .card__id')).toBeVisible();
+});

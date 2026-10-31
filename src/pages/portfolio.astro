@@ -5,6 +5,7 @@ import Bug from '../components/Bug.astro';
 import GameCard from '../components/GameCard.astro';
 import Join from '../components/Join.astro';
 import { employers } from '../config';
+import { trackerIds } from '../data/ids';
 
 const all = await getCollection('projects');
 // Released titles newest first, titles in development last.
@@ -13,6 +14,8 @@ const shown = (import.meta.env.DEV ? all : all.filter((p) => p.data.public)).sor
   const bDev = b.data.status === 'in-development' ? 1 : 0;
   return aDev - bDev || (b.data.year ?? 0) - (a.data.year ?? 0);
 });
+// Each game's tracker ID (PR-001...), stable from the data.
+const ids = trackerIds(shown);
 // One group per post, in the order of `employers`; a post with no public titles keeps its header.
 const groups = employers.map((e) => ({ ...e, projects: shown.filter((p) => p.data.employer === e.id) }));
 const count = shown.length;
@@ -96,7 +99,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
                 <ul role="list" class="group__grid">
                   {g.projects.map((p, i) => (
                     <li class="group__cell">
-                      <GameCard project={p} via={g.via} delay={i * 60} scan open={i === 0} />
+                      <GameCard project={p} via={g.via} delay={i * 60} scan open={i === 0} trackerId={ids.get(p.id)} />
                     </li>
                   ))}
                 </ul>

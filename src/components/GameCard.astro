@@ -24,8 +24,10 @@ interface Props {
   scan?: boolean;
   /** Open in a phone's folded list (the first game of each company); the desktop always shows it whole. */
   open?: boolean;
+  /** Its tracker ID (PR-001...), shown small like the bug ticket's; decorative. */
+  trackerId?: string;
 }
-const { project: p, via, delay = 0, scan = false, open = false } = Astro.props;
+const { project: p, via, delay = 0, scan = false, open = false, trackerId } = Astro.props;
 const panel = `card-${p.id}`;
 const logo = logos[p.id];
 const when = p.data.status === 'in-development' ? 'In development' : `${p.data.year} · Released`;
@@ -40,7 +42,10 @@ const store = p.data.store ?? 'Steam';
     <span class="card__mini" aria-hidden="true">
       {logo ? <Image src={logo} alt="" height={56} densities={[1, 2]} loading="lazy" decoding="async" /> : !p.data.wordmark && <GameIcon name={p.data.icon} />}
     </span>
-    <span class="card__name">{p.data.title}</span>
+    <span class="card__name">
+      {trackerId && <span class="card__id" aria-hidden="true" data-nosnippet>{trackerId}</span>}
+      {p.data.title}
+    </span>
     <span class="card__state">{when}</span>
     <svg class="card__chevron" viewBox="0 0 7 5" shape-rendering="crispEdges" aria-hidden="true">
       <path d="M0 0h2v1H0zM5 0h2v1H5zM1 1h2v1H1zM4 1h2v1H4zM2 2h3v1H2zM3 3h1v1H3z" fill="currentColor"></path>
@@ -60,6 +65,7 @@ const store = p.data.store ?? 'Steam';
         </span>
         <p class="card__when">{when}</p>
       </div>
+      {trackerId && <p class="card__id" aria-hidden="true" data-nosnippet>{trackerId}</p>}
       <h4 class="card__title">{p.data.title}</h4>
       {via && <p class="card__via">{via}</p>}
       <p class="card__summary">{p.data.summary}</p>
@@ -169,6 +175,24 @@ const store = p.data.store ?? 'Steam';
     color: var(--g-ink, var(--accent-2));
     max-width: none;
     padding-top: 0.25rem;
+  }
+  /* The tracker ID, small and spaced like the key on the bug ticket. */
+  .card__id {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    line-height: 1;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    max-width: none;
+    margin-bottom: -0.25rem;
+  }
+  /* (on the folded row it sits before the title, on the same line) */
+  .card__name .card__id {
+    display: inline;
+    margin: 0 0.4em 0 0;
+    font-size: 0.75rem;
   }
   .card__title {
     font-family: var(--font-display);
