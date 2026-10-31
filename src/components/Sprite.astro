@@ -2,7 +2,8 @@
 /**
  * Pixel sprites drawn from bitmaps in the brand colours only. Nothing is copied from any game.
  * The ship is the logo icon rasterised at 24 by 18 and banded blue, cyan, green from the top,
- * the same way the primary icon carries its gradient. The bug is a 10 by 8 original.
+ * the same way the primary icon carries its gradient. The bug is a 10 by 8 original, with a navy
+ * pixel outline.
  */
 interface Props {
   name: 'ship' | 'bug' | 'net';
@@ -63,6 +64,9 @@ const BUG = [
 ];
 
 type Cell = { x: number; y: number; cls: string };
+// The bug's outline, like a classic game sprite: a navy ring round its shape, about a third of one
+// of its pixels thick (1px at its size), drawn behind it so its shape reads on any field.
+const RING = 0.3;
 const cells: Cell[] = [];
 let w = 0;
 let h = 0;
@@ -91,7 +95,14 @@ if (name === 'ship') {
 }
 ---
 
-<svg class:list={['sprite', `sprite--${name}`, className]} viewBox={`0 0 ${w} ${h}`} shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+<svg
+  class:list={['sprite', `sprite--${name}`, className]}
+  viewBox={name === 'bug' ? `${-RING} ${-RING} ${w + 2 * RING} ${h + 2 * RING}` : `0 0 ${w} ${h}`}
+  shape-rendering="crispEdges"
+  aria-hidden="true"
+  focusable="false"
+>
+  {name === 'bug' && cells.map((c) => <rect x={c.x - RING} y={c.y - RING} width={1 + 2 * RING} height={1 + 2 * RING} class="px-ring" />)}
   {cells.map((c) => <rect x={c.x} y={c.y} width="1" height="1" class={c.cls} />)}
 </svg>
 
@@ -127,5 +138,8 @@ if (name === 'ship') {
   }
   .px-leg {
     fill: var(--bug-leg, var(--pr-cyan));
+  }
+  .px-ring {
+    fill: var(--pr-navy);
   }
 </style>

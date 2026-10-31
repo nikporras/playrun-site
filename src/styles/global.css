@@ -692,22 +692,33 @@ p + p {
     opacity var(--dur-press) var(--ease-out);
 }
 .bug .sprite {
-  width: 2rem;
+  width: 2.12rem; /* (the 10 pixels at 2rem, and the outline round them) */
   height: auto;
 }
 .bug[hidden],
 html:not(.games) .bug {
   display: none;
 }
+/* A bug stands out on every field: its body and legs at least 3:1 against the level (WCAG
+   non-text contrast), and a navy outline round it. Green on navy (8.2:1), light on the blue (4:1:
+   the brand's green and cyan are only 2.3:1 there), navy on green, cyan and light (8:1 and up). */
 .level--navy,
-.level--field,
-.level--blue {
+.level--field {
   --bug-body: var(--pr-green);
   --bug-leg: var(--pr-cyan);
   --bug-eye: var(--pr-navy);
 }
+.level--blue {
+  --bug-body: var(--pr-light);
+  --bug-leg: var(--pr-navy);
+  --bug-eye: var(--pr-navy);
+}
 .level--cyan,
-.level--green,
+.level--green {
+  --bug-body: var(--pr-navy);
+  --bug-leg: var(--pr-navy);
+  --bug-eye: var(--pr-light);
+}
 .level--light {
   --bug-body: var(--pr-navy);
   --bug-leg: var(--pr-blue);

@@ -82,3 +82,43 @@ for (const path of PAGES) {
     });
   }
 }
+
+test('every bug stands out on its level: its body and legs at least 3:1 against the field (WCAG non-text contrast), with a navy outline round its shape', async ({ page }) => {
+  for (const path of [...PAGES, '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/']) {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(path);
+    const bugs = await page.locator('[data-bug]').evaluateAll((els) => {
+      const lum = (c: string) => {
+        const [r, g, b] = (c.match(/[\d.]+/g) ?? []).slice(0, 3).map((v) => {
+          const s = Number(v) / 255;
+          return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const ratio = (a: string, b: string) => {
+        const [x, y] = [lum(a), lum(b)];
+        return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+      };
+      // a level under the curtain paints its field as a gradient below its band: read that colour
+      const fieldOf = (el: Element) => {
+        const cs = getComputedStyle(el);
+        return cs.backgroundColor !== 'rgba(0, 0, 0, 0)' ? cs.backgroundColor : (cs.backgroundImage.match(/rgba?\([^)]*\)/)?.[0] ?? cs.backgroundColor);
+      };
+      return els.map((b) => {
+        const level = b.closest('.level')!;
+        const field = fieldOf(level);
+        const body = getComputedStyle(b.querySelector('.bug__body .px-body')!).fill;
+        const leg = getComputedStyle(b.querySelector('.bug__body .px-leg')!).fill;
+        const ring = b.querySelectorAll('.bug__body .px-ring');
+        return { id: (b as HTMLElement).dataset.bug, level: level.className.match(/level--(navy|blue|cyan|green|light|field)/)?.[1], body: ratio(body, field), leg: ratio(leg, field), ring: ring.length, ringFill: ring[0] ? getComputedStyle(ring[0]).fill : '' };
+      });
+    });
+    // (the legal pages carry none)
+    for (const b of bugs) {
+      expect(b.body, `${path} ${b.id} body on ${b.level}`).toBeGreaterThanOrEqual(3);
+      expect(b.leg, `${path} ${b.id} legs on ${b.level}`).toBeGreaterThanOrEqual(3);
+      expect(b.ring, `${path} ${b.id} outlined`).toBeGreaterThan(0);
+      expect(b.ringFill).toBe('rgb(12, 21, 42)');
+    }
+  }
+});
