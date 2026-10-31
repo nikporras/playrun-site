@@ -1,6 +1,6 @@
 ---
 /**
- * About: the facts about Nicolás Porras for people and for AI, in the third person, built from the
+ * About: the facts about Nicolás Porras for people and for AI, in the first person, built from the
  * site's own data (src/data/about.ts). A page for reading: plain text from the first paint, no
  * games, no bugs, no entrance that hides anything.
  */
@@ -10,7 +10,7 @@ import Join from '../components/Join.astro';
 import { contact } from '../config';
 import { about } from '../data/about';
 
-const { summary, facts, qa, linkedin } = await about();
+const { summaryFirstPerson, facts, qa, linkedin } = await about();
 ---
 
 <Base
@@ -25,7 +25,7 @@ const { summary, facts, qa, linkedin } = await about();
     <div class="level__head">
       <p class="flag" data-nosnippet><span>About</span></p>
       <h1 id="about-title" class="page__title about__title">About {contact.name}</h1>
-      <p class="about__summary statement">{summary}</p>
+      <p class="about__summary statement">{summaryFirstPerson}</p>
     </div>
     <Join kind="clouds" from="var(--pr-navy)" to="var(--field-blue)" seed="about-facts" />
   </section>

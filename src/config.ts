@@ -182,6 +182,8 @@ export const leadRoles = postsOldestFirst.flatMap((e) => e.roles.filter((r) => r
 // A few of the best known titles, for the summary (a test checks each is a public title).
 export const credits = ['Cyberpunk 2077', 'NBA 2K21', 'Ghostbusters: Rise of the Ghost Lord', 'Synapse', "Lou's Lagoon"];
 
-// The shared summary in the third person: the About page, the Person in the structured data and
-// llms.txt. Built from the data above.
+// The summary, built from the data above, twice: in the third person for machines (the Person in
+// the structured data, llms.txt), and in the first person for the About page, like the rest of
+// the site.
 export const summary = `${contact.name} is a game QA tester based in London. He has tested console, PC and VR games since ${since}, at ${listed(studios)}, and has led QA as ${listed(leadRoles.map((r) => `${r.title} at ${r.at}`))}. His credits include ${listed(credits)}. ${site.name}, at playrunqa.com, is his personal QA portfolio.`;
+export const summaryFirstPerson = `I'm a game QA tester based in London. I've tested console, PC and VR games since ${since}, at ${listed(studios)}, and I've led QA as ${listed(leadRoles.map((r) => `${r.title} at ${r.at}`))}. My credits include ${listed(credits)}. ${site.name}, at playrunqa.com, is my personal QA portfolio.`;
