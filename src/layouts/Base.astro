@@ -10,6 +10,7 @@ import Hud from '../components/Hud.astro';
 import TabBar from '../components/TabBar.astro';
 import { getImage } from 'astro:assets';
 import portrait from '../assets/photos/nicolas.png';
+import ogCard from '../assets/og-card.png';
 import { graph, type PageKind } from '../data/schema';
 import { contact, site } from '../config';
 
@@ -31,7 +32,9 @@ interface Props {
   noindex?: boolean;
 }
 
-const { title, description = site.description, fullTitle, ogImage = '/og.png', games = true, kind = 'WebPage', faq, structured = true, noindex = false } = Astro.props;
+// The social card is shared from an address named by its content (/_astro/og-card.<hash>.png), so
+// a new card is a new address and nothing serves a cached old one.
+const { title, description = site.description, fullTitle, ogImage = ogCard.src, games = true, kind = 'WebPage', faq, structured = true, noindex = false } = Astro.props;
 // A page's own title, then the person the site is about.
 const pageTitle = fullTitle ?? `${title} | ${contact.name}`;
 // The build writes a folder per page (/skills/index.html); the public address is the one with the
@@ -41,7 +44,7 @@ const ogUrl = new URL(ogImage, Astro.site);
 // The structured data: the person, the site and this page (src/data/schema.ts). The person's image
 // is the hero photo.
 const photo = await getImage({ src: portrait, width: 800, format: 'jpeg' });
-const ld = structured ? graph({ url: canonical.href, title: pageTitle, description, kind, crumb: title, image: new URL(photo.src, Astro.site).href, faq }) : null;
+const ld = structured ? graph({ url: canonical.href, title: pageTitle, description, kind, crumb: title, image: new URL(photo.src, Astro.site).href, card: ogUrl.href, faq }) : null;
 // Routes that exist in this build. The live link checks only test links to these, so pages that
 // are not built yet never count as failures; new pages join the list the moment they are built.
 const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))

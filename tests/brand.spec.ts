@@ -29,7 +29,7 @@ test.describe('Brand assets', () => {
       expect(res.status(), path).toBe(200);
     }
     const og = await page.locator('meta[property="og:image"]').getAttribute('content');
-    expect(og).toContain('/og.png');
+    expect(og, 'the card, at an address named by its content').toMatch(/^https:\/\/playrunqa\.com\/_astro\/og-card\.[\w-]+\.png$/);
   });
 });
 
@@ -42,7 +42,18 @@ test('the social card is a 1200 by 630 picture of Nicolás Porras, Game QA Teste
   for (const path of ['/', '/skills/', '/about/']) {
     await page.goto(path);
     const c = (sel: string) => page.locator(sel).getAttribute('content');
-    expect(await c('meta[property="og:image"]')).toBe('https://playrunqa.com/og.png');
+    const card = await c('meta[property="og:image"]');
+    expect(card).toMatch(/^https:\/\/playrunqa\.com\/_astro\/og-card\.[\w-]+\.png$/);
+    expect(await c('meta[name="twitter:image"]')).toBe(card);
+    // the page's image in the structured data is the same card
+    const ld = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent())!) as { '@graph': { '@type': string; image?: string; primaryImageOfPage?: { url: string } }[] };
+    const node = ld['@graph'].find((n) => /Page$/.test(n['@type']) && n['@type'] !== 'FAQPage')!;
+    expect(node.image).toBe(card);
+    expect(node.primaryImageOfPage!.url).toBe(card);
+    // it answers, and it is the same picture as the old /og.png kept for old links
+    const versioned = await request.get(new URL(card!).pathname);
+    expect(versioned.status()).toBe(200);
+    expect(Buffer.compare(await versioned.body(), await res.body()), 'the same card').toBe(0);
     expect(await c('meta[property="og:image:alt"]')).toBe('Nicolás Porras, Game QA Tester, London: his photo on a navy pixel grid, with playrunqa.com.');
     expect(await c('meta[property="og:type"]')).toBe(path === '/' ? 'profile' : 'website');
     await expect(page.locator('meta[property="profile:first_name"]')).toHaveCount(path === '/' ? 1 : 0);

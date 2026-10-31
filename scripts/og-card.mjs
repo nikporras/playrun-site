@@ -1,4 +1,4 @@
-// Builds the social card, public/og.png (1200x630), in the site's pixel style: the navy field with
+// Builds the social card, src/assets/og-card.png and its copy public/og.png (1200x630), in the site's pixel style: the navy field with
 // its faint grid and a few stars, the hero photo, the name in Pixel Operator and the work in one
 // line. Rendered by Chromium (Playwright) so the card uses the site's own fonts. Run from the
 // project root: node scripts/og-card.mjs
@@ -56,6 +56,10 @@ await tab.evaluate(() => document.fonts.ready);
 await tab.waitForTimeout(200);
 const shot = await tab.locator('.card').screenshot();
 await browser.close();
-// (a palette PNG: a fraction of the size, the same look)
-await sharp(shot).png({ palette: true, quality: 92, compressionLevel: 9 }).toFile('public/og.png');
-console.log('wrote public/og.png');
+// (a palette PNG: a fraction of the size, the same look). The site shares src/assets/og-card.png,
+// which the build names by its content, so a new card gets a new address; public/og.png stays a
+// copy for old links.
+const card = await sharp(shot).png({ palette: true, quality: 92, compressionLevel: 9 }).toBuffer();
+writeFileSync('src/assets/og-card.png', card);
+writeFileSync('public/og.png', card);
+console.log('wrote src/assets/og-card.png and public/og.png');

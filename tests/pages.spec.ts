@@ -91,7 +91,7 @@ for (const p of PAGES) {
       const expected = `https://playrunqa.com${p.path}`;
       await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', expected);
       await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', expected);
-      await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', 'https://playrunqa.com/og.png');
+      await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /^https:\/\/playrunqa\.com\/_astro\/og-card\.[\w-]+\.png$/);
       await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute('content', /Nicolás Porras, Game QA Tester/);
     });
 

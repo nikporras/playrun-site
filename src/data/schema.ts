@@ -79,7 +79,7 @@ export function person(image: string) {
 
 export type PageKind = 'WebPage' | 'ProfilePage' | 'AboutPage';
 
-export function graph(o: { url: string; title: string; description: string; kind: PageKind; crumb: string; image: string; faq?: { q: string; a: string }[] }) {
+export function graph(o: { url: string; title: string; description: string; kind: PageKind; crumb: string; image: string; card: string; faq?: { q: string; a: string }[] }) {
   const home = o.kind === 'ProfilePage';
   const page = {
     '@type': o.kind,
@@ -90,6 +90,9 @@ export function graph(o: { url: string; title: string; description: string; kind
     inLanguage: 'en-GB',
     isPartOf: { '@id': WEBSITE },
     about: { '@id': PERSON },
+    // the page's image: the social card, at its versioned address
+    primaryImageOfPage: { '@type': 'ImageObject', url: o.card, width: 1200, height: 630 },
+    image: o.card,
     ...(home ? { mainEntity: { '@id': PERSON }, dateCreated: CREATED, dateModified: built() } : {}),
   };
   const nodes: object[] = [
