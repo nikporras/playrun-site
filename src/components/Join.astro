@@ -8,11 +8,9 @@
  * seam, and no box. On Home the first join sits at the top of Level 2 instead (`at="top"`), so the
  * clouds slide up over the pinned hero with the level, the hero and the photo showing through above
  * them. Everything is inline SVG in brand colours, drawn at build time from a seeded random walk
- * so no two joins repeat, in 8px pixels (scaled to 6px on tablets). On scroll the back layers
- * drift a little (scroll-driven CSS where supported, still under reduced motion). On a phone the
- * same band is a mosaic of 16px blocks instead, the next level's colour thickening row by row, its
- * blocks flipping in once as the band comes into view. Decorative: hidden from assistive tech, no
- * pointer events, no layout shift.
+ * so no two joins repeat, in 8px pixels (scaled to 6px on tablets and 4px on phones). On scroll
+ * the back layers drift a little (scroll-driven CSS where supported, still under reduced motion).
+ * Decorative: hidden from assistive tech, no pointer events, no layout shift.
  */
 interface Props {
   /** clouds for the dark sky into the next level; terrain into a bright highlight and down again */
@@ -157,25 +155,6 @@ const layers = spec.map((s) => {
   const h = kind === 'terrain' ? terrain(cols, s.lo, s.hi, s.flat, s.rise) : clouds(cols, s.lo, s.hi, s.count, s.flat, s.rise);
   return { ...s, path: silhouette(h), light: kind === 'clouds' ? highlights(h, s.every) : '' };
 });
-
-// The phone's join, a mosaic: 16px blocks in five rows across the widest phone, the next level's
-// colour thickening row by row (a block or two in the top row, a gap or two in the bottom one), so
-// the next level loads in pixel by pixel. Only the lower colour is drawn; the rest of the band is
-// see-through, the upper field (or the hero under the curtain) showing. Each block carries the
-// moment it flips in, within half a second, the lower rows a little first.
-const B = 16;
-const ROWS = 5;
-const COLS = 48; // 768px, the widest phone; the band clips the rest
-const odds = [0.1, 0.3, 0.55, 0.78, 0.93];
-const blocks: { x: number; y: number; d: number }[] = [];
-for (let r = 0; r < ROWS; r++) {
-  let row: number[] = [];
-  // every row is a mix of both colours, across the band and across the narrowest phone (22 blocks),
-  // so no row reads as a straight edge
-  const mixed = (cols: number[], n: number) => cols.filter((c) => c < n).length > 0 && cols.filter((c) => c < n).length < n;
-  for (let guard = 0; guard < 60 && !(mixed(row, COLS) && mixed(row, 22)); guard++) row = Array.from({ length: COLS }, (_, c) => c).filter(() => rand() < odds[r]);
-  for (const c of row) blocks.push({ x: c * B, y: r * B, d: Math.round(rand() * 340 + (ROWS - 1 - r) * 40) });
-}
 ---
 
 <div class={`join join--${kind} join--${at}`} aria-hidden="true" style={`--from: ${from}; --to: ${to}`}>
@@ -192,9 +171,6 @@ for (let r = 0; r < ROWS; r++) {
       </svg>
     ))
   }
-  <svg class="join__mosaic" width={COLS * B} height={ROWS * B} aria-hidden="true" focusable="false" shape-rendering="crispEdges">
-    {blocks.map((b) => <rect class="join__block" x={b.x} y={b.y} width={B} height={B} style={`--d: ${b.d}ms`} />)}
-  </svg>
 </div>
 
 <style is:global>
@@ -307,50 +283,9 @@ for (let r = 0; r < ROWS; r++) {
       --join-s: 0.75;
     }
   }
-  /* The mosaic is the phone's join; wider screens keep the clouds and the terrain. */
-  .join__mosaic {
-    display: none;
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    max-width: none;
-  }
-  .join__block {
-    fill: var(--to);
-  }
   @media (max-width: 47.99rem) {
-    .join__layer {
-      display: none;
-    }
-    .join__mosaic {
-      display: block;
-    }
-    /* Armed by script while the band is still off screen; as it comes into view each block flips
-       in at its own moment, once. Without script or under reduced motion the mosaic simply stands. */
-    .join.is-armed .join__block {
-      opacity: 0;
-    }
-    .join.is-armed.is-flipped .join__block {
-      opacity: 1;
-      transition: opacity 0s linear var(--d);
+    .join {
+      --join-s: 0.5;
     }
   }
 </style>
-
-<script>
-  // The mosaic's flip: on a phone, with motion allowed, each band waits off screen and flips in
-  // once as it enters the screen.
-  if (matchMedia('(max-width: 47.99rem)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
-    const io = new IntersectionObserver((entries) => {
-      for (const e of entries) {
-        if (!e.isIntersecting) continue;
-        e.target.classList.add('is-flipped');
-        io.unobserve(e.target);
-      }
-    });
-    document.querySelectorAll<HTMLElement>('.join').forEach((j) => {
-      j.classList.add('is-armed');
-      io.observe(j);
-    });
-  }
-</script>

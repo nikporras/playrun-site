@@ -98,6 +98,6 @@
     --hud-h: calc(var(--bar-h) + 2px + env(safe-area-inset-bottom, 0px)); /* the room it takes, its edge and the home indicator */
     --floor-h: 0.5rem;
     --ship-w: 1.5rem;
-    --join-h: 5rem; /* the phone's mosaic join: five rows of 16px blocks */
+    --join-h: 4.5rem; /* the join art at 4px pixels */
   }
 }
