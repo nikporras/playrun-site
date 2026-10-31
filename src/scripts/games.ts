@@ -176,6 +176,56 @@ export function startGames() {
     }, CATCH_MS);
   });
 
+  // The tap hint, on a touch screen: a small pixel TAP beside the first bug that comes on screen,
+  // once a visit, until a bug is caught or for five seconds. Not with the games off or motion off.
+  // Decorative: the bug is already a button named for what it does.
+  const touch = matchMedia('(hover: none) and (pointer: coarse)');
+  const HINT = 'playrun.taphint';
+  const hinted = () => {
+    try {
+      return sessionStorage.getItem(HINT) === 'shown';
+    } catch {
+      return false;
+    }
+  };
+  if (touch.matches && !hinted() && 'IntersectionObserver' in window) {
+    let hint: HTMLElement | null = null;
+    let hintTimer = 0;
+    const drop = () => {
+      window.clearTimeout(hintTimer);
+      hint?.remove();
+      hint = null;
+    };
+    const seen = new IntersectionObserver(
+      (entries) => {
+        if (hint || hinted() || !state.on || reducedMotion()) return;
+        const e = entries.find((x) => x.isIntersecting && !(x.target as HTMLButtonElement).hidden);
+        if (!e) return;
+        const bug = e.target as HTMLElement;
+        hint = document.createElement('span');
+        hint.className = 'bug__tap';
+        hint.setAttribute('aria-hidden', 'true');
+        hint.textContent = 'TAP';
+        // beside the bug, on the side with room
+        if (e.boundingClientRect.right + 64 > innerWidth) hint.classList.add('bug__tap--left');
+        bug.append(hint);
+        try {
+          sessionStorage.setItem(HINT, 'shown');
+        } catch {
+          /* storage off: once on this page */
+        }
+        seen.disconnect();
+        hintTimer = window.setTimeout(drop, 5000);
+      },
+      { threshold: 0.9 },
+    );
+    bugs().forEach((b) => seen.observe(b));
+    document.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('[data-bug]')) drop();
+    });
+    toggle.addEventListener('click', drop);
+  }
+
   // Discoveries: an achievement unlocks when every element carrying its id has been on screen.
   const pending = new Map<string, Set<Element>>();
   document.querySelectorAll('[data-achieve]').forEach((el) => {

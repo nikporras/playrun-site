@@ -264,3 +264,64 @@ test.describe('Games', () => {
     await context.close();
   });
 });
+
+test.describe('The tap hint', () => {
+  const phone = { viewport: { width: 375, height: 780 }, hasTouch: true, isMobile: true };
+  test('on a touch screen a pixel TAP sits beside the first bug on screen, once a visit, for a few seconds or until a catch; decorative', async ({ browser }) => {
+    test.setTimeout(60_000);
+    const context = await browser.newContext(phone);
+    const page = await context.newPage();
+    await page.goto('/');
+    const hint = page.locator('.bug__tap');
+    await expect(hint).toHaveCount(1, { timeout: 5000 });
+    await expect(hint).toHaveText('TAP');
+    await expect(hint).toHaveAttribute('aria-hidden', 'true');
+    // beside a bug that is on screen, and inside the screen
+    const bug = hint.locator('xpath=..');
+    await expect(bug).toHaveAttribute('data-bug', /.+/);
+    const h = (await hint.boundingBox())!;
+    expect(h.x).toBeGreaterThanOrEqual(0);
+    expect(h.x + h.width).toBeLessThanOrEqual(375);
+    // the bug's name is still its own
+    await expect(bug).toHaveAccessibleName('Catch this bug');
+    // gone after a few seconds, and not again this visit
+    await expect(hint).toHaveCount(0, { timeout: 7000 });
+    await page.reload();
+    await page.waitForTimeout(2000);
+    await expect(page.locator('.bug__tap')).toHaveCount(0);
+    await context.close();
+  });
+
+  test('a catch takes the hint away at once', async ({ browser }) => {
+    const context = await browser.newContext(phone);
+    const page = await context.newPage();
+    await page.goto('/');
+    const hint = page.locator('.bug__tap');
+    await expect(hint).toHaveCount(1, { timeout: 5000 });
+    const bug = hint.locator('xpath=..');
+    await bug.evaluate((b) => b.getAnimations().forEach((a) => a.pause()));
+    await bug.tap();
+    await expect(hint).toHaveCount(0);
+    await context.close();
+  });
+
+  test('no hint with a mouse, with motion off, or with the games off', async ({ browser }) => {
+    // a mouse
+    const desk = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    let page = await desk.newPage();
+    await page.goto('/');
+    await page.waitForTimeout(2500);
+    await expect(page.locator('.bug__tap')).toHaveCount(0);
+    await desk.close();
+    // motion off, games off
+    for (const store of [{ 'playrun.motion': 'off' }, { 'playrun.games': JSON.stringify({ on: false, bugs: [], achievements: [] }) }]) {
+      const context = await browser.newContext(phone);
+      page = await context.newPage();
+      await page.addInitScript((s) => Object.entries(s).forEach(([k, v]) => localStorage.setItem(k, v)), store);
+      await page.goto('/');
+      await page.waitForTimeout(2500);
+      await expect(page.locator('.bug__tap')).toHaveCount(0);
+      await context.close();
+    }
+  });
+});

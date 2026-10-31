@@ -724,6 +724,42 @@ html:not(.games) .bug {
   --bug-leg: var(--pr-blue);
   --bug-eye: var(--pr-cyan);
 }
+/* The tap hint on a touch screen: a small pixel label beside the first bug, light on navy. */
+.bug__tap {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  translate: 0.25rem -50%;
+  padding: 0.2rem 0.35rem;
+  background: var(--pr-light);
+  color: var(--pr-navy);
+  outline: 2px solid var(--pr-navy);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  pointer-events: none;
+  rotate: 0deg;
+}
+.bug__tap--left {
+  left: auto;
+  right: 100%;
+  translate: -0.25rem -50%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bug__tap {
+    animation: tap-blink 1s steps(2, jump-none) infinite;
+  }
+}
+@keyframes tap-blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.35;
+  }
+}
 /* The net and the +1 exist only during a catch */
 .bug__net,
 .bug__plus {
