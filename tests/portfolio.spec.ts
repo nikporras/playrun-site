@@ -464,7 +464,7 @@ for (const [width, height] of [
     }
     // the titles in order, as on LinkedIn
     const ndreams = page.locator('.group').filter({ has: page.locator('.group__name', { hasText: 'nDreams' }) });
-    await expect(ndreams.locator('.group__role')).toHaveText(['QA Tester · Mar 2022 to Sep 2022', 'Senior QA Tester · Sep 2022 to Apr 2023', 'Lead QA Tester · Apr 2023 to Oct 2024']);
+    await expect(ndreams.locator('.group__role')).toHaveText(['QA Tester · Apr 2022 to Sep 2022', 'Senior Quality Assurance Tester · Sep 2022 to Apr 2023', 'Lead Quality Assurance Tester · Apr 2023 to Oct 2024']);
     // the first job is Level 1
     await expect(page.locator('.group').last().locator('.group__level')).toHaveText('Level 1');
   });

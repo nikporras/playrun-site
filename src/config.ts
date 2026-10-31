@@ -84,11 +84,11 @@ export const employers: Employer[] = [
     name: 'nDreams',
     accent: 'blue',
     roles: [
-      { title: 'QA Tester', when: 'Mar 2022 to Sep 2022' },
-      { title: 'Senior QA Tester', when: 'Sep 2022 to Apr 2023' },
-      { title: 'Lead QA Tester', when: 'Apr 2023 to Oct 2024', lead: true },
+      { title: 'QA Tester', when: 'Apr 2022 to Sep 2022' },
+      { title: 'Senior Quality Assurance Tester', when: 'Sep 2022 to Apr 2023' },
+      { title: 'Lead Quality Assurance Tester', when: 'Apr 2023 to Oct 2024', lead: true },
     ],
-    lead: 'Grew from tester to lead. Sole tester on a project, then led a QA team: test planning, the bug lifecycle in Jira and Confluence, QA in sprint planning and retrospectives, mentoring testers and managing an external QA vendor. Lead QA Tester on one cancelled project.',
+    lead: 'Grew from tester to lead. Sole tester on a project, then led a QA team: test planning, the bug lifecycle in Jira and Confluence, QA in sprint planning and retrospectives, mentoring testers and managing an external QA vendor. Lead Quality Assurance Tester on one cancelled project.',
   },
   {
     id: 'universally-speaking-2021',

@@ -28,7 +28,7 @@ const PAGES = [
       'Nexus Studios',
       'Build and Distribution Technician, contract',
       'QA Manager, contract',
-      'Lead QA Tester on one cancelled project.',
+      'Lead Quality Assurance Tester on one cancelled project.',
       'Apple Vision Pro',
       "Lou's Lagoon",
       'Hello Sunshine',
@@ -193,16 +193,16 @@ test('every card has a logo or its icon, the labels and one store button in a ne
 
   // the dates, large and in the accent, right under the name; a post with several roles keeps
   // each role's own dates on its line
-  await expect(page.locator('.group__when')).toHaveText(['Jul 2026 to present', 'Apr 2026 to Jul 2026', 'Oct 2025 to Dec 2025', 'Jun 2025 to Aug 2025', 'Feb 2025 to Feb 2026', 'Mar 2022 to Oct 2024', '2021 to 2022']);
+  await expect(page.locator('.group__when')).toHaveText(['Jul 2026 to present', 'Apr 2026 to Jul 2026', 'Oct 2025 to Dec 2025', 'Jun 2025 to Aug 2025', 'Feb 2025 to Feb 2026', 'Apr 2022 to Oct 2024', '2021 to 2022']);
   await expect(page.locator('.group__role')).toHaveText([
     'Senior Quality Assurance Tester',
     'VR Robotics Operator, client Google DeepMind, contract',
     'Quality Assurance Tester, contract',
     'Build and Distribution Technician, contract',
     'QA Manager, contract',
-    'QA Tester · Mar 2022 to Sep 2022',
-    'Senior QA Tester · Sep 2022 to Apr 2023',
-    'Lead QA Tester · Apr 2023 to Oct 2024',
+    'QA Tester · Apr 2022 to Sep 2022',
+    'Senior Quality Assurance Tester · Sep 2022 to Apr 2023',
+    'Lead Quality Assurance Tester · Apr 2023 to Oct 2024',
     'Quality Assurance Tester',
   ]);
   const head = await page.locator('.group__head').first().evaluate((el) => {
@@ -448,7 +448,7 @@ test('the built site is a portfolio, offers no work, links to no repository and 
     'Founder &amp; Lead QA',
     'Build and Distribution Technician',
     'QA Manager',
-    'Lead QA Tester',
+    'Lead Quality Assurance Tester',
   ];
   let portfolio = '';
   for (const file of html) {
