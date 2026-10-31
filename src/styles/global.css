@@ -660,14 +660,14 @@ p + p {
      with a strip of ground under the footer that it can sit on without covering anything. */
   .games body,
   .games-off body {
-    padding-bottom: calc(4rem + var(--ticket-room, 0px)); /* (and the bug ticket's chip above the pill) */
+    padding-bottom: calc(4rem + var(--ticket-pad, 0px)); /* (and the bug ticket above the pill) */
   }
 }
 @media (max-width: 47.99rem) {
   /* A phone always has the bottom bar (games or not, script or not): the page ends above it, with
      room for the ship that rides on its top edge. The scoreboard's counter takes its right end. */
   :root body {
-    padding-bottom: calc(var(--hud-h) + var(--ship-w) + 0.5rem + var(--ticket-room, 0px)); /* (and the bug ticket's strip) */
+    padding-bottom: calc(var(--hud-h) + var(--ship-w) + 0.5rem + var(--ticket-pad, 0px)); /* (and the bug ticket on the bar) */
   }
   .has-dock {
     --counter-w: 3.75rem;

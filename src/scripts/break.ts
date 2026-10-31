@@ -23,9 +23,9 @@
  * A tracker ticket pops when the name breaks ("Open", with "Scroll back up to fix"). It docks with
  * the scoreboard, in the game layer's corner (above the pill on a desktop, in the bar on a tablet,
  * a strip on the bar's top edge on a phone), and never moves, hides or fades while it is there. The
- * first time in a visit it stays until the name is whole again: the card for three seconds, then
- * folded into a chip that opens it again; when the name is fixed it shows "Fixed" for three
- * seconds and goes. Later breaks show the card for three seconds. Dismiss closes it (that counts
+ * first time in a visit it stays, the full card, until the name is whole again or the visitor
+ * dismisses it (the chip folds it and opens it again); when the name is fixed it shows "Fixed" for
+ * three seconds and goes. Later breaks show the card for three seconds. Dismiss closes it (that counts
  * as done). Its content is decorative and hidden from assistive tech; the chip and Dismiss are real
  * buttons. Off without script, under reduced motion and with the games off.
  */
@@ -356,12 +356,11 @@ export function startBreak() {
 
   // ---- The ticket. It lives with the scoreboard, in the game layer's corner, and never moves: the
   // chip keeps its one spot (above the pill on a desktop, in the bar on a tablet, a strip on the
-  // bar's top edge on a phone) and the card opens above it. The first time in a visit it stays
-  // until the name is fixed: the card for three seconds, then folded into the chip, which opens it
-  // again (and it folds after three seconds, or at a second tap). Later breaks, and the fix, show
-  // the card for three seconds and go. The page keeps room for it at its foot (--ticket-room), and
-  // the toast and the scoreboard's card open above it (--ticket-lift where the card opens above
-  // the bar).
+  // bar's top edge on a phone) and the card opens above it. The first time in a visit the card
+  // stays open until the name is fixed or the ticket is dismissed (the chip folds and opens it).
+  // Later breaks, and the fix, show the card for three seconds and go. The page keeps room for it
+  // at its foot (--ticket-pad, as the bar does), and the toast and the scoreboard's card open
+  // above it (--ticket-lift where the card opens above the bar).
   dock.prepend(ticket);
   const tablet = matchMedia('(min-width: 48rem) and (max-width: 63.99rem)');
   let wanted = false; // on show
@@ -370,32 +369,36 @@ export function startBreak() {
   let dismissed = false; // closed by hand: quiet until the next break
   let armed = false;
   let timer = 0; // the card or the ticket leaving
-  let footRoom = 0;
-  // the room it takes: at the foot of the page, and above the bar for the toast and the card
+  let padRoom = 0;
+  // the room it takes: on the bar (a phone's strip, which the HUD line rides on), at the foot of
+  // the page (the strip or chip and the open card, as the bar reserves its own), and above the bar
+  // for the toast and the scoreboard's card where the ticket's card opens above it
   const room = () => {
     const on = wanted && !ticket.hidden;
-    let foot = 0;
-    if (on && phone.matches) foot = (ticket.querySelector('.ticket__dock') as HTMLElement).offsetHeight;
-    else if (on && !tablet.matches) foot = ticket.offsetHeight + 8;
+    const dockRow = ticket.querySelector('.ticket__dock') as HTMLElement;
     // (the card's full height, whatever its fold is doing this instant, and its margins)
-    const lift = on && expanded && (phone.matches || tablet.matches) ? (ticket.querySelector('.ticket__cardin') as HTMLElement).scrollHeight + 16 : 0;
+    const card = on && expanded ? (ticket.querySelector('.ticket__cardin') as HTMLElement).scrollHeight + 16 : 0;
+    const strip = on && phone.matches ? dockRow.offsetHeight : 0;
+    const pad = !on ? 0 : phone.matches ? strip + card : tablet.matches ? card : dockRow.offsetHeight + 8 + card;
+    const lift = phone.matches || tablet.matches ? card : 0;
     // (a visitor at the very foot of the page stays there as the room grows)
     const atFoot = scrollY + innerHeight >= html.scrollHeight - 2;
-    const grew = foot - footRoom;
-    footRoom = foot;
-    html.style.setProperty('--ticket-room', `${foot}px`);
+    const grew = pad - padRoom;
+    padRoom = pad;
+    html.style.setProperty('--ticket-room', `${strip}px`);
+    html.style.setProperty('--ticket-pad', `${pad}px`);
     html.style.setProperty('--ticket-lift', `${lift}px`);
-    // (once, as it appears: the page takes its new length first)
+    // (once, as it changes: the page takes its new length first)
     if (atFoot && grew > 0 && html.scrollHeight) scrollBy({ top: grew, behavior: 'instant' });
   };
+  // The kept ticket stays open until the fix or Dismiss, folding only when the visitor folds it;
+  // any other leaves three seconds after it opens (or after it is folded).
   const expand = (on: boolean) => {
     expanded = on;
     ticket.classList.toggle('is-expanded', on);
     chip.setAttribute('aria-expanded', String(on));
     window.clearTimeout(timer);
-    // a kept ticket folds back after three seconds; any other leaves after three
-    if (kept && on) timer = window.setTimeout(() => expand(false), SHOW_MS);
-    else if (!kept && wanted) timer = window.setTimeout(hide, SHOW_MS);
+    if (!kept && wanted) timer = window.setTimeout(hide, SHOW_MS);
     room();
   };
   const hide = () => {

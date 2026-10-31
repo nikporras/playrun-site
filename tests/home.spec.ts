@@ -392,7 +392,7 @@ test.describe('Home', () => {
     [768, 1000],
     [375, 780],
   ] as const) {
-    test(`the bug ticket (${width}px) docks by the scoreboard in one spot that never moves, hides or fades at any scroll position and covers nothing outside the game layer; the card folds into a chip that opens and closes it; the toast and the scoreboard's card open above it; Fixed, then gone; later ones for three seconds; Dismiss`, async ({ page, browser }) => {
+    test(`the bug ticket (${width}px) docks by the scoreboard in one spot that never moves, hides or fades at any scroll position and covers nothing outside the game layer; the first stays the full card until fixed or dismissed, folding only when the visitor folds it; the toast and the scoreboard's card open above it; Fixed, then gone; later ones for three seconds; Dismiss`, async ({ page, browser }) => {
       test.setTimeout(120_000);
       await page.setViewportSize({ width, height });
       await page.goto('/');
@@ -446,9 +446,20 @@ test.describe('Home', () => {
       });
       expect(ratios.length).toBeGreaterThanOrEqual(6);
       for (const r of ratios) expect(r.ratio, `${r.what} at AA`).toBeGreaterThanOrEqual(4.5);
-      // after three seconds the card folds into the chip, in the same spot
+      // the first ticket of a visit stays the full card (no folding on a timer)
       const first = await box();
-      await expect(chip).toHaveAttribute('aria-expanded', 'false', { timeout: 4000 });
+      await page.waitForTimeout(3600);
+      await expect(chip).toHaveAttribute('aria-expanded', 'true');
+      await expect(card).toBeVisible();
+      if (width >= 1024) {
+        // the card stacked above the chip and the pill, right-aligned with them
+        const c = (await card.boundingBox())!;
+        expect(c.y + c.height).toBeLessThanOrEqual(first.y + 1);
+        expect(Math.abs(c.x + c.width - (first.x + first.width))).toBeLessThanOrEqual(4);
+      }
+      // the visitor folds it into the chip, which never moves
+      await chip.click();
+      await expect(chip).toHaveAttribute('aria-expanded', 'false');
       await expect(card).toBeHidden();
       await page.waitForTimeout(500);
       const home = await box();
@@ -528,9 +539,11 @@ test.describe('Home', () => {
       await expect(panel).toBeVisible();
       expect(overlap((await panel.boundingBox())!, home), "the scoreboard's card above the chip").toBe(false);
       await page.keyboard.press('Escape');
+      // opened again, it stays open until folded
       await chip.click();
       await expect(card).toBeVisible();
-      await expect(chip).toHaveAttribute('aria-expanded', 'false', { timeout: 4000 });
+      await page.waitForTimeout(3600);
+      await expect(chip).toHaveAttribute('aria-expanded', 'true');
       // back to the top: the name is whole, Fixed for three seconds, then it goes; the visit is done
       await page.evaluate(() => window.scrollTo(0, 0));
       await expect(ticket).toContainText('Fixed', { timeout: 2500 });
@@ -566,6 +579,126 @@ test.describe('Home', () => {
       await fresh.close();
     });
   }
+
+  for (const [width, height] of [
+    [1440, 900],
+    [768, 1000],
+    [375, 780],
+  ] as const) {
+    test(`the scoreboard's card with the bug ticket docked (${width}px): it opens and closes on the pill, Escape and a click outside; Reset clears the progress at once; Games toggles; the ticket and the card never block each other's clicks`, async ({ browser }) => {
+      test.setTimeout(60_000);
+      const context = await browser.newContext({ viewport: { width, height }, hasTouch: width < 768 });
+      const page = await context.newPage();
+      // some progress to clear
+      await page.addInitScript(() => {
+        if (!sessionStorage.getItem('seeded')) {
+          localStorage.setItem('playrun.games', JSON.stringify({ on: true, bugs: ['hero-1', 'wall-1'], achievements: ['first-bug', 'selftest'] }));
+          sessionStorage.setItem('seeded', '1');
+        }
+      });
+      await page.goto('/');
+      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForTimeout(500);
+      const wallTop = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
+      await page.evaluate((y) => window.scrollTo(0, y), width < 768 ? Math.round(wallTop - height + 260) : 300);
+      const ticket = page.locator('.hero__ticket');
+      const chip = ticket.locator('[data-ticket-chip]');
+      await expect(ticket).toHaveClass(/is-in/);
+      await page.waitForTimeout(500);
+      const pill = page.getByRole('button', { name: /^Scoreboard/ });
+      const panel = page.locator('.score__panel');
+      const press = (l: typeof pill) => (width < 768 ? l.tap() : l.click());
+      // the pill opens it and closes it, with the pointer still on it
+      await press(pill);
+      await expect(panel).toBeVisible();
+      await expect(pill).toHaveAttribute('aria-expanded', 'true');
+      await press(pill);
+      await expect(panel).toBeHidden();
+      await expect(pill).toHaveAttribute('aria-expanded', 'false');
+      // Escape
+      await press(pill);
+      await expect(panel).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(panel).toBeHidden();
+      // a click (or a tap) anywhere outside, on the page or on the ticket
+      await press(pill);
+      await expect(panel).toBeVisible();
+      if (width < 768) await page.touchscreen.tap(width / 2, 120);
+      else await page.mouse.click(width / 2, 120);
+      await expect(panel).toBeHidden();
+      await press(pill);
+      await expect(panel).toBeVisible();
+      // the ticket is not under the card: its chip takes the click (and that closes the card)
+      const c = (await chip.boundingBox())!;
+      expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('[data-ticket-chip]') !== null, [c.x + c.width / 2, c.y + c.height / 2])).toBe(true);
+      const was = await chip.getAttribute('aria-expanded');
+      await press(chip);
+      await expect(chip).not.toHaveAttribute('aria-expanded', was!);
+      await expect(panel).toBeHidden();
+      // nothing lies over the card's buttons
+      await press(pill);
+      await expect(panel).toBeVisible();
+      for (const sel of ['[data-hud-toggle]', '[data-hud-reset]']) {
+        const b = (await page.locator(sel).boundingBox())!;
+        expect(await page.evaluate(([x, y, s]) => document.elementFromPoint(x as number, y as number)?.closest(s as string) !== null, [b.x + b.width / 2, b.y + b.height / 2, sel] as const), `${sel} takes the click`).toBe(true);
+      }
+      // Reset: bugs and achievements cleared, the card, the pill and the stored progress at once
+      await expect(page.locator('[data-panel-bugs]')).toHaveText('2');
+      await expect(page.locator('[data-hud-ach]')).toHaveText('2/4');
+      await press(page.locator('[data-hud-reset]'));
+      await expect(page.locator('[data-panel-bugs]')).toHaveText('0');
+      await expect(page.locator('[data-panel-ach]')).toHaveText('0');
+      await expect(page.locator('[data-hud-bugs]')).toHaveText('00');
+      await expect(page.locator('[data-hud-ach]')).toHaveText('0/4');
+      await expect(page.locator('.score__ach li.is-done')).toHaveCount(0);
+      expect(await page.evaluate(() => JSON.parse(localStorage.getItem('playrun.games')!))).toMatchObject({ bugs: [], achievements: [] });
+      await expect(panel, 'Reset keeps the card open').toBeVisible();
+      // Games off and on again
+      const toggle = page.locator('[data-hud-toggle]');
+      await press(toggle);
+      await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+      await expect(page.locator('html')).toHaveClass(/games-off/);
+      await press(toggle);
+      await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('html')).not.toHaveClass(/games-off/);
+      await context.close();
+    });
+  }
+
+  test("the first ticket's full card covers no content on a desktop: in the gutter where it fits (1920), and with room kept for it at the page's foot where it does not (1440)", async ({ browser }) => {
+    test.setTimeout(60_000);
+    for (const [width, height] of [
+      [1920, 1080],
+      [1440, 900],
+    ] as const) {
+      const context = await browser.newContext({ viewport: { width, height } });
+      const page = await context.newPage();
+      await page.goto('/');
+      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForTimeout(500);
+      await page.evaluate(() => window.scrollTo(0, 300));
+      const card = page.locator('.ticket__cardin');
+      await expect(card).toBeVisible();
+      await page.waitForTimeout(600);
+      const c = (await card.boundingBox())!;
+      const column = await page.locator('.level').first().evaluate((el) => innerWidth - parseFloat(getComputedStyle(el).paddingRight));
+      if (c.x >= column) {
+        // in the gutter: nothing of the page is ever under it
+        expect(width).toBe(1920);
+      } else {
+        // not in the gutter: the page keeps room for it at its foot, as the bar does
+        expect(width).toBe(1440);
+        await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+        await page.waitForTimeout(300);
+        const legal = (await page.locator('.footer__legal').boundingBox())!;
+        const now = (await card.boundingBox())!;
+        expect(legal.y + legal.height, 'the page ends above the card').toBeLessThanOrEqual(now.y);
+      }
+      await context.close();
+    }
+  });
 
   test("the hero's exit is triggered, not scrubbed: it plays for a fixed time (1.2 s down, 1 s back) whatever the scroll speed, holds still at the threshold, and draws nothing while the page scrolls between crossings", async ({ page }) => {
     test.setTimeout(60_000);
