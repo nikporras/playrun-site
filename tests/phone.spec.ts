@@ -22,7 +22,7 @@ test.describe("Home on a phone", () => {
       box!.y + box!.height,
       "the paragraph sits on the first screen above the HUD",
     ).toBeLessThanOrEqual(844 - hud);
-    await expect(page.locator(".hero").getByRole("link")).toHaveCount(0);
+    await expect(page.locator(".hero").getByRole("link")).toHaveText(["More about me"]);
 
     const heads = page.locator("[data-level] h1, [data-level] h2");
     const n = await heads.count();

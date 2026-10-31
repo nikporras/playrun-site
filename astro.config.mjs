@@ -11,7 +11,7 @@ const projectSlugs = readdirSync('./src/content/projects')
   .filter((f) => f.endsWith('.md'))
   .map((f) => f.replace(/\.md$/, ''));
 const projectRedirects = Object.fromEntries([...projectSlugs, 'the-climb'].map((slug) => [`/portfolio/${slug}`, '/portfolio/']));
-const redirects = { '/services': '/skills/', '/about': '/', '/credits': '/terms/#credits', ...projectRedirects };
+const redirects = { '/services': '/skills/', '/credits': '/terms/#credits', ...projectRedirects };
 
 // Every redirect page is written twice: as the folder Astro builds (/services/index.html) and as a
 // file beside it (/services.html). GitHub Pages serves the file for the old slash-free address, so
@@ -44,7 +44,7 @@ export default defineConfig({
       // Redirect pages are not pages; the addresses in the map carry the trailing slash.
       filter: (page) => {
         const path = new URL(page).pathname.replace(/\/$/, '');
-        return !/^\/portfolio\/./.test(path) && !['/services', '/about', '/credits'].includes(path);
+        return !/^\/portfolio\/./.test(path) && !['/services', '/credits'].includes(path);
       },
     }),
   ],

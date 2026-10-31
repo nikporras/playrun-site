@@ -59,7 +59,7 @@ test.describe('Home', () => {
     const tops = await page.locator('h1, .hero__post, .hero__value').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
     expect(tops).toEqual([...tops].sort((a, b) => a - b));
     await expect(page.locator('.hero__value')).toHaveText(
-      "I'm a game QA tester in London. I've been testing games since 2021, on consoles, PC and VR. I've led QA teams at nDreams and Historic VR, and taken games all the way to release on several platforms. I plan the testing, run it on real hardware, and write reports developers can act on.",
+      "I'm a game QA tester in London. I've been testing games since 2021, on consoles, PC and VR. I've led QA teams at nDreams and Historic VR, and taken games all the way to release on several platforms. I plan the testing, run it on real hardware, and write reports developers can act on. More about me",
     );
     await page.waitForLoadState('networkidle');
     expect(errors, errors.join('\n')).toEqual([]);
@@ -1278,7 +1278,8 @@ test.describe('Home', () => {
     const buttons = page.getByRole('link', { name: 'Get in touch' });
     await expect(buttons).toHaveCount(2);
     await expect(page.locator('header').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
-    await expect(page.locator('.hero').getByRole('link')).toHaveCount(0);
+    // (one text link only: More about me, at the end of the intro)
+    await expect(page.locator('.hero').getByRole('link')).toHaveText(['More about me']);
     await expect(page.locator('.hero button:not([data-bug])')).toHaveCount(0);
     await expect(page.locator('.final').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
     await expect(page.locator('footer').getByRole('link', { name: 'Get in touch' })).toHaveCount(0);

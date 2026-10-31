@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
  * Links that leave the site open in a new tab, hand nothing to the other site, and say so to
  * assistive tech. Links inside the site stay in the same tab.
  */
-const PAGES = ['/', '/skills/', '/portfolio/', '/contact/', '/quality/', '/privacy/', '/terms/', '/accessibility/'];
+const PAGES = ['/', '/skills/', '/portfolio/', '/contact/', '/quality/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
 const SITE = 'https://playrunqa.com';
 
 for (const path of PAGES) {

@@ -6,7 +6,7 @@ import { HtmlValidate } from 'html-validate';
  * compatible: the elements, their content and attributes, ids, the document's structure). The
  * subresource integrity rule is left out: every script and style is served from the site itself.
  */
-const PAGES = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+const PAGES = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
 const validator = new HtmlValidate({ extends: ['html-validate:standard', 'html-validate:document'], rules: { 'require-sri': 'off' } });
 
 for (const path of PAGES) {

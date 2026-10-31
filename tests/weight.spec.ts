@@ -13,6 +13,7 @@ const BUDGETS: Record<string, number> = {
   '/portfolio/': 200,
   '/quality/': 150,
   '/contact/': 150,
+  '/about/': 120,
   '/privacy/': 120,
   '/terms/': 120,
   '/accessibility/': 120,

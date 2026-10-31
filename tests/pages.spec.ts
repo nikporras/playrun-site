@@ -315,7 +315,7 @@ test('every card has a logo or its icon, the labels and one store button in a ne
   const sitemap = await (await request.get('/sitemap-0.xml')).text();
   expect(sitemap).toContain('/portfolio/<');
   expect(sitemap, 'no page per game in the map').not.toMatch(/\/portfolio\/[a-z0-9-]+/);
-  expect(sitemap).not.toContain('/about/');
+  expect(sitemap, 'the About page is a page again').toContain('/about/<');
 });
 
 test('every Skills paragraph is full first-person sentences, and the In practice items are readable labels', async ({ page }) => {
@@ -359,7 +359,7 @@ test('the skills jump list lands on each skill', async ({ page }) => {
 });
 
 test('the trailing-slash address is the one official form: every internal link answers 200 with no redirect, the canonical and og:url match it, the sitemap lists it, and a missing page is still the 404', { tag: ['@pages', '@links'] }, async ({ request, page }) => {
-  const routes = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/'];
+  const routes = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
   const seen = new Set<string>();
   for (const route of routes) {
     const res = await request.get(route, { maxRedirects: 0 });
@@ -398,13 +398,10 @@ test('the trailing-slash address is the one official form: every internal link a
   await expect(page.locator('header').getByRole('link', { name: 'Portfolio' })).toHaveAttribute('aria-current', 'page');
 });
 
-test('the old services, about and credits addresses send visitors on', { tag: ['@pages', '@links'] }, async ({ request, page }) => {
+test('the old services and credits addresses send visitors on', { tag: ['@pages', '@links'] }, async ({ request, page }) => {
   const services = await request.get('/services/');
   expect(services.status()).toBe(200);
   expect(await services.text()).toMatch(/http-equiv="refresh"[^>]*url=\/skills\//);
-  const about = await request.get('/about/');
-  expect(about.status()).toBe(200);
-  expect(await about.text()).toMatch(/http-equiv="refresh"[^>]*url=\/"?/);
   const credits = await request.get('/credits/');
   expect(credits.status()).toBe(200);
   expect(await credits.text()).toMatch(/http-equiv="refresh"[^>]*url=\/terms\/#credits/);
@@ -412,7 +409,7 @@ test('the old services, about and credits addresses send visitors on', { tag: ['
   expect(sitemap).not.toContain('/credits/');
   await page.goto('/');
   await expect(page.locator('footer').getByRole('link', { name: 'Credits' })).toHaveCount(0);
-  await expect(page.locator('footer').getByRole('link')).toContainText(['Home', 'Skills', 'Portfolio', 'Quality', 'Contact']);
+  await expect(page.locator('footer').getByRole('link')).toContainText(['Home', 'Skills', 'Portfolio', 'Quality', 'About', 'Contact']);
   expect(await page.locator('footer').getByRole('link', { name: 'Home' }).count(), 'Home once in the footer').toBe(1);
 });
 

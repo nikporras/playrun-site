@@ -12,7 +12,7 @@ import sharp from 'sharp';
  * The back layers drift with the scroll where scroll-driven animations exist, never under reduced
  * motion.
  */
-const PAGES = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+const PAGES = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
 const TEXT = 'main :is(p, li, dt, dd, h1, h2, h3, h4, a, button:not(.bug), img, picture, table, pre, input, textarea, label, .flag)';
 const CLEAR = 'rgba(0, 0, 0, 0)';
 

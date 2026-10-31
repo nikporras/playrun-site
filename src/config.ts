@@ -33,6 +33,10 @@ export type Role = { title: string; when: string; contract?: boolean; lead?: boo
 export type Employer = {
   id: string;
   name: string;
+  /** false for a post that was not game QA (left out of the studio lists, kept among the roles) */
+  games?: boolean;
+  /** what the current post is about, for the About page */
+  focus?: string;
   accent: 'green' | 'cyan' | 'blue' | 'light';
   roles: Role[];
   lead: string;
@@ -46,6 +50,7 @@ export const employers: Employer[] = [
   {
     id: 'aonic',
     name: 'Aonic',
+    focus: 'indie titles published by Megabit, from milestone builds to compliance, certification and release',
     accent: 'green',
     roles: [{ title: 'Senior Quality Assurance Tester', when: 'Jul 2026 to present' }],
     lead:
@@ -54,6 +59,7 @@ export const employers: Employer[] = [
   {
     id: 'hcltech',
     name: 'HCLTech',
+    games: false,
     accent: 'cyan',
     roles: [{ title: 'VR Robotics Operator, client Google DeepMind', when: 'Apr 2026 to Jul 2026', contract: true }],
     lead: 'Operated robots through VR teleoperation for an AI research project, following strict processes to produce clean, consistent data, and flagging issues with the robots, tools and workflows.',
@@ -108,6 +114,7 @@ export const nav = [
   { label: 'Skills', href: '/skills/' },
   { label: 'Portfolio', href: '/portfolio/' },
   { label: 'Quality', href: '/quality/' },
+  { label: 'About', href: '/about/' },
 ];
 
 // The one action. It appears in the nav, in the hero and at the end of Home, nowhere else.
@@ -144,3 +151,37 @@ export const vrPlatforms: { name: string; match: RegExp; text: string }[] = [
   { name: 'PS VR', match: /^PS VR$/, text: 'PlayStation VR, its Move controllers and the camera.' },
   { name: 'PS VR2', match: /PS VR2/, text: "PS VR2 on PS5, the Sense controllers and the console's own checks." },
 ];
+
+// What I bring: the tools, the languages and the education (Skills, the About page, the
+// structured data).
+export const tools = ['Jira and Confluence', 'TestRail', 'Unreal Engine: debugging, profiling, Blueprint', 'Agile and Scrum'];
+export const languages: { name: string; code: string; level: 'fluent' | 'intermediate' }[] = [
+  { name: 'Spanish', code: 'es', level: 'fluent' },
+  { name: 'English', code: 'en', level: 'fluent' },
+  { name: 'Chinese', code: 'zh', level: 'intermediate' },
+  { name: 'Portuguese', code: 'pt', level: 'intermediate' },
+  { name: 'Italian', code: 'it', level: 'intermediate' },
+];
+export const education = [
+  { school: 'Swinburne University of Technology', course: 'Diploma of Information Technology', when: '2017 to 2019', wikipedia: 'https://en.wikipedia.org/wiki/Swinburne_University_of_Technology' },
+  { school: 'South China Normal University', place: 'Guangzhou', course: 'Mandarin', when: '2015 to 2017', wikipedia: 'https://en.wikipedia.org/wiki/South_China_Normal_University' },
+];
+
+/** "a, b and c" */
+export const listed = (items: string[]) => (items.length < 2 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
+/** The languages by level: "Spanish and English, fluent; Chinese, Portuguese and Italian, intermediate" */
+export const languagesByLevel = () =>
+  (['fluent', 'intermediate'] as const).map((level) => `${listed(languages.filter((l) => l.level === level).map((l) => l.name))}, ${level}`);
+
+// The posts from the first to the latest, the game studios among them (each named once), and the
+// lead roles with their posts.
+export const postsOldestFirst = [...employers].reverse();
+export const studios = [...new Set(postsOldestFirst.filter((e) => e.games !== false).map((e) => e.name))];
+export const leadRoles = postsOldestFirst.flatMap((e) => e.roles.filter((r) => r.lead).map((r) => ({ ...r, at: e.name })));
+
+// A few of the best known titles, for the summary (a test checks each is a public title).
+export const credits = ['Cyberpunk 2077', 'NBA 2K21', 'Ghostbusters: Rise of the Ghost Lord', 'Synapse', "Lou's Lagoon"];
+
+// The shared summary in the third person: the About page, the Person in the structured data and
+// llms.txt. Built from the data above.
+export const summary = `${contact.name} is a game QA tester based in London. He has tested console, PC and VR games since ${since}, at ${listed(studios)}, and has led QA as ${listed(leadRoles.map((r) => `${r.title} at ${r.at}`))}. His credits include ${listed(credits)}. ${site.name}, at playrunqa.com, is his personal QA portfolio.`;

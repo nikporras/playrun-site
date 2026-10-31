@@ -16,9 +16,11 @@ interface Props {
   /** Full page title override (the home page uses the brand line). */
   fullTitle?: string;
   ogImage?: string;
+  /** false leaves out the game layer (the HUD, the scoreboard, the bugs): a page for reading */
+  games?: boolean;
 }
 
-const { title, description = site.description, fullTitle, ogImage = '/og.png' } = Astro.props;
+const { title, description = site.description, fullTitle, ogImage = '/og.png', games = true } = Astro.props;
 // A page's own title, then the person the site is about.
 const pageTitle = fullTitle ?? `${title} | ${contact.name}`;
 // The build writes a folder per page (/skills/index.html); the public address is the one with the
@@ -92,7 +94,7 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
     </main>
     <Footer />
     <TabBar />
-    <Hud />
+    {games && <Hud />}
     <script>
       // Section entrances: once, in reading order, with the stagger set per element in --enter-delay.
       // Nothing waits for anything else: whatever enters the screen shows.

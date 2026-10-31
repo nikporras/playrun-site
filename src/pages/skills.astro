@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import { platforms as basePlatforms, vrPlatforms } from '../config';
+import { education, languagesByLevel, platforms as basePlatforms, tools, vrPlatforms } from '../config';
 import Bug from '../components/Bug.astro';
 import Join from '../components/Join.astro';
 import PassMark from '../components/PassMark.astro';
@@ -41,10 +41,10 @@ const services = [
 
 // What I bring: the kit and the method, the languages and the education.
 const panels = [
-  { title: 'Tools', items: ['Jira and Confluence', 'TestRail', 'Unreal Engine: debugging, profiling, Blueprint', 'Agile and Scrum'] },
+  { title: 'Tools', items: tools },
   { title: 'How I work', items: ['A test plan the team can read before I start', 'Every pass on real hardware', 'Steps, severity, media and a build number on every bug', 'A quality report at each milestone'] },
-  { title: 'Languages', items: ['Spanish, fluent', 'English, fluent', 'Chinese, Portuguese and Italian, intermediate'] },
-  { title: 'Education', items: ['Swinburne University of Technology, Diploma in Information Technology, 2017 to 2019', 'South China Normal University, Guangzhou, Mandarin, 2015 to 2017'] },
+  { title: 'Languages', items: languagesByLevel() },
+  { title: 'Education', items: education.map((e) => [e.school, e.place, e.course, e.when].filter(Boolean).join(', ')) },
 ];
 
 const run = [
