@@ -604,29 +604,31 @@ p + p {
 .row__terms li:not(:last-child)::after {
   content: ',';
 }
+/* The arrival of a page's first screen: every line is there and readable on the very first paint;
+   the arrival only settles it into place with a small rise (transform only, never a hidden start). */
 @media (prefers-reduced-motion: no-preference) {
   .js .mask__line {
-    transform: translateY(105%);
-    animation: boot-line var(--dur-reveal) var(--ease-expo) forwards;
-    animation-delay: calc(120ms + var(--i, 0) * 110ms);
+    animation: boot-line var(--dur-reveal) var(--ease-expo) both;
+    animation-delay: calc(var(--i, 0) * 80ms);
   }
   .js [data-load] {
     animation: load-rise 500ms var(--ease-out) both;
-    animation-delay: var(--d, 0ms);
+    animation-delay: calc(var(--d, 0ms) / 4);
   }
 }
 @keyframes boot-line {
+  from {
+    transform: translateY(0.12em);
+  }
   to {
     transform: none;
   }
 }
 @keyframes load-rise {
   from {
-    opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(8px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }

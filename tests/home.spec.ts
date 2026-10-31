@@ -1277,6 +1277,47 @@ test.describe('Home', () => {
     }
   });
 
+  for (const [width, height] of [
+    [1440, 900],
+    [375, 780],
+  ] as const) {
+    test(`the hero is readable on the very first frame (${width}px): with a slow CPU the name, the post and the intro are on screen and opaque at once, and the photo loads first`, async ({ browser }) => {
+      const context = await browser.newContext({ viewport: { width, height } });
+      const page = await context.newPage();
+      const cdp = await context.newCDPSession(page);
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+      // what the first animation frame shows, read the moment the hero exists
+      await page.addInitScript(() => {
+        const w = window as unknown as { first: unknown };
+        const look = () => {
+          const lines = Array.from(document.querySelectorAll('.hero__line'));
+          const post = document.querySelector('.hero__post');
+          const value = document.querySelector('.hero__value');
+          if (lines.length < 2 || !post || !value) return requestAnimationFrame(look);
+          const inMask = lines.map((l) => {
+            const r = l.getBoundingClientRect();
+            const m = l.parentElement!.getBoundingClientRect();
+            return Math.max(0, Math.min(r.bottom, m.bottom) - Math.max(r.top, m.top)) / Math.max(1, r.height);
+          });
+          const opaque = [...lines, post, value].map((el) => {
+            let o = 1;
+            for (let n: Element | null = el; n; n = n.parentElement) o *= Number(getComputedStyle(n).opacity);
+            return o;
+          });
+          w.first = { inMask, opaque };
+        };
+        requestAnimationFrame(look);
+      });
+      await page.goto('/');
+      await expect.poll(() => page.evaluate(() => (window as unknown as { first?: unknown }).first !== undefined)).toBe(true);
+      const first = await page.evaluate(() => (window as unknown as { first: { inMask: number[]; opaque: number[] } }).first);
+      for (const k of first.inMask) expect(k, 'the name inside its mask on the first frame').toBeGreaterThanOrEqual(0.85);
+      for (const o of first.opaque) expect(o, 'no hidden start').toBe(1);
+      await expect(page.locator('.hero__figure img')).toHaveAttribute('fetchpriority', 'high');
+      await context.close();
+    });
+  }
+
   test('hero content is in the HTML before any script runs', { tag: ['@pages'] }, async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();

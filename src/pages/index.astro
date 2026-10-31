@@ -106,6 +106,7 @@ const checks = [
         fallbackFormat="webp"
         loading="eager"
         decoding="async"
+        fetchpriority="high"
       />
     </div>
     <Bug id="hero-1" style="left: 40%; top: 2rem" tablet="right: 6%; top: 8rem" walk="x 2rem" />
@@ -778,31 +779,32 @@ const checks = [
     }
   }
 
-  /* The boot: the one loud moment. Everything is in the HTML on the first frame; the sequence only
-     adds arrival and is over by 1.2s. The two name lines rise from their masks, the rest follows. */
+  /* The boot. Everything is in the HTML and visible on the very first paint: the name, the post,
+     the intro and the photo never start hidden or wait for a font or an animation. The arrival only
+     settles them into place with a small rise (transform only), over by about 0.8s. */
   @media (prefers-reduced-motion: no-preference) {
     :global(.js) .hero__line {
-      transform: translateY(105%);
-      animation: boot-line var(--dur-reveal) var(--ease-expo) forwards;
-      animation-delay: calc(260ms + var(--i) * 110ms);
+      animation: boot-line var(--dur-reveal) var(--ease-expo) both;
+      animation-delay: calc(var(--i) * 80ms);
     }
     :global(.js) .hero [data-load] {
       animation: load-rise 500ms var(--ease-out) both;
-      animation-delay: var(--d, 0ms);
+      animation-delay: calc(var(--d, 0ms) / 4);
     }
   }
   @keyframes boot-line {
+    from {
+      transform: translateY(0.12em);
+    }
     to {
       transform: none;
     }
   }
   @keyframes load-rise {
     from {
-      opacity: 0;
-      transform: translateY(12px);
+      transform: translateY(8px);
     }
     to {
-      opacity: 1;
       transform: none;
     }
   }
