@@ -9,8 +9,10 @@ import { contact, education, employers, languages, social, site, summary } from 
 
 export const PERSON = `${site.url}/#person`;
 export const WEBSITE = `${site.url}/#website`;
-// The day the site in its portfolio form was first published.
-const CREATED = '2026-10-27';
+// The day the site in its portfolio form was first published, and the build's own time: full
+// ISO 8601 date-times with a time zone, as rich results expect.
+const CREATED = '2026-10-27T00:00:00+00:00';
+const built = () => new Date().toISOString().replace(/\.\d{3}Z$/, '+00:00');
 
 const KNOWS_ABOUT = [
   'Video game quality assurance',
@@ -88,7 +90,7 @@ export function graph(o: { url: string; title: string; description: string; kind
     inLanguage: 'en-GB',
     isPartOf: { '@id': WEBSITE },
     about: { '@id': PERSON },
-    ...(home ? { mainEntity: { '@id': PERSON }, dateCreated: CREATED, dateModified: new Date().toISOString().slice(0, 10) } : {}),
+    ...(home ? { mainEntity: { '@id': PERSON }, dateCreated: CREATED, dateModified: built() } : {}),
   };
   const nodes: object[] = [
     person(o.image),

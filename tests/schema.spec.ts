@@ -50,12 +50,25 @@ for (const path of PAGES) {
     expect(pageNode.description).toBe(await page.locator('meta[name="description"]').getAttribute('content'));
     expect(pageNode).toMatchObject({ isPartOf: { '@id': 'https://playrunqa.com/#website' }, about: { '@id': 'https://playrunqa.com/#person' } });
     if (path === '/') {
-      expect(pageNode).toMatchObject({ mainEntity: { '@id': 'https://playrunqa.com/#person' }, dateCreated: '2026-10-27' });
-      expect(pageNode.dateModified).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(pageNode).toMatchObject({ mainEntity: { '@id': 'https://playrunqa.com/#person' }, dateCreated: '2026-10-27T00:00:00+00:00' });
+      expect(pageNode.dateModified, 'the build time, a full date-time with its zone').toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$/);
+      expect(Number.isNaN(Date.parse(String(pageNode.dateModified)))).toBe(false);
       expect(of('BreadcrumbList')).toHaveLength(0);
     } else {
       const [crumbs] = of('BreadcrumbList');
       expect((crumbs.itemListElement as Node[]).map((i) => i.item)).toEqual(['https://playrunqa.com/', `https://playrunqa.com${path}`]);
+    }
+    // every date in the graph is a full date-time with a zone, but a role's start and end (year or year-month)
+    const dates: [string, string][] = [];
+    const walk = (v: unknown, key = '') => {
+      if (Array.isArray(v)) v.forEach((x) => walk(x, key));
+      else if (v && typeof v === 'object') Object.entries(v).forEach(([k, x]) => walk(x, k));
+      else if (/^date|Date$/.test(key)) dates.push([key, String(v)]);
+    };
+    walk(graph);
+    for (const [k, v] of dates) {
+      if (k === 'startDate' || k === 'endDate') expect(v, k).toMatch(/^\d{4}(-\d{2})?$/);
+      else expect(v, k).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/);
     }
     // a person and a portfolio only (the studios appear only inside the roles)
     expect(graph.filter((n) => n['@type'] === 'Organization'), 'no organisation node').toHaveLength(0);
