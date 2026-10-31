@@ -305,7 +305,8 @@ test('every card has a logo or its icon, the labels and one store button in a ne
   await page.mouse.move(0, 0);
   await store.focus();
   await expect.poll(() => store.evaluate((el) => getComputedStyle(el, '::before').backgroundColor)).toBe('rgb(103, 193, 140)');
-  expect(await store.evaluate((el) => [getComputedStyle(el).color, getComputedStyle(el, '::after').opacity, getComputedStyle(el, '::after').boxShadow])).toEqual(['rgb(12, 21, 42)', '1', expect.stringContaining('rgb(12, 21, 42)')]);
+  // (polled: the colours ease in)
+  await expect.poll(() => store.evaluate((el) => [getComputedStyle(el).color, getComputedStyle(el, '::after').opacity, getComputedStyle(el, '::after').boxShadow])).toEqual(['rgb(12, 21, 42)', '1', expect.stringContaining('rgb(12, 21, 42)')]);
   // the old pages are gone from the build and the sitemap; their addresses send visitors to the portfolio
   for (const slug of ['lous-lagoon', 'synapse', 'cyberpunk-2077', 'the-climb', 'pathfinder-abomination-vaults']) {
     const res = await request.get(`/portfolio/${slug}/`);

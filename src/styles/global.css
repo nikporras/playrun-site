@@ -535,6 +535,9 @@ p + p {
   max-width: 60ch;
   text-wrap: pretty;
 }
+.level__lead--wide {
+  max-width: none; /* (a longer lead: the whole column, so it still fits two lines) */
+}
 .level__actions {
   display: flex;
   align-items: center;
