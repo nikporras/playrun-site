@@ -927,6 +927,20 @@ const checks = [
       scrollbar-color: var(--accent-2) var(--bg);
     }
   }
+  /* (the same with motion off from the switch) */
+  :global(.motion-off) .ticker__copy,
+  :global(.motion-off) .ticker__pause {
+    display: none;
+  }
+  :global(.motion-off) .ticker__view {
+    overflow-x: auto;
+    scrollbar-color: var(--accent-2) var(--bg);
+  }
+  /* with motion off the hero is not pinned: it scrolls away as under reduced motion */
+  :global(.motion-off) .hero {
+    position: relative;
+    top: auto;
+  }
   /* A title with no clean official logo: its name set in Pixel Operator at the logos' height. */
   .wall__word {
     font-family: var(--font-display);
@@ -1365,7 +1379,8 @@ const checks = [
 <script>
   import { startBreak } from '../scripts/break';
   import { checks as engine } from '../scripts/checks';
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  import { reducedMotion } from '../scripts/motion';
+  const reduce = reducedMotion();
   startBreak();
 
   // The curtain: the hero is pinned while the next level slides over it. A hero taller than the
@@ -1451,7 +1466,8 @@ const checks = [
     };
     // A tap rests it a moment, then it carries on.
     let touchedUntil = 0;
-    const resting = () => hovered || focused || paused || !seen || performance.now() < touchedUntil;
+    // (motion off from the switch: a still drum)
+    const resting = () => hovered || focused || paused || !seen || performance.now() < touchedUntil || reducedMotion();
     const tick = () => {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {

@@ -165,6 +165,9 @@ test.describe('Home', () => {
   test('on a phone the bottom bar covers nothing: the last button and the footer end above it and the ship, the achievement toast rises above it, and it is there without script and under reduced motion', async ({ page, browser }) => {
     await page.setViewportSize({ width: 375, height: 780 });
     await page.goto('/');
+    // (once the page has laid out: a page that opens past the headline shows no ticket)
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(400);
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     // (passing the headline docks the bug ticket's strip on the bar; the page grows by it)
     await expect(page.locator('.hero__ticket')).toHaveClass(/is-in/);

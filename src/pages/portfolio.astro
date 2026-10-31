@@ -233,12 +233,13 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
 </style>
 
 <script>
+  import { reducedMotion } from '../scripts/motion';
   // The folded list on a phone: each company's cards are rows, one open at a time (the first to
   // begin with). A tap on a row opens its card and folds the one that was open; the row stays under
   // the finger while the cards above it fold. Once open, a card that runs off the screen is brought
   // into view, and the games script is told to look at it (the scan plays on an open card only).
   const phone = matchMedia('(max-width: 47.99rem)');
-  const still = matchMedia('(prefers-reduced-motion: reduce)');
+  const still = { get matches() { return reducedMotion(); } };
   const FOLD_MS = 280;
   document.querySelectorAll<HTMLElement>('.group__grid').forEach((list) => {
     const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-card]'));

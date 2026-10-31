@@ -96,13 +96,14 @@ import Join from '../components/Join.astro';
 </style>
 
 <script>
+  import { reducedMotion } from '../scripts/motion';
   // Continue? 10, 9, 8 ... then Home. Any key, any focus, or Stay here stops it. Not started under
   // reduced motion, and the page is a plain link home without script.
   const num = document.querySelector<HTMLElement>('[data-count]');
   const stay = document.querySelector<HTMLButtonElement>('[data-stay]');
   const note = document.querySelector<HTMLElement>('[data-count-note]');
   const cont = document.querySelector<HTMLAnchorElement>('[data-continue]');
-  if (num && stay && note && cont && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (num && stay && note && cont && !reducedMotion()) {
     let n = 10;
     let timer = 0;
     const stop = () => {

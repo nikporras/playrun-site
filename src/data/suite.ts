@@ -52,6 +52,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'games.spec.ts': ['The games', 'The track, the runner, the bug hunt and the achievements by mouse, touch and keyboard, and off under reduced motion.'],
   'home.spec.ts': ['Home', 'Loads clean, the bottom bar on a phone, the curtain, the headline break, the wall, the stats, three widths, axe, the self test.'],
   'links.spec.ts': ['Links', 'Links that leave the site open a new tab and say so. Internal links stay.'],
+  'motion.spec.ts': ['The Motion switch', 'On by default and following the device; off stills the site (no drift, no headline break, a still drum, no scan) and is remembered.'],
   'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, stacked level headers, labels that read, no stale facts, and passes axe.'],
   'portfolio.spec.ts': ['The Portfolio journey', 'The year on the track as you scroll, each header and card landing once from the laser, nothing under reduced motion.'],
   'phone.spec.ts': ['Home on a phone', 'A real device profile: nothing clipped, the hero on the first screen, the pages and the scoreboard in the bottom bar.'],

@@ -1053,3 +1053,16 @@ html:not(.games) .bug {
     transform: none;
   }
 }
+
+/* Motion off (the switch in the header, or the device asking for reduced motion before the visitor
+   chose): the site behaves as under reduced motion. Nothing animates or eases (the joins keep their
+   shapes and stop drifting), and the page scrolls without smoothing. */
+html.motion-off {
+  scroll-behavior: auto;
+}
+.motion-off *,
+.motion-off *::before,
+.motion-off *::after {
+  animation: none !important;
+  transition: none !important;
+}

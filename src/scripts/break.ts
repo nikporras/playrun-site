@@ -77,7 +77,8 @@ export function startBreak() {
   if (!ctx) return;
   const html = document.documentElement;
   const phone = matchMedia('(max-width: 47.99rem)');
-  const off = () => html.classList.contains('games-off');
+  // (the games off, or motion off from the switch: the hero simply goes behind)
+  const off = () => html.classList.contains('games-off') || html.classList.contains('motion-off');
   const dpr = Math.min(2, devicePixelRatio || 1);
 
   // ---- The pixels

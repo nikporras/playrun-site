@@ -6,6 +6,8 @@
  * Markup: [data-deck] > .deck__pin > (the level head, then .deck__stage > .deck__card*), each card
  * with --i (its index) and --tilt (its angle). A jump to a card's id lands where it is dealt.
  */
+import { reducedMotion, onMotionChange } from './motion';
+
 export function startDeck() {
   const deck = document.querySelector<HTMLElement>('[data-deck]');
   if (!deck) return;
@@ -13,7 +15,6 @@ export function startDeck() {
   const stage = deck.querySelector<HTMLElement>('.deck__stage');
   if (!stage || cards.length < 2) return;
   const wide = matchMedia('(min-width: 64rem)');
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const ease = (k: number) => 1 - Math.pow(1 - k, 3);
   const steps = cards.length - 1;
   let on = false;
@@ -34,7 +35,7 @@ export function startDeck() {
     });
   };
   const apply = () => {
-    on = wide.matches && !reduce.matches;
+    on = wide.matches && !reducedMotion();
     deck.classList.toggle('is-deck', on);
     if (!on) cards.forEach((c) => c.style.removeProperty('--e'));
     measure();
@@ -58,7 +59,7 @@ export function startDeck() {
     scrub();
   });
   wide.addEventListener('change', apply);
-  reduce.addEventListener('change', apply);
+  onMotionChange(apply);
   document.fonts?.ready.then(() => {
     measure();
     scrub();

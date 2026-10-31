@@ -809,6 +809,7 @@ Attachments: [screenshot or video]</pre>
 </style>
 
 <script>
+  import { reducedMotion } from '../scripts/motion';
   import { checks, errorsSinceLoad, kb, timings, type Result } from '../scripts/checks';
   import { startDeck } from '../scripts/deck';
   startDeck();
@@ -823,7 +824,7 @@ Attachments: [screenshot or video]</pre>
     });
   });
 
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduce = reducedMotion();
   const steps = Array.from(document.querySelectorAll<HTMLElement>('.step'));
   const status = document.getElementById('run-status');
   const runAll = document.getElementById('run-all') as HTMLButtonElement | null;

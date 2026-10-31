@@ -3,6 +3,8 @@
  * All of it is optional play. It is off under prefers-reduced-motion, off with the Games button,
  * absent without script, and the page underneath never depends on it.
  */
+import { reducedMotion } from './motion';
+
 type State = { on: boolean; bugs: string[]; achievements: string[] };
 
 const KEY = 'playrun.games';
@@ -319,7 +321,7 @@ export function startGames() {
     }, bolt ? SHOT_MS : SCAN_MS);
   };
   const consider = () => {
-    if (shooting || !state.on || hud.classList.contains('hud--off') || speed > 0.6) return;
+    if (shooting || !state.on || hud.classList.contains('hud--off') || speed > 0.6 || reducedMotion()) return;
     const mid = innerHeight / 2;
     // the cards wholly on screen whose centre sits in the middle band, grouped by row
     const rows = new Map<number, { card: HTMLElement; left: number; d: number }[]>();

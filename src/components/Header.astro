@@ -7,9 +7,17 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
 ---
 
 <header class="header wrap">
-  <a class="header__brand" href="/" aria-label={`${site.name} home`}>
-    <Lockup class="header__lockup" aria-hidden="true" role="presentation" />
-  </a>
+  <div class="header__start">
+    <a class="header__brand" href="/" aria-label={`${site.name} home`}>
+      <Lockup class="header__lockup" aria-hidden="true" role="presentation" />
+    </a>
+    <!-- Motion on or off for this site (with script; it follows the device's setting until set) -->
+    <button type="button" class="motion" aria-pressed="true" data-motion>
+      <span class="motion__label">Motion</span>
+      <span class="motion__state" aria-hidden="true"><span class="motion__on">On</span><span class="motion__off">Off</span></span>
+      <span class="visually-hidden" data-motion-note></span>
+    </button>
+  </div>
 
   <nav class="header__nav" aria-label="Site">
     <ul role="list" class="header__links">
@@ -97,4 +105,76 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
       display: none;
     }
   }
+  .header__start {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+  }
+  /* The Motion switch: a small HUD toggle, its state in green (on) or muted (off). */
+  .motion {
+    display: none;
+    align-items: center;
+    gap: 0.5em;
+    min-height: 2.75rem;
+    padding: 0 0.75rem;
+    border: 2px solid var(--surface-2);
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  :global(.js) .motion {
+    display: inline-flex;
+  }
+  .motion:hover {
+    border-color: var(--accent-2);
+  }
+  .motion:focus-visible {
+    outline-offset: 2px;
+  }
+  .motion__state {
+    min-width: 2.25em;
+    padding: 0.2em 0.4em;
+    background: var(--accent);
+    color: var(--pr-navy);
+    text-align: center;
+  }
+  .motion__off,
+  .motion[aria-pressed='false'] .motion__on {
+    display: none;
+  }
+  .motion[aria-pressed='false'] .motion__off {
+    display: inline;
+  }
+  .motion[aria-pressed='false'] .motion__state {
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+  .motion[aria-disabled='true'] {
+    cursor: not-allowed;
+  }
 </style>
+
+<script>
+  import { reducedMotion, setMotion, onMotionChange } from '../scripts/motion';
+  const button = document.querySelector<HTMLButtonElement>('[data-motion]');
+  const note = button?.querySelector<HTMLElement>('[data-motion-note]');
+  const device = matchMedia('(prefers-reduced-motion: reduce)');
+  if (button && note) {
+    const show = () => {
+      button.setAttribute('aria-pressed', String(!reducedMotion()));
+      // the device's own setting wins: the switch shows it and cannot turn motion back on
+      button.setAttribute('aria-disabled', String(device.matches));
+      note.textContent = device.matches ? ', off by your device setting' : '';
+    };
+    button.addEventListener('click', () => {
+      if (device.matches) return;
+      setMotion(reducedMotion());
+    });
+    onMotionChange(show);
+    show();
+  }
+</script>
