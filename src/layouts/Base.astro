@@ -8,6 +8,9 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Hud from '../components/Hud.astro';
 import TabBar from '../components/TabBar.astro';
+import { getImage } from 'astro:assets';
+import portrait from '../assets/photos/nicolas.png';
+import { graph, type PageKind } from '../data/schema';
 import { contact, site } from '../config';
 
 interface Props {
@@ -18,15 +21,25 @@ interface Props {
   ogImage?: string;
   /** false leaves out the game layer (the HUD, the scoreboard, the bugs): a page for reading */
   games?: boolean;
+  /** The kind of page in the structured data (Home is the ProfilePage, About the AboutPage) */
+  kind?: PageKind;
+  /** About's questions and answers, for its FAQPage */
+  faq?: { q: string; a: string }[];
+  /** false leaves the structured data out (the 404) */
+  structured?: boolean;
 }
 
-const { title, description = site.description, fullTitle, ogImage = '/og.png', games = true } = Astro.props;
+const { title, description = site.description, fullTitle, ogImage = '/og.png', games = true, kind = 'WebPage', faq, structured = true } = Astro.props;
 // A page's own title, then the person the site is about.
 const pageTitle = fullTitle ?? `${title} | ${contact.name}`;
 // The build writes a folder per page (/skills/index.html); the public address is the one with the
 // trailing slash (/skills/), which is what the canonical link and the share address carry.
 const canonical = new URL(Astro.url.pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, '/').replace(/([^/])$/, '$1/'), Astro.site);
 const ogUrl = new URL(ogImage, Astro.site);
+// The structured data: the person, the site and this page (src/data/schema.ts). The person's image
+// is the hero photo.
+const photo = await getImage({ src: portrait, width: 800, format: 'jpeg' });
+const ld = structured ? graph({ url: canonical.href, title: pageTitle, description, kind, crumb: title, image: new URL(photo.src, Astro.site).href, faq }) : null;
 // Routes that exist in this build. The live link checks only test links to these, so pages that
 // are not built yet never count as failures; new pages join the list the moment they are built.
 const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
@@ -42,6 +55,7 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {ld && <script is:inline type="application/ld+json" set:html={JSON.stringify(ld)} />}
     <meta name="theme-color" content={site.themeColor} />
     <meta name="color-scheme" content="dark" />
     <meta name="playrun-routes" content={JSON.stringify(builtRoutes)} />

@@ -64,6 +64,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'phone.spec.ts': ['Home on a phone', 'A real device profile: nothing clipped, the hero on the first screen, the pages and the scoreboard in the bottom bar.'],
   'pocket.spec.ts': ['Pocket DevTools', 'On a phone: the phone steps instead of the computer ones, and the console, the requests and the timings from the page itself.'],
   'quality.spec.ts': ['The guided test run', 'Five live steps, the report, the template, the phone steps and Pocket DevTools, without script and under reduced motion.'],
+  'schema.spec.ts': ['Structured data', 'One valid JSON-LD graph a page: the person with every role, the site, the page and its breadcrumb, a FAQ on About, none on the 404.'],
   'selection.spec.ts': ['Selectable text', 'A drag selects a paragraph on every page and the highlight reads on every field.'],
 };
 

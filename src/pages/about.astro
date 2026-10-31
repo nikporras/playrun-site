@@ -18,6 +18,8 @@ const { summary, facts, qa, linkedin } = await about();
   fullTitle={`About ${contact.name}, game QA tester in London`}
   description={`${contact.name} is a game QA tester in London. Key facts and short answers about his roles, the games he has tested, VR, tools and languages.`}
   games={false}
+  kind="AboutPage"
+  faq={qa}
 >
   <section class="level level--navy level--sky has-join-bottom about" data-level="1" aria-labelledby="about-title">
     <div class="level__head">
