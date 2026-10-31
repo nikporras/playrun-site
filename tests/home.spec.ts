@@ -392,7 +392,7 @@ test.describe('Home', () => {
     [768, 1000],
     [375, 780],
   ] as const) {
-    test(`the bug ticket (${width}px) docks by the scoreboard in one spot that never moves, hides or fades at any scroll position and covers nothing outside the game layer; the first stays the full card until fixed or dismissed, folding only when the visitor folds it; the toast and the scoreboard's card open above it; Fixed, then gone; later ones for three seconds; Dismiss`, async ({ page, browser }) => {
+    test(`the bug ticket (${width}px) docks by the scoreboard in one spot that never moves, hides or fades at any scroll position and covers nothing outside the game layer; the first shows the card for four seconds and then the pulsing chip until fixed or dismissed; the toast and the scoreboard's card open above it; Fixed, then gone; later ones for three seconds; Dismiss`, async ({ page, browser }) => {
       test.setTimeout(120_000);
       await page.setViewportSize({ width, height });
       await page.goto('/');
@@ -446,21 +446,21 @@ test.describe('Home', () => {
       });
       expect(ratios.length).toBeGreaterThanOrEqual(6);
       for (const r of ratios) expect(r.ratio, `${r.what} at AA`).toBeGreaterThanOrEqual(4.5);
-      // the first ticket of a visit stays the full card (no folding on a timer)
+      // the first ticket of a visit: the full card for four seconds (none of these widths fits it in
+      // the gutter), then folded into the chip, which stays, pulsing, and never moves
       const first = await box();
-      await page.waitForTimeout(3600);
-      await expect(chip).toHaveAttribute('aria-expanded', 'true');
-      await expect(card).toBeVisible();
       if (width >= 1024) {
         // the card stacked above the chip and the pill, right-aligned with them
         const c = (await card.boundingBox())!;
         expect(c.y + c.height).toBeLessThanOrEqual(first.y + 1);
         expect(Math.abs(c.x + c.width - (first.x + first.width))).toBeLessThanOrEqual(4);
       }
-      // the visitor folds it into the chip, which never moves
-      await chip.click();
-      await expect(chip).toHaveAttribute('aria-expanded', 'false');
+      await page.waitForTimeout(3300);
+      await expect(chip, 'the card for four seconds').toHaveAttribute('aria-expanded', 'true');
+      await expect(chip).toHaveAttribute('aria-expanded', 'false', { timeout: 2000 });
       await expect(card).toBeHidden();
+      await expect(ticket, 'folded, not gone').toHaveClass(/is-in/);
+      expect(await chip.evaluate((el) => getComputedStyle(el, '::after').animationName), 'a gentle pulse while it is still open').toBe('chip-pulse');
       await page.waitForTimeout(500);
       const home = await box();
       expect(home, 'folding never moves the chip').toEqual(first);
@@ -539,11 +539,13 @@ test.describe('Home', () => {
       await expect(panel).toBeVisible();
       expect(overlap((await panel.boundingBox())!, home), "the scoreboard's card above the chip").toBe(false);
       await page.keyboard.press('Escape');
-      // opened again, it stays open until folded
+      // opened again, it folds again after four seconds
       await chip.click();
       await expect(card).toBeVisible();
-      await page.waitForTimeout(3600);
+      expect(await chip.evaluate((el) => getComputedStyle(el, '::after').animationName), 'no pulse while open').toBe('none');
+      await page.waitForTimeout(3300);
       await expect(chip).toHaveAttribute('aria-expanded', 'true');
+      await expect(chip).toHaveAttribute('aria-expanded', 'false', { timeout: 2000 });
       // back to the top: the name is whole, Fixed for three seconds, then it goes; the visit is done
       await page.evaluate(() => window.scrollTo(0, 0));
       await expect(ticket).toContainText('Fixed', { timeout: 2500 });
@@ -666,7 +668,7 @@ test.describe('Home', () => {
     });
   }
 
-  test("the first ticket's full card covers no content on a desktop: in the gutter where it fits (1920), and with room kept for it at the page's foot where it does not (1440)", async ({ browser }) => {
+  test("the first ticket's full card covers no content on a desktop: it stays open where it fits the gutter (1920), and folds into the chip in the gutter where it does not (1440), with no room kept for the card", async ({ browser }) => {
     test.setTimeout(60_000);
     for (const [width, height] of [
       [1920, 1080],
@@ -680,24 +682,58 @@ test.describe('Home', () => {
       await page.waitForTimeout(500);
       await page.evaluate(() => window.scrollTo(0, 300));
       const card = page.locator('.ticket__cardin');
+      const chip = page.locator('[data-ticket-chip]');
       await expect(card).toBeVisible();
       await page.waitForTimeout(600);
-      const c = (await card.boundingBox())!;
       const column = await page.locator('.level').first().evaluate((el) => innerWidth - parseFloat(getComputedStyle(el).paddingRight));
-      if (c.x >= column) {
-        // in the gutter: nothing of the page is ever under it
-        expect(width).toBe(1920);
+      const c = (await card.boundingBox())!;
+      await page.waitForTimeout(4400);
+      if (width === 1920) {
+        expect(c.x, 'the card in the gutter').toBeGreaterThanOrEqual(column);
+        await expect(chip, 'and it stays open').toHaveAttribute('aria-expanded', 'true');
       } else {
-        // not in the gutter: the page keeps room for it at its foot, as the bar does
-        expect(width).toBe(1440);
-        await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
-        await page.waitForTimeout(300);
-        const legal = (await page.locator('.footer__legal').boundingBox())!;
-        const now = (await card.boundingBox())!;
-        expect(legal.y + legal.height, 'the page ends above the card').toBeLessThanOrEqual(now.y);
+        expect(c.x, 'the card does not fit the gutter').toBeLessThan(column);
+        await expect(chip, 'so it folds').toHaveAttribute('aria-expanded', 'false');
+        expect((await chip.boundingBox())!.x, 'the chip in the gutter').toBeGreaterThanOrEqual(column);
       }
+      // the room at the foot is the chip's only, never the card's
+      const pad = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ticket-pad')));
+      expect(pad).toBeLessThan(80);
       await context.close();
     }
+  });
+
+  test('Reset on the scoreboard starts the bug ticket over: after it, the next break shows the first-time ticket again', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.addInitScript(() => {
+      if (!sessionStorage.getItem('seeded')) {
+        sessionStorage.setItem('playrun.ticket', 'done');
+        sessionStorage.setItem('seeded', '1');
+      }
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(500);
+    const ticket = page.locator('.hero__ticket');
+    // the visit has had its first ticket: this one is a three-second one
+    await page.evaluate(() => window.scrollTo(0, 300));
+    await expect(ticket).toHaveClass(/is-in/);
+    await expect(ticket).not.toHaveClass(/is-kept/);
+    await page.getByRole('button', { name: /^Scoreboard/ }).click();
+    await page.locator('[data-hud-reset]').click();
+    expect(await page.evaluate(() => sessionStorage.getItem('playrun.ticket'))).toBeNull();
+    await page.keyboard.press('Escape');
+    // back up and down again: the first-time ticket, kept until the fix
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(page.locator('.hero__break')).toBeHidden({ timeout: 2500 });
+    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 4500 });
+    await page.evaluate(() => window.scrollTo(0, 300));
+    await expect(ticket).toHaveClass(/is-in/);
+    await expect(ticket).toHaveClass(/is-kept/);
+    await page.waitForTimeout(5500);
+    await expect(ticket, 'still there, folded into the chip').toHaveClass(/is-in/);
   });
 
   test("the hero's exit is triggered, not scrubbed: it plays for a fixed time (1.2 s down, 1 s back) whatever the scroll speed, holds still at the threshold, and draws nothing while the page scrolls between crossings", async ({ page }) => {

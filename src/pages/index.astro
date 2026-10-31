@@ -556,6 +556,34 @@ const checks = [
     font-size: 0.6875rem;
     padding: 0.15em 0.35em;
   }
+  /* Folded but still open: a gentle pulse, a cyan ring breathing round the chip (opacity only). */
+  .ticket__chip {
+    position: relative;
+  }
+  .ticket__chip::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-shadow:
+      inset 0 0 0 2px var(--pr-cyan),
+      0 0 10px 1px var(--pr-cyan);
+    opacity: 0;
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__ticket.is-kept:not(.is-expanded) .ticket__chip::after {
+      animation: chip-pulse 1.8s ease-in-out infinite;
+    }
+  }
+  @keyframes chip-pulse {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    50% {
+      opacity: 0.9;
+    }
+  }
   .ticket__chipsep,
   .ticket__chiphint,
   .ticket__close--strip {
