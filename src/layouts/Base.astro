@@ -11,6 +11,7 @@ import TabBar from '../components/TabBar.astro';
 import { getImage } from 'astro:assets';
 import portrait from '../assets/photos/nicolas.png';
 import ogCard from '../assets/og-card.png';
+import headScript from '../scripts/head-inline.js?raw';
 import { graph, type PageKind } from '../data/schema';
 import { contact, site } from '../config';
 
@@ -57,6 +58,7 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
@@ -97,21 +99,7 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
     <link rel="preload" href="/fonts/PixelOperator.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={montserrat400} as="font" type="font/woff2" crossorigin />
 
-    <script is:inline>
-      document.documentElement.classList.add('js');
-      // Motion: the visitor's choice from the switch, or the device's setting (before the first paint)
-      (function () {
-        var off = matchMedia('(prefers-reduced-motion: reduce)').matches;
-        try {
-          var v = localStorage.getItem('playrun.motion');
-          if (v === 'off') off = true;
-        } catch (e) {}
-        if (off) document.documentElement.classList.add('motion-off');
-      })();
-      window.__playrunErrors = [];
-      addEventListener('error', (e) => window.__playrunErrors.push(String(e.message || e)));
-      addEventListener('unhandledrejection', (e) => window.__playrunErrors.push(String(e.reason || e)));
-    </script>
+    <script is:inline set:html={headScript} />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
