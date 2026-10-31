@@ -74,7 +74,7 @@ jobs:
         run: |
           test -s tests/results/run.json || { echo "::error::tests/results/run.json is missing: the Home scoreboard and the Quality page need the test job's run"; exit 1; }
           node -e "const r=require('./tests/results/run.json'); if(!r.stats||!r.suites?.length){console.error('::error::run.json has no run in it'); process.exit(1)}"
-      - uses: withastro/action@v3
+      - uses: withastro/action@v6
         with:
           node-version: 24
           package-manager: npm@latest
