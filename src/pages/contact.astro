@@ -81,17 +81,17 @@ const steps = [
       >
         <div class="form__row">
           <label class="form__label" for="f-name">Your name</label>
-          <input class="form__input" id="f-name" name="name" type="text" autocomplete="name" required aria-describedby="e-name" />
+          <input class="form__input" id="f-name" name="name" type="text" autocomplete="name" maxlength="120" required aria-describedby="e-name" />
           <p class="form__error" id="e-name" hidden>Tell me who to reply to.</p>
         </div>
         <div class="form__row">
           <label class="form__label" for="f-email">Your email</label>
-          <input class="form__input" id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="e-email" />
+          <input class="form__input" id="f-email" name="email" type="email" autocomplete="email" maxlength="254" required aria-describedby="e-email" />
           <p class="form__error" id="e-email" hidden>I need a working email address to reply to.</p>
         </div>
         <div class="form__row">
           <label class="form__label" for="f-message">Your message</label>
-          <textarea class="form__input form__input--area" id="f-message" name="message" rows="7" required aria-describedby="e-message"
+          <textarea class="form__input form__input--area" id="f-message" name="message" rows="7" maxlength="5000" required aria-describedby="e-message"
           ></textarea>
           <p class="form__error" id="e-message" hidden>A line or two is enough.</p>
         </div>
@@ -566,7 +566,9 @@ const steps = [
           status.textContent = fieldErrors.length === 1 ? 'One field needs a look.' : fieldErrors.length + ' fields need a look.';
           fieldErrors[0].focus();
         } else if (errors.includes('rate_limited')) {
-          status.textContent = "You've just sent a message, give it a minute.";
+          // the script's limit per minute or per day: the message stays in the form, and email is the way round
+          status.textContent = 'Too many messages right now, please try again in a few minutes, or email me directly.';
+          offerMail();
         } else {
           throw new Error(errors.join(','));
         }

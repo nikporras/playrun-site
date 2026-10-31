@@ -97,13 +97,28 @@ test.describe('Contact', () => {
     await expect(page.locator('#f-message')).toBeFocused();
   });
 
-  test('a rate limit asks for a minute', async ({ page }) => {
+  test('a rate limit (per minute or per day) says so kindly, keeps the message and offers email instead', async ({ page }) => {
     await answer(page, { ok: false, errors: ['rate_limited'] });
     await page.goto('/contact/');
     await fillValid(page);
     await page.getByRole('button', { name: 'Send the message' }).click();
-    await expect(page.locator('#form-status')).toHaveText("You've just sent a message, give it a minute.");
+    await expect(page.locator('#form-status')).toHaveText('Too many messages right now, please try again in a few minutes, or email me directly.');
     await expect(page.locator('#f-name')).toBeVisible();
+    await expect(page.locator('#f-message')).toHaveValue('Hello from the test suite.');
+    await expect(page.locator('[data-fallback-link]')).toBeVisible();
+    await expect(page.locator('[data-fallback-link]')).toHaveAttribute('href', /^mailto:studio@playrunqa\.com\?subject=.*Hello%20from%20the%20test%20suite/);
+  });
+
+  test('every field stops at the length the script accepts (name 120, email 254, message 5000)', async ({ page }) => {
+    await page.goto('/contact/');
+    for (const [id, max] of [['#f-name', 120], ['#f-email', 254], ['#f-message', 5000]] as const) {
+      await expect(page.locator(id)).toHaveAttribute('maxlength', String(max));
+      // a visitor typing past the limit stops at it
+      await page.locator(id).fill('');
+      await page.locator(id).focus();
+      await page.keyboard.insertText('a'.repeat(max + 10));
+      expect((await page.locator(id).inputValue()).length, id).toBe(max);
+    }
   });
 
   test('a server error or a network failure keeps the mail fallback', async ({ page }) => {
