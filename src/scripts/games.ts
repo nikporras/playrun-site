@@ -480,6 +480,8 @@ export function startGames() {
   // Controls. The pill opens the card and closes it (a tap, a click or Enter); Escape and a click
   // or tap anywhere outside the scoreboard (the bug ticket docked beside it included) close it too.
   const open = (on: boolean) => {
+    // (the bug ticket docked below folds first, so the card never moves under the pointer)
+    if (on) document.dispatchEvent(new CustomEvent('playrun:scoreopen'));
     score.classList.toggle('is-open', on);
     pill.setAttribute('aria-expanded', String(on));
   };

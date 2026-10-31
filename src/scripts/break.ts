@@ -439,6 +439,15 @@ export function startBreak() {
     expand(true);
   }
   chip.addEventListener('click', () => expand(!expanded));
+  // the scoreboard's card opening above: fold the ticket's card now, so nothing moves later
+  document.addEventListener('playrun:scoreopen', () => {
+    if (!wanted || !expanded) return;
+    // (at once, no fold animation: the card above must not slide)
+    ticket.classList.add('is-snap');
+    expand(false);
+    void ticket.offsetHeight;
+    requestAnimationFrame(() => ticket.classList.remove('is-snap'));
+  });
   for (const d of dismissButtons)
     d.addEventListener('click', () => {
       markSeen();
