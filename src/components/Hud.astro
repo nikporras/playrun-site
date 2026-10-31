@@ -15,7 +15,7 @@ import PassMark from './PassMark.astro';
 ---
 
 <div class="hud" id="hud" hidden>
-  <ol class="hud__levels" aria-hidden="true"></ol>
+  <ol class="hud__levels" aria-label="Levels"></ol>
   <div class="hud__runner" aria-hidden="true" data-dir="1">
     <div class="hud__ship"><Sprite name="ship" /></div>
   </div>
@@ -164,6 +164,29 @@ import PassMark from './PassMark.astro';
   .hud__levels :global(li.is-past) {
     color: var(--accent);
   }
+  /* Each marker is a button that jumps to its level: at least 24px to hit on the bar, 44px on the
+     rail where there is room. */
+  .hud__levels :global(.hud__jump) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    cursor: pointer;
+  }
+  .hud__levels :global(.hud__jump:hover) {
+    color: var(--accent-2);
+  }
+  .hud__levels :global(.hud__jump:focus-visible) {
+    outline: 2px solid var(--accent-2);
+    outline-offset: 1px;
+  }
+
   .hud__runner {
     position: absolute;
     left: 0;
@@ -563,6 +586,7 @@ import PassMark from './PassMark.astro';
     }
     .hud__runner {
       bottom: 100%;
+      pointer-events: none; /* (it rides over the markers: they take the tap) */
     }
     .dock,
     .dock.dock--off {
@@ -655,6 +679,12 @@ import PassMark from './PassMark.astro';
       padding: 2px 3px;
       background: var(--bg);
       outline: 1px solid color-mix(in srgb, var(--pr-light) 35%, var(--pr-navy));
+    }
+    /* (44px tall; as wide as the gutter allows, never into the column) */
+    .hud__levels :global(.hud__jump) {
+      min-width: max(1.5rem, min(2.75rem, calc(var(--margin) - var(--track-w) - 0.75rem)));
+      min-height: 2.75rem;
+      justify-content: flex-start;
     }
     .hud__levels :global(li)::after {
       box-shadow:

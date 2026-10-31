@@ -325,3 +325,52 @@ test.describe('The tap hint', () => {
     }
   });
 });
+
+test.describe('Jump markers', () => {
+  for (const [width, height, hit] of [
+    [1440, 900, 44],
+    [768, 1000, 24],
+    [375, 780, 24],
+  ] as const) {
+    test(`at ${width}px the level markers on the track are buttons that jump to their level, named for it, at least ${hit}px to hit, with a visible focus`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto('/');
+      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+      const jumps = page.locator('.hud__levels .hud__jump');
+      await expect(jumps).toHaveCount(4);
+      const names = await jumps.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')));
+      expect(names).toEqual(["Jump to Level 2: Games I've tested", 'Jump to Level 3: The score so far', 'Jump to Level 4: Tested like my games', 'Jump to Level 5: After hours']);
+      const column = await page.locator('.level').first().evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft));
+      for (const b of await jumps.evaluateAll((els) => els.map((el) => el.getBoundingClientRect()))) {
+        expect(b.height).toBeGreaterThanOrEqual(hit);
+        expect(b.width).toBeGreaterThanOrEqual(24);
+        // on the rail: as wide as the gutter allows, never into the column
+        if (width >= 1024) expect(b.right).toBeLessThanOrEqual(column);
+      }
+      // a jump: Level 4's top comes to the top of the screen and its heading takes focus
+      await page.getByRole('button', { name: /^Jump to Level 4/ }).click();
+      await expect.poll(() => page.evaluate(() => Math.round(document.querySelector('[data-level="4"]')!.getBoundingClientRect().top)), { timeout: 3000 }).toBeLessThanOrEqual(2);
+      await expect(page.locator('#proof-title')).toBeFocused();
+      // the keyboard reaches them with a ring
+      await jumps.first().focus();
+      await page.keyboard.press('Shift+Tab');
+      await page.keyboard.press('Tab');
+      await expect(jumps.first()).toBeFocused();
+      expect(await jumps.first().evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
+    });
+  }
+
+  test('with motion off the jump is instant; on the Portfolio the markers are years named for their post', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.getByRole('button', { name: /^Jump to Level 5/ }).click();
+    const at = await page.evaluate(() => Math.round(document.querySelector('[data-level="5"]')!.getBoundingClientRect().top));
+    expect(Math.abs(at), 'there at once').toBeLessThanOrEqual(2);
+    await page.goto('/portfolio/');
+    const names = await page.locator('.hud__levels .hud__jump').evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')));
+    // (the rail shows two digits: the name carries them and the year)
+    expect(names[0]).toBe('Jump to ’26 (2026): Aonic');
+    expect(names[names.length - 1]).toBe('Jump to ’21 (2021): Universally Speaking');
+  });
+});

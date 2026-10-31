@@ -453,14 +453,25 @@ export function startGames() {
     sectionTops = sections.map(top);
     markTops = marks.map((m) => top(m.el));
     yearTops = yearEls.map(top);
+    // Each marker is a button that jumps to its level (or, on the Portfolio, its year's first post).
     levelsList.replaceChildren(
       ...marks.map((m, i) => {
         const li = document.createElement('li');
         li.style.setProperty('--at', String(Math.min(1, markTops[i] / range)));
+        const jump = document.createElement('button');
+        jump.type = 'button';
+        jump.className = 'hud__jump';
+        const name = titleOf(m.el);
+        // The upright rail has room for two digits: a year shows its last two there, and its name
+        // carries what it shows ('26) as well as the year.
+        const short = vertical.matches && m.label.length > 2;
+        const what = yearMarks.length ? (short ? `’${m.label.slice(-2)} (${m.label})` : m.label) : `Level ${m.label}`;
+        jump.setAttribute('aria-label', `Jump to ${what}${name ? `: ${name}` : ''}`);
         const text = document.createElement('span');
-        // The upright rail has room for two digits: a year shows its last two there.
-        text.textContent = vertical.matches && m.label.length > 2 ? m.label.slice(-2) : m.label;
-        li.append(text);
+        text.textContent = short ? m.label.slice(-2) : m.label;
+        jump.append(text);
+        jump.addEventListener('click', () => jumpTo(m.el, markTops[i]));
+        li.append(jump);
         return li;
       }),
     );
@@ -472,6 +483,22 @@ export function startGames() {
     panelLevelStat.hidden = sections.length === 0;
     lastP = -1;
   };
+  // A level's title, from the heading that names it.
+  function titleOf(el: HTMLElement) {
+    const id = el.getAttribute('aria-labelledby');
+    const heading = id ? document.getElementById(id) : el.querySelector('h1, h2, h3');
+    return (heading?.textContent ?? '').replace(/\s+/g, ' ').trim();
+  }
+  // The jump: to the level's top (smoothly, at once with motion off), then focus on its heading.
+  function jumpTo(el: HTMLElement, top: number) {
+    scrollTo({ top, behavior: reducedMotion() ? 'instant' : 'smooth' });
+    const id = el.getAttribute('aria-labelledby');
+    const heading = (id ? document.getElementById(id) : el.querySelector('h1, h2, h3')) as HTMLElement | null;
+    if (heading) {
+      if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+      heading.focus({ preventScroll: true });
+    }
+  }
   let lastY = scrollY;
   let lastP = -1;
   let moveTimer = 0;
