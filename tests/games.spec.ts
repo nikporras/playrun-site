@@ -339,7 +339,7 @@ test.describe('Jump markers', () => {
       const jumps = page.locator('.hud__levels .hud__jump');
       await expect(jumps).toHaveCount(4);
       const names = await jumps.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')));
-      expect(names).toEqual(["Jump to Level 2: Games I've tested", 'Jump to Level 3: The score so far', 'Jump to Level 4: Tested like my games', 'Jump to Level 5: After hours']);
+      expect(names).toEqual(["Jump to Level 2: Games I've tested", 'Jump to Level 3: My game QA career in numbers', 'Jump to Level 4: This site, tested like my games', 'Jump to Level 5: After hours']);
       const column = await page.locator('.level').first().evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft));
       for (const b of await jumps.evaluateAll((els) => els.map((el) => el.getBoundingClientRect()))) {
         expect(b.height).toBeGreaterThanOrEqual(hit);

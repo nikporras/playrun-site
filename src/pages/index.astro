@@ -86,13 +86,13 @@ const checks = [
       <p class="flag" data-load style="--d: 0ms"><span>Level 1 &middot; Start</span></p>
       <div class="hero__name">
         <h1 id="hero-title" class="hero__title">
-          <span class="hero__mask"><span class="hero__line" style="--i: 0">Nicolás</span></span>
+          <span class="hero__mask"><span class="hero__line" style="--i: 0">Nicolás</span></span>{' '}
           <span class="hero__mask"><span class="hero__line" style="--i: 1">Porras</span></span>
         </h1>
       </div>
       <p class="hero__post" data-load style="--d: 400ms">{playrun.role}, {site.name}</p>
       <p class="hero__value" data-load style="--d: 500ms">
-        I've been testing games since 2021, on consoles, PC and VR. I've led QA teams at nDreams and Historic VR, and
+        I'm a game QA tester in London. I've been testing games since 2021, on consoles, PC and VR. I've led QA teams at nDreams and Historic VR, and
         taken games all the way to release on several platforms. I plan the testing, run it on real hardware, and
         write reports developers can act on.
       </p>
@@ -209,7 +209,7 @@ const checks = [
     <div class="stats__grid">
       <div class="level__head stats__head">
         <p class="flag" data-enter><span>Level 3 &middot; Stats</span></p>
-        <h2 id="stats-title" class="level__title stats__title" data-enter="wipe">The score so far</h2>
+        <h2 id="stats-title" class="level__title stats__title" data-enter="wipe">My game QA career in numbers</h2>
         <p class="level__lead" data-enter style="--enter-delay: 80ms">Counted from the portfolio, so they stay right as it grows.</p>
       </div>
       <div class="drum level__body" data-drum data-count={stats.length} role="group" aria-labelledby="stats-title" data-enter style="--enter-delay: 120ms">
@@ -256,7 +256,7 @@ const checks = [
     <Join kind="terrain" from="var(--field-green)" to="var(--field-light)" seed="home-final" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 4 &middot; Proof</span></p>
-      <h2 id="proof-title" class="level__title" data-enter="wipe">Tested like my games</h2>
+      <h2 id="proof-title" class="level__title" data-enter="wipe">This site, tested like my games</h2>
       <p class="level__lead" data-enter style="--enter-delay: 80ms">
         A Playwright suite runs on every push, and the site deploys only if it passes. Run the same kind of checks on this page now.
       </p>
@@ -306,7 +306,7 @@ const checks = [
         })
       }
     </div>
-    <Bug id="proof-1" style="right: 12%; top: 10rem" tablet="right: 20%; top: 0.75rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <Bug id="proof-1" style="right: 12%; top: 1.5rem" tablet="right: 20%; top: 0.75rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
   <!-- Level 5: after hours, and the one last button -->

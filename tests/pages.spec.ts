@@ -12,7 +12,7 @@ const PAGES = [
       'Functional testing',
       'Bug reporting',
       'GOG',
-      'What I bring',
+      'Tools, methods, languages and education',
       'TestRail',
       'Swinburne University of Technology',
       'I test the same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the requirements of Steam, Epic Games Store and GOG. Each platform and store has its own rules, so I check them before submission, not after a rejection.',
@@ -459,4 +459,14 @@ test('the built site is a portfolio, offers no work, links to no repository and 
     if (file.replace(/\\/g, '/').endsWith('/portfolio/index.html')) portfolio = text;
   }
   for (const t of titles) expect(portfolio, t).toContain(t);
+});
+
+test('every h1 reads with its words apart in the HTML, as it does on screen (the two-line titles included)', { tag: ['@pages'] }, async ({ page }) => {
+  for (const path of ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/']) {
+    await page.goto(path);
+    const h1 = await page.locator('h1').evaluate((el) => ({ text: (el.textContent ?? '').replace(/\s+/g, ' ').trim(), seen: (el as HTMLElement).innerText.replace(/\s+/g, ' ').trim() }));
+    expect(h1.text, `${path}: the h1 in the HTML`).toBe(h1.seen);
+  }
+  await page.goto('/');
+  await expect(page.locator('h1')).toHaveText('Nicolás Porras');
 });

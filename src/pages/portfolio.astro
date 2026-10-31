@@ -39,7 +39,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     <div class="level__head">
       <p class="flag" data-load style="--d: 0ms"><span>Portfolio</span></p>
       <h1 id="work-title" class="page__title">
-        <span class="mask"><span class="mask__line" style="--i: 0">Games I've</span></span>
+        <span class="mask"><span class="mask__line" style="--i: 0">Games I've</span></span>{' '}
         <span class="mask"><span class="mask__line" style="--i: 1">tested</span></span>
       </h1>
       <p class="work__lead statement" data-load style="--d: 360ms">
@@ -55,7 +55,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     <Join kind="terrain" from="var(--field-cyan)" to="var(--field-green)" seed="portfolio-next" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 2 &middot; By company</span></p>
-      <h2 id="titles-title" class="level__title" data-enter="wipe">Where I tested them</h2>
+      <h2 id="titles-title" class="level__title" data-enter="wipe">Games I've tested, by studio</h2>
       <p class="level__lead" data-enter style="--enter-delay: 80ms">Newest first. Every card has one button, to the game's store page, in a new tab.</p>
     </div>
     <div class="level__body">
@@ -110,7 +110,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
       }
     </div>
     <Bug id="portfolio-2" style="right: 10%; bottom: 0.75rem" walk="x -2rem" />
-    <Bug id="portfolio-3" style="right: 8%; top: 10rem" tablet="left: 45%; top: 0.75rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <Bug id="portfolio-3" style="right: 8%; top: 1.5rem" tablet="left: 45%; top: 0.75rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
   <!-- Level 3: a short way on -->
@@ -118,7 +118,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="portfolio-foot" />
     <div class="level__head">
       <p class="flag" data-enter><span>Level 3 &middot; Next</span></p>
-      <h2 id="next-title" class="level__title level__title--small" data-enter="wipe">How I test</h2>
+      <h2 id="next-title" class="level__title level__title--small" data-enter="wipe">How I test games, and this site</h2>
       <p class="level__lead" data-enter style="--enter-delay: 80ms">The skills behind the titles, and the suite that tests this site.</p>
       <div class="level__actions" data-enter style="--enter-delay: 160ms">
         <a class="button button--navy" href="/skills/">See the skills</a>
