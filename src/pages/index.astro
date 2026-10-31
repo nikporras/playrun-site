@@ -60,6 +60,9 @@ const stats = [
 ];
 
 const ALT = 'Nicolás Porras wearing a VR headset pushed up on his head';
+// For the description: the lead roles counted from the data, in words.
+const leadRoles = employers.flatMap((e) => e.roles).filter((r) => r.lead).length;
+const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 
 // The run that built this page. GitHub Actions builds only after the suite has passed, so the
 // numbers on the board are that run's. Local builds carry no run.
@@ -79,7 +82,11 @@ const checks = [
 ];
 ---
 
-<Base title="Home" fullTitle={`${site.name}, the game QA portfolio of Nicolás Porras, London`}>
+<Base
+  title="Home"
+  fullTitle={`${contact.name}, Game QA Tester in London | ${site.name}`}
+  description={`Game QA portfolio of ${contact.name} in London: testing console, PC and VR games since ${since}, from compliance (CQA) to release, including ${numberWords[leadRoles]} QA lead roles.`}
+>
   <!-- Level 1: the start screen. It stays pinned while the next level slides up over it. -->
   <section class="level level--navy level--sky hero" data-level="1" aria-labelledby="hero-title">
     <div class="level__head hero__head">

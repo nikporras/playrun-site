@@ -8,7 +8,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Hud from '../components/Hud.astro';
 import TabBar from '../components/TabBar.astro';
-import { site } from '../config';
+import { contact, site } from '../config';
 
 interface Props {
   title: string;
@@ -19,7 +19,8 @@ interface Props {
 }
 
 const { title, description = site.description, fullTitle, ogImage = '/og.png' } = Astro.props;
-const pageTitle = fullTitle ?? `${title} | ${site.name}, ${site.tagline}`;
+// A page's own title, then the person the site is about.
+const pageTitle = fullTitle ?? `${title} | ${contact.name}`;
 // The build writes a folder per page (/skills/index.html); the public address is the one with the
 // trailing slash (/skills/), which is what the canonical link and the share address carry.
 const canonical = new URL(Astro.url.pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, '/').replace(/([^/])$/, '$1/'), Astro.site);

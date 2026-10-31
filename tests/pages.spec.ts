@@ -470,3 +470,36 @@ test('every h1 reads with its words apart in the HTML, as it does on screen (the
   await page.goto('/');
   await expect(page.locator('h1')).toHaveText('Nicolás Porras');
 });
+
+test('every page has its own title and description, the same in the og and Twitter tags, and no "test experts" suffix', { tag: ['@pages'] }, async ({ page }) => {
+  const expected: Record<string, [string, string]> = {
+    '/': ['Nicolás Porras, Game QA Tester in London | PlayRun', 'Game QA portfolio of Nicolás Porras in London: testing console, PC and VR games since 2021, from compliance (CQA) to release, including two QA lead roles.'],
+    '/skills/': ['Game QA skills and how I test | Nicolás Porras', 'How Nicolás Porras tests games: functional and regression testing, platform compliance on Switch, Xbox and PS5, performance, playtesting and bug reports.'],
+    '/portfolio/': ["Games I've tested, QA portfolio | Nicolás Porras", "The 20 games Nicolás Porras has tested since 2021, from Cyberpunk 2077 and NBA 2K21 to VR titles at nDreams and Historic VR, with his part in each."],
+    '/quality/': ['How I test: a live QA run on this page | Nicolás Porras', 'A five step QA run you can watch on this page: smoke, responsive, accessibility, links and performance checks, plus a bug report template.'],
+    '/contact/': ['Contact | Nicolás Porras, game QA tester', 'Get in touch with Nicolás Porras, a game QA tester in London, about networking, opportunities, a game QA question or just to say hello.'],
+    '/privacy/': ['Privacy notice | Nicolás Porras', ''],
+    '/terms/': ['Terms of use | Nicolás Porras', ''],
+    '/accessibility/': ['Accessibility | Nicolás Porras', ''],
+    '/this-page-is-not-in-the-build/': ['Game over | Nicolás Porras', ''],
+  };
+  for (const [path, [title, description]] of Object.entries(expected)) {
+    await page.goto(path);
+    await expect(page).toHaveTitle(title);
+    const meta = await page.evaluate(() => {
+      const c = (sel: string) => document.querySelector(sel)?.getAttribute('content') ?? '';
+      return { description: c('meta[name="description"]'), ogTitle: c('meta[property="og:title"]'), ogDescription: c('meta[property="og:description"]'), twTitle: c('meta[name="twitter:title"]'), twDescription: c('meta[name="twitter:description"]') };
+    });
+    if (description) expect(meta.description, path).toBe(description);
+    expect(meta.description.length, `${path}: a description`).toBeGreaterThan(40);
+    expect(meta.ogTitle).toBe(title);
+    expect(meta.twTitle).toBe(title);
+    expect(meta.ogDescription).toBe(meta.description);
+    expect(meta.twDescription).toBe(meta.description);
+    for (const text of [title, meta.description, meta.ogTitle, meta.twTitle]) expect(text, `${path}: no old suffix`).not.toMatch(/test experts/i);
+  }
+  // the counts in the descriptions come from the data
+  await page.goto('/portfolio/');
+  const cards = await page.locator('.card').count();
+  expect(expected['/portfolio/'][1]).toContain(`The ${cards} games`);
+});
