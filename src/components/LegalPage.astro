@@ -21,7 +21,7 @@ const updatedText = new Date(updated).toLocaleDateString('en-GB', { day: 'numeri
 
 <Base title={title} description={description}>
   <section class="level level--navy level--sky has-join-bottom legal" data-level="1" aria-labelledby="legal-title">
-    <p class="flag" data-load style="--d: 0ms"><span>{kicker}</span></p>
+    <p class="flag" data-nosnippet data-load style="--d: 0ms"><span>{kicker}</span></p>
     <div class="legal__head">
       <h1 id="legal-title" class="page__title legal__title">
         <span class="mask"><span class="mask__line" style="--i: 0">{title}</span></span>
@@ -36,7 +36,7 @@ const updatedText = new Date(updated).toLocaleDateString('en-GB', { day: 'numeri
 
   <section class="level level--blue has-join-bottom legal__body" data-level="2" aria-label={`${title}, the details`}>
     <Join kind="terrain" from="var(--field-blue)" to="var(--field-green)" seed={`legal-ask-${title}`} />
-    <p class="flag" data-enter><span>Level 2 &middot; The details</span></p>
+    <p class="flag" data-nosnippet data-enter><span>Level 2 &middot; The details</span></p>
     <div class="legal__rows rows">
       <slot />
     </div>
@@ -45,7 +45,7 @@ const updatedText = new Date(updated).toLocaleDateString('en-GB', { day: 'numeri
   <section class="level level--green has-join-bottom legal__ask" data-level="3" aria-labelledby="legal-ask-title">
     <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed={`legal-foot-${title}`} />
     <div class="level__head">
-      <p class="flag" data-enter><span>Level 3 &middot; Questions</span></p>
+      <p class="flag" data-nosnippet data-enter><span>Level 3 &middot; Questions</span></p>
       <h2 id="legal-ask-title" class="level__title" data-enter="wipe">Questions about this page</h2>
       <p class="level__lead" data-enter style="--enter-delay: 80ms">
         {legal.controller}{legal.address ? `, ${legal.address}` : `, ${contact.location}`}.

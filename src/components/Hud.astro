@@ -14,7 +14,7 @@ import Sprite from './Sprite.astro';
 import PassMark from './PassMark.astro';
 ---
 
-<div class="hud" id="hud" hidden>
+<div class="hud" id="hud" data-nosnippet hidden>
   <ol class="hud__levels" aria-label="Levels"></ol>
   <div class="hud__runner" aria-hidden="true" data-dir="1">
     <div class="hud__ship"><Sprite name="ship" /></div>
@@ -38,7 +38,7 @@ import PassMark from './PassMark.astro';
   </div>
 </div>
 
-<div class="dock" id="dock" hidden>
+<div class="dock" id="dock" data-nosnippet hidden>
   <!-- The toast, Steam style: slides in above the scoreboard, leaves the same way. -->
   <div class="toast" role="status" aria-live="polite" data-toast>
     <div class="toast__icon" aria-hidden="true"><PassMark class="toast__mark" /></div>

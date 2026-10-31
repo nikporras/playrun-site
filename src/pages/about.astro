@@ -23,7 +23,7 @@ const { summary, facts, qa, linkedin } = await about();
 >
   <section class="level level--navy level--sky has-join-bottom about" data-level="1" aria-labelledby="about-title">
     <div class="level__head">
-      <p class="flag"><span>About</span></p>
+      <p class="flag" data-nosnippet><span>About</span></p>
       <h1 id="about-title" class="page__title about__title">About {contact.name}</h1>
       <p class="about__summary statement">{summary}</p>
     </div>
@@ -33,7 +33,7 @@ const { summary, facts, qa, linkedin } = await about();
   <section class="level level--blue has-join-bottom" data-level="2" aria-labelledby="facts-title">
     <Join kind="terrain" from="var(--field-blue)" to="var(--field-green)" seed="about-answers" />
     <div class="level__head">
-      <p class="flag"><span>Level 2 &middot; Facts</span></p>
+      <p class="flag" data-nosnippet><span>Level 2 &middot; Facts</span></p>
       <h2 id="facts-title" class="level__title">Key facts</h2>
     </div>
     <table class="facts level__body">
@@ -58,7 +58,7 @@ const { summary, facts, qa, linkedin } = await about();
   <section class="level level--green has-join-bottom" data-level="3" aria-labelledby="qa-title">
     <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="about-foot" />
     <div class="level__head">
-      <p class="flag"><span>Level 3 &middot; Questions</span></p>
+      <p class="flag" data-nosnippet><span>Level 3 &middot; Questions</span></p>
       <h2 id="qa-title" class="level__title">Questions and answers</h2>
     </div>
     <div class="qa level__body">

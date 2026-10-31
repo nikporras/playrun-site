@@ -41,10 +41,11 @@ export default defineConfig({
   integrations: [
     redirectTwins,
     sitemap({
-      // Redirect pages are not pages; the addresses in the map carry the trailing slash.
+      // Redirect pages are not pages, and llms.txt is for machines; the addresses in the map carry
+      // the trailing slash.
       filter: (page) => {
         const path = new URL(page).pathname.replace(/\/$/, '');
-        return !/^\/portfolio\/./.test(path) && !['/services', '/credits'].includes(path);
+        return !/^\/portfolio\/./.test(path) && !['/services', '/credits', '/llms.txt'].includes(path);
       },
     }),
   ],

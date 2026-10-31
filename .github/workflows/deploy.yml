@@ -88,3 +88,18 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  indexnow:
+    name: Tell IndexNow what changed
+    needs: deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # (a report only: a search engine being down never fails the deploy)
+    continue-on-error: true
+    steps:
+      - name: Post the sitemap's addresses to IndexNow
+        run: |
+          urls=$(curl -fsS https://playrunqa.com/sitemap-0.xml | grep -o '<loc>[^<]*</loc>' | sed 's/<[^>]*>//g' | jq -R . | jq -s -c .) || { echo "Could not read the sitemap"; exit 0; }
+          body=$(jq -n --argjson urls "$urls" '{host: "playrunqa.com", key: "ba54fe2b9837ad645217daed2d1f84dd", keyLocation: "https://playrunqa.com/ba54fe2b9837ad645217daed2d1f84dd.txt", urlList: $urls}')
+          status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST https://api.indexnow.org/indexnow -H 'Content-Type: application/json; charset=utf-8' -d "$body") || status=error
+          echo "IndexNow answered $status for $(echo "$urls" | jq length) addresses"

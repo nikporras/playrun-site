@@ -55,6 +55,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'credits.spec.ts': ['Credits', 'Every typeface, tool and sprite is credited, and the page passes axe.'],
   'games.spec.ts': ['The games', 'The track, the runner, the bug hunt and the achievements by mouse, touch and keyboard, and off under reduced motion.'],
   'home.spec.ts': ['Home', 'Loads clean, the bottom bar on a phone, the curtain, the headline break, the wall, the stats, three widths, axe, the self test.'],
+  'indexing.spec.ts': ['Search and AI access', 'robots.txt welcomes the AI crawlers and disallows nothing, the IndexNow key and step, llms.txt and its pages, snippets kept to the content.'],
   'links.spec.ts': ['Links', 'Links that leave the site open a new tab and say so. Internal links stay.'],
   'motion.spec.ts': ['The Motion switch', 'On by default and following the device; off stills the site (no drift, no headline break, a still drum, no scan) and is remembered.'],
   'validity.spec.ts': ['Valid HTML', 'Every page as the server sends it passes html-validate, offline: elements, content, attributes, ids and the document.'],

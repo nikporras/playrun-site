@@ -7,7 +7,7 @@ import Join from '../components/Join.astro';
 <Base title="Game over" structured={false} description="This page is not in the build. Continuing takes you back to the start.">
   <section class="level level--green has-join-bottom gameover" data-level="1" aria-labelledby="gameover-title">
     <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="gameover" />
-    <p class="flag"><span>Error 404</span></p>
+    <p class="flag" data-nosnippet><span>Error 404</span></p>
     <div class="gameover__body">
       <h1 id="gameover-title" class="gameover__title">Game over</h1>
       <p class="gameover__count" aria-live="polite">

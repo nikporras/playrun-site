@@ -91,7 +91,7 @@ const checks = [
   <!-- Level 1: the start screen. It stays pinned while the next level slides up over it. -->
   <section class="level level--navy level--sky hero" data-level="1" aria-labelledby="hero-title">
     <div class="level__head hero__head">
-      <p class="flag" data-load style="--d: 0ms"><span>Level 1 &middot; Start</span></p>
+      <p class="flag" data-nosnippet data-load style="--d: 0ms"><span>Level 1 &middot; Start</span></p>
       <div class="hero__name">
         <h1 id="hero-title" class="hero__title">
           <span class="hero__mask"><span class="hero__line" style="--i: 0">Nicolás</span></span>{' '}
@@ -127,7 +127,7 @@ const checks = [
   <canvas class="hero__break" aria-hidden="true" hidden></canvas>
   <!-- (the script docks it with the scoreboard: above the pill on a desktop, in the bar on a tablet,
        on the bar's top edge on a phone) -->
-  <div class="hero__ticket" hidden>
+  <div class="hero__ticket" data-nosnippet hidden>
     <div class="ticket__card" id="ticket-card">
       <div class="ticket__cardin">
         <div class="ticket__body" aria-hidden="true">
@@ -169,7 +169,7 @@ const checks = [
     <Join kind="clouds" at="top" from="var(--pr-navy)" to="var(--field-blue)" seed="home-wall" />
     <Join kind="terrain" from="var(--field-blue)" to="var(--pr-navy)" seed="home-stats" />
     <div class="level__head">
-      <p class="flag" data-enter><span>Level 2 &middot; Portfolio</span></p>
+      <p class="flag" data-nosnippet data-enter><span>Level 2 &middot; Portfolio</span></p>
       <h2 id="wall-title" class="level__title wall__title" data-enter="wipe">Games I've tested</h2>
     </div>
     <div class="ticker level__body" data-ticker data-enter style="--enter-delay: 120ms">
@@ -218,7 +218,7 @@ const checks = [
     <Join kind="clouds" from="var(--pr-navy)" to="var(--field-green)" seed="home-proof" />
     <div class="stats__grid">
       <div class="level__head stats__head">
-        <p class="flag" data-enter><span>Level 3 &middot; Stats</span></p>
+        <p class="flag" data-nosnippet data-enter><span>Level 3 &middot; Stats</span></p>
         <h2 id="stats-title" class="level__title stats__title" data-enter="wipe">My game QA career in numbers</h2>
         <p class="level__lead" data-enter style="--enter-delay: 80ms">Counted from the portfolio, so they stay right as it grows.</p>
       </div>
@@ -265,7 +265,7 @@ const checks = [
   <section class="level level--green has-join-bottom proof" data-level="4" aria-labelledby="proof-title">
     <Join kind="terrain" from="var(--field-green)" to="var(--field-light)" seed="home-final" />
     <div class="level__head">
-      <p class="flag" data-enter><span>Level 4 &middot; Proof</span></p>
+      <p class="flag" data-nosnippet data-enter><span>Level 4 &middot; Proof</span></p>
       <h2 id="proof-title" class="level__title" data-enter="wipe">This site, tested like my games</h2>
       <p class="level__lead" data-enter style="--enter-delay: 80ms">
         A Playwright suite runs on every push, and the site deploys only if it passes. Run the same kind of checks on this page now.
@@ -274,10 +274,10 @@ const checks = [
         <button class="button button--navy" type="button" id="selftest" aria-describedby="selftest-status">Test this page</button>
         <a class="textlink proof__link" href="/quality/">How I test this site</a>
       </div>
-      <p id="selftest-status" class="proof__status" aria-live="polite" data-enter style="--enter-delay: 200ms">
+      <p id="selftest-status" class="proof__status" data-nosnippet aria-live="polite" data-enter style="--enter-delay: 200ms">
         {suite.run ? `${suite.passed} of ${suite.total} checks passed in the last run${runDate ? `, on ${runDate}` : ''}` : `${suite.total} checks run before every deploy`}
       </p>
-      <p class="proof__score" id="selftest-score" hidden>
+      <p class="proof__score" id="selftest-score" data-nosnippet hidden>
         <span data-score-mark class="proof__scoremark"><PassMark /></span>
         <span data-score>Not run yet</span>
         <span data-score-word></span>
@@ -323,7 +323,7 @@ const checks = [
   <section class="level level--light has-join-bottom final" data-level="5" aria-labelledby="final-title">
     <Join kind="terrain" from="var(--field-light)" to="var(--pr-navy)" seed="home-foot" />
     <div class="level__head">
-      <p class="flag" data-enter><span>Level 5 &middot; Final level</span></p>
+      <p class="flag" data-nosnippet data-enter><span>Level 5 &middot; Final level</span></p>
       <h2 id="final-title" class="level__title" data-enter="wipe">After hours</h2>
       <p class="final__text" data-enter style="--enter-delay: 80ms">
         I play and pull apart games for the mechanics and the design choices, Helldivers, The Witcher and God of War
