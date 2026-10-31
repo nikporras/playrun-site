@@ -64,7 +64,7 @@ const ALT = 'Nicolás Porras wearing a VR headset pushed up on his head';
 // The run that built this page. GitHub Actions builds only after the suite has passed, so the
 // numbers on the board are that run's. Local builds carry no run.
 const runDate = suite.run ? suite.run.startedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
-// The six live checks the button runs on this page, in the visitor's browser. Until they run,
+// The eight live checks the button runs on this page, in the visitor's browser. Until they run,
 // each panel shows the suite's own checks for that area (tagged in the spec files), from the run
 // that built the page; the line above the board carries the whole suite's numbers.
 const checks = [
@@ -74,6 +74,8 @@ const checks = [
   { id: 'viewports', title: 'Three widths', detail: 'No sideways scroll at 375, 768 and 1440 pixels. Phones count.' },
   { id: 'a11y', title: 'Accessibility scan', detail: 'axe-core finds no violations. Keyboard and screen readers get the whole page.' },
   { id: 'brand', title: 'Brand assets', detail: 'Both typefaces load, the logo renders, favicon and Open Graph image present.' },
+  { id: 'weight', title: 'Page weight', detail: 'Every page under its budget on a first visit: HTML, CSS, script, fonts and images.' },
+  { id: 'html', title: 'Valid HTML', detail: 'Every page passes an HTML validator: elements, attributes, ids and the document.' },
 ];
 ---
 
@@ -285,8 +287,17 @@ const checks = [
               <CrossMark class="proof__cross" />
             </div>
             <p class="panel__num num">
-              <span data-count>{suite.run ? a.passed : a.total}</span>
-              <span class="panel__of">{suite.run ? ` of ${a.total}` : ' checks'}</span>
+              {g.id === 'weight' && suite.homeWeight ? (
+                <>
+                  {/* (one line: no space before the comma) */}
+                  <span data-count>{suite.homeWeight.kb} KB</span><span class="panel__of">, budget {suite.homeWeight.budget} KB</span>
+                </>
+              ) : (
+                <>
+                  <span data-count>{suite.run ? a.passed : a.total}</span>
+                  <span class="panel__of">{suite.run ? ` of ${a.total}` : ' checks'}</span>
+                </>
+              )}
             </p>
             <h3 class="panel__title">{g.title}</h3>
             <p class="panel__detail" data-detail>{g.detail}</p>
@@ -1517,7 +1528,7 @@ const checks = [
   const status = document.getElementById('selftest-status');
   const tiles = new Map<string, HTMLElement>();
   document.querySelectorAll<HTMLElement>('[data-check]').forEach((t) => tiles.set(t.dataset.check!, t));
-  const checks = ['pages', 'console', 'links', 'viewports', 'a11y', 'brand'].map((id) => engine[id]);
+  const checks = ['pages', 'console', 'links', 'viewports', 'a11y', 'brand', 'weight', 'html'].map((id) => engine[id]);
 
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
   const score = document.getElementById('selftest-score');
@@ -1539,7 +1550,7 @@ const checks = [
     let tilesPassed = 0;
     for (const check of checks) {
       const tile = tiles.get(check.id);
-      const { passed, failed, detail } = await check.run();
+      const { passed, failed, detail, value, of: ofText } = await check.run();
       if (!reduce) await wait(260);
       passedAll += passed;
       failedAll += failed;
@@ -1551,8 +1562,8 @@ const checks = [
         const count = tile.querySelector('[data-count]');
         const of = tile.querySelector('.panel__of');
         const det = tile.querySelector('[data-detail]');
-        if (count) count.textContent = String(passed);
-        if (of) of.textContent = ` of ${passed + failed}`;
+        if (count) count.textContent = value ?? String(passed);
+        if (of) of.textContent = ofText ?? ` of ${passed + failed}`;
         if (det) det.textContent = detail;
       }
     }

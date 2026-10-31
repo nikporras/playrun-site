@@ -1239,10 +1239,15 @@ test.describe('Home', () => {
     const panels = await page.locator('.panel').evaluateAll((els) =>
       els.map((el) => ({ id: (el as HTMLElement).dataset.check!, from: (el as HTMLElement).dataset.from, cls: el.className, count: el.querySelector('[data-count]')!.textContent!.trim(), of: el.querySelector('.panel__of')!.textContent!.trim() })),
     );
-    expect(panels).toHaveLength(6);
+    expect(panels.map((p) => p.id)).toEqual(['pages', 'console', 'links', 'viewports', 'a11y', 'brand', 'weight', 'html']);
     for (const p of panels) {
       expect(tagged[p.id], `${p.id} has tagged checks`).toBeGreaterThan(0);
-      if (p.from === 'run') {
+      if (p.from === 'run' && p.id === 'weight') {
+        // the weight from the run: Home's real figure against its budget
+        expect(p.cls).toMatch(/is-pass|is-failed/);
+        expect(p.count).toMatch(/^\d+ KB$/);
+        expect(p.of).toMatch(/^, budget \d+ KB$/);
+      } else if (p.from === 'run') {
         expect(p.cls).toMatch(/is-pass|is-failed/);
         expect(p.of).toBe(`of ${tagged[p.id]}`);
         expect(Number(p.count)).toBeLessThanOrEqual(tagged[p.id]);
@@ -1259,9 +1264,12 @@ test.describe('Home', () => {
     await expect(page.locator('#selftest-status')).toContainText(/on your device/, { timeout: 15_000 });
     await expect(page.getByRole('button', { name: 'Run again' })).toBeVisible();
     await expect(page.locator('#selftest-score')).toBeVisible();
-    await expect(page.locator('#selftest-score [data-score]')).toHaveText(/^\d\/6$/);
+    await expect(page.locator('#selftest-score [data-score]')).toHaveText(/^\d\/8$/);
+    // the live weight is this page's own figure against Home's budget
+    await expect(page.locator('[data-check="weight"] [data-count]')).toHaveText(/^\d+ KB$/);
+    await expect(page.locator('[data-check="html"] [data-detail]')).toHaveText('A doctype, a language, a title, and no id used twice');
     await expect(page.locator('.panel.is-idle')).toHaveCount(0);
-    await expect(page.locator('.panel.is-pass, .panel.is-failed')).toHaveCount(6);
+    await expect(page.locator('.panel.is-pass, .panel.is-failed')).toHaveCount(8);
     await expect(quality).toBeVisible();
   });
 

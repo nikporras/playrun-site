@@ -4,7 +4,8 @@
  * at a time in its guided test run; Pocket DevTools reads the same recorders. Every check
  * answers with what passed, what failed and one line that says what it saw.
  */
-export type Result = { passed: number; failed: number; detail: string };
+/** `value` and `of` stand in for the counts where a figure says more (a page's weight). */
+export type Result = { passed: number; failed: number; detail: string; value?: string; of?: string };
 export type Check = { id: string; title: string; run: () => Promise<Result> };
 
 const routes = (): string[] => {
@@ -144,6 +145,33 @@ export const checks: Record<string, Check> = {
       const favicon = !!document.querySelector('link[rel="icon"]');
       const passed = [pixel, mont, favicon].filter(Boolean).length;
       return { passed, failed: 3 - passed, detail: passed === 3 ? 'Pixel Operator and Montserrat loaded, favicon present' : 'A brand asset did not load' };
+    },
+  },
+  weight: {
+    id: 'weight',
+    title: 'Page weight',
+    run: async () => {
+      // what this page has fetched so far, against Home's budget (the suite weighs every page)
+      const budget = 250;
+      const kbs = Math.round(timings().bytes / 1024);
+      const ok = kbs <= budget;
+      return { passed: ok ? 1 : 0, failed: ok ? 0 : 1, value: `${kbs} KB`, of: `, budget ${budget} KB`, detail: ok ? `${kbs} KB fetched so far, inside a ${budget} KB budget` : `${kbs} KB fetched, over the ${budget} KB budget` };
+    },
+  },
+  html: {
+    id: 'html',
+    title: 'Valid HTML',
+    run: async () => {
+      // what a browser can check of its own page: a doctype, a language, a title, no id twice
+      const problems: string[] = [];
+      if (!document.doctype || document.doctype.name.toLowerCase() !== 'html') problems.push('no HTML doctype');
+      if (!document.documentElement.lang) problems.push('no language');
+      if (!document.title.trim()) problems.push('no title');
+      const ids = Array.from(document.querySelectorAll('[id]'), (el) => el.id);
+      const twice = ids.filter((id, i) => ids.indexOf(id) !== i);
+      if (twice.length) problems.push(`id "${twice[0]}" used twice`);
+      const n = problems.length;
+      return { passed: n ? 0 : 1, failed: n ? 1 : 0, detail: n ? problems.join(', ') : 'A doctype, a language, a title, and no id used twice' };
     },
   },
   performance: {

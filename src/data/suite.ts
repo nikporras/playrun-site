@@ -12,7 +12,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
-type JsonTest = { status?: string };
+type Annotation = { type: string; description?: string };
+type JsonTest = { status?: string; annotations?: Annotation[]; results?: { annotations?: Annotation[] }[] };
 type JsonSpec = { title: string; file: string; tags?: string[]; tests: JsonTest[] };
 type JsonSuite = { title: string; file?: string; specs: JsonSpec[]; suites?: JsonSuite[] };
 type Report = { suites: JsonSuite[]; stats?: { startTime?: string; duration?: number } };
@@ -41,6 +42,8 @@ export type Suite = {
   failed: number;
   /** The run the numbers come from, or null when only the list is known. */
   run: { startedAt: Date; seconds: number } | null;
+  /** Home's weight on a first visit in that run, and its budget, in KB (null without a run). */
+  homeWeight: { kb: number; budget: number } | null;
 };
 
 // The words for each file. The numbers never live here.
@@ -53,6 +56,8 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'home.spec.ts': ['Home', 'Loads clean, the bottom bar on a phone, the curtain, the headline break, the wall, the stats, three widths, axe, the self test.'],
   'links.spec.ts': ['Links', 'Links that leave the site open a new tab and say so. Internal links stay.'],
   'motion.spec.ts': ['The Motion switch', 'On by default and following the device; off stills the site (no drift, no headline break, a still drum, no scan) and is remembered.'],
+  'validity.spec.ts': ['Valid HTML', 'Every page as the server sends it passes html-validate, offline: elements, content, attributes, ids and the document.'],
+  'weight.spec.ts': ['Page weight', 'Each page under its budget on a first visit with nothing cached (Home 250 KB): HTML, CSS, script, fonts and images.'],
   'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, stacked level headers, labels that read, no stale facts, and passes axe.'],
   'portfolio.spec.ts': ['The Portfolio journey', 'The year on the track as you scroll, each header and card landing once from the laser, nothing under reduced motion.'],
   'phone.spec.ts': ['Home on a phone', 'A real device profile: nothing clipped, the hero on the first screen, the pages and the scoreboard in the bottom bar.'],
@@ -109,6 +114,22 @@ function collect(suite: JsonSuite, into: Map<string, Tally>, areas: Record<strin
 }
 
 const { report, fromRun } = load();
+
+// Home's page weight, as the weight check measured it in the run (an annotation on its test).
+function findWeight(suite: JsonSuite): { kb: number; budget: number } | null {
+  for (const spec of suite.specs ?? [])
+    for (const t of spec.tests ?? [])
+      for (const a of [...(t.annotations ?? []), ...(t.results ?? []).flatMap((r) => r.annotations ?? [])]) {
+        if (a.type !== 'page-weight' || !a.description) continue;
+        const w = JSON.parse(a.description) as { path: string; kb: number; budget: number };
+        if (w.path === '/') return { kb: w.kb, budget: w.budget };
+      }
+  for (const s of suite.suites ?? []) {
+    const w = findWeight(s);
+    if (w) return w;
+  }
+  return null;
+}
 const counts = new Map<string, Tally>();
 const areas: Record<string, Tally> = {};
 for (const s of report.suites) collect(s, counts, areas);
@@ -128,6 +149,7 @@ export const suite: Suite = {
   total: groups.reduce((n, g) => n + g.total, 0),
   passed: groups.reduce((n, g) => n + g.passed, 0),
   failed: groups.reduce((n, g) => n + g.failed, 0),
+  homeWeight: fromRun ? report.suites.map(findWeight).find(Boolean) ?? null : null,
   run:
     fromRun && report.stats?.startTime
       ? { startedAt: new Date(report.stats.startTime), seconds: Math.round((report.stats.duration ?? 0) / 1000) }
