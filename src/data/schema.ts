@@ -68,6 +68,7 @@ export function person(image: string) {
     url: `${site.url}/`,
     image,
     sameAs: social.map((s) => s.href),
+    nationality: { '@type': 'Country', name: 'Colombia' },
     homeLocation: { '@type': 'Place', name: 'London', address: { '@type': 'PostalAddress', addressLocality: 'London', addressCountry: 'GB' } },
     alumniOf: education.map((e) => ({ '@type': 'CollegeOrUniversity', name: e.school, sameAs: e.wikipedia })),
     worksFor: roles(),

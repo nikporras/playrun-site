@@ -27,6 +27,7 @@ for (const path of PAGES) {
     expect(person.name).toBe('Nicolás Porras');
     expect(person.alternateName).toBe('Nicolas Porras');
     expect(person.jobTitle).toBe('Game QA Tester');
+    expect(person.nationality).toEqual({ '@type': 'Country', name: 'Colombia' });
     // (for machines, the third person)
     expect(person.description).toBe("Nicolás Porras is a game QA tester based in London. He has tested console, PC and VR games since 2021, at Universally Speaking, nDreams, Historic VR, Nexus Studios and Aonic, and has led QA as Lead Quality Assurance Tester at nDreams and QA Manager at Historic VR. His credits include Cyberpunk 2077, NBA 2K21, Ghostbusters: Rise of the Ghost Lord, Synapse and Lou's Lagoon. PlayRun, at playrunqa.com, is his personal QA portfolio.");
     expect(person.sameAs as string[]).toContain(social.find((s) => s.label === 'LinkedIn')!.href);

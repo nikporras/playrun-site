@@ -439,7 +439,7 @@ test('the built site is a portfolio, offers no work, links to no repository and 
   // titles, the old Node version, the old span of VR work, the empty score, the phone number, SKU
   // counts, the NDA cards, the stage numbers, the ticker. Scripts are skipped: the form still
   // posts the message in the field the Apps Script calls 'brief', which no visitor sees.
-  const offers = /quote|brief|start a project|Node 22|Three years|0\/0|7830 303383|SKU|30\+|every one of them|redacted|under NDA|QA Technician|Senior Game Quality Tester|Stage \d|marquee|I break games/i;
+  const offers = /quote|brief|start a project|Node 22|Three years of VR|0\/0|7830 303383|SKU|30\+|every one of them|redacted|under NDA|QA Technician|Senior Game Quality Tester|Stage \d|marquee|I break games/i;
   const titles = [
     'Senior Quality Assurance Tester',
     'VR Robotics Operator, client Google DeepMind',

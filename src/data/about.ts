@@ -37,6 +37,8 @@ export async function about() {
     ['Name', contact.name],
     ['Work', `Game QA tester; ${nowRole.title} at ${now.name} since ${nowSince}`],
     ['Based in', contact.location],
+    ['From', 'Colombia'],
+    ['Lived in', 'Colombia, the United States (New Jersey), China (Guangzhou), Australia (Melbourne) and the United Kingdom (London)'],
     ['Studios', listed(studios)],
     ['Lead roles', leadRoles.map((r) => `${r.title}, ${r.at}, ${r.when}`).join('; ')],
     ['Platforms', `${flatNames.join(', ')}; VR: ${vrNames.join(', ')}`],
@@ -71,5 +73,12 @@ export async function about() {
     { q: `What is ${site.name}?`, a: `${site.name}, at playrunqa.com, is my personal QA portfolio: the games I've tested, how I test, and a site that runs its own test suite. It does not offer services.` },
   ];
 
-  return { summary, summaryFirstPerson, facts, qa, linkedin, games: projects.length, vrCount, vrNames, flatNames };
+  // a bit more about me, in my own words (approved wording)
+  const personal = [
+    "I'm from Colombia, and I've been on the move since school. I spent two years of high school in New Jersey, then four years in China, where I learned Mandarin and worked as a translator and shipping agent: finding products for clients, checking their quality, and making sure every shipment to Colombia and South America went through properly. That's where I first did QA, long before games.",
+    "Then came three years in Australia, studying IT in Melbourne and working in hospitality, as head bartender at Rod Laver Arena and Marvel Stadium during events like the Australian Open, Formula 1 and the Melbourne Cup. Back in the UK I became an assistant food and beverage manager, and hospitality has stayed with me on and off ever since, leading teams at large events. Now I'm in London.",
+    "Living in all those places is why I speak five languages and why I'm comfortable working with teams from anywhere. Outside work I play a lot of games, I'm always learning something new, and I love music, especially Latin music. Put some on and I'll be dancing.",
+  ];
+
+  return { summary, summaryFirstPerson, personal, facts, qa, linkedin, games: projects.length, vrCount, vrNames, flatNames };
 }

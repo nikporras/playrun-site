@@ -27,11 +27,21 @@ test('the About page: one h1, the summary, a real table of key facts and the que
   );
   // every credit named in the summary is a public title
   for (const credit of ['Cyberpunk 2077', 'NBA 2K21', 'Ghostbusters: Rise of the Ghost Lord', 'Synapse', "Lou's Lagoon"]) expect(all.map((p) => p.title)).toContain(credit);
-  await expect(page.getByRole('heading', { level: 2 })).toHaveText(['Key facts', 'Questions and answers']);
+  await expect(page.getByRole('heading', { level: 2 })).toHaveText(['A bit more about me', 'Key facts', 'Questions and answers']);
+  // the personal section sits between the summary and the key facts, in my own words
+  await expect(page.locator('.about__more p')).toHaveText([
+    "I'm from Colombia, and I've been on the move since school. I spent two years of high school in New Jersey, then four years in China, where I learned Mandarin and worked as a translator and shipping agent: finding products for clients, checking their quality, and making sure every shipment to Colombia and South America went through properly. That's where I first did QA, long before games.",
+    "Then came three years in Australia, studying IT in Melbourne and working in hospitality, as head bartender at Rod Laver Arena and Marvel Stadium during events like the Australian Open, Formula 1 and the Melbourne Cup. Back in the UK I became an assistant food and beverage manager, and hospitality has stayed with me on and off ever since, leading teams at large events. Now I'm in London.",
+    "Living in all those places is why I speak five languages and why I'm comfortable working with teams from anywhere. Outside work I play a lot of games, I'm always learning something new, and I love music, especially Latin music. Put some on and I'll be dancing.",
+  ]);
+  const tops = await page.locator('.about__summary, .about__more, #facts-title').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+  expect(tops).toEqual([...tops].sort((a, b) => a - b));
   // a real table: a row header per fact
   const table = page.getByRole('table', { name: 'Key facts about Nicolás Porras' });
-  await expect(table.getByRole('rowheader')).toHaveText(['Name', 'Work', 'Based in', 'Studios', 'Lead roles', 'Platforms', 'Games tested', 'Tools', 'Languages', 'Education', 'Profiles']);
+  await expect(table.getByRole('rowheader')).toHaveText(['Name', 'Work', 'Based in', 'From', 'Lived in', 'Studios', 'Lead roles', 'Platforms', 'Games tested', 'Tools', 'Languages', 'Education', 'Profiles']);
   const cell = (k: string) => table.getByRole('row', { name: new RegExp(`^${k}`) }).getByRole('cell');
+  await expect(cell('From')).toHaveText('Colombia');
+  await expect(cell('Lived in')).toHaveText('Colombia, the United States (New Jersey), China (Guangzhou), Australia (Melbourne) and the United Kingdom (London)');
   await expect(cell('Games tested')).toHaveText(`${all.length}, of them ${vr} in VR`);
   await expect(cell('Lead roles')).toHaveText('Lead Quality Assurance Tester, nDreams, Apr 2023 to Oct 2024; QA Manager, Historic VR, Feb 2025 to Feb 2026');
   await expect(cell('Work')).toHaveText('Game QA tester; Senior Quality Assurance Tester at Aonic since Jul 2026');

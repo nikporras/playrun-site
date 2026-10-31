@@ -10,7 +10,7 @@ import Join from '../components/Join.astro';
 import { contact } from '../config';
 import { about } from '../data/about';
 
-const { summaryFirstPerson, facts, qa, linkedin } = await about();
+const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
 ---
 
 <Base
@@ -27,6 +27,10 @@ const { summaryFirstPerson, facts, qa, linkedin } = await about();
       <h1 id="about-title" class="page__title about__title">About {contact.name}</h1>
       <p class="about__summary statement">{summaryFirstPerson}</p>
     </div>
+    <section class="about__more level__body" aria-labelledby="more-title">
+      <h2 id="more-title" class="about__moretitle">A bit more about me</h2>
+      {personal.map((p) => <p>{p}</p>)}
+    </section>
     <Join kind="clouds" from="var(--pr-navy)" to="var(--field-blue)" seed="about-facts" />
   </section>
 
@@ -84,6 +88,22 @@ const { summaryFirstPerson, facts, qa, linkedin } = await about();
   }
   .about__summary {
     max-width: 62ch;
+  }
+  /* A bit more about me: plain paragraphs under the summary, on the sky. */
+  .about__more {
+    display: grid;
+    gap: var(--s-2);
+    max-width: 68ch;
+    margin-top: var(--s-4);
+  }
+  .about__moretitle {
+    font-size: 1.75rem;
+    line-height: 1.1;
+  }
+  @media (max-width: 47.99rem) {
+    .about__moretitle {
+      font-size: 1.375rem;
+    }
   }
   /* The key facts: a plain table, each row a navy band on the blue field. */
   .facts {
