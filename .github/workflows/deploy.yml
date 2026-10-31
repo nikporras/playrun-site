@@ -20,7 +20,7 @@ jobs:
         with:
           # (the whole history: the sitemap's dates are each page's last commit, and a test checks them)
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
