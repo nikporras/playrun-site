@@ -438,3 +438,32 @@ test.describe('The Portfolio journey', () => {
     await plain.close();
   });
 });
+
+for (const [width, height] of [
+  [1440, 900],
+  [375, 780],
+] as const) {
+  test(`each company reads as a level card at ${width}px: Level N counted from the first post, Allegiance, the titles in order, and the games cleared with a pip each`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/portfolio/');
+    const heads = page.locator('.group__head');
+    const n = await heads.count();
+    expect(n).toBe(7);
+    await expect(page.locator('.group__level')).toHaveText(Array.from({ length: n }, (_, i) => `Level ${n - i}`));
+    for (let i = 0; i < n; i++) {
+      const head = heads.nth(i);
+      await expect(head.locator('.group__key')).toHaveText(['Allegiance', 'Titles', 'Cleared']);
+      const cards = await page.locator('.group').nth(i).locator('.card').count();
+      await expect(head.locator('.group__cleared')).toHaveText(`${cards} ${cards === 1 ? 'game' : 'games'}`);
+      await expect(head.locator('.group__pip')).toHaveCount(cards);
+      await expect(head.locator('.group__pips')).toHaveAttribute('aria-hidden', 'true');
+      for (const el of await head.locator('.group__level, .group__key, .group__cleared, .group__role').all()) await expect(el).toBeVisible();
+    }
+    // the titles in order, as on LinkedIn
+    const ndreams = page.locator('.group').filter({ has: page.locator('.group__name', { hasText: 'nDreams' }) });
+    await expect(ndreams.locator('.group__role')).toHaveText(['QA Tester · Mar 2022 to Sep 2022', 'Senior QA Tester · Sep 2022 to Apr 2023', 'Lead QA Tester · Apr 2023 to Oct 2024']);
+    // the first job is Level 1
+    await expect(page.locator('.group').last().locator('.group__level')).toHaveText('Level 1');
+  });
+}
