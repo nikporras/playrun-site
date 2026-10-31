@@ -1,4 +1,5 @@
 // @ts-check
+import { execFileSync } from 'node:child_process';
 import { copyFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
@@ -11,6 +12,22 @@ const projectSlugs = readdirSync('./src/content/projects')
   .filter((f) => f.endsWith('.md'))
   .map((f) => f.replace(/\.md$/, ''));
 const projectRedirects = Object.fromEntries([...projectSlugs, 'the-climb'].map((slug) => [`/portfolio/${slug}`, '/portfolio/']));
+// The sources of a page, for its date in the sitemap.
+const DATA = ['src/content/projects', 'src/config.ts'];
+const SOURCES = {
+  '/': ['src/pages/index.astro', ...DATA],
+  '/portfolio/': ['src/pages/portfolio.astro', 'src/components/GameCard.astro', ...DATA],
+  '/about/': ['src/pages/about.astro', 'src/data/about.ts', ...DATA],
+};
+const sourcesOf = (path) => SOURCES[path] ?? [`src/pages${path.replace(/\/$/, '')}.astro`];
+const lastCommit = (paths) => {
+  try {
+    return execFileSync('git', ['log', '-1', '--format=%cI', '--', ...paths], { encoding: 'utf8' }).trim() || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 const redirects = { '/services': '/skills/', '/credits': '/terms/#credits', ...projectRedirects };
 
 // Every redirect page is written twice: as the folder Astro builds (/services/index.html) and as a
@@ -41,6 +58,13 @@ export default defineConfig({
   integrations: [
     redirectTwins,
     sitemap({
+      // Each page's date: the last commit that touched its source (Home, the Portfolio and About
+      // are built from the projects and the config too). Needs the whole history (fetch-depth: 0).
+      serialize(item) {
+        const date = lastCommit(sourcesOf(new URL(item.url).pathname));
+        if (date) item.lastmod = date;
+        return item;
+      },
       // Redirect pages are not pages, and llms.txt is for machines; the addresses in the map carry
       // the trailing slash.
       filter: (page) => {

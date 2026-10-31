@@ -61,6 +61,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'validity.spec.ts': ['Valid HTML', 'Every page as the server sends it passes html-validate, offline: elements, content, attributes, ids and the document.'],
   'weight.spec.ts': ['Page weight', 'Each page under its budget on a first visit with nothing cached (Home 250 KB): HTML, CSS, script, fonts and images.'],
   'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, stacked level headers, labels that read, no stale facts, and passes axe.'],
+  'polish.spec.ts': ['The finish', 'The 404 kept out of search, a commit date for every page in the sitemap, no broken or doubled attribute in any page.'],
   'portfolio.spec.ts': ['The Portfolio journey', 'The year on the track as you scroll, each header and card landing once from the laser, nothing under reduced motion.'],
   'phone.spec.ts': ['Home on a phone', 'A real device profile: nothing clipped, the hero on the first screen, the pages and the scoreboard in the bottom bar.'],
   'pocket.spec.ts': ['Pocket DevTools', 'On a phone: the phone steps instead of the computer ones, and the console, the requests and the timings from the page itself.'],

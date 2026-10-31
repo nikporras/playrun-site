@@ -21,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # (the whole history: the sitemap's dates are each page's last commit, and a test checks them)
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -63,6 +66,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # (the whole history: each page's date in the sitemap is its last commit)
+          fetch-depth: 0
       - name: Results of the test job, read by the Quality page
         uses: actions/download-artifact@v4
         with:
