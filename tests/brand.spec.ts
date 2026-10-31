@@ -32,3 +32,22 @@ test.describe('Brand assets', () => {
     expect(og).toContain('/og.png');
   });
 });
+
+test('the social card is a 1200 by 630 picture of Nicolás Porras, Game QA Tester; Home shares as a profile with his first and last name', { tag: ['@brand'] }, async ({ page, request }) => {
+  const sharp = (await import('sharp')).default;
+  const res = await request.get('/og.png');
+  expect(res.status()).toBe(200);
+  const meta = await sharp(await res.body()).metadata();
+  expect([meta.width, meta.height]).toEqual([1200, 630]);
+  for (const path of ['/', '/skills/', '/about/']) {
+    await page.goto(path);
+    const c = (sel: string) => page.locator(sel).getAttribute('content');
+    expect(await c('meta[property="og:image"]')).toBe('https://playrunqa.com/og.png');
+    expect(await c('meta[property="og:image:alt"]')).toBe('Nicolás Porras, Game QA Tester, London: his photo on a navy pixel grid, with playrunqa.com.');
+    expect(await c('meta[property="og:type"]')).toBe(path === '/' ? 'profile' : 'website');
+    await expect(page.locator('meta[property="profile:first_name"]')).toHaveCount(path === '/' ? 1 : 0);
+  }
+  await page.goto('/');
+  expect(await page.locator('meta[property="profile:first_name"]').getAttribute('content')).toBe('Nicolás');
+  expect(await page.locator('meta[property="profile:last_name"]').getAttribute('content')).toBe('Porras');
+});

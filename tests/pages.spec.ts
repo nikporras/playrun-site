@@ -92,7 +92,7 @@ for (const p of PAGES) {
       await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', expected);
       await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', expected);
       await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', 'https://playrunqa.com/og.png');
-      await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute('content', /logo/);
+      await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute('content', /Nicolás Porras, Game QA Tester/);
     });
 
     test('every level header is one stacked block: label, title, lead, then the button', { tag: ['@pages'] }, async ({ page }) => {

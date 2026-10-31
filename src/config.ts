@@ -7,7 +7,7 @@ export const site = {
     'PlayRun is the game QA portfolio of Nicolás Porras in London: game QA, platform compliance and release testing since 2021, on Nintendo Switch, Xbox, PS5 and the PC stores, with reports developers can act on.',
   locale: 'en_GB',
   themeColor: '#0C152A',
-  ogImageAlt: 'The PlayRun logo on navy: the pixel icon above the name playrun and the words test experts.',
+  ogImageAlt: 'Nicolás Porras, Game QA Tester, London: his photo on a navy pixel grid, with playrunqa.com.',
 };
 
 export const contact = {

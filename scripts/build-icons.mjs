@@ -1,10 +1,9 @@
 // Builds the raster icons from the extracted SVGs with sharp:
 // public/favicon.ico (16, 32, 48 from the simplified favicon), public/apple-touch-icon.png (180, detailed tile),
-// public/og.png (1200x630, primary lock-up on navy).
+// (the social card, public/og.png, is built by scripts/og-card.mjs).
 import sharp from 'sharp';
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const NAVY = '#0C152A';
 
 async function png(svgPath, size) {
   return sharp(readFileSync(svgPath), { density: 384 }).resize(size, size).png().toBuffer();
@@ -41,14 +40,4 @@ writeFileSync('public/favicon.ico', ico(entries));
 
 writeFileSync('public/apple-touch-icon.png', await png('src/assets/logo/icon-tile.svg', 180));
 
-const logo = await sharp(readFileSync('src/assets/logo/logo-primary.svg'), { density: 384 })
-  .resize({ width: 520 })
-  .png()
-  .toBuffer();
-const meta = await sharp(logo).metadata();
-await sharp({ create: { width: 1200, height: 630, channels: 4, background: NAVY } })
-  .composite([{ input: logo, left: Math.round((1200 - meta.width) / 2), top: Math.round((630 - meta.height) / 2) }])
-  .png()
-  .toFile('public/og.png');
-
-console.log('wrote public/favicon.ico, public/apple-touch-icon.png, public/og.png');
+console.log('wrote public/favicon.ico, public/apple-touch-icon.png');
