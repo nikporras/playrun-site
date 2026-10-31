@@ -47,14 +47,14 @@ jobs:
       - run: npm test
         env:
           CI: true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report
           path: playwright-report
           retention-days: 14
       - name: Hand the results to the build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-results
           path: tests/results/run.json
