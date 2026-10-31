@@ -97,7 +97,7 @@ test.describe('Games', () => {
     await expect(page.locator('[data-hud-level]')).not.toHaveText('1');
   });
 
-  test('the track is a rail no wider than the ship on the left, its numbers fully visible; the scoreboard is a compact card bottom right that opens on hover, Enter or a click', async ({ page }) => {
+  test('the track is a rail no wider than the ship on the left, its numbers fully visible; the scoreboard is a compact card bottom right that opens on Enter, a click or a tap and closes on the pill, Escape or a click outside', async ({ page }) => {
     for (const path of ['/', '/skills/', '/portfolio/', '/quality/']) {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(path);
@@ -161,13 +161,18 @@ test.describe('Games', () => {
       await expect(page.locator('[data-hud-bugs]')).toBeVisible();
       const panel = page.locator('.score__panel');
       await expect(panel).toBeHidden();
+      // the pointer alone never opens it: it is a disclosure
       await pill.hover();
+      await page.waitForTimeout(200);
+      await expect(panel).toBeHidden();
+      await pill.click();
       await expect(panel).toBeVisible();
       await expect(panel.getByText('Bugs caught')).toBeVisible();
       await expect(panel.locator('.score__ach li')).toHaveCount(4);
       const pb = (await panel.boundingBox())!;
       expect(pb.y + pb.height, `${path}: the card opens above the pill`).toBeLessThanOrEqual(p.y + 1);
-      await page.mouse.move(700, 450);
+      // the pill closes it again, with the pointer still on it
+      await pill.click();
       await expect(panel).toBeHidden();
       // a disclosure for the keyboard: Enter opens it, Escape closes it, Tab reaches its buttons
       await pill.focus();

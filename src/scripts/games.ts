@@ -477,18 +477,18 @@ export function startGames() {
     new ResizeObserver(() => layout()).observe(dock);
   }
 
-  // Controls. The pill opens the card and closes it (a tap on a phone, a click or Enter anywhere);
-  // a click outside closes it too. Hover and focus open it without pinning it.
+  // Controls. The pill opens the card and closes it (a tap, a click or Enter); Escape and a click
+  // or tap anywhere outside the scoreboard (the bug ticket docked beside it included) close it too.
   const open = (on: boolean) => {
     score.classList.toggle('is-open', on);
     pill.setAttribute('aria-expanded', String(on));
   };
   pill.addEventListener('click', () => open(!score.classList.contains('is-open')));
   document.addEventListener('click', (e) => {
-    if (score.classList.contains('is-open') && !dock.contains(e.target as Node)) open(false);
+    if (score.classList.contains('is-open') && !score.contains(e.target as Node)) open(false);
   });
-  dock.addEventListener('focusout', (e) => {
-    if (!dock.contains(e.relatedTarget as Node | null)) open(false);
+  score.addEventListener('focusout', (e) => {
+    if (e.relatedTarget && !score.contains(e.relatedTarget as Node)) open(false);
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && score.classList.contains('is-open')) {

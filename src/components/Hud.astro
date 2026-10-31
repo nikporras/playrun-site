@@ -302,9 +302,9 @@ import PassMark from './PassMark.astro';
     font-size: 0.875rem;
     color: var(--accent);
   }
-  /* The card opens above the pill: on hover (with a mouse), or pinned open by a tap, a click or
-     Enter on the pill, which is a disclosure. Its ::before bridges the gap to the pill so the
-     pointer can cross into it. */
+  /* The card opens above the dock (and the bug ticket when it is docked there) by a tap, a click
+     or Enter on the pill, which is a disclosure; the pill, Escape or a click anywhere else closes
+     it. No hover: a card held up by the pointer could not be closed from the pill under it. */
   .score__panel {
     display: none;
     position: absolute;
@@ -320,19 +320,6 @@ import PassMark from './PassMark.astro';
   }
   .score.is-open .score__panel {
     display: block;
-  }
-  .score__panel::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 100%;
-    height: var(--s-2);
-  }
-  @media (hover: hover) {
-    .score:hover .score__panel {
-      display: block;
-    }
   }
   .score__list {
     margin: 0;
