@@ -391,7 +391,8 @@ export function startGames() {
   let yearTops: number[] = [];
   const layout = () => {
     range = Math.max(1, html.scrollHeight - innerHeight);
-    const free = vertical.matches ? hud.clientHeight : phone.matches ? hud.clientWidth : hud.clientWidth - pill.offsetWidth;
+    // (on a tablet the dock in the bar holds the pill and, when there is one, the bug ticket's chip)
+    const free = vertical.matches ? hud.clientHeight : phone.matches ? hud.clientWidth : hud.clientWidth - dock.offsetWidth;
     ship = vertical.matches ? runner.offsetHeight : runner.offsetWidth;
     track = Math.max(0, free - ship);
     lineW = Math.max(1, hud.clientWidth);
@@ -473,6 +474,7 @@ export function startGames() {
         onScroll();
       });
     }).observe(document.body);
+    new ResizeObserver(() => layout()).observe(dock);
   }
 
   // Controls. The pill opens the card and closes it (a tap on a phone, a click or Enter anywhere);

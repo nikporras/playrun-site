@@ -20,17 +20,16 @@
  * opacity only: the canvas is drawn in requestAnimationFrame for the length of the animation and
  * then left alone; the hero's fade is a Web Animation.
  *
- * A tracker ticket pops when the name breaks ("Open", with "Scroll back up to fix"). The first
- * time in a visit it docks (bottom left on a desktop, the lower third on a phone) and stays until
- * the name is whole again, then shows "Fixed" for three seconds and leaves; later breaks show it
- * for three seconds beside the name. A Dismiss button closes it (that counts as done). While it is
- * on show it moves out of the way of a heading, a button, a form field or the scoreboard passing
- * underneath, and hides while there is no clear place. Its content is decorative and hidden from
- * assistive tech; the button is a real button. Off without script, under reduced motion and with
- * the games off.
+ * A tracker ticket pops when the name breaks ("Open", with "Scroll back up to fix"). It docks with
+ * the scoreboard, in the game layer's corner (above the pill on a desktop, in the bar on a tablet,
+ * a strip on the bar's top edge on a phone), and never moves, hides or fades while it is there. The
+ * first time in a visit it stays until the name is whole again: the card for three seconds, then
+ * folded into a chip that opens it again; when the name is fixed it shows "Fixed" for three
+ * seconds and goes. Later breaks show the card for three seconds. Dismiss closes it (that counts
+ * as done). Its content is decorative and hidden from assistive tech; the chip and Dismiss are real
+ * buttons. Off without script, under reduced motion and with the games off.
  */
 type Cell = { x: number; y: number; d: number; vx: number; spin: number; slot: number; fade: number };
-type Box = { left: number; top: number; right: number; bottom: number };
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
 const ease = (k: number) => k * k; // each pixel's fall gathers speed
@@ -59,15 +58,17 @@ const markSeen = () => {
 export function startBreak() {
   const hero = document.querySelector<HTMLElement>('.hero');
   const wall = document.querySelector<HTMLElement>('.wall');
-  const name = hero?.querySelector<HTMLElement>('.hero__name');
   const h1 = hero?.querySelector<HTMLElement>('.hero__title');
   const title = wall?.querySelector<HTMLElement>('.wall__title');
   const flag = wall?.querySelector<HTMLElement>('.flag');
   const canvas = document.querySelector<HTMLCanvasElement>('.hero__break');
   const ticket = document.querySelector<HTMLElement>('.hero__ticket');
   const status = ticket?.querySelector<HTMLElement>('[data-ticket-status]');
-  const dismiss = ticket?.querySelector<HTMLButtonElement>('[data-ticket-close]');
-  if (!hero || !wall || !name || !h1 || !title || !canvas || !ticket || !status || !dismiss) return;
+  const chip = ticket?.querySelector<HTMLButtonElement>('[data-ticket-chip]');
+  const chipStatus = ticket?.querySelector<HTMLElement>('[data-ticket-chipstatus]');
+  const dismissButtons = Array.from(ticket?.querySelectorAll<HTMLButtonElement>('[data-ticket-close]') ?? []);
+  const dock = document.getElementById('dock');
+  if (!hero || !wall || !h1 || !title || !canvas || !ticket || !status || !chip || !chipStatus || !dock) return;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (!('IntersectionObserver' in window)) return;
   const ctx = canvas.getContext('2d');
@@ -353,136 +354,81 @@ export function startBreak() {
     for (const m of markers.keys()) io.observe(m);
   };
 
-  // ---- The ticket
-  let wanted = false; // it should be on show (it hides while there is no clear place)
-  let docked = false; // the first appearance of the visit, waiting for the fix
+  // ---- The ticket. It lives with the scoreboard, in the game layer's corner, and never moves: the
+  // chip keeps its one spot (above the pill on a desktop, in the bar on a tablet, a strip on the
+  // bar's top edge on a phone) and the card opens above it. The first time in a visit it stays
+  // until the name is fixed: the card for three seconds, then folded into the chip, which opens it
+  // again (and it folds after three seconds, or at a second tap). Later breaks, and the fix, show
+  // the card for three seconds and go. The page keeps room for it at its foot (--ticket-room), and
+  // the toast and the scoreboard's card open above it (--ticket-lift where the card opens above
+  // the bar).
+  dock.prepend(ticket);
+  const tablet = matchMedia('(min-width: 48rem) and (max-width: 63.99rem)');
+  let wanted = false; // on show
+  let kept = false; // the first appearance of the visit, staying until the fix
+  let expanded = false;
   let dismissed = false; // closed by hand: quiet until the next break
   let armed = false;
-  let timer = 0;
-  let size = { w: 288, h: 160 };
-  let at = { left: -1, top: -1 };
-  let vw = innerWidth;
-  let vh = innerHeight;
-  let barTop = innerHeight;
-  let nameBox: Box = { left: 0, top: 0, right: 0, bottom: 0 }; // on the screen while the hero is pinned
-  let obstacles: Box[] = []; // in the page: headings, buttons, fields after the hero
-  let fixedObstacles: Box[] = []; // on the screen: the scoreboard, the bar
-  // measured as the ticket appears and when the page changes size, not while it scrolls
-  const measure = () => {
-    vw = innerWidth;
-    vh = innerHeight;
-    barTop = document.querySelector('.tabbar')?.getBoundingClientRect().top ?? vh;
-    if (barTop <= 0) barTop = vh;
-    const n = name.getBoundingClientRect();
-    nameBox = { left: n.left, top: n.top, right: n.right, bottom: n.bottom };
-    obstacles = Array.from(document.querySelectorAll<HTMLElement>('main :is(h1, h2, h3, .button, button, input, textarea, select)'))
-      .filter((el) => !el.closest('.hero, .bug, .hero__ticket') && el.getClientRects().length)
-      .map((el) => {
-        // by the layout, not the box on screen: an entrance may still be moving it
-        let left = 0;
-        let top = 0;
-        for (let p: HTMLElement | null = el; p; p = p.offsetParent as HTMLElement | null) {
-          left += p.offsetLeft;
-          top += p.offsetTop;
-        }
-        return { left, top, right: left + el.offsetWidth, bottom: top + el.offsetHeight };
-      });
-    fixedObstacles = Array.from(document.querySelectorAll<HTMLElement>('.score__pill, .tabbar, .toast.is-in'))
-      .filter((el) => el.getClientRects().length)
-      .map((el) => {
-        const b = el.getBoundingClientRect();
-        return { left: b.left, top: b.top, right: b.right, bottom: b.bottom };
-      });
+  let timer = 0; // the card or the ticket leaving
+  let footRoom = 0;
+  // the room it takes: at the foot of the page, and above the bar for the toast and the card
+  const room = () => {
+    const on = wanted && !ticket.hidden;
+    let foot = 0;
+    if (on && phone.matches) foot = (ticket.querySelector('.ticket__dock') as HTMLElement).offsetHeight;
+    else if (on && !tablet.matches) foot = ticket.offsetHeight + 8;
+    // (the card's full height, whatever its fold is doing this instant, and its margins)
+    const lift = on && expanded && (phone.matches || tablet.matches) ? (ticket.querySelector('.ticket__cardin') as HTMLElement).scrollHeight + 16 : 0;
+    // (a visitor at the very foot of the page stays there as the room grows)
+    const atFoot = scrollY + innerHeight >= html.scrollHeight - 2;
+    const grew = foot - footRoom;
+    footRoom = foot;
+    html.style.setProperty('--ticket-room', `${foot}px`);
+    html.style.setProperty('--ticket-lift', `${lift}px`);
+    // (once, as it appears: the page takes its new length first)
+    if (atFoot && grew > 0 && html.scrollHeight) scrollBy({ top: grew, behavior: 'instant' });
   };
-  const overlaps = (a: Box, b: Box, pad = 8) => a.left < b.right + pad && a.right > b.left - pad && a.top < b.bottom + pad && a.bottom > b.top - pad;
-  // the places it may stand, best first
-  const candidates = (): { left: number; top: number }[] => {
-    const { w, h } = size;
-    if (phone.matches) {
-      const left = Math.max(8, (vw - w) / 2);
-      return [
-        { left, top: barTop - 40 - h },
-        { left, top: 16 },
-      ];
-    }
-    const margin = Math.max(48, Math.min(96, vw * 0.05));
-    const docks = [
-      { left: margin, top: vh - 24 - h },
-      { left: margin, top: 88 },
-      { left: vw - margin - w - 220, top: vh - 24 - h },
-    ];
-    if (docked) return docks;
-    return [{ left: Math.max(16, Math.min(nameBox.right + 32, vw - w - 16)), top: Math.max(16, Math.min(nameBox.top + 8, vh - 200)) }, ...docks];
-  };
-  const clearAt = (c: { left: number; top: number }, y: number) => {
-    const b = { left: c.left, top: c.top, right: c.left + size.w, bottom: c.top + size.h };
-    if (b.top < 0 || b.bottom > vh) return false;
-    if (!broken && overlaps(b, nameBox)) return false;
-    for (const o of obstacles) if (overlaps(b, { left: o.left, top: o.top - y, right: o.right, bottom: o.bottom - y })) return false;
-    for (const o of fixedObstacles) if (overlaps(b, o)) return false;
-    return true;
-  };
-  // Find a clear place for it; hide it while there is none. It is fixed on the screen and moves
-  // only when what is under it changes, so it never chases the scroll.
-  const spot = () => {
-    if (!wanted) return;
-    const y = scrollY;
-    const c = candidates().find((k) => clearAt(k, y));
-    if (!c) {
-      ticket.classList.remove('is-in');
-      return;
-    }
-    if (c.left !== at.left || c.top !== at.top) {
-      at = c;
-      ticket.style.left = `${Math.round(c.left)}px`;
-      ticket.style.top = `${Math.round(c.top)}px`;
-    }
-    ticket.classList.add('is-in');
-  };
-  // (a light check on scroll, only while the ticket is up: the cached boxes against the place it stands)
-  let queued = false;
-  const onScroll = () => {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(() => {
-      queued = false;
-      spot();
-    });
+  const expand = (on: boolean) => {
+    expanded = on;
+    ticket.classList.toggle('is-expanded', on);
+    chip.setAttribute('aria-expanded', String(on));
+    window.clearTimeout(timer);
+    // a kept ticket folds back after three seconds; any other leaves after three
+    if (kept && on) timer = window.setTimeout(() => expand(false), SHOW_MS);
+    else if (!kept && wanted) timer = window.setTimeout(hide, SHOW_MS);
+    room();
   };
   const hide = () => {
     wanted = false;
+    kept = false;
+    expanded = false;
     window.clearTimeout(timer);
-    ticket.classList.remove('is-in');
-    removeEventListener('scroll', onScroll);
+    ticket.classList.remove('is-in', 'is-expanded');
+    chip.setAttribute('aria-expanded', 'false');
+    room();
   };
   function show(state: 'open' | 'fixed') {
-    window.clearTimeout(timer);
-    if (state === 'open' && !seen()) docked = true;
+    if (state === 'open' && !seen()) kept = true;
+    if (state === 'fixed') {
+      if (kept) markSeen();
+      kept = false;
+    }
     ticket.hidden = false;
     ticket.dataset.status = state;
-    ticket.classList.toggle('is-docked', docked);
+    ticket.classList.toggle('is-kept', kept);
     status.textContent = state === 'open' ? 'Open' : 'Fixed';
-    // its size for the places it may take (read once, as it appears)
-    size = { w: ticket.offsetWidth || 288, h: ticket.offsetHeight || 160 };
-    at = { left: -1, top: -1 };
+    chipStatus.textContent = status.textContent;
     wanted = true;
-    measure();
-    spot();
-    addEventListener('scroll', onScroll, { passive: true });
-    if (state === 'fixed') {
-      if (docked) markSeen();
-      docked = false;
-      timer = window.setTimeout(hide, SHOW_MS);
-    } else if (!docked) {
-      timer = window.setTimeout(hide, SHOW_MS);
-    }
+    ticket.classList.add('is-in');
+    expand(true);
   }
-  dismiss.addEventListener('click', () => {
-    markSeen();
-    docked = false;
-    dismissed = true;
-    hide();
-  });
+  chip.addEventListener('click', () => expand(!expanded));
+  for (const d of dismissButtons)
+    d.addEventListener('click', () => {
+      markSeen();
+      dismissed = true;
+      hide();
+    });
 
   // ---- Games off: the hero simply goes behind and the name stays whole; back on, the threshold
   // decides again, at once.
@@ -502,7 +448,6 @@ export function startBreak() {
       broken = false;
       p = 0;
       t = 1;
-      docked = false;
       hide();
     } else decide(true);
   }).observe(html, { attributes: true, attributeFilter: ['class'] });
@@ -511,7 +456,7 @@ export function startBreak() {
   const relayout = () => {
     if (sampled) sample();
     watch();
-    if (wanted) measure();
+    room();
     if (broken && !raf) {
       place('page');
       render(1);

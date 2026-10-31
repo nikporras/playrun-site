@@ -231,20 +231,25 @@ import PassMark from './PassMark.astro';
     display: none;
   }
 
-  /* The dock: the scoreboard and, above it, the toast. Bottom right, in the bar on small screens. */
+  /* The dock: the scoreboard, the bug ticket when the headline breaks (Home docks it here: above
+     the pill on a desktop, beside it in the bar on a tablet), and above them all the toast and the
+     scoreboard's card. Bottom right, in the bar on small screens. */
   .dock {
     position: fixed;
     right: 0;
     bottom: 0;
     z-index: 41;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
     font-family: var(--font-display);
     line-height: 1;
   }
   .dock[hidden] {
     display: none;
   }
+  /* (the card and the toast open from the dock, above the ticket too) */
   .score {
-    position: relative;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -510,15 +515,21 @@ import PassMark from './PassMark.astro';
     .toast {
       right: var(--s-2);
     }
-    .score__panel {
-      margin-bottom: calc(var(--floor-h) + var(--s-1));
-    }
+    .score__panel,
     .toast {
-      margin-bottom: calc(var(--floor-h) + var(--s-1));
+      margin-bottom: calc(var(--floor-h) + var(--s-1) + var(--ticket-lift, 0px));
     }
     /* With the bar gone the pill keeps its corner, flush with the bottom. */
     .dock.dock--off {
       bottom: 0;
+    }
+  }
+  /* A tablet: the ticket's chip stands in the bar beside the pill. */
+  @media (min-width: 48rem) and (max-width: 63.99rem) {
+    .dock {
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 0.5rem;
     }
   }
   /* A phone: the bottom bar (TabBar.astro) holds the pages. The track is a thin line along its top
@@ -526,8 +537,9 @@ import PassMark from './PassMark.astro';
      scoreboard is the counter at the bar's right end (the bugs over the achievements; the level is
      still in its name), and the card and the toasts open above the bar, clear of the ship. */
   @media (max-width: 47.99rem) {
+    /* (the bug ticket's strip, when there is one, joins the bar: the line rides on top of it) */
     .hud {
-      bottom: var(--hud-h);
+      bottom: calc(var(--hud-h) + var(--ticket-room, 0px));
       height: 3px;
       z-index: 41;
       border-top: 0;
@@ -571,6 +583,7 @@ import PassMark from './PassMark.astro';
       bottom: env(safe-area-inset-bottom, 0px);
       width: var(--counter-w);
       height: var(--bar-h);
+      align-items: stretch;
     }
     .score {
       height: 100%;
@@ -600,7 +613,7 @@ import PassMark from './PassMark.astro';
     }
     .score__panel,
     .toast {
-      margin-bottom: calc(3px + var(--ship-w) + var(--s-1));
+      margin-bottom: calc(3px + var(--ship-w) + var(--s-1) + var(--ticket-room, 0px) + var(--ticket-lift, 0px));
     }
   }
 

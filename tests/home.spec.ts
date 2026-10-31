@@ -166,10 +166,14 @@ test.describe('Home', () => {
     await page.setViewportSize({ width: 375, height: 780 });
     await page.goto('/');
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    // (passing the headline docks the bug ticket's strip on the bar; the page grows by it)
+    await expect(page.locator('.hero__ticket')).toHaveClass(/is-in/);
+    await page.waitForTimeout(600);
+    await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
     await page.waitForTimeout(300);
-    const top = (await page.locator('.tabbar').boundingBox())!.y;
+    const top = (await page.locator('.ticket__dock').boundingBox())!.y;
     const ship = (await page.locator('.hud__runner').boundingBox())!;
-    expect(ship.y + ship.height, 'the ship rides on the bar').toBeLessThanOrEqual(top + 1);
+    expect(ship.y + ship.height, 'the ship rides on the bar (and the strip on it)').toBeLessThanOrEqual(top + 1);
     const last = (await page.locator('.footer__legal').boundingBox())!;
     expect(last.y + last.height, 'the footer ends above the ship').toBeLessThanOrEqual(ship.y);
     const button = (await page.getByRole('link', { name: 'Get in touch' }).last().boundingBox())!;
@@ -372,7 +376,7 @@ test.describe('Home', () => {
     await expect(ticket).toHaveClass(/is-in/);
     await expect(ticket).toContainText('BUG-001');
     await expect(ticket).toContainText('Open');
-    await expect(ticket).not.toHaveClass(/is-docked/);
+    await expect(ticket).not.toHaveClass(/is-kept/);
     await expect(ticket.locator('.ticket__hint')).toHaveText('Scroll back up to fix');
     await expect(ticket.locator('.ticket__hint')).toBeVisible();
     const t0 = Date.now();
@@ -385,41 +389,38 @@ test.describe('Home', () => {
 
   for (const [width, height] of [
     [1440, 900],
+    [768, 1000],
     [375, 780],
   ] as const) {
-    test(`the first ticket of a visit (${width}px) docks and stays until the fix, dressed like the achievement toasts and readable, never over a heading, a button, a field or the scoreboard; later ones show for three seconds; Dismiss closes it`, async ({ page, browser }) => {
-      test.setTimeout(90_000);
+    test(`the bug ticket (${width}px) docks by the scoreboard in one spot that never moves, hides or fades at any scroll position and covers nothing outside the game layer; the card folds into a chip that opens and closes it; the toast and the scoreboard's card open above it; Fixed, then gone; later ones for three seconds; Dismiss`, async ({ page, browser }) => {
+      test.setTimeout(120_000);
       await page.setViewportSize({ width, height });
       await page.goto('/');
       await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(600);
       const ticket = page.locator('.hero__ticket');
+      const card = ticket.locator('.ticket__cardin');
+      const chip = ticket.locator('[data-ticket-chip]');
+      const spot = width < 768 ? ticket.locator('.ticket__dock') : chip;
+      const box = async () => (await spot.boundingBox())!;
       const wallTop = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
       const breakAt = width < 768 ? Math.round(wallTop - height + 260) : 300;
       await page.evaluate((y) => window.scrollTo(0, y), breakAt);
+      // the first time in a visit: kept, the card open
       await expect(ticket).toHaveClass(/is-in/);
-      await expect(ticket).toHaveClass(/is-docked/);
-      await expect(ticket.locator('.ticket__hint')).toHaveText('Scroll back up to fix');
-      await page.waitForTimeout(400);
-      // docked: bottom left on a desktop, the lower third above the bar on a phone
-      const box = (await ticket.boundingBox())!;
-      if (width < 768) {
-        const bar = (await page.locator('.tabbar').boundingBox())!;
-        expect(box.y).toBeGreaterThanOrEqual((height / 3) * 2 - 40);
-        expect(box.y + box.height).toBeLessThanOrEqual(bar.y);
-      } else {
-        expect(box.x, 'on the left').toBeLessThan(200);
-        expect(box.y + box.height, 'at the foot').toBeGreaterThan(height - 120);
-      }
+      await expect(ticket).toHaveClass(/is-kept/);
+      await expect(card).toBeVisible();
+      await expect(chip).toHaveAttribute('aria-expanded', 'true');
+      await expect(card).toContainText('Scroll back up to fix');
       // the same family as the toasts: the light field, navy ink, a navy outline, Pixel Operator
       const look = await page.evaluate(() => {
-        const t = getComputedStyle(document.querySelector('.hero__ticket')!);
+        const t = getComputedStyle(document.querySelector('.ticket__cardin')!);
         const o = getComputedStyle(document.querySelector('.toast')!);
-        return { bg: [t.backgroundColor, o.backgroundColor], ink: [t.color, o.color], outline: [t.outlineColor, o.outlineColor], font: [t.fontFamily, o.fontFamily] };
+        return { bg: [t.backgroundColor, o.backgroundColor], outline: [t.outlineColor, o.outlineColor], font: [t.fontFamily, o.fontFamily] };
       });
       for (const [k, [a, b]] of Object.entries(look)) expect(a, k).toBe(b);
-      // every piece of text reads at AA on what is behind it (the ticket is opaque)
+      // every piece of text reads at AA on what is behind it
       const ratios = await ticket.evaluate((el) => {
         const lum = (c: string) => {
           const [r, g, b] = (c.match(/[\d.]+/g) ?? []).slice(0, 3).map((v) => {
@@ -435,57 +436,116 @@ test.describe('Home', () => {
           }
           return 'rgb(12, 21, 42)';
         };
-        return Array.from(el.querySelectorAll('.ticket__key, .ticket__title, dt, .ticket__status, .ticket__hint, .ticket__close'))
-          .filter((n) => n.getClientRects().length)
+        return Array.from(el.querySelectorAll('.ticket__key, .ticket__title, dt, .ticket__status, .ticket__hint, .ticket__close, .ticket__chipkey, .ticket__chipstatus, .ticket__chiphint'))
+          .filter((n) => n.getClientRects().length && getComputedStyle(n).visibility !== 'hidden')
           .map((n) => {
             const a = lum(getComputedStyle(n).color);
             const b = lum(bgOf(n));
             return { what: n.className || n.tagName, ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) };
           });
       });
-      expect(ratios.length).toBeGreaterThanOrEqual(5);
+      expect(ratios.length).toBeGreaterThanOrEqual(6);
       for (const r of ratios) expect(r.ratio, `${r.what} at AA`).toBeGreaterThanOrEqual(4.5);
-      // the status, a coloured label
-      expect(await ticket.locator('.ticket__status').evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(look.bg[0]);
-      // it stays, wherever the visitor reads, and keeps clear of what matters
-      await page.waitForTimeout(3600);
-      await expect(ticket, 'still there after three and a half seconds').toHaveClass(/is-in/);
-      const end = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
-      let shown = 0;
-      for (let y = breakAt; y <= end; y += Math.round(height * 0.35)) {
-        await page.evaluate((y) => window.scrollTo(0, y), y);
-        await page.waitForTimeout(120);
-        const hits = await page.evaluate(() => {
-          const t = document.querySelector('.hero__ticket')!;
-          if (!t.classList.contains('is-in')) return null;
-          const b = t.getBoundingClientRect();
-          return Array.from(document.querySelectorAll<HTMLElement>('main :is(h1, h2, h3, .button, button, input, textarea, select), .score__pill, .tabbar'))
-            .filter((el) => !el.closest('.hero__ticket, .bug, .hero') && el.getClientRects().length)
-            .filter((el) => {
-              const r = el.getBoundingClientRect();
-              return r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top;
-            })
-            .map((el) => `${el.tagName} ${(el.textContent ?? '').trim().slice(0, 30)}`);
-        });
-        if (hits === null) continue;
-        shown++;
-        expect(hits, `clear at ${y}`).toEqual([]);
+      // after three seconds the card folds into the chip, in the same spot
+      const first = await box();
+      await expect(chip).toHaveAttribute('aria-expanded', 'false', { timeout: 4000 });
+      await expect(card).toBeHidden();
+      await page.waitForTimeout(500);
+      const home = await box();
+      expect(home, 'folding never moves the chip').toEqual(first);
+      // where it lives
+      const pill = (await page.locator('.score__pill').boundingBox())!;
+      if (width >= 1024) {
+        // above the pill, right-aligned with it, in the gutter beside the column
+        expect(Math.abs(home.x + home.width - (pill.x + pill.width))).toBeLessThanOrEqual(1);
+        expect(home.y + home.height).toBeLessThanOrEqual(pill.y);
+        const column = await page.locator('.level').first().evaluate((el) => innerWidth - parseFloat(getComputedStyle(el).paddingRight));
+        expect(home.x, 'in the gutter, clear of the column').toBeGreaterThanOrEqual(column);
+      } else if (width >= 768) {
+        // inside the bottom bar, beside the pill
+        const bar = (await page.locator('#hud').boundingBox())!;
+        expect(home.y).toBeGreaterThanOrEqual(bar.y - 1);
+        expect(home.y + home.height).toBeLessThanOrEqual(bar.y + bar.height + 1);
+        expect(home.x + home.width).toBeLessThanOrEqual(pill.x);
+      } else {
+        // a strip the whole width on the bar's top edge, the track riding on top of it
+        const bar = (await page.locator('.tabbar').boundingBox())!;
+        const line = (await page.locator('#hud').boundingBox())!;
+        expect(home.x).toBe(0);
+        expect(home.width).toBe(width);
+        expect(Math.abs(home.y + home.height - bar.y)).toBeLessThanOrEqual(1);
+        expect(Math.abs(line.y + line.height - home.y)).toBeLessThanOrEqual(1);
       }
-      expect(shown, 'on show most of the way down').toBeGreaterThan(3);
-      // back to the top: the name is whole, Fixed, then it leaves; the visit has had its first ticket
+      // at every scroll position: the same spot, on show, not faded, and (on a desktop, where it
+      // stands beside the column rather than in a bar) over no heading, link, button or field
+      const end = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+      for (let y = breakAt; y <= end + height; y += Math.round(height * 0.3)) {
+        await page.evaluate((y) => window.scrollTo(0, y), Math.min(y, end));
+        await page.waitForTimeout(80);
+        expect(await box(), `the same spot at ${y}`).toEqual(home);
+        const shown = await ticket.evaluate((el) => {
+          const cs = getComputedStyle(el);
+          return el.classList.contains('is-in') && cs.visibility === 'visible' && cs.opacity === '1';
+        });
+        expect(shown, `on show at ${y}`).toBe(true);
+        if (width >= 1024) {
+          const hits = await page.evaluate((b) => {
+            return Array.from(document.querySelectorAll<HTMLElement>(':is(main, footer) :is(h1, h2, h3, h4, a, button, input, textarea, select)'))
+              .filter((el) => !el.closest('.hero__ticket, .bug, .dock, .hud') && el.getClientRects().length)
+              .filter((el) => {
+                const r = el.getBoundingClientRect();
+                return r.left < b.x + b.width && r.right > b.x && r.top < b.y + b.height && r.bottom > b.y;
+              })
+              .map((el) => `${el.tagName} ${(el.textContent ?? '').trim().slice(0, 30)}`);
+          }, home);
+          expect(hits, `clear at ${y}`).toEqual([]);
+        }
+      }
+      // at the foot of the page the last line and button end above it
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.waitForTimeout(150);
+      const legal = (await page.locator('.footer__legal').boundingBox())!;
+      if (width < 1024) expect(legal.y + legal.height, 'the page ends above the ticket').toBeLessThanOrEqual(home.y);
+      else expect(legal.x + legal.width <= home.x || legal.y + legal.height <= home.y).toBe(true);
+      // the chip opens the card and closes it, and folds it after three seconds
+      await chip.click();
+      await expect(chip).toHaveAttribute('aria-expanded', 'true');
+      await expect(card).toBeVisible();
+      expect(await box(), 'opening never moves it').toEqual(home);
+      // the toast and the scoreboard's card open above it, open card and all
+      const overlap = (a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }) =>
+        a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+      await page.evaluate(() => document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'selftest' })));
+      await expect(page.locator('[data-toast]')).toHaveClass(/is-in/);
+      await page.waitForTimeout(450);
+      const toast = (await page.locator('[data-toast]').boundingBox())!;
+      expect(overlap(toast, (await card.boundingBox())!), 'the toast above the open card').toBe(false);
+      expect(overlap(toast, home), 'the toast above the chip').toBe(false);
+      await chip.click();
+      await expect(chip).toHaveAttribute('aria-expanded', 'false');
+      await page.locator('.score__pill').click();
+      const panel = page.locator('.score__panel');
+      await expect(panel).toBeVisible();
+      expect(overlap((await panel.boundingBox())!, home), "the scoreboard's card above the chip").toBe(false);
+      await page.keyboard.press('Escape');
+      await chip.click();
+      await expect(card).toBeVisible();
+      await expect(chip).toHaveAttribute('aria-expanded', 'false', { timeout: 4000 });
+      // back to the top: the name is whole, Fixed for three seconds, then it goes; the visit is done
       await page.evaluate(() => window.scrollTo(0, 0));
-      await expect(ticket).toContainText('Fixed');
-      await expect(ticket).toHaveClass(/is-in/);
+      await expect(ticket).toContainText('Fixed', { timeout: 2500 });
+      await expect(card).toBeVisible();
       await expect(ticket).not.toHaveClass(/is-in/, { timeout: 4500 });
       expect(await page.evaluate(() => sessionStorage.getItem('playrun.ticket'))).toBe('done');
-      // later in the visit (a reload too): three seconds, then away
+      // later in the visit (a reload too): the card for three seconds, then away
       await page.reload();
       await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(400);
       await page.evaluate((y) => window.scrollTo(0, y), breakAt);
       await expect(ticket).toHaveClass(/is-in/);
-      await expect(ticket).not.toHaveClass(/is-docked/);
+      await expect(ticket).not.toHaveClass(/is-kept/);
+      await expect(card).toBeVisible();
       await expect(ticket).not.toHaveClass(/is-in/, { timeout: 4500 });
       // Dismiss: a real button, closes it, counts as done, and no Fixed after it
       const fresh = await browser.newContext({ viewport: { width, height } });
@@ -496,13 +556,12 @@ test.describe('Home', () => {
       await p2.waitForTimeout(400);
       await p2.evaluate((y) => window.scrollTo(0, y), breakAt);
       const t2 = p2.locator('.hero__ticket');
-      await expect(t2).toHaveClass(/is-docked/);
-      await expect(t2).toHaveClass(/is-in/);
+      await expect(t2).toHaveClass(/is-kept/);
       await p2.getByRole('button', { name: 'Dismiss ticket' }).click();
       await expect(t2).not.toHaveClass(/is-in/);
       expect(await p2.evaluate(() => sessionStorage.getItem('playrun.ticket'))).toBe('done');
       await p2.evaluate(() => window.scrollTo(0, 0));
-      await p2.waitForTimeout(600);
+      await p2.waitForTimeout(1500);
       await expect(t2).not.toHaveClass(/is-in/);
       await fresh.close();
     });
@@ -591,32 +650,6 @@ test.describe('Home', () => {
       await expect(page.locator('h1')).toHaveCSS('opacity', '1');
       await expect(page.locator('.hero')).toHaveCSS('opacity', '1');
     }
-  });
-
-  test('on a phone the ticket sits in the lower third, above the bottom bar and clear of the headings', async ({ browser }) => {
-    const context = await browser.newContext({ viewport: { width: 375, height: 780 }, hasTouch: true, isMobile: true });
-    const page = await context.newPage();
-    await page.goto('/');
-    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
-    await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(600);
-    const wallTop = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
-    // the hero pins by its foot: Level 2 starts up from the bottom of the screen
-    await page.evaluate((y) => window.scrollTo(0, y), Math.round(wallTop - 780 + 260));
-    const ticket = page.locator('.hero__ticket');
-    await expect(ticket).toHaveClass(/is-in/);
-    await page.waitForTimeout(400);
-    const t = (await ticket.boundingBox())!;
-    const bar = (await page.locator('.tabbar').boundingBox())!;
-    expect(t.y, 'in the lower third').toBeGreaterThanOrEqual(780 / 3 * 2 - 40);
-    expect(t.y + t.height, 'above the bar and the ship').toBeLessThanOrEqual(bar.y - 24);
-    expect(t.x).toBeGreaterThanOrEqual(0);
-    expect(t.x + t.width).toBeLessThanOrEqual(375);
-    for (const sel of ['.wall__title', 'h1']) {
-      const h = (await page.locator(sel).boundingBox())!;
-      expect(h.y + h.height <= t.y || h.y >= t.y + t.height, `clear of ${sel}`).toBe(true);
-    }
-    await context.close();
   });
 
   test('the ticker rolls every title left as a plain image or its icon, named for a screen reader, the biggest names first; it pauses with the button', async ({ page }) => {

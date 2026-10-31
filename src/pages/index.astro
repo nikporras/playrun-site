@@ -114,23 +114,43 @@ const checks = [
   <!-- The visual copy of the name for its break, so its pixels can land on the next title
        (click-through, decorative), and the ticket the break raises -->
   <canvas class="hero__break" aria-hidden="true" hidden></canvas>
+  <!-- (the script docks it with the scoreboard: above the pill on a desktop, in the bar on a tablet,
+       on the bar's top edge on a phone) -->
   <div class="hero__ticket" hidden>
-    <div class="ticket__body" aria-hidden="true">
-      <p class="ticket__key">BUG-001</p>
-      <p class="ticket__title">Headline broke</p>
-      <dl class="ticket__meta">
-        <dt class="ticket__severity">Severity</dt>
-        <dd class="ticket__severity">Cosmetic</dd>
-        <dt>Status</dt>
-        <dd><span class="ticket__status" data-ticket-status>Open</span></dd>
-      </dl>
-      <p class="ticket__hint">Scroll back up to fix</p>
+    <div class="ticket__card" id="ticket-card">
+      <div class="ticket__cardin">
+        <div class="ticket__body" aria-hidden="true">
+          <p class="ticket__key">BUG-001</p>
+          <p class="ticket__title">Headline broke</p>
+          <dl class="ticket__meta">
+            <dt class="ticket__severity">Severity</dt>
+            <dd class="ticket__severity">Cosmetic</dd>
+            <dt>Status</dt>
+            <dd><span class="ticket__status" data-ticket-status>Open</span></dd>
+          </dl>
+          <p class="ticket__hint">Scroll back up to fix</p>
+        </div>
+        <button type="button" class="ticket__close" aria-label="Dismiss ticket" data-ticket-close>
+          <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" width="14" height="14">
+          <path d="M0 0h1v1H0zM6 0h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM2 2h1v1H2zM4 2h1v1H4zM3 3h1v1H3zM2 4h1v1H2zM4 4h1v1H4zM1 5h1v1H1zM5 5h1v1H5zM0 6h1v1H0zM6 6h1v1H6z" fill="currentColor"></path>
+        </svg>
+        </button>
+      </div>
     </div>
-    <button type="button" class="ticket__close" aria-label="Dismiss ticket" data-ticket-close>
-      <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" width="14" height="14">
-        <path d="M0 0h1v1H0zM6 0h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM2 2h1v1H2zM4 2h1v1H4zM3 3h1v1H3zM2 4h1v1H2zM4 4h1v1H4zM1 5h1v1H1zM5 5h1v1H5zM0 6h1v1H0zM6 6h1v1H6z" fill="currentColor"></path>
-      </svg>
-    </button>
+    <div class="ticket__dock">
+      <button type="button" class="ticket__chip" aria-expanded="false" aria-controls="ticket-card" data-ticket-chip>
+        <span class="visually-hidden">Bug ticket</span>
+        <span class="ticket__chipkey">BUG-001</span>
+        <span class="ticket__chipsep" aria-hidden="true">&middot;</span>
+        <span class="ticket__chipstatus" data-ticket-chipstatus>Open</span>
+        <span class="ticket__chiphint"><span aria-hidden="true">&middot;</span> Scroll back up to fix</span>
+      </button>
+      <button type="button" class="ticket__close ticket__close--strip" aria-label="Dismiss ticket" data-ticket-close>
+        <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" width="14" height="14">
+          <path d="M0 0h1v1H0zM6 0h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM2 2h1v1H2zM4 2h1v1H4zM3 3h1v1H3zM2 4h1v1H2zM4 4h1v1H4zM1 5h1v1H1zM5 5h1v1H5zM0 6h1v1H0zM6 6h1v1H6z" fill="currentColor"></path>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <!-- Level 2: the ticker of titles, their official logos in one colour, rolling slowly left -->
@@ -373,29 +393,20 @@ const checks = [
     display: none;
   }
   /* The ticket: a tracker card in the same family as the achievement toasts and the scoreboard
-     card (the light field, navy ink, a navy outline, Pixel Operator), fixed on the screen and placed
-     by script; transform and opacity only. Docked (the first time in a visit) it is compact. */
+     card (the light field, navy ink, a navy outline, Pixel Operator). It lives with the scoreboard
+     (the script docks it there) and never moves: the chip sits in one spot, and the card opens
+     above it and folds back into it (grid rows and opacity). Transform and opacity for the rest. */
   .hero__ticket {
-    position: fixed;
-    left: 0;
-    top: 0;
-    z-index: 35;
     display: flex;
-    align-items: flex-start;
-    gap: var(--s-1);
-    width: 18rem;
-    padding: 0.75rem 0.5rem 0.75rem 0.875rem;
-    background: var(--field-light);
-    color: var(--field-light-ink);
-    outline: 2px solid var(--pr-navy);
-    border-left: 4px solid var(--pr-blue);
+    flex-direction: column;
+    align-items: flex-end;
     font-family: var(--font-display);
     font-size: 0.875rem;
     line-height: 1.4;
     letter-spacing: 0.04em;
+    color: var(--field-light-ink);
     opacity: 0;
-    transform: translateY(0.5rem) scale(0.96);
-    transform-origin: left bottom;
+    transform: translateY(0.5rem);
     visibility: hidden;
     transition:
       transform 320ms var(--ease-out),
@@ -413,12 +424,44 @@ const checks = [
     visibility: visible;
     transition-delay: 0s;
   }
-  .hero__ticket[data-status='fixed'] {
-    border-left-color: var(--pr-green);
+  .ticket__card {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      grid-template-rows 360ms var(--ease-out),
+      opacity 240ms ease,
+      visibility 0s linear 360ms;
   }
+  .hero__ticket.is-expanded .ticket__card {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .ticket__cardin {
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s-1);
+    width: 18rem;
+  }
+  /* (the card's own box, inside the fold, with room for its outline) */
   .ticket__body {
     flex: 1;
     min-width: 0;
+  }
+  .ticket__cardin {
+    margin: 2px 2px calc(var(--s-1) + 2px);
+    padding: 0.75rem 0.5rem 0.75rem 0.875rem;
+    background: var(--field-light);
+    outline: 2px solid var(--pr-navy);
+    border-left: 4px solid var(--pr-blue);
+  }
+  .hero__ticket[data-status='fixed'] .ticket__cardin {
+    border-left-color: var(--pr-green);
   }
   .ticket__key {
     font-size: 0.8125rem;
@@ -447,7 +490,8 @@ const checks = [
     margin: 0;
   }
   /* The status, a coloured label: Open in cyan on navy, Fixed in navy on green (both above 8:1). */
-  .ticket__status {
+  .ticket__status,
+  .ticket__chipstatus {
     display: inline-block;
     padding: 0.1em 0.5em;
     background: var(--pr-navy);
@@ -455,7 +499,7 @@ const checks = [
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
-  .hero__ticket[data-status='fixed'] .ticket__status {
+  .hero__ticket[data-status='fixed'] :is(.ticket__status, .ticket__chipstatus) {
     background: var(--pr-green);
     color: var(--pr-navy);
   }
@@ -466,7 +510,7 @@ const checks = [
     margin-top: 0.5em;
     max-width: none;
   }
-  .hero__ticket[data-status='fixed'] .ticket__hint {
+  .hero__ticket[data-status='fixed'] :is(.ticket__hint, .ticket__chiphint) {
     display: none;
   }
   .ticket__close {
@@ -481,18 +525,115 @@ const checks = [
   .ticket__close:hover {
     color: var(--pr-blue);
   }
-  .ticket__close:focus-visible {
-    outline: 3px solid var(--pr-navy);
-    outline-offset: -3px;
+  .ticket__close:focus-visible,
+  .ticket__chip:focus-visible {
+    outline: 3px solid var(--pr-cyan);
+    outline-offset: 2px;
   }
-  .hero__ticket.is-docked {
-    width: 15rem;
+  /* The chip, the ticket folded: BUG-001 over its status, narrow enough for the gutter on a desktop. */
+  .ticket__dock {
+    display: flex;
   }
-  .hero__ticket.is-docked .ticket__title {
-    font-size: 1rem;
+  .ticket__chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    min-height: 2.75rem;
+    padding: 0.3rem 0.35rem;
+    background: var(--field-light);
+    color: var(--field-light-ink);
+    outline: 2px solid var(--pr-navy);
+    outline-offset: -2px;
+    font: inherit;
+    font-size: 0.75rem;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
   }
-  .hero__ticket.is-docked .ticket__severity {
+  .ticket__chipstatus {
+    font-size: 0.6875rem;
+    padding: 0.15em 0.35em;
+  }
+  .ticket__chipsep,
+  .ticket__chiphint,
+  .ticket__close--strip {
     display: none;
+  }
+  /* A tablet: the chip sits in the bottom bar beside the pill (as tall as it); the card opens above
+     the bar. */
+  @media (min-width: 48rem) and (max-width: 63.99rem) {
+    .hero__ticket {
+      position: relative;
+      align-self: stretch;
+      justify-content: flex-end;
+    }
+    .ticket__card {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + var(--floor-h));
+    }
+    .ticket__chip {
+      height: calc(var(--hud-h) - var(--floor-h));
+    }
+  }
+  /* A phone: a slim strip along the top edge of the bottom bar, the whole width: the chip on one
+     line with its hint, and Dismiss; the card opens above it. */
+  @media (max-width: 47.99rem) {
+    .hero__ticket {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: var(--hud-h);
+      align-items: stretch;
+    }
+    .ticket__cardin {
+      width: auto;
+      margin-inline: var(--s-1);
+    }
+    .ticket__dock {
+      align-items: stretch;
+      background: var(--field-light);
+      border-top: 2px solid var(--pr-navy);
+    }
+    .ticket__chip {
+      flex: 1;
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: 0.5rem;
+      min-width: 0;
+      min-height: 2.75rem;
+      padding: 0 var(--s-2);
+      outline: 0;
+      font-size: 0.875rem;
+    }
+    .ticket__chip:focus-visible {
+      outline: 3px solid var(--pr-navy);
+      outline-offset: -3px;
+    }
+    .ticket__chipsep,
+    .ticket__chiphint {
+      display: inline;
+    }
+    .ticket__chiphint {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ticket__close--strip {
+      display: grid;
+      margin: 0;
+    }
+    /* (open, the card's own Dismiss is the one) */
+    .hero__ticket.is-expanded .ticket__close--strip {
+      visibility: hidden;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ticket__card,
+    .hero__ticket {
+      transition: none;
+    }
   }
   /* The two markers the break watches, from near the top of Level 2 to the end of the page
      (placed by the script; invisible, click-through). */
@@ -597,12 +738,6 @@ const checks = [
     }
     .hero__value {
       font-size: 1rem;
-    }
-    /* On a phone the ticket spans the column (the script sets it in the lower third, above the bar). */
-    .hero__ticket,
-    .hero__ticket.is-docked {
-      width: calc(100vw - 2 * var(--margin));
-      transform-origin: bottom center;
     }
     /* On a phone the photo comes under the text, on the bottom edge. */
     .hero__figure {
