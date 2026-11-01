@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 /**
- * The Portfolio journey: newest first, the track shows the year of the post on screen, and the
+ * The Games page journey: newest first, the track shows the year of the post on screen, and the
  * scan: a bonus on a game card that is already on screen. Nothing waits for the laser; every
  * header, block and card shows with the normal entrance as it enters the screen. Once the scroll
  * settles, the card wholly on screen nearest the middle gets one shot (a beam from the ship on a
@@ -12,7 +12,7 @@ import path from 'node:path';
  */
 const noSmooth = (page: Page) => page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
 
-test.describe('The Portfolio journey', () => {
+test.describe('The Games page journey', () => {
   test('the track shows the year as the page scrolls, 2026 down to 2021, with a marker where each year begins', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/portfolio/');

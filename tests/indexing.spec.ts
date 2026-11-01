@@ -51,7 +51,7 @@ test('/llms.txt says who the site is about in the shared summary, lists the page
   expect(text).toContain(`> ${summary}`);
   expect(text).toContain('This site is a portfolio and CV. All facts here match his LinkedIn profile.');
   const pages = [...text.slice(text.indexOf('## Pages'), text.indexOf('## Profiles')).matchAll(/^- \[([^\]]+)\]\((https:\/\/playrunqa\.com[^)]*)\): .{20,}$/gm)];
-  expect(pages.map((m) => m[1])).toEqual(['About', 'Portfolio', 'Skills', 'Quality', 'Contact']);
+  expect(pages.map((m) => m[1])).toEqual(['About', 'Games', 'Skills', 'Quality', 'Contact']);
   for (const [, , url] of pages) expect((await request.get(new URL(url).pathname)).status(), url).toBe(200);
   // (LinkedIn turns automated requests away, so the profile is checked as an address, not fetched)
   expect(text.slice(text.indexOf('## Profiles'))).toMatch(/^- \[LinkedIn\]\(https:\/\/www\.linkedin\.com\/in\/[^)]+\)$/m);

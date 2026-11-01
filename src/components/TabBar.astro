@@ -11,11 +11,9 @@ import { nav, primaryAction } from '../config';
 
 // The build writes file routes (/skills.html, /index.html); the bar compares the clean address.
 const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '/').replace(/([^/])$/, '$1/');
-// the five pages, About first (Home is the header's logo); the Portfolio is called Games here
+// the five pages, About first (Home is the header's logo)
 const about = nav.find((n) => n.href === '/about/')!;
-const items = [about, ...nav.filter((n) => n.href !== '/' && n !== about), { label: 'Contact', href: primaryAction.href }].map((n) =>
-  n.href === '/portfolio/' ? { ...n, label: 'Games' } : n,
-);
+const items = [about, ...nav.filter((n) => n.href !== '/' && n !== about), { label: 'Contact', href: primaryAction.href }];
 // 8 by 8 pixel icons, one path each
 const icons: Record<string, string> = {
   '/about/': 'M3 0h2v1H3zM2 1h4v2H2zM3 3h2v1H3zM1 5h6v1H1zM0 6h8v2H0z',

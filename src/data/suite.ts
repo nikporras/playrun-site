@@ -62,7 +62,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'weight.spec.ts': ['Page weight', 'Each page under its budget on a first visit with nothing cached (Home 250 KB): HTML, CSS, script, fonts and images.'],
   'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, stacked level headers, labels that read, no stale facts, and passes axe.'],
   'polish.spec.ts': ['The finish', 'The 404 kept out of search, a commit date for every page in the sitemap, no broken or doubled attribute in any page.'],
-  'portfolio.spec.ts': ['The Portfolio journey', 'The year on the track as you scroll, each header and card landing once from the laser, nothing under reduced motion.'],
+  'portfolio.spec.ts': ['The Games page journey', 'The year on the track as you scroll, each header and card landing once from the laser, nothing under reduced motion.'],
   'phone.spec.ts': ['Home on a phone', 'A real device profile: nothing clipped, the hero on the first screen, the pages and the scoreboard in the bottom bar.'],
   'pocket.spec.ts': ['Pocket DevTools', 'On a phone: the phone steps instead of the computer ones, and the console, the requests and the timings from the page itself.'],
   'quality.spec.ts': ['The guided test run', 'Five live steps, the report, the template, the phone steps and Pocket DevTools, without script and under reduced motion.'],

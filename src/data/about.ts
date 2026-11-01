@@ -54,7 +54,7 @@ export async function about() {
     { q: "What's your current role?", a: `I'm a ${nowRole.title} at ${now.name}, since ${longMonth(nowSince)}, on ${now.focus}.` },
     {
       q: 'Which games have you tested?',
-      a: `${projects.length} games: ${byStudio.map((s) => `at ${s.name}, ${listed(s.titles)}`).join('; ')}. The Portfolio shows my part in each.`,
+      a: `${projects.length} games: ${byStudio.map((s) => `at ${s.name}, ${listed(s.titles)}`).join('; ')}. The Games page shows my part in each.`,
     },
     {
       q: 'Do you have VR QA experience?',

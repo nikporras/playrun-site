@@ -396,7 +396,7 @@ test('the trailing-slash address is the one official form: every internal link a
   expect(await missing.text()).toContain('Game over');
   await page.goto('/portfolio/');
   await expect(page.locator('h1')).toHaveText(/Games I've\s*tested/);
-  await expect(page.locator('header').getByRole('link', { name: 'Portfolio' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('header').getByRole('link', { name: 'Games' })).toHaveAttribute('aria-current', 'page');
 });
 
 test('the old services and credits addresses send visitors on', { tag: ['@pages', '@links'] }, async ({ request, page }) => {
@@ -410,7 +410,10 @@ test('the old services and credits addresses send visitors on', { tag: ['@pages'
   expect(sitemap).not.toContain('/credits/');
   await page.goto('/');
   await expect(page.locator('footer').getByRole('link', { name: 'Credits' })).toHaveCount(0);
-  await expect(page.locator('footer').getByRole('link')).toContainText(['Home', 'Skills', 'Portfolio', 'Quality', 'About', 'Contact']);
+  await expect(page.locator('footer').getByRole('link')).toContainText(['Home', 'Skills', 'Games', 'Quality', 'About', 'Contact']);
+  // the page is called Games everywhere a link names it; its address stays /portfolio/
+  await expect(page.locator(':is(header, footer, .tabbar) a', { hasText: 'Portfolio' })).toHaveCount(0);
+  await expect(page.locator('header').getByRole('link', { name: 'Games', exact: true })).toHaveAttribute('href', '/portfolio/');
   expect(await page.locator('footer').getByRole('link', { name: 'Home' }).count(), 'Home once in the footer').toBe(1);
 });
 

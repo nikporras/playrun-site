@@ -112,7 +112,8 @@ export const since = 2021;
 export const nav = [
   { label: 'Home', href: '/' },
   { label: 'Skills', href: '/skills/' },
-  { label: 'Portfolio', href: '/portfolio/' },
+  // (the page keeps its address, /portfolio/; everywhere it is called Games)
+  { label: 'Games', href: '/portfolio/' },
   { label: 'Quality', href: '/quality/' },
   { label: 'About', href: '/about/' },
 ];
