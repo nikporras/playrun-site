@@ -5,35 +5,14 @@
  * the same way the primary icon carries its gradient. The bug is a 10 by 8 original, with a navy
  * pixel outline.
  */
+// (the ship's and the bug's bitmaps are shared with the Bug Sweep game on the About page)
+import { SHIP, FLAME_A, FLAME_B, BUG, shipBand } from '../data/sprites';
+
 interface Props {
   name: 'ship' | 'bug' | 'net';
   class?: string;
 }
 const { name, class: className } = Astro.props;
-
-const SHIP = [
-  '..........#..#..........',
-  '........###..###........',
-  '......#####..#####......',
-  '.....######..######.....',
-  '...#######....#######...',
-  '.########......########.',
-  '########........########',
-  '..#######......#######..',
-  '....#######..#######....',
-  '.....######..######.....',
-  '.......####..#####......',
-  '........###..#####......',
-  '........###..######.....',
-  '.........##..######.....',
-  '.........##..##..###....',
-  '..........#..##...##....',
-  '..........#..#.....#....',
-  '..........#..#..........',
-];
-// The thruster, two frames behind the tail: cyan, then green.
-const FLAME_A = ['..........####', '...........##.'];
-const FLAME_B = ['..........####', '..........####', '...........##.'];
 
 // The butterfly net: cyan hoop, light mesh, blue handle.
 const NET = [
@@ -52,17 +31,6 @@ const NET = [
   'bb..............',
 ];
 
-const BUG = [
-  '..L..BB..L',
-  '...LBBBB..',
-  '..BBEBBEB.',
-  'L.BBBBBB.L',
-  '.LBBBBBBBL',
-  'L.BBBBBB.L',
-  '..L.BB.L..',
-  '.L......L.',
-];
-
 type Cell = { x: number; y: number; cls: string };
 // The bug's outline, like a classic game sprite: a navy ring round its shape, about a third of one
 // of its pixels thick (1px at its size), drawn behind it so its shape reads on any field.
@@ -75,7 +43,7 @@ if (name === 'ship') {
   w = SHIP[0].length;
   SHIP.forEach((row, y) =>
     [...row].forEach((ch, x) => {
-      if (ch === '#') cells.push({ x, y, cls: y < 6 ? 'px-blue' : y < 12 ? 'px-cyan' : 'px-green' });
+      if (ch === '#') cells.push({ x, y, cls: `px-${shipBand(y)}` });
     }),
   );
   const tail = SHIP.length;

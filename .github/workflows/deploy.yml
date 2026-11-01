@@ -78,6 +78,10 @@ jobs:
         with:
           node-version: 24
           package-manager: npm@latest
+      # (Bug Sweep's test handle exists only in test builds: a failure here stops the deploy)
+      - name: The production build carries no test handle
+        run: |
+          if grep -rq "sweepTest" dist; then echo "::error::Bug Sweep's test handle is in the production build"; exit 1; fi
 
   deploy:
     name: Deploy to GitHub Pages

@@ -15,6 +15,7 @@ const ACHIEVEMENTS: Record<string, string> = {
   services: 'Read every skill',
   selftest: 'Tested the page',
   glitch: 'Glitch spotted',
+  bugsweep: 'Bug Sweep cleared',
 };
 const defaults = (): State => ({ on: true, bugs: [], achievements: [] });
 
@@ -44,7 +45,17 @@ export function startGames() {
   if (reducedMotion() && offByDevice()) {
     const parts = [hud, dock, document.querySelector<HTMLElement>('[data-shot]')];
     parts.forEach((p) => p && (p.style.display = 'none'));
+    // (an achievement earned meanwhile, Bug Sweep cleared say, is still kept)
+    const record = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      const s = read();
+      if (!s.on || !ACHIEVEMENTS[id] || s.achievements.includes(id)) return;
+      s.achievements.push(id);
+      write(s);
+    };
+    document.addEventListener('playrun:achieve', record);
     whenMotion(() => {
+      document.removeEventListener('playrun:achieve', record);
       parts.forEach((p) => p && (p.style.display = ''));
       startGames();
     });

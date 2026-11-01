@@ -4,7 +4,7 @@ import path from 'node:path';
 
 /**
  * The About page: the facts about Nicolás Porras in the third person, for people and for AI, from
- * the site's own data. A page for reading: no games, no bugs, nothing hidden at first.
+ * the site's own data. Nothing hidden at first; no bugs to catch (its game is Bug Sweep, sweep.spec.ts).
  */
 const projects = () => {
   const dir = path.join(process.cwd(), 'src', 'content', 'projects');
@@ -27,7 +27,7 @@ test('the About page: one h1, the summary, a real table of key facts and the que
   );
   // every credit named in the summary is a public title
   for (const credit of ['Cyberpunk 2077', 'NBA 2K21', 'Ghostbusters: Rise of the Ghost Lord', 'Synapse', "Lou's Lagoon"]) expect(all.map((p) => p.title)).toContain(credit);
-  await expect(page.getByRole('heading', { level: 2 })).toHaveText(['A bit more about me', 'Key facts', 'Questions and answers']);
+  await expect(page.getByRole('heading', { level: 2 })).toHaveText(['A bit more about me', 'I love playing and making games', 'Key facts', 'Questions and answers']);
   // the personal section sits between the summary and the key facts, in my own words
   await expect(page.locator('.about__more p')).toHaveText([
     "I'm from Colombia, and I've been on the move since school. I spent two years of high school in New Jersey, then four years in China, where I learned Mandarin and worked as a translator and shipping agent: finding products for clients, checking their quality, and making sure every shipment to Colombia and South America went through properly. That's where I first did QA, long before games.",
@@ -83,8 +83,10 @@ test('the About page: one h1, the summary, a real table of key facts and the que
   await expect(answer('What is PlayRun?')).toHaveText("PlayRun, at playrunqa.com, is my personal QA portfolio: the games I've tested, how I test, and a site that runs its own test suite. It does not offer services.");
   // no third person left in the answers
   for (const a of await page.locator('.qa__item p').allTextContents()) expect(a).not.toMatch(/\b(he|his|him)\b/i);
-  // a page for reading: no games, no bugs, nothing that waits to show
-  await expect(page.locator('.bug, #hud, #dock, [data-enter], [data-load]')).toHaveCount(0);
+  // nothing that waits to show, and no bugs to catch: the scoreboard is here for Bug Sweep
+  await expect(page.locator('[data-bug], [data-enter], [data-load]')).toHaveCount(0);
+  await expect(page.locator('#hud')).toHaveCount(1);
+  await expect(page.locator('#dock')).toHaveCount(1);
 });
 
 test('About is in the desktop nav, the footer and first in the bottom bar of phones and tablets, and Home links to it from the intro', { tag: ['@links'] }, async ({ page }) => {

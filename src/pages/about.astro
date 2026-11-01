@@ -1,12 +1,14 @@
 ---
 /**
  * About: the facts about Nicolás Porras for people and for AI, in the first person, built from the
- * site's own data (src/data/about.ts). A page for reading: plain text from the first paint, no
- * games, no bugs, no entrance that hides anything.
+ * site's own data (src/data/about.ts). Plain text from the first paint, no entrance that hides
+ * anything. The games layer runs here (the scoreboard and its toasts) with no bugs to catch: the
+ * page's game is Bug Sweep, which loads only when Play is pressed.
  */
 import Base from '../layouts/Base.astro';
 import ExternalLink from '../components/ExternalLink.astro';
 import Join from '../components/Join.astro';
+import Sprite from '../components/Sprite.astro';
 import { contact } from '../config';
 import { about } from '../data/about';
 
@@ -17,7 +19,6 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
   title="About"
   fullTitle={`About ${contact.name}, game QA tester in London`}
   description={`${contact.name} is a game QA tester in London. Key facts and short answers about his roles, the games he has tested, VR, tools and languages.`}
-  games={false}
   kind="AboutPage"
   faq={qa}
 >
@@ -31,13 +32,72 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
       <h2 id="more-title" class="about__moretitle">A bit more about me</h2>
       {personal.map((p) => <p>{p}</p>)}
     </section>
-    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-blue)" seed="about-facts" />
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-cyan)" seed="about-play" />
   </section>
 
-  <section class="level level--blue has-join-bottom" data-level="2" aria-labelledby="facts-title">
+  <!-- Level 2: Bug Sweep, a small arcade game. Nothing of the game loads or runs until Play is
+       pressed: the code arrives then (src/scripts/sweep.ts, a dynamic import). -->
+  <section class="level level--cyan has-join-bottom play" data-level="2" aria-labelledby="play-title">
+    <Join kind="terrain" from="var(--field-cyan)" to="var(--field-blue)" seed="about-facts" />
+    <div class="level__head">
+      <p class="flag" data-nosnippet><span>Level 2 &middot; Play</span></p>
+      <h2 id="play-title" class="level__title">I love playing and making games</h2>
+      <p class="level__lead">Here's one I made while building this site.</p>
+    </div>
+    <div class="sweep level__body" data-sweep>
+      <p id="sweep-desc" class="visually-hidden">
+        Bug Sweep is a short arcade game. You fly a pixel ship along the bottom of the screen and fire upward at ten bugs that fly in formation at the top; now and then one dives at the ship.
+        Sweep all ten to clear the level. A bug that hits the ship costs a life, and after three it's game over.
+      </p>
+      <div class="sweep__bar" data-nosnippet>
+        <p class="sweep__name" id="sweep-title">Bug Sweep</p>
+        <p class="sweep__stat">Lives <b data-sweep-lives>3</b></p>
+        <p class="sweep__stat">Bugs <b data-sweep-bugs>10</b></p>
+        <button type="button" class="sweep__pause" data-sweep-pause hidden>Pause</button>
+      </div>
+      <div
+        class="sweep__stage"
+        data-sweep-stage
+        role="group"
+        aria-labelledby="sweep-title"
+        aria-describedby="sweep-desc sweep-keys"
+      >
+        <canvas class="sweep__canvas" aria-hidden="true"></canvas>
+        <div class="sweep__overlay" data-sweep-overlay>
+          <div class="sweep__poster" data-sweep-poster aria-hidden="true">
+            <span class="sweep__row">
+              {[0, 1, 2, 3, 4].map(() => <Sprite name="bug" class="sweep__bug" />)}
+            </span>
+            <Sprite name="ship" class="sweep__ship" />
+          </div>
+          <p class="sweep__title" data-sweep-title>Bug Sweep</p>
+          <p class="sweep__text" data-sweep-text>Ten bugs, three lives.</p>
+          <button type="button" class="button sweep__action" data-sweep-action>Play Bug Sweep</button>
+        </div>
+      </div>
+      <p id="sweep-keys" class="sweep__keys">Arrow keys or A and D to move, Space to fire, Esc to pause.</p>
+      <div class="sweep__pad" data-sweep-pad hidden>
+        <button type="button" class="sweep__key" data-sweep-left>
+          <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 3h1v1H1zM2 2h1v3H2zM3 1h1v5H3zM4 0h1v7H4z" fill="currentColor" /></svg>
+          <span>Left</span>
+        </button>
+        <button type="button" class="sweep__key sweep__key--fire" data-sweep-fire>
+          <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M3 0h1v1H3zM2 1h3v1H2zM3 2h1v5H3z" fill="currentColor" /></svg>
+          <span>Fire</span>
+        </button>
+        <button type="button" class="sweep__key" data-sweep-right>
+          <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M5 3h1v1H5zM4 2h1v3H4zM3 1h1v5H3zM2 0h1v7H2z" fill="currentColor" /></svg>
+          <span>Right</span>
+        </button>
+      </div>
+      <p class="visually-hidden" aria-live="polite" data-sweep-live></p>
+    </div>
+  </section>
+
+  <section class="level level--blue has-join-bottom" data-level="3" aria-labelledby="facts-title">
     <Join kind="terrain" from="var(--field-blue)" to="var(--field-green)" seed="about-answers" />
     <div class="level__head">
-      <p class="flag" data-nosnippet><span>Level 2 &middot; Facts</span></p>
+      <p class="flag" data-nosnippet><span>Level 3 &middot; Facts</span></p>
       <h2 id="facts-title" class="level__title">Key facts</h2>
     </div>
     <table class="facts level__body">
@@ -59,10 +119,10 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
     </table>
   </section>
 
-  <section class="level level--green has-join-bottom" data-level="3" aria-labelledby="qa-title">
+  <section class="level level--green has-join-bottom" data-level="4" aria-labelledby="qa-title">
     <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="about-foot" />
     <div class="level__head">
-      <p class="flag" data-nosnippet><span>Level 3 &middot; Questions</span></p>
+      <p class="flag" data-nosnippet><span>Level 4 &middot; Questions</span></p>
       <h2 id="qa-title" class="level__title">Questions and answers</h2>
     </div>
     <div class="qa level__body">
@@ -172,4 +232,219 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
       font-size: 1.375rem;
     }
   }
+  /* Level 2: Bug Sweep. The game sits in a navy screen on the cyan field: a status bar on top, the
+     playing field (a canvas drawn at a whole number of device pixels per game pixel, so it stays
+     crisp at every size), then on touch screens and on tablets and phones the Left, Fire and
+     Right buttons, in the page's flow so the bottom bar never covers them. */
+  .sweep {
+    /* (text selected on the navy screen shows green, as in the footer) */
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
+    width: 100%;
+    max-width: 40rem;
+    display: grid;
+    gap: var(--s-2);
+    /* (brought into view on Play with room under it for the bottom bar and the ship riding on it) */
+    scroll-margin-bottom: calc(var(--hud-h, 0px) + var(--ship-w, 0px) + var(--s-2));
+    scroll-margin-top: var(--s-2);
+  }
+  .sweep__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    min-height: 2.75rem;
+    padding: 0 var(--s-2);
+    background: var(--pr-navy);
+    color: var(--pr-light);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .sweep__bar p {
+    margin: 0;
+    max-width: none;
+  }
+  .sweep__name {
+    color: var(--pr-green);
+    margin-right: auto !important;
+  }
+  .sweep__stat b {
+    font-weight: 400;
+    color: var(--pr-cyan);
+  }
+  .sweep__pause {
+    align-self: stretch;
+    margin-right: calc(-1 * var(--s-2));
+    min-width: 2.75rem;
+    padding: 0 var(--s-2);
+    border: 0;
+    border-left: 2px solid var(--surface-2);
+    background: transparent;
+    color: var(--pr-light);
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+  }
+  .sweep__pause:hover {
+    color: var(--pr-cyan);
+  }
+  .sweep__pause[hidden] {
+    display: none;
+  }
+  .sweep__stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 5 / 4;
+    background: var(--pr-navy);
+    overflow: hidden;
+    touch-action: none;
+  }
+  .sweep__stage:focus-visible {
+    outline: 3px solid var(--pr-light);
+    outline-offset: 3px;
+  }
+  .sweep__canvas {
+    grid-area: 1 / 1;
+    display: block;
+    image-rendering: pixelated;
+  }
+  .sweep__overlay {
+    grid-area: 1 / 1;
+    align-self: stretch;
+    justify-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-2);
+    padding: var(--s-3);
+    background: color-mix(in srgb, var(--pr-navy) 88%, transparent);
+    color: var(--pr-light);
+    text-align: center;
+  }
+  .sweep__overlay[hidden] {
+    display: none;
+  }
+  .sweep__poster {
+    display: grid;
+    justify-items: center;
+    gap: var(--s-3);
+    margin-bottom: var(--s-1);
+  }
+  .sweep__poster[hidden] {
+    display: none;
+  }
+  .sweep__row {
+    display: flex;
+    gap: var(--s-2);
+  }
+  /* (the bugs in the site's usual colours: on the cyan level their body is navy) */
+  .sweep__poster {
+    --bug-body: var(--pr-green);
+    --bug-eye: var(--pr-navy);
+    --bug-leg: var(--pr-cyan);
+  }
+  .sweep__overlay :global(.sweep__bug) {
+    width: 2.5rem;
+  }
+  .sweep__overlay :global(.sweep__ship) {
+    width: 3rem;
+  }
+  .sweep__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--pr-light);
+  }
+  .sweep__text {
+    margin: 0;
+    color: var(--muted);
+  }
+  .sweep__keys {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--field-cyan-ink);
+  }
+  .sweep__pad {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr 1fr;
+    gap: var(--s-1);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .sweep__pad[hidden] {
+    display: none;
+  }
+  .sweep__key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    min-height: 3.5rem;
+    border: 0;
+    background: var(--pr-navy);
+    color: var(--pr-light);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    cursor: pointer;
+  }
+  .sweep__key svg {
+    width: 1rem;
+    height: 1rem;
+  }
+  .sweep__key--fire {
+    background: var(--pr-green);
+    color: var(--pr-navy);
+  }
+  .sweep__key.is-down {
+    background: var(--surface-2);
+  }
+  .sweep__key--fire.is-down {
+    background: var(--pr-light);
+  }
+  .sweep__key:focus-visible,
+  .sweep__pause:focus-visible {
+    outline: 3px solid var(--pr-light);
+    outline-offset: -3px;
+  }
+  @media (max-width: 47.99rem) {
+    .sweep__bar {
+      gap: var(--s-2);
+      font-size: 0.875rem;
+    }
+    .sweep__title {
+      font-size: 1.5rem;
+    }
+    .sweep__overlay :global(.sweep__bug) {
+      width: 1.75rem;
+    }
+    .sweep__overlay :global(.sweep__ship) {
+      width: 2.25rem;
+    }
+  }
 </style>
+
+<script>
+  // Bug Sweep: the game's code arrives only when Play is pressed (a module of its own).
+  const root = document.querySelector<HTMLElement>('[data-sweep]');
+  const play = root?.querySelector<HTMLButtonElement>('[data-sweep-action]');
+  if (root && play) {
+    const start = async () => {
+      play.removeEventListener('click', start);
+      play.disabled = true;
+      const { startSweep } = await import('../scripts/sweep');
+      play.disabled = false;
+      startSweep(root);
+    };
+    play.addEventListener('click', start);
+  }
+</script>

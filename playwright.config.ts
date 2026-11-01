@@ -22,6 +22,8 @@ export default defineConfig({
     ? undefined
     : {
         command: `npm run build && npm run preview -- --port ${port} --host 127.0.0.1`,
+        // (a test build: the handle Bug Sweep's tests drive it with; the production build leaves it out)
+        env: { PUBLIC_TEST_HOOKS: '1' },
         url: `http://127.0.0.1:${port}/`,
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
