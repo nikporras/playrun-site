@@ -265,7 +265,16 @@ test.describe('Home', () => {
         const img = el.querySelector('img')!.getBoundingClientRect();
         const r = svg.getBoundingClientRect();
         const lastRow = Math.max(...paths.flatMap((p) => [...p.getAttribute('d')!.matchAll(/M-?\d+ (\d+)h/g)].map((m) => Number(m[1]))));
+        const k = r.width / vb.width;
+        let minX = Infinity;
+        let maxX = -Infinity;
+        for (const p of paths) for (const m of p.getAttribute('d')!.matchAll(/M(-?\d+) \d+h(\d+)/g)) {
+          minX = Math.min(minX, Number(m[1]));
+          maxX = Math.max(maxX, Number(m[1]) + Number(m[2]));
+        }
+        const clipBox = svg.parentElement!.getBoundingClientRect();
         return {
+          contained: r.left + minX * k >= clipBox.left - 0.5 && r.left + maxX * k <= clipBox.right + 0.5,
           count: shown.length,
           crisp: svg.getAttribute('shape-rendering'),
           hidden: svg.getAttribute('aria-hidden'),
@@ -296,6 +305,7 @@ test.describe('Home', () => {
       expect(halo.endsAt, "it ends with the photo's fade").toBeLessThanOrEqual(1);
       expect(Math.abs(halo.centre), `centred on the photo at ${width}`).toBeLessThanOrEqual(1);
       expect(halo.clip.overflow).toBe('hidden');
+      expect(halo.contained, `every band inside the clip at ${width}: no straight edge`).toBe(true);
       expect(Math.abs(halo.clip.centre), `what shows is centred on the photo at ${width}`).toBeLessThanOrEqual(1);
       expect(halo.clip.right, 'and never cut by the edge of the screen').toBeLessThanOrEqual(width + 1);
     }
@@ -569,6 +579,8 @@ test.describe('Home', () => {
   }
 
   test('the ticker rolls every title left as a plain image or its icon, named for a screen reader, the biggest names first; it pauses with the button', async ({ page }) => {
+    // (a full-height desktop: on a short one, 1280 by 720, the logos are a little smaller)
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
     const seq = page.locator('.ticker__seq').first();
@@ -590,7 +602,7 @@ test.describe('Home', () => {
     expect(await page.locator('.ticker__view').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
     expect(await marks.first().evaluate((el) => [getComputedStyle(el.parentElement!).borderLeftWidth, getComputedStyle(el.parentElement!).backgroundColor])).toEqual(['0px', 'rgba(0, 0, 0, 0)']);
     const viewBox = (await page.locator('.ticker__view').boundingBox())!;
-    expect(viewBox.height, 'the logos are the content of the section').toBeGreaterThanOrEqual(120);
+    expect(viewBox.height, 'the logos are the content of the section').toBeGreaterThanOrEqual(112);
     expect(viewBox.height).toBeLessThanOrEqual(200);
     // the title is the section-head size, smaller than the next level's title
     const sizes = await page.evaluate(() => [parseFloat(getComputedStyle(document.querySelector('#wall-title')!).fontSize), parseFloat(getComputedStyle(document.querySelector('#proof-title')!).fontSize)]);
@@ -1108,9 +1120,14 @@ for (const [width, height] of [
   [1440, 900],
   [375, 812],
 ] as const) {
-  test(`the games are on the first screen (${width}x${height}): the row of logos rests on the clouds at the hero's foot, whole on screen, rolling, unlinked, covering nothing of the hero; centred under its label, with Pause and the link under it`, { tag: ['@viewports'] }, async ({ page }) => {
+  test(`the games are on the first screen (${width}x${height}): the row of logos whole on screen (on a phone the clouds and the label peeking in), rolling, unlinked, its first logos there with the page; Level 2 one centred block on the blue (the label, the logos, Pause and the link), even gaps, the same gap to the clouds above and below, nothing over the joins`, { tag: ['@viewports'] }, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
+    // the first logos load with the page, not after it: there at its load event, no wait
+    const loaded = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLImageElement>('.ticker__seq:not(.ticker__copy) img.wall__logo')].slice(0, 3).map((i) => i.complete && i.naturalWidth > 0 && i.loading === 'eager'),
+    );
+    expect(loaded, 'the first logos in with the page').toEqual([true, true, true]);
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(300);
     const geo = await page.evaluate(() => {
@@ -1123,9 +1140,39 @@ for (const [width, height] of [
       return { floor, logoBottom: Math.max(...marks.map((r) => r.bottom)), logoTop: Math.min(...marks.map((r) => r.top)), shown: marks.length, band: [band.top, band.bottom], heroBottom: Math.max(...hero.map((r) => r.bottom)) };
     });
     expect(geo.shown, 'logos on show').toBeGreaterThanOrEqual(2);
-    expect(geo.logoBottom, 'the whole row on the first screen').toBeLessThanOrEqual(geo.floor);
+    if (width >= 768) expect(geo.logoBottom, 'the whole row on the first screen').toBeLessThanOrEqual(geo.floor);
+    else {
+      // a phone: the clouds and the label peek in, and the photo keeps its size
+      const peek = await page.evaluate(() => ({ flag: document.querySelector('.wall .flag')!.getBoundingClientRect().bottom, photo: document.querySelector('.hero__figure img')!.getBoundingClientRect().height }));
+      expect(peek.flag, 'the label on the first screen').toBeLessThanOrEqual(geo.floor);
+      expect(peek.photo, 'the photo about its old size').toBeGreaterThanOrEqual(180);
+    }
     expect(geo.logoTop, 'resting on the clouds').toBeGreaterThan(geo.band[0]);
     expect(geo.heroBottom, 'the hero text above the clouds').toBeLessThanOrEqual(geo.band[0]);
+    // the block, measured in place (Pause and the link rise in as they enter)
+    await page.evaluate(() => document.querySelectorAll('.wall [data-enter]').forEach((e) => e.classList.add('is-in')));
+    await page.waitForTimeout(900);
+    const block = await page.evaluate(() => {
+      const r = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+      const top = r('.wall .join--top');
+      const bottom = r('.wall .join--bottom');
+      const parts = ['.wall__head', '.ticker__view', '.wall__actions'].map(r);
+      const flag = r('.wall .flag');
+      return {
+        above: parts[0].top - top.bottom,
+        below: bottom.top - parts[2].bottom,
+        labelToRow: parts[1].top - flag.bottom,
+        rowToActions: parts[2].top - parts[1].bottom,
+        rowAbove: parts[1].top - top.bottom,
+        rowBelow: bottom.top - parts[1].bottom,
+        inside: [flag, ...parts].every((p) => p.top >= top.bottom - 0.5 && p.bottom <= bottom.top + 0.5),
+      };
+    });
+    expect(block.inside, 'nothing over the cloud joins').toBe(true);
+    expect(block.above).toBeGreaterThan(0);
+    expect(Math.abs(block.above - block.below), `the same gap to the clouds above and below (${block.above}, ${block.below})`).toBeLessThanOrEqual(1);
+    expect(Math.abs(block.labelToRow - block.rowToActions), `even gaps (${block.labelToRow}, ${block.rowToActions})`).toBeLessThanOrEqual(1);
+    expect(Math.abs(block.rowAbove - block.rowBelow), 'the logos in the middle of the blue').toBeLessThanOrEqual(1);
     // rolling, unlinked; the label above the row, Pause and the link side by side under it, all
     // centred; the heading there for the outline and screen readers only
     expect(await page.locator('.ticker a').count()).toBe(0);
@@ -1164,6 +1211,27 @@ test('on a desktop the scoreboard never covers the row of logos, wherever the pa
       const meet = pill!.x < row!.x + row!.width && pill!.x + pill!.width > row!.x && pill!.y < row!.y + row!.height && pill!.y + pill!.height > row!.y;
       expect(meet, `the pill clear of the row at ${width}, scrolled ${Math.round(y)}`).toBe(false);
       expect(Math.abs(row!.x + row!.width / 2 - width / 2), 'the row centred').toBeLessThanOrEqual(10);
+    }
+  }
+});
+
+// A hairline of what is behind can show where a cloud join meets the level's own blue, on a screen
+// scaled by a fraction (1.25, 1.5) when the two edges round to different device pixels. The field
+// starts under the join's front layer (the same colour), not at its edge, on every page.
+test("no hairline where a level's clouds meet its blue: the field starts under the front layer of the join", { tag: ['@brand'] }, async ({ page }) => {
+  for (const path of ['/', '/skills/', '/portfolio/', '/quality/', '/contact/']) {
+    await page.goto(path);
+    const levels = await page.locator('.level.has-join-top').evaluateAll((els) =>
+      els.map((el) => {
+        const band = el.querySelector('.join--top')!.getBoundingClientRect();
+        const cs = getComputedStyle(el);
+        return { band: band.height, fieldTop: parseFloat(cs.backgroundPositionY), image: cs.backgroundImage };
+      }),
+    );
+    for (const l of levels) {
+      expect(l.image).toMatch(/gradient/);
+      expect(l.fieldTop, `${path}: the blue starts under the clouds' front layer`).toBeLessThanOrEqual(l.band - 1);
+      expect(l.fieldTop).toBeGreaterThanOrEqual(l.band - 4);
     }
   }
 });

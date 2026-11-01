@@ -239,8 +239,10 @@ const layers = spec.map((s) => {
     padding-top: calc(var(--s-6) + var(--join-h));
     background-color: transparent;
     background-image: linear-gradient(var(--level-bg), var(--level-bg));
-    background-size: 100% calc(100% - var(--join-h));
-    background-position: 0 var(--join-h);
+    /* (the field starts 2px under the band's front layer, the same colour: on a screen scaled by
+       a fraction no hairline of what is behind shows between them) */
+    background-size: 100% calc(100% - var(--join-h) + 2px);
+    background-position: 0 calc(var(--join-h) - 2px);
     background-repeat: no-repeat;
   }
   .level--tight.has-join-top {

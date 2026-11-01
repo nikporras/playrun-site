@@ -119,8 +119,13 @@ const checks = [
     <div class="hero__figure" data-load style="--d: 200ms">
       <!-- (the pixel halo behind it, drawn for the desktop photo and for the smaller one) -->
       <div class="hero__photo">
-      <HeroHalo photo={500} class="hero__halo hero__halo--wide" />
-      <HeroHalo photo={264} class="hero__halo hero__halo--small" />
+      <HeroHalo photo={500} class="hero__halo hero__halo--500" />
+      <HeroHalo photo={380} class="hero__halo hero__halo--380" />
+      <HeroHalo photo={264} class="hero__halo hero__halo--264" />
+      <HeroHalo photo={200} class="hero__halo hero__halo--200" />
+      <HeroHalo photo={160} class="hero__halo hero__halo--160" />
+      <HeroHalo photo={110} class="hero__halo hero__halo--110" />
+      <HeroHalo photo={80} class="hero__halo hero__halo--80" />
       <Picture
         src={portrait}
         alt={ALT}
@@ -166,11 +171,20 @@ const checks = [
           {
             [false, true].map((copy) => (
               <ul role="list" class:list={['ticker__seq', copy && 'ticker__copy']} aria-hidden={copy ? 'true' : undefined}>
-                {wall.map((p) => (
+                {wall.map((p, i) => (
                   <li class="wall__item">
                     <span class="wall__mark" style={size(p.id)}>
                       {logos[p.id] ? (
-                        <Image class="wall__logo" src={logos[p.id]} alt={copy ? '' : p.data.title} height={120} densities={[1, 2]} loading="lazy" decoding="async" />
+                        <Image
+                          class="wall__logo"
+                          src={logos[p.id]}
+                          alt={copy ? '' : p.data.title}
+                          height={120}
+                          densities={[1, 2]}
+                          loading={!copy && i < 5 ? 'eager' : 'lazy'}
+                          fetchpriority={!copy && i < 5 ? 'high' : undefined}
+                          decoding="async"
+                        />
                       ) : p.data.wordmark ? (
                         <span class="wall__word">{p.data.title}</span>
                       ) : (
@@ -197,7 +211,7 @@ const checks = [
       <!-- the logos are pictures only; the way on to the games is this link -->
       <a class="textlink wall__more" href="/portfolio/">See every game I've tested</a>
     </div>
-    <Bug id="wall-1" style="right: 14%; bottom: calc(var(--join-h) + 0.5rem)" tablet="right: 6%; bottom: calc(var(--join-h) + 0.5rem)" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <Bug id="wall-1" style="right: 5%; bottom: calc(var(--join-h) + 0.25rem)" tablet="right: 5%; bottom: calc(var(--join-h) + 0.25rem)" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
   <!-- Level 3: the numbers, counted from the portfolio, on a drum that turns: five rows on show,
@@ -335,18 +349,25 @@ const checks = [
      logos (the peek). The hero is the rest of the screen under the header. */
   .hero,
   .wall {
-    --cell-h: 8rem; /* the logo row */
-    --ticker-top: calc(var(--join-h) * 0.3); /* where the label sits in the cloud band */
-    --flag-room: 2.5rem; /* the label and its space above the row */
-    --peek: calc(var(--ticker-top) + var(--flag-room) + var(--cell-h));
+    /* Level 2 is one centred block on the blue between its two cloud joins: the label, the row of
+       logos, then Pause and the link, an even gap between them and the same gap to the clouds above
+       and below. The label sits in a zone as tall as the Pause and link row, so the logos are in
+       the middle of the blue. */
+    --cell-h: 7rem; /* the logo row (the tallest logo is 7rem) */
+    --zone: 2rem; /* the label's zone, and the Pause and link row */
+    --gap: var(--s-2); /* between the label, the logos and the row */
+    --edge: var(--s-3); /* between the block and the clouds */
+    --peek: calc(var(--join-h) + var(--edge) + var(--zone) + var(--gap) + var(--cell-h));
   }
   .hero {
     min-height: calc(100svh - var(--hud-space, 0px) - 4.5rem - var(--peek));
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-top: var(--s-4);
-    padding-bottom: var(--s-6);
+    --hero-pt: var(--s-4);
+    --hero-pb: var(--s-4);
+    padding-top: var(--hero-pt);
+    padding-bottom: var(--hero-pb);
   }
   @media (max-width: 63.99rem) {
     :global(.games) .hero {
@@ -562,7 +583,7 @@ const checks = [
     position: absolute;
     right: var(--gutter);
     /* the middle of the content box (the level's top and bottom padding differ) */
-    top: calc(var(--s-4) + (100% - var(--s-4) - var(--s-6)) / 2);
+    top: calc(var(--hero-pt) + (100% - var(--hero-pt) - var(--hero-pb)) / 2);
     translate: 0 -50%;
     /* (no taller than the hero, on a short screen) */
     width: min(36vw, 34rem, calc((100svh - 4.5rem - var(--peek)) * 0.95 / 1.0335));
@@ -587,9 +608,63 @@ const checks = [
       radial-gradient(ellipse 78% 92% at 50% 30%, #000 62%, rgba(0, 0, 0, 0.7) 78%, rgba(0, 0, 0, 0.3) 91%, transparent 100%);
     mask-composite: intersect;
   }
-  /* The halo (HeroHalo.astro): pixel bands behind the photo, one size a screen. */
-  :global(.hero__halo--small) {
+  /* The halo (HeroHalo.astro): pixel bands behind the photo, drawn at a few sizes, as the 8px steps
+     cannot scale with the photo. The one shown is the largest that fits the room either side of
+     the photo (the clip reaches to the edge of the screen), so it is never cut by a straight edge:
+     chosen by the photo's width on tablets and desktops, by its height on a phone, where it takes
+     the height the text leaves. */
+  :global(.hero__halo) {
     display: none;
+  }
+  .hero__figure {
+    container: halo / inline-size;
+  }
+  @media (min-width: 48rem) {
+    @container halo (min-width: 480px) {
+      :global(.hero__halo--500) {
+        display: block;
+      }
+    }
+    @container halo (min-width: 330px) and (max-width: 479.98px) {
+      :global(.hero__halo--380) {
+        display: block;
+      }
+    }
+    @container halo (max-width: 329.98px) {
+      :global(.hero__halo--264) {
+        display: block;
+      }
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .hero__figure {
+      container: halo / size;
+    }
+    @container halo (min-height: 290px) {
+      :global(.hero__halo--264) {
+        display: block;
+      }
+    }
+    @container halo (min-height: 207px) and (max-height: 289.98px) {
+      :global(.hero__halo--200) {
+        display: block;
+      }
+    }
+    @container halo (min-height: 155px) and (max-height: 206.98px) {
+      :global(.hero__halo--160) {
+        display: block;
+      }
+    }
+    @container halo (min-height: 120px) and (max-height: 154.98px) {
+      :global(.hero__halo--110) {
+        display: block;
+      }
+    }
+    @container halo (max-height: 119.98px) {
+      :global(.hero__halo--80) {
+        display: block;
+      }
+    }
   }
   .hero__figure :global(img) {
     position: relative;
@@ -605,6 +680,21 @@ const checks = [
     .hero__head {
       gap: var(--s-2);
     }
+    .hero {
+      --hero-pt: var(--s-3);
+      --hero-pb: var(--s-2);
+    }
+    .hero,
+    .wall {
+      --edge: var(--s-2);
+      --cell-h: 6rem;
+    }
+    .wall .ticker {
+      --k: 0.85; /* (the tallest logo at 6rem) */
+    }
+    .hero__title {
+      font-size: round(min(var(--step-hero), calc((100svh - 4.5rem - var(--peek)) * 0.2)), 16px);
+    }
   }
 
   @media (max-width: 63.99rem) {
@@ -614,18 +704,12 @@ const checks = [
     .hero__figure {
       width: min(34vw, 20rem);
     }
-    :global(.hero__halo--wide) {
-      display: none;
-    }
-    :global(.hero__halo--small) {
-      display: block;
-    }
   }
   @media (max-width: 47.99rem) {
     .hero {
       min-height: 0;
       justify-content: flex-start;
-      padding-top: var(--s-3);
+      padding-top: var(--s-2);
       padding-bottom: 0;
     }
     :global(.games) .hero {
@@ -633,7 +717,7 @@ const checks = [
     }
     .hero__head {
       max-width: none;
-      gap: var(--s-3);
+      gap: var(--s-2);
     }
     .hero__title {
       font-size: round(17vw, 8px);
@@ -660,7 +744,7 @@ const checks = [
       width: auto;
       display: flex;
       justify-content: flex-end;
-      margin: var(--s-3) 0 0;
+      margin: var(--s-2) 0 0;
     }
     .hero__photo {
       height: 100%;
@@ -717,23 +801,25 @@ const checks = [
     text-align: center;
   }
   .wall.has-join-top {
-    padding-top: var(--ticker-top);
+    padding-top: calc(var(--join-h) + var(--edge));
   }
+  .wall.has-join-bottom {
+    padding-bottom: calc(var(--edge) + var(--join-h));
+  }
+  /* the label, at the foot of its zone, just above the logos */
   .wall__head {
-    position: relative;
-    z-index: 1;
+    height: var(--zone);
+    justify-content: flex-end;
     align-items: center;
-    height: calc(var(--flag-room) - var(--s-2));
+    gap: 0;
   }
   .wall__head .flag {
     margin: 0;
   }
-  /* the row of logos, in the clouds and above them, the whole width of the column */
+  /* the row of logos, the whole width of the column */
   .wall .ticker {
     align-self: stretch;
-    position: relative;
-    z-index: 1;
-    margin-top: var(--s-2);
+    margin-top: var(--gap);
   }
   /* A desktop: the scoreboard's pill stands bottom right, beside the column on a wide screen and
      over its end on a narrower one. The row stops short of the pill's column at both ends (so it
@@ -750,7 +836,8 @@ const checks = [
     justify-content: center;
     align-items: center;
     gap: var(--s-2) var(--s-3);
-    margin-top: var(--s-2);
+    height: var(--zone);
+    margin-top: var(--gap);
   }
   .ticker {
     --k: 1; /* the scale of every logo: smaller on tablets and phones */
@@ -898,7 +985,7 @@ const checks = [
     }
     .hero,
     .wall {
-      --cell-h: 6.5rem;
+      --cell-h: 5.25rem; /* (the logos at 0.72) */
     }
     .wall__name {
       font-size: 1.25rem;
@@ -913,7 +1000,11 @@ const checks = [
     }
     .hero,
     .wall {
-      --cell-h: 4.5rem;
+      --cell-h: 3.75rem; /* (the logos at half size) */
+      --gap: 0.75rem;
+      --edge: var(--s-2);
+      /* (a phone's first screen shows the clouds and the label peeking in; the photo keeps its size) */
+      --peek: calc(var(--join-h) + var(--edge) + var(--zone) + 0.5rem);
     }
     .wall__name {
       font-size: 1rem;
