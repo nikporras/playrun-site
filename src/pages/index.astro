@@ -101,9 +101,8 @@ const checks = [
       </div>
       <p class="hero__post" data-load style="--d: 400ms">{playrun.role}, {site.name}</p>
       <p class="hero__value" data-load style="--d: 500ms">
-        I'm a game QA tester in London. I've been testing games since 2021, on consoles, PC and VR. I've led QA teams at nDreams and Historic VR, and
-        taken games all the way to release on several platforms. I plan the testing, run it on real hardware, and
-        write reports developers can act on. <a class="textlink" href="/about/">More about me</a>
+        I'm a game QA tester in London. I've tested console, PC and VR games since {since}, and led QA teams at {listed([...new Set(leadRoles.map((r) => r.at))])}.{' '}
+        <a class="textlink" href="/about/">More about me</a>
       </p>
     </div>
     <!-- The player character: the one photo on the site, standing on the bottom edge of the level -->

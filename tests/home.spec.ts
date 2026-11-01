@@ -59,7 +59,7 @@ test.describe('Home', () => {
     const tops = await page.locator('h1, .hero__post, .hero__value').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
     expect(tops).toEqual([...tops].sort((a, b) => a - b));
     await expect(page.locator('.hero__value')).toHaveText(
-      "I'm a game QA tester in London. I've been testing games since 2021, on consoles, PC and VR. I've led QA teams at nDreams and Historic VR, and taken games all the way to release on several platforms. I plan the testing, run it on real hardware, and write reports developers can act on. More about me",
+      "I'm a game QA tester in London. I've tested console, PC and VR games since 2021, and led QA teams at nDreams and Historic VR. More about me",
     );
     await page.waitForLoadState('networkidle');
     expect(errors, errors.join('\n')).toEqual([]);
