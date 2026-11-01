@@ -209,9 +209,9 @@ export function startHeroExit() {
   };
   addEventListener('resize', relayout);
   if ('ResizeObserver' in window) new ResizeObserver(relayout).observe(document.body);
-  document.fonts.ready.then(() => {
-    watch();
-    // (the observer's first report sets the page as it opened; from then on, the glitch)
-    requestAnimationFrame(() => (armed = true));
-  });
+  // (the observer's reports until the page has loaded and settled set the page as it opened,
+  // including a scroll the browser restores on a reload; from then on, the glitch)
+  const loaded = document.readyState === 'complete' ? Promise.resolve() : new Promise((r) => addEventListener('load', r, { once: true }));
+  document.fonts.ready.then(() => watch());
+  Promise.all([document.fonts.ready, loaded]).then(() => window.setTimeout(() => (armed = true), 250));
 }
