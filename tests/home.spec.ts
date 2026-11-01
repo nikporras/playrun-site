@@ -918,7 +918,7 @@ test.describe('Home', () => {
     await drum.scrollIntoViewIfNeeded();
     await expect(drum).toHaveClass(/is-live/);
     const caps = drum.locator('.drum__row:not(.drum__clone) .drum__cap');
-    await expect(caps).toHaveText(['Started in 2021. Still finding things.', 'Six sets of house rules learned.', 'Every one played to the credits.', 'Headset tan included.', 'Each one with its own cable.', 'Test plans, rotas and the odd pep talk.']);
+    await expect(caps).toHaveText(['Started in 2021. Still finding things.', 'From outsourced QA to in-house teams.', 'Released titles and games still in development.', 'Headset tan included.', 'Consoles, PC stores and VR headsets.', 'At nDreams and Historic VR.']);
     const active = drum.locator('.drum__row[data-d="0"] .drum__cap');
     await expect(active).toHaveCSS('opacity', '1', { timeout: 2000 });
     const style = await active.evaluate((el) => {

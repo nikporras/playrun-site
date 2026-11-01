@@ -9,7 +9,7 @@ import Join from '../components/Join.astro';
 import GameIcon from '../components/GameIcon.astro';
 import { suite } from '../data/suite';
 import { logos } from '../data/logos';
-import { contact, employers, playrun, primaryAction, since, site } from '../config';
+import { contact, employers, leadRoles, listed, playrun, primaryAction, since, site } from '../config';
 
 import portrait from '../assets/photos/nicolas.png';
 
@@ -52,16 +52,16 @@ const isVR = (p: (typeof shown)[number]) => p.data.vr || p.data.platforms.some((
 // Each stat carries a short caption, shown under it while it is the active row: light, and true.
 const stats = [
   { n: new Date().getFullYear() - since, suffix: '+', label: 'years in QA', cap: 'Started in 2021. Still finding things.' },
-  { n: new Set(employers.map((e) => e.name)).size, suffix: '', label: 'companies', cap: 'Six sets of house rules learned.' },
-  { n: shown.length, suffix: '', label: 'games', cap: 'Every one played to the credits.' },
+  { n: new Set(employers.map((e) => e.name)).size, suffix: '', label: 'companies', cap: 'From outsourced QA to in-house teams.' },
+  { n: shown.length, suffix: '', label: 'games', cap: 'Released titles and games still in development.' },
   { n: shown.filter(isVR).length, suffix: '', label: 'VR games', cap: 'Headset tan included.' },
-  { n: 10, suffix: '+', label: 'platforms', cap: 'Each one with its own cable.' },
-  { n: employers.flatMap((e) => e.roles).filter((r) => r.lead).length, suffix: '', label: 'QA lead roles', cap: 'Test plans, rotas and the odd pep talk.' },
+  { n: 10, suffix: '+', label: 'platforms', cap: 'Consoles, PC stores and VR headsets.' },
+  { n: leadRoles.length, suffix: '', label: 'QA lead roles', cap: `At ${listed([...new Set(leadRoles.map((r) => r.at))])}.` },
 ];
 
 const ALT = 'Nicolás Porras wearing a VR headset pushed up on his head';
 // For the description: the lead roles counted from the data, in words.
-const leadRoles = employers.flatMap((e) => e.roles).filter((r) => r.lead).length;
+const leadCount = leadRoles.length;
 const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 
 // The run that built this page. GitHub Actions builds only after the suite has passed, so the
@@ -86,7 +86,7 @@ const checks = [
   title="Home"
   kind="ProfilePage"
   fullTitle={`${contact.name}, Game QA Tester in London | ${site.name}`}
-  description={`Game QA portfolio of ${contact.name} in London: testing console, PC and VR games since ${since}, from compliance (CQA) to release, including ${numberWords[leadRoles]} QA lead roles.`}
+  description={`Game QA portfolio of ${contact.name} in London: testing console, PC and VR games since ${since}, from compliance (CQA) to release, including ${numberWords[leadCount]} QA lead roles.`}
 >
   <!-- Level 1: the start screen. It stays pinned while the next level slides up over it. -->
   <section class="level level--navy level--sky hero" data-level="1" aria-labelledby="hero-title">
@@ -1026,11 +1026,12 @@ const checks = [
   .stats__title {
     font-size: clamp(2rem, 1rem + 2.2vw, 3rem);
   }
-  /* One size rules the drum: the number, 96px from 1440 up and 36px at 375; the row is 1.25 of
-     it, the offsets a third and two thirds of it (32px and 64px on a desktop). */
+  /* One size rules the drum: the number, 96px from 1440 up and 36px at 375; the row is the number
+     and 2.5rem, room for the label and a caption on two lines, and the offsets a third and two
+     thirds of it (32px and 64px on a desktop). */
   .drum {
     --num: clamp(2.25rem, 1rem + 5.6vw, 6rem);
-    --row: calc(var(--num) * 1.25);
+    --row: calc(var(--num) + 2.5rem);
     --shift: calc(var(--num) / 3);
     position: relative;
     display: grid;
@@ -1084,7 +1085,7 @@ const checks = [
     font-size: clamp(0.9375rem, 0.875rem + 0.2vw, 1.0625rem);
     line-height: 1.3;
     color: var(--accent-2);
-    max-width: 30ch;
+    max-width: 40ch;
   }
   .drum__controls {
     display: none;
@@ -1199,8 +1200,6 @@ const checks = [
   @media (max-width: 47.99rem) {
     .drum {
       column-gap: var(--s-2);
-      /* a caption wraps to two lines on a phone: the row grows to hold label and caption */
-      --row: max(calc(var(--num) * 1.25), 4.75rem);
     }
     .drum__button {
       width: 2.5rem;
