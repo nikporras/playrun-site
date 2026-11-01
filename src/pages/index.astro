@@ -879,6 +879,14 @@ const checks = [
     z-index: 1;
     margin-bottom: var(--s-4);
   }
+  /* A desktop: the scoreboard's pill stands bottom right, beside the column on a wide screen and
+     over its end on a narrower one. The row stops short of the pill's column at both ends (so it
+     stays centred), and the pill never covers a logo, wherever the page is scrolled. */
+  @media (min-width: 64rem) {
+    .wall .ticker {
+      margin-inline: max(0px, calc(13rem - max(clamp(1.25rem, 5vw, 6rem), calc((100vw - 77.5rem) / 2))));
+    }
+  }
   .wall__actions {
     align-items: center;
   }

@@ -60,8 +60,10 @@ const layers = BANDS.flatMap((band) => {
 });
 ---
 
+<!-- (the clip: as far either side of the photo as from its middle to the edge of the screen) -->
+<div class:list={['halo__clip', className]} aria-hidden="true">
 <svg
-  class:list={['halo', className]}
+  class="halo"
   viewBox={`0 0 ${cols} ${rows}`}
   width={cols * CELL}
   height={rows * CELL}
@@ -72,8 +74,22 @@ const layers = BANDS.flatMap((band) => {
 >
   {layers.map((l) => <path d={l.d} fill={l.fill} fill-opacity={l.opacity} />)}
 </svg>
+</div>
 
 <style>
+  /* The photo stands a gutter from the right edge of the screen, so a halo wider than that would be
+     cut by the screen on the right only and look off centre. The clip reaches exactly from the
+     photo's middle to the edge of the screen on both sides, so what shows is always centred. */
+  .halo__clip {
+    --edge: max(clamp(1.25rem, 5vw, 6rem), calc((100vw - 77.5rem) / 2)); /* the gutter */
+    position: absolute;
+    top: -300%;
+    bottom: 0;
+    left: calc(-1 * var(--edge));
+    right: calc(-1 * var(--edge));
+    overflow: hidden;
+    pointer-events: none;
+  }
   /* behind the photo, centred across it, its fade ending on the photo's foot whatever the photo's
      size (the top is set on the element) */
   .halo {

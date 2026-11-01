@@ -250,11 +250,15 @@ test.describe('Home', () => {
     expect(mask.figMask, 'the figure itself is not masked, so the halo is not cut at its edges').toBe('none');
     expect(mask.glow, 'no soft gradient glow any more').toBe('none');
     // the halo: one shown a screen, behind the photo, wider than it, hard 8px steps in the brand
-    // cyan and blue at falling opacity, fading row by row and ending at the photo's foot
+    // cyan and blue at falling opacity, fading row by row and ending at the photo's foot; centred on
+    // the photo, and what shows of it centred too (never cut by the screen on one side only)
     for (const [width, height] of [
       [1920, 1080],
+      [1440, 900],
       [1280, 720],
+      [768, 1024],
       [375, 812],
+      [360, 740],
     ] as const) {
       await page.setViewportSize({ width, height });
       await page.evaluate(() => window.scrollTo(0, 0));
@@ -277,6 +281,11 @@ test.describe('Home', () => {
           wider: r.width / img.width,
           behind: svg.compareDocumentPosition(el.querySelector('picture')!) & Node.DOCUMENT_POSITION_FOLLOWING,
           endsAt: r.top + ((lastRow + 1) * r.height) / vb.height - img.bottom,
+          centre: (r.left + r.right) / 2 - (img.left + img.right) / 2,
+          clip: (() => {
+            const c = svg.parentElement!.getBoundingClientRect();
+            return { centre: (c.left + c.right) / 2 - (img.left + img.right) / 2, overflow: getComputedStyle(svg.parentElement!).overflow, right: c.right };
+          })(),
         };
       });
       expect(halo.count, `one halo at ${width}`).toBe(1);
@@ -290,6 +299,10 @@ test.describe('Home', () => {
       expect(halo.wider).toBeGreaterThan(1.5);
       expect(halo.behind, 'drawn before the photo, so behind it').toBeTruthy();
       expect(halo.endsAt, "it ends with the photo's fade").toBeLessThanOrEqual(1);
+      expect(Math.abs(halo.centre), `centred on the photo at ${width}`).toBeLessThanOrEqual(1);
+      expect(halo.clip.overflow).toBe('hidden');
+      expect(Math.abs(halo.clip.centre), `what shows is centred on the photo at ${width}`).toBeLessThanOrEqual(1);
+      expect(halo.clip.right, 'and never cut by the edge of the screen').toBeLessThanOrEqual(width + 1);
     }
     await page.setViewportSize({ width: 1440, height: 900 });
     // the photo keeps its full height on screen at every desktop width (nothing is cut off above the hero's foot)
@@ -1448,3 +1461,24 @@ for (const [width, height] of [
     await expect(page.locator('.ticker__pause')).toHaveAccessibleName('Play the logos');
   });
 }
+
+test('on a desktop the scoreboard never covers the row of logos, wherever the page is scrolled; the row stays centred', { tag: ['@viewports'] }, async ({ page }) => {
+  for (const [width, height] of [
+    [1280, 720],
+    [1440, 900],
+    [1920, 1080],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    const wall = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
+    for (const y of [0, wall - height + 260, wall - height / 2, wall]) {
+      await page.evaluate((y) => window.scrollTo(0, Math.max(0, y)), Math.round(y));
+      await page.waitForTimeout(100);
+      const [pill, row] = await Promise.all(['.score__pill', '.ticker__view'].map((s) => page.locator(s).boundingBox()));
+      const meet = pill!.x < row!.x + row!.width && pill!.x + pill!.width > row!.x && pill!.y < row!.y + row!.height && pill!.y + pill!.height > row!.y;
+      expect(meet, `the pill clear of the row at ${width}, scrolled ${Math.round(y)}`).toBe(false);
+      expect(Math.abs(row!.x + row!.width / 2 - width / 2), 'the row centred').toBeLessThanOrEqual(10);
+    }
+  }
+});
