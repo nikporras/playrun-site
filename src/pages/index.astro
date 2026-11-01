@@ -924,27 +924,46 @@ const checks = [
   :global(html:not(.js)) .ticker__pause {
     display: none;
   }
+  /* Still, under reduced motion or with motion off from the switch: one centred row of as many
+     whole logos as fit the width. The list wraps and the view shows its first line only, so no logo
+     is ever cut and nothing scrolls; no fade at the ends, no copy, no Pause. */
   @media (prefers-reduced-motion: reduce) {
     .ticker__track {
       animation: none;
+      width: auto;
     }
     .ticker__copy,
     .ticker__pause {
       display: none;
     }
     .ticker__view {
-      overflow-x: auto;
-      scrollbar-color: var(--accent-2) var(--bg);
+      height: var(--cell-h);
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+    .ticker__seq {
+      flex: auto;
+      flex-wrap: wrap;
+      justify-content: center;
     }
   }
-  /* (the same with motion off from the switch) */
+  :global(.motion-off) .ticker__track {
+    animation: none;
+    width: auto;
+  }
   :global(.motion-off) .ticker__copy,
   :global(.motion-off) .ticker__pause {
     display: none;
   }
   :global(.motion-off) .ticker__view {
-    overflow-x: auto;
-    scrollbar-color: var(--accent-2) var(--bg);
+    height: var(--cell-h);
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  :global(.motion-off) .ticker__seq {
+    flex: auto;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   /* with motion off the hero is not pinned: it scrolls away as under reduced motion */
   :global(.motion-off) .hero {

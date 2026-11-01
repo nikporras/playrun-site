@@ -158,18 +158,37 @@ const layers = spec.map((s) => {
 ---
 
 <div class={`join join--${kind} join--${at}`} aria-hidden="true" style={`--from: ${from}; --to: ${to}`}>
+  <div class="join__far">
+    {
+      layers
+        .filter((l) => l.name !== 'front')
+        .map((l) => (
+          <svg class={`join__layer join__layer--${l.name}`} height={TH} aria-hidden="true" focusable="false" shape-rendering="crispEdges">
+            <defs>
+              <pattern id={`${id}-${l.name}`} width={l.tile} height={TH} patternUnits="userSpaceOnUse">
+                <path d={l.path} class="join__fill" />
+                {l.light && <path d={l.light} class="join__light" />}
+              </pattern>
+            </defs>
+            <rect width="100%" height={TH} fill={`url(#${id}-${l.name})`} />
+          </svg>
+        ))
+    }
+  </div>
   {
-    layers.map((l) => (
-      <svg class={`join__layer join__layer--${l.name}`} height={TH} aria-hidden="true" focusable="false" shape-rendering="crispEdges">
-        <defs>
-          <pattern id={`${id}-${l.name}`} width={l.tile} height={TH} patternUnits="userSpaceOnUse">
-            <path d={l.path} class="join__fill" />
-            {l.light && <path d={l.light} class="join__light" />}
-          </pattern>
-        </defs>
-        <rect width="100%" height={TH} fill={`url(#${id}-${l.name})`} />
-      </svg>
-    ))
+    layers
+      .filter((l) => l.name === 'front')
+      .map((l) => (
+        <svg class={`join__layer join__layer--${l.name}`} height={TH} aria-hidden="true" focusable="false" shape-rendering="crispEdges">
+          <defs>
+            <pattern id={`${id}-${l.name}`} width={l.tile} height={TH} patternUnits="userSpaceOnUse">
+              <path d={l.path} class="join__fill" />
+              {l.light && <path d={l.light} class="join__light" />}
+            </pattern>
+          </defs>
+          <rect width="100%" height={TH} fill={`url(#${id}-${l.name})`} />
+        </svg>
+      ))
   }
 </div>
 
@@ -190,6 +209,19 @@ const layers = spec.map((s) => {
     z-index: 0;
     --join-back: color-mix(in srgb, var(--to) 50%, var(--from));
     --join-mid: color-mix(in srgb, var(--to) 76%, var(--from));
+  }
+  /* The back and mid layers stop 6px above the band's foot, where the front layer always covers
+     them (it is at least two art pixels deep there, 8px on a phone). On a screen scaled by a
+     fraction, or a zoomed page, the foot falls inside a device pixel: every layer reaching it would
+     be drawn there in part, the darker ones showing through the front as a hairline. The clip is
+     on this box, not the layers, so it stays put while they drift. */
+  .join__far {
+    position: absolute;
+    inset: 0 0 6px;
+    overflow: hidden;
+  }
+  .join__far .join__layer {
+    bottom: -6px;
   }
   .join--top {
     top: 0;

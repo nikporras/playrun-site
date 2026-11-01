@@ -653,17 +653,57 @@ test.describe('Home', () => {
     expect(await page.evaluate(() => !!document.activeElement?.closest('.ticker__view'))).toBe(false);
   });
 
-  test('under reduced motion the ticker is a still row', async ({ browser }) => {
-    const context = await browser.newContext({ reducedMotion: 'reduce' });
-    const page = await context.newPage();
-    await page.goto('/');
-    const track = page.locator('.ticker__track');
-    expect(await track.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
-    await expect(page.locator('.ticker__copy')).toBeHidden();
-    await expect(page.getByRole('button', { name: /the logos/ })).toBeHidden();
-    expect(await page.locator('.ticker__view').evaluate((el) => getComputedStyle(el).overflowX)).toBe('auto');
-    await context.close();
-  });
+  for (const [width, height] of [
+    [1440, 900],
+    [768, 1024],
+    [375, 812],
+  ] as const) {
+    test(`with motion off the logos are a still, centred row of whole logos (${width}x${height}): as many as fit, none cut, no scrollbar, no Pause, the link under it`, async ({ browser }) => {
+      for (const how of ['reduced motion', 'the motion switch'] as const) {
+        const context = await browser.newContext({ viewport: { width, height }, reducedMotion: how === 'reduced motion' ? 'reduce' : 'no-preference' });
+        const page = await context.newPage();
+        if (how === 'the motion switch') await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
+        await page.goto('/');
+        await page.evaluate(() => document.fonts.ready);
+        await page.locator('.wall').scrollIntoViewIfNeeded();
+        await page.waitForTimeout(400);
+        expect(await page.locator('.ticker__track').evaluate((el) => getComputedStyle(el).animationName), how).toBe('none');
+        await expect(page.locator('.ticker__copy')).toBeHidden();
+        await expect(page.getByRole('button', { name: /the logos/ }), `${how}: no Pause`).toBeHidden();
+        await expect(page.getByRole('link', { name: "See every game I've tested" })).toBeVisible();
+        const row = await page.locator('.ticker__view').evaluate((view) => {
+          const v = view.getBoundingClientRect();
+          const marks = [...view.querySelectorAll('.ticker__seq:not(.ticker__copy) .wall__mark')].map((m) => m.getBoundingClientRect());
+          const shown = marks.filter((m) => m.top < v.bottom - 0.5 && m.bottom > v.top + 0.5);
+          const left = Math.min(...shown.map((m) => m.left));
+          const right = Math.max(...shown.map((m) => m.right));
+          const next = marks[shown.length];
+          return {
+            scroll: view.scrollWidth - view.clientWidth,
+            overflow: getComputedStyle(view).overflowX,
+            mask: getComputedStyle(view).maskImage,
+            shown: shown.length,
+            whole: shown.every((m) => m.left >= v.left - 0.5 && m.right <= v.right + 0.5 && m.top >= v.top - 0.5 && m.bottom <= v.bottom + 0.5),
+            // the ones not shown are wholly out of the view (on the next line, clipped), never cut
+            cut: marks.filter((m) => m.top < v.bottom - 0.5 && m.bottom > v.top + 0.5 && (m.left < v.left - 0.5 || m.right > v.right + 0.5)).length,
+            sides: [left - v.left, v.right - right],
+            nextFits: next ? right - left + next.width <= v.width : false,
+            firstRow: shown.every((m) => Math.abs(m.top - shown[0].top) < 0.5),
+          };
+        });
+        expect(row.scroll, `${how}: nothing to scroll`).toBeLessThanOrEqual(0);
+        expect(row.overflow, how).toBe('hidden');
+        expect(row.mask, `${how}: no fade at the ends`).toBe('none');
+        expect(row.shown, how).toBeGreaterThanOrEqual(2);
+        expect(row.whole, `${how}: every logo shown whole`).toBe(true);
+        expect(row.cut, `${how}: no logo cut at an end`).toBe(0);
+        expect(row.firstRow, `${how}: one row`).toBe(true);
+        expect(Math.abs(row.sides[0] - row.sides[1]), `${how}: centred (${row.sides})`).toBeLessThanOrEqual(1);
+        expect(row.nextFits, `${how}: as many as fit`).toBe(false);
+        await context.close();
+      }
+    });
+  }
 
   test('every stat carries a caption: Montserrat italic in cyan under the active row, fading in with it, the six all shown in the still list', async ({ page, browser }) => {
     await page.setViewportSize({ width: 1440, height: 900 });

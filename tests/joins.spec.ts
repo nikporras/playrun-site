@@ -46,6 +46,10 @@ for (const path of PAGES) {
                 // (the clipped content of a folded card on a phone is hidden, not covered; Home's row of
                 // logos and its label are drawn above its clouds)
                 if (top && t.closest('.ticker, .wall__head')) return false;
+                // (with motion off the row of logos wraps and shows its first line only: the rest is
+                // clipped by the row's window, hidden, not covered)
+                const view = t.closest('.ticker__view')?.getBoundingClientRect();
+                if (view && (b.top >= view.bottom - 0.5 || b.bottom <= view.top + 0.5)) return false;
                 return b.width > 0 && b.height > 0 && getComputedStyle(t).visibility !== 'hidden' && b.left < r.right && b.right > r.left && b.top < r.bottom - 0.5 && b.bottom > r.top + 0.5;
               })
               .map((t) => `${t.tagName}: ${(t.textContent ?? '').trim().slice(0, 30)}`);
@@ -228,5 +232,53 @@ for (const width of [375, 1280, 1440, 1920]) {
     }
     // and the photo is what shows: at least one sample is a grey of the portrait, not the navy sky
     expect(samples.some(([r, g, b]) => Math.abs(r - g) < 12 && Math.abs(g - b) < 12 && r > 60), 'the portrait shows through').toBe(true);
+  });
+}
+
+// On a screen scaled by a fraction (Windows at 125% or 150%, a page zoomed out, an Android phone at
+// 2.625) the foot of a join falls inside a device pixel. Nothing may show there but the lower
+// colour: not the darker back layers, not the page behind two fields meeting, not a grid line.
+// Every join on every page, read from screenshots, row by row across its foot.
+const SCALED: [number, number, number][] = [
+  [1440, 900, 1.25],
+  [1440, 900, 1.5],
+  [1440, 900, 0.8],
+  [375, 812, 2.625],
+];
+for (const [width, height, scale] of SCALED) {
+  test(`no hairline at the foot of any join on a screen scaled by ${scale} (${width}x${height})`, { tag: ['@brand'] }, async ({ browser }) => {
+    test.setTimeout(90_000);
+    const context = await browser.newContext({ deviceScaleFactor: scale, viewport: { width, height }, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    for (const path of PAGES) {
+      await page.goto(path);
+      await page.evaluate(() => document.fonts.ready);
+      const n = await page.locator('.join').count();
+      for (let j = 0; j < n; j++) {
+        const join = page.locator('.join').nth(j);
+        await join.evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + scrollY - 300));
+        await page.waitForTimeout(100);
+        const { bottom, to } = await join.evaluate((el) => ({
+          bottom: el.getBoundingClientRect().bottom,
+          to: getComputedStyle(el.querySelector('.join__layer--front .join__fill')!).fill,
+        }));
+        const rgb = (to.match(/[\d.]+/g) ?? []).map(Number);
+        // a strip across the middle of the screen, from 8px above the foot to 8px below it
+        const png = await page.screenshot({ clip: { x: Math.round(width * 0.2), y: Math.floor(bottom) - 8, width: Math.round(width * 0.6), height: 16 } });
+        const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+        const off: number[] = [];
+        for (let row = 0; row < info.height; row++) {
+          let n = 0;
+          let all = 0;
+          for (let x = 0; x < info.width; x += 3, all++) {
+            const i = (row * info.width + x) * info.channels;
+            if (Math.abs(data[i] - rgb[0]) + Math.abs(data[i + 1] - rgb[1]) + Math.abs(data[i + 2] - rgb[2]) > 12) n++;
+          }
+          off.push(n / all);
+        }
+        expect(Math.max(...off), `${path} join ${j}: every row at its foot is the lower colour (${off.map((v) => v.toFixed(2)).join(' ')})`).toBeLessThan(0.2);
+      }
+    }
+    await context.close();
   });
 }

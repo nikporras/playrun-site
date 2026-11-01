@@ -425,6 +425,23 @@ p + p {
 .level--tight {
   padding-block: var(--s-6);
 }
+/* Each level overlaps the one above by 2px and paints over it. Where two fields meet inside a
+   device pixel (a screen scaled by 1.25 or 1.5, a zoomed page) both would be drawn there in part
+   and the page behind would show as a hairline; the overlap puts that edge inside a solid field.
+   The upper level's foot is its join's front layer or its own field, the same colour as this one.
+   (Not under the curtain: Level 2's top is its see-through cloud band.) The footer does the same
+   over the last level. A navy level's grid starts half a cell down, so no grid line runs along the
+   foot of the join above it. */
+.level + .level:not(.has-join-top) {
+  z-index: 1;
+  margin-top: -2px;
+  background-position-y: calc(var(--grid-size) / 2);
+}
+.footer {
+  position: relative;
+  z-index: 1;
+  margin-top: -2px;
+}
 .level--navy,
 .level--field {
   --level-bg: var(--bg);
