@@ -225,14 +225,17 @@ test.describe('Games', () => {
     }
   });
 
-  test('reduced motion removes the games and the bar', async ({ browser }) => {
+  test("under the device's reduced motion the games wait, hidden, and start when the Motion switch is turned on", async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce' });
     const page = await context.newPage();
     await page.goto('/');
-    await expect(page.locator('#hud')).toHaveCount(0);
-    await expect(page.locator('#dock')).toHaveCount(0);
+    await expect(page.locator('#hud')).toBeHidden();
+    await expect(page.locator('#dock')).toBeHidden();
     await expect(page.locator('[data-bug]:visible')).toHaveCount(0);
     await expect(page.locator('h1')).toBeVisible();
+    await page.getByRole('button', { name: /^Motion/ }).click();
+    await expect(page.getByRole('button', { name: /^Scoreboard/ })).toBeVisible();
+    expect(await page.locator('[data-bug]:visible').count()).toBeGreaterThan(0);
     await context.close();
   });
 

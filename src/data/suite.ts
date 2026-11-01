@@ -57,7 +57,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'home.spec.ts': ['Home', 'Loads clean, the bottom bar on a phone, the curtain, the glitch and its card, the wall, the stats, three widths, axe, the self test.'],
   'indexing.spec.ts': ['Search and AI access', 'robots.txt welcomes the AI crawlers and disallows nothing, the IndexNow key and step, llms.txt and its pages, snippets kept to the content.'],
   'links.spec.ts': ['Links', 'Links that leave the site open a new tab and say so. Internal links stay.'],
-  'motion.spec.ts': ['The Motion switch', 'On by default and following the device; off stills the site (no drift, no glitch, a still drum, no scan) and is remembered.'],
+  'motion.spec.ts': ['The Motion switch', 'Follows the device until you choose; on wins even over reduced motion, off stills the site (no drift, no glitch, a still drum, no scan), and the choice is remembered.'],
   'validity.spec.ts': ['Valid HTML', 'Every page as the server sends it passes html-validate, offline: elements, content, attributes, ids and the document.'],
   'weight.spec.ts': ['Page weight', 'Each page under its budget on a first visit with nothing cached (Home 250 KB): HTML, CSS, script, fonts and images.'],
   'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, stacked level headers, labels that read, no stale facts, and passes axe.'],

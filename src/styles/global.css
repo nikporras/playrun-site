@@ -626,15 +626,13 @@ p + p {
 }
 /* The arrival of a page's first screen: every line is there and readable on the very first paint;
    the arrival only settles it into place with a small rise (transform only, never a hidden start). */
-@media (prefers-reduced-motion: no-preference) {
-  .js .mask__line {
-    animation: boot-line var(--dur-reveal) var(--ease-expo) both;
-    animation-delay: calc(var(--i, 0) * 80ms);
-  }
-  .js [data-load] {
-    animation: load-rise 500ms var(--ease-out) both;
-    animation-delay: calc(var(--d, 0ms) / 4);
-  }
+.js:not(.motion-off) .mask__line {
+  animation: boot-line var(--dur-reveal) var(--ease-expo) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+.js:not(.motion-off) [data-load] {
+  animation: load-rise 500ms var(--ease-out) both;
+  animation-delay: calc(var(--d, 0ms) / 4);
 }
 @keyframes boot-line {
   from {
@@ -767,10 +765,8 @@ html:not(.games) .bug {
   right: 100%;
   translate: -0.25rem -50%;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .bug__tap {
-    animation: tap-blink 1s steps(2, jump-none) infinite;
-  }
+.bug__tap {
+  animation: tap-blink 1s steps(2, jump-none) infinite;
 }
 @keyframes tap-blink {
   from {
@@ -819,37 +815,35 @@ html:not(.games) .bug {
     cursor: url('/net-cursor.svg') 20 6, pointer;
   }
 }
-@media (prefers-reduced-motion: no-preference) {
-  /* The walk: each bug paces a short path set on it (--wx, --wy) and turns round at each end;
-     the legs twitch all the while. A caught bug stops where it is. */
-  .bug {
-    animation: bug-walk var(--walk-time, 6s) ease-in-out infinite alternate;
-  }
-  .bug__body {
-    animation:
-      crawl 2.4s steps(2) infinite,
-      bug-face calc(var(--walk-time, 6s) * 2) linear infinite;
-  }
-  .bug.is-caught,
-  .bug.is-away,
-  .bug.is-away .bug__body {
-    animation-play-state: paused; /* (off screen a bug rests: no work on frames nobody sees) */
-  }
-  /* The catch: the net swoops in, the bug wiggles inside it, both go, the +1 rises */
-  .bug.is-caught .bug__net {
-    animation:
-      net-swoop 240ms var(--ease-out) forwards,
-      net-go 200ms 640ms var(--ease-out) forwards;
-  }
-  .bug.is-caught .bug__body {
-    transform: none;
-    animation:
-      bug-wiggle 420ms 220ms steps(2) 2,
-      net-go 200ms 640ms var(--ease-out) forwards;
-  }
-  .bug.is-caught .bug__plus {
-    animation: plus-rise 420ms 700ms var(--ease-out) forwards;
-  }
+/* The walk: each bug paces a short path set on it (--wx, --wy) and turns round at each end;
+   the legs twitch all the while. A caught bug stops where it is. */
+.bug {
+  animation: bug-walk var(--walk-time, 6s) ease-in-out infinite alternate;
+}
+.bug__body {
+  animation:
+    crawl 2.4s steps(2) infinite,
+    bug-face calc(var(--walk-time, 6s) * 2) linear infinite;
+}
+.bug.is-caught,
+.bug.is-away,
+.bug.is-away .bug__body {
+  animation-play-state: paused; /* (off screen a bug rests: no work on frames nobody sees) */
+}
+/* The catch: the net swoops in, the bug wiggles inside it, both go, the +1 rises */
+.bug.is-caught .bug__net {
+  animation:
+    net-swoop 240ms var(--ease-out) forwards,
+    net-go 200ms 640ms var(--ease-out) forwards;
+}
+.bug.is-caught .bug__body {
+  transform: none;
+  animation:
+    bug-wiggle 420ms 220ms steps(2) 2,
+    net-go 200ms 640ms var(--ease-out) forwards;
+}
+.bug.is-caught .bug__plus {
+  animation: plus-rise 420ms 700ms var(--ease-out) forwards;
 }
 @keyframes crawl {
   from {
@@ -933,10 +927,8 @@ html:not(.games) .bug {
   .tile--accent.tile--live:hover {
     background-color: var(--accent);
   }
-  @media (prefers-reduced-motion: no-preference) {
-    .tile--live:hover::after {
-      animation: scanline 420ms var(--ease-out) forwards;
-    }
+  .tile--live:hover::after {
+    animation: scanline 420ms var(--ease-out) forwards;
   }
 }
 @keyframes scanline {
@@ -1087,32 +1079,11 @@ html:not(.games) .bug {
 .js [data-enter='scan'].is-in::after {
   animation: scanline 600ms var(--ease-out) var(--enter-delay, 0ms) forwards;
 }
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  .js [data-enter] {
-    opacity: 1;
-    transform: none;
-    clip-path: none;
-    transition: none;
-  }
-  .laser.is-on,
-  .flash.is-on {
-    animation: none;
-  }
-  .js [data-enter='scan'].is-in::after,
-  .tile--live:hover::after {
-    animation: none;
-  }
-  .button:active {
-    transform: none;
-  }
-}
-
-/* Motion off (the switch in the header, or the device asking for reduced motion before the visitor
-   chose): the site behaves as under reduced motion. Nothing animates or eases (the joins keep their
-   shapes and stop drifting), and the page scrolls without smoothing. */
+/* Motion off: the device asking for reduced motion (until the visitor chooses), or the switch in
+   the header set off. The head script puts `motion-off` on <html> before the first paint, and the
+   switch can take it away even under the device's setting. Nothing animates or eases (the joins
+   keep their shapes and stop drifting), everything is simply there, and the page scrolls without
+   smoothing. */
 html.motion-off {
   scroll-behavior: auto;
 }
@@ -1121,4 +1092,27 @@ html.motion-off {
 .motion-off *::after {
   animation: none !important;
   transition: none !important;
+}
+.motion-off [data-enter] {
+  opacity: 1;
+  transform: none;
+  clip-path: none;
+}
+.motion-off .button:active {
+  transform: none;
+}
+/* Without script there is no switch and no class: the device's setting holds. */
+@media (prefers-reduced-motion: reduce) {
+  html:not(.js) {
+    scroll-behavior: auto;
+  }
+  html:not(.js) *,
+  html:not(.js) *::before,
+  html:not(.js) *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  html:not(.js) .button:active {
+    transform: none;
+  }
 }

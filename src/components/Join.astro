@@ -284,24 +284,22 @@ const layers = spec.map((s) => {
      put on the level it belongs to. Only where scroll-driven animations exist, never under reduced
      motion; elsewhere the layers are still. */
   @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .join__layer--back,
-      .join__layer--mid {
-        animation: join-drift linear both;
-      }
-      /* the timeline in a rule of its own: folded into the shorthand by the minifier, the browser
-         would drop the whole declaration */
-      .join .join__layer--back,
-      .join .join__layer--mid {
-        animation-timeline: view();
-        animation-range: entry 0% exit 100%;
-      }
-      .join__layer--back {
-        --drift: 28px;
-      }
-      .join__layer--mid {
-        --drift: 12px;
-      }
+    .join__layer--back,
+    .join__layer--mid {
+      animation: join-drift linear both;
+    }
+    /* the timeline in a rule of its own: folded into the shorthand by the minifier, the browser
+       would drop the whole declaration */
+    .join .join__layer--back,
+    .join .join__layer--mid {
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+    .join__layer--back {
+      --drift: 28px;
+    }
+    .join__layer--mid {
+      --drift: 12px;
     }
   }
   @keyframes join-drift {

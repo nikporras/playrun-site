@@ -209,7 +209,9 @@ test.describe('Home', () => {
       const p = await context.newPage();
       await p.goto('/skills/');
       await expect(p.getByRole('navigation', { name: 'Site' }).getByRole('link')).toHaveText(['About', 'Skills', 'Games', 'Quality', 'Contact']);
-      await expect(p.locator('.hud__runner')).toHaveCount(options.reducedMotion ? 0 : 1);
+      // (under the device's reduced motion the games wait, hidden, until the Motion switch is on)
+      if (options.reducedMotion) await expect(p.locator('.hud__runner')).toBeHidden();
+      else await expect(p.locator('.hud__runner')).toHaveCount(1);
       const links = await p.locator('.tabbar__link').evaluateAll((els) => els.map((a) => a.getBoundingClientRect().right));
       expect(links[4], 'the five take the whole bar').toBeGreaterThan(370);
       await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));

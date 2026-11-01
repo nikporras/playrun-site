@@ -413,14 +413,12 @@ Attachments: [screenshot or video]</pre>
   .step.is-pass .step__mark {
     color: var(--accent);
   }
-  @media (prefers-reduced-motion: no-preference) {
-    .step.is-pass .step__mark,
-    .step.is-fail .step__mark {
-      animation: mark-pop 320ms var(--ease-out);
-    }
-    .step.is-running .step__idle {
-      animation: blink 700ms steps(2) infinite;
-    }
+  .step.is-pass .step__mark,
+  .step.is-fail .step__mark {
+    animation: mark-pop 320ms var(--ease-out);
+  }
+  .step.is-running .step__idle {
+    animation: blink 700ms steps(2) infinite;
   }
   @keyframes mark-pop {
     from {

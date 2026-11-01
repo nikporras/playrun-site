@@ -2,12 +2,13 @@
 // page as scripted, applies the motion setting and collects errors for the checks. It is written
 // into the page as it is, and its sha256 hash goes into the Content Security Policy (astro.config.mjs).
 document.documentElement.classList.add('js');
-// Motion: the visitor's choice from the switch, or the device's setting (before the first paint)
+// Motion: the device's setting, unless the visitor chose with the switch (before the first paint)
 (function () {
   var off = matchMedia('(prefers-reduced-motion: reduce)').matches;
   try {
     var v = localStorage.getItem('playrun.motion');
     if (v === 'off') off = true;
+    if (v === 'on') off = false;
   } catch (e) {}
   if (off) document.documentElement.classList.add('motion-off');
 })();

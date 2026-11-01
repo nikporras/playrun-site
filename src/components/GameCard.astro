@@ -338,16 +338,14 @@ const store = p.data.store ?? 'Steam';
     opacity: 1;
     transform: none;
   }
-  @media (prefers-reduced-motion: no-preference) {
-    .card.is-scanned {
-      animation: card-flash 240ms steps(2) both;
-    }
-    .card.is-scanned::before {
-      animation: scan-band 500ms linear 40ms both;
-    }
-    .card.is-scanned .card__pass {
-      animation: pass-pop 200ms var(--ease-out) 600ms both;
-    }
+  .card.is-scanned {
+    animation: card-flash 240ms steps(2) both;
+  }
+  .card.is-scanned::before {
+    animation: scan-band 500ms linear 40ms both;
+  }
+  .card.is-scanned .card__pass {
+    animation: pass-pop 200ms var(--ease-out) 600ms both;
   }
   @keyframes card-flash {
     from {
@@ -476,11 +474,6 @@ const store = p.data.store ?? 'Steam';
     }
     :global(.js) .card__part {
       margin-bottom: var(--s-2);
-    }
-  }
-  @media (max-width: 47.99rem) and (prefers-reduced-motion: reduce) {
-    :global(.js) .card__body {
-      transition: none;
     }
   }
 </style>

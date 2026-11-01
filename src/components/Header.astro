@@ -11,10 +11,12 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
     <a class="header__brand" href="/" aria-label={`${site.name}, home`}>
       <Lockup class="header__lockup" aria-hidden="true" role="presentation" />
     </a>
-    <!-- Motion on or off for this site (with script; it follows the device's setting until set) -->
+    <!-- Motion on or off for this site (with script): it follows the device's setting until the
+         visitor chooses, and their choice wins either way -->
     <button type="button" class="motion" aria-pressed="true" data-motion>
       <span class="motion__label">Motion</span>
       <span class="motion__state" aria-hidden="true"><span class="motion__on">On</span><span class="motion__off">Off</span></span>
+      <span class="motion__why" aria-hidden="true">(device setting)</span>
       <span class="visually-hidden" data-motion-note></span>
     </button>
   </div>
@@ -154,27 +156,45 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
     background: var(--surface-2);
     color: var(--ink);
   }
-  .motion[aria-disabled='true'] {
-    cursor: not-allowed;
+  /* Off only because the device asks for reduced motion, until the visitor chooses: the reason
+     beside the state, and on a phone, where the header is narrow, on a second line under it. */
+  .motion__why {
+    display: none;
+    white-space: nowrap;
+  }
+  .motion.is-device .motion__why {
+    display: inline;
+  }
+  @media (max-width: 47.99rem) {
+    .motion.is-device {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.25rem 0.5em;
+      padding-block: 0.25rem;
+    }
+    .motion.is-device .motion__why {
+      flex-basis: 100%;
+      font-size: 0.75rem;
+      letter-spacing: 0;
+      text-align: center;
+    }
   }
 </style>
 
 <script>
-  import { reducedMotion, setMotion, onMotionChange } from '../scripts/motion';
+  import { reducedMotion, offByDevice, setMotion, onMotionChange } from '../scripts/motion';
   const button = document.querySelector<HTMLButtonElement>('[data-motion]');
   const note = button?.querySelector<HTMLElement>('[data-motion-note]');
-  const device = matchMedia('(prefers-reduced-motion: reduce)');
   if (button && note) {
+    // On, Off, or Off (device setting) while it is off only because the device asks for reduced
+    // motion; a press turns it on even then, and the choice is kept.
     const show = () => {
+      const device = reducedMotion() && offByDevice();
       button.setAttribute('aria-pressed', String(!reducedMotion()));
-      // the device's own setting wins: the switch shows it and cannot turn motion back on
-      button.setAttribute('aria-disabled', String(device.matches));
-      note.textContent = device.matches ? ', off by your device setting' : '';
+      button.classList.toggle('is-device', device);
+      note.textContent = device ? ', off by your device setting' : '';
     };
-    button.addEventListener('click', () => {
-      if (device.matches) return;
-      setMotion(reducedMotion());
-    });
+    button.addEventListener('click', () => setMotion(reducedMotion()));
     onMotionChange(show);
     show();
   }

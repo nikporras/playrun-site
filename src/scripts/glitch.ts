@@ -45,7 +45,6 @@ export function startHeroExit() {
   const no = card?.querySelector<HTMLButtonElement>('[data-glitch-no]');
   const dock = document.getElementById('dock');
   if (!hero || !wall || !copy || !card || !text || !actions || !yes || !no || !dock) return;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (!('IntersectionObserver' in window)) return;
   const html = document.documentElement;
   // (the games off, or motion off from the switch: the hero simply goes behind)

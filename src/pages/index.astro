@@ -380,13 +380,11 @@ const checks = [
       --hud-space: var(--hud-h);
     }
   }
-  @media (prefers-reduced-motion: no-preference) {
-    .hero {
-      position: sticky;
-      top: var(--hero-top, 0px);
-      z-index: 0;
-      will-change: opacity; /* it fades as the name breaks: on its own layer, nothing repaints */
-    }
+  .hero {
+    position: sticky;
+    top: var(--hero-top, 0px);
+    z-index: 0;
+    will-change: opacity; /* it fades as the name breaks: on its own layer, nothing repaints */
   }
   .hero__head {
     max-width: 58%;
@@ -761,15 +759,13 @@ const checks = [
   /* The boot. Everything is in the HTML and visible on the very first paint: the name, the post,
      the intro and the photo never start hidden or wait for a font or an animation. The arrival only
      settles them into place with a small rise (transform only), over by about 0.8s. */
-  @media (prefers-reduced-motion: no-preference) {
-    :global(.js) .hero__line {
-      animation: boot-line var(--dur-reveal) var(--ease-expo) both;
-      animation-delay: calc(var(--i) * 80ms);
-    }
-    :global(.js) .hero [data-load] {
-      animation: load-rise 500ms var(--ease-out) both;
-      animation-delay: calc(var(--d, 0ms) / 4);
-    }
+  :global(.js:not(.motion-off)) .hero__line {
+    animation: boot-line var(--dur-reveal) var(--ease-expo) both;
+    animation-delay: calc(var(--i) * 80ms);
+  }
+  :global(.js:not(.motion-off)) .hero [data-load] {
+    animation: load-rise 500ms var(--ease-out) both;
+    animation-delay: calc(var(--d, 0ms) / 4);
   }
   @keyframes boot-line {
     from {
@@ -924,27 +920,31 @@ const checks = [
   :global(html:not(.js)) .ticker__pause {
     display: none;
   }
-  /* Still, under reduced motion or with motion off from the switch: one centred row of as many
-     whole logos as fit the width. The list wraps and the view shows its first line only, so no logo
-     is ever cut and nothing scrolls; no fade at the ends, no copy, no Pause. */
+  /* Still with motion off (the device's setting until the visitor chooses, or the switch): one
+     centred row of as many whole logos as fit the width. The list wraps and the view shows its
+     first line only, so no logo is ever cut and nothing scrolls; no fade at the ends, no copy, no
+     Pause. (Without script, the device's setting decides: the media query below.) */
   @media (prefers-reduced-motion: reduce) {
-    .ticker__track {
+    :global(html:not(.js)) .ticker__track {
       animation: none;
       width: auto;
     }
-    .ticker__copy,
-    .ticker__pause {
+    :global(html:not(.js)) .ticker__copy {
       display: none;
     }
-    .ticker__view {
+    :global(html:not(.js)) .ticker__view {
       height: var(--cell-h);
       -webkit-mask-image: none;
       mask-image: none;
     }
-    .ticker__seq {
+    :global(html:not(.js)) .ticker__seq {
       flex: auto;
       flex-wrap: wrap;
       justify-content: center;
+    }
+    :global(html:not(.js)) .hero {
+      position: relative;
+      top: auto;
     }
   }
   :global(.motion-off) .ticker__track {
@@ -965,7 +965,7 @@ const checks = [
     flex-wrap: wrap;
     justify-content: center;
   }
-  /* with motion off the hero is not pinned: it scrolls away as under reduced motion */
+  /* with motion off the hero is not pinned: it simply scrolls away */
   :global(.motion-off) .hero {
     position: relative;
     top: auto;
@@ -1271,10 +1271,8 @@ const checks = [
   .proof__score.is-fail .proof__scoremark {
     display: none;
   }
-  @media (prefers-reduced-motion: no-preference) {
-    .proof__score.is-in {
-      animation: boot-pop 360ms var(--ease-out) both;
-    }
+  .proof__score.is-in {
+    animation: boot-pop 360ms var(--ease-out) both;
   }
   @keyframes boot-pop {
     from {
@@ -1332,10 +1330,8 @@ const checks = [
   .panel.is-failed :global(.proof__cross) {
     display: block;
   }
-  @media (prefers-reduced-motion: no-preference) {
-    .panel.is-pass .panel__mark {
-      animation: mark-pop 320ms var(--ease-out);
-    }
+  .panel.is-pass .panel__mark {
+    animation: mark-pop 320ms var(--ease-out);
   }
   @keyframes mark-pop {
     from {
@@ -1420,14 +1416,16 @@ const checks = [
 <script>
   import { startHeroExit } from '../scripts/glitch';
   import { checks as engine } from '../scripts/checks';
-  import { reducedMotion } from '../scripts/motion';
+  import { reducedMotion, whenMotion } from '../scripts/motion';
   const reduce = reducedMotion();
   startHeroExit();
+  // (the curtain, the ticker's button and the drum start with motion: at once, or when the visitor
+  // turns the Motion switch on)
 
   // The curtain: the hero is pinned while the next level slides over it. A hero taller than the
   // screen (a phone) pins with its bottom edge on the bottom of the screen instead of its top.
   const hero = document.querySelector<HTMLElement>('.hero');
-  if (hero && !reduce) {
+  if (hero) whenMotion(() => {
     const pin = () => {
       // The room the bottom bar takes; the desktop track stands in the gutter and takes none (the
       // body's bottom padding there is only a strip at the end of the page for the scoreboard).
@@ -1438,11 +1436,11 @@ const checks = [
     addEventListener('resize', pin);
     addEventListener('load', pin);
     document.fonts?.ready.then(pin);
-  }
+  });
 
-  // The ticker: the button pauses and plays it. Static under reduced motion, so nothing to do.
+  // The ticker: the button pauses and plays it. Still with motion off, so nothing to do until then.
   const tick = document.querySelector<HTMLElement>('[data-ticker]');
-  if (tick && !reduce) {
+  if (tick) whenMotion(() => {
     const pause = tick.querySelector<HTMLButtonElement>('[data-ticker-pause]')!;
     const word = pause.querySelector<HTMLElement>('[data-ticker-word]')!;
     pause.addEventListener('click', () => {
@@ -1450,7 +1448,7 @@ const checks = [
       word.textContent = paused ? 'Play' : 'Pause';
       pause.setAttribute('aria-label', paused ? 'Play the logos' : 'Pause the logos');
     });
-  }
+  });
 
   // The drum: the four stats three times over; row --i (a float index into the list) sits in the
   // centre. It turns one row every 3.5 s with a 0.6 s slide, and keeps turning after the arrows.
@@ -1459,7 +1457,7 @@ const checks = [
   // paused, for a few seconds after a tap, and while the level is off screen. Still under reduced
   // motion.
   const drum = document.querySelector<HTMLElement>('[data-drum]');
-  if (drum && !reduce) {
+  if (drum) whenMotion(() => {
     const list = drum.querySelector<HTMLElement>('.drum__list')!;
     const rows = Array.from(list.children) as HTMLElement[];
     const live = drum.querySelector<HTMLElement>('[data-drum-live]')!;
@@ -1550,7 +1548,7 @@ const checks = [
     drum.classList.add('is-live');
     paint(false);
     tick();
-  }
+  });
 
   // The live thing: real checks on this page, run in the visitor's browser, from the shared engine
   // the Quality page uses too.

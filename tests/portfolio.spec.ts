@@ -425,7 +425,7 @@ test.describe('The Games page journey', () => {
     const y = await first.evaluate((el) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
     await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
     await page.waitForTimeout(1300);
-    await expect(page.locator('[data-shot]')).toHaveCount(0);
+    await expect(page.locator('[data-shot]')).toBeHidden();
     await expect(page.locator('.is-scanned')).toHaveCount(0);
     expect(await first.evaluate((el) => getComputedStyle(el, '::before').animationName)).toBe('none');
     await expect(first.locator('.card__pass')).toHaveCSS('opacity', '0');

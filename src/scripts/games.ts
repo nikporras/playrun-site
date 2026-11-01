@@ -1,9 +1,10 @@
 /**
  * The games on the PlayRun site: the runner on the track, the bug hunt and the achievements.
- * All of it is optional play. It is off under prefers-reduced-motion, off with the Games button,
- * absent without script, and the page underneath never depends on it.
+ * All of it is optional play. It is off while motion is off because of the device's reduced-motion
+ * setting (it starts if the visitor turns the Motion switch on), off with the Games button, absent
+ * without script, and the page underneath never depends on it.
  */
-import { reducedMotion } from './motion';
+import { reducedMotion, offByDevice, whenMotion } from './motion';
 
 type State = { on: boolean; bugs: string[]; achievements: string[] };
 
@@ -39,10 +40,14 @@ export function startGames() {
   const dock = document.getElementById('dock');
   const toast = document.querySelector<HTMLElement>('[data-toast]');
   if (!hud || !dock) return;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    hud.remove();
-    dock.remove();
-    document.querySelector('[data-shot]')?.remove();
+  // Motion off by the device's setting: the games wait, hidden, and start if motion is turned on.
+  if (reducedMotion() && offByDevice()) {
+    const parts = [hud, dock, document.querySelector<HTMLElement>('[data-shot]')];
+    parts.forEach((p) => p && (p.style.display = 'none'));
+    whenMotion(() => {
+      parts.forEach((p) => p && (p.style.display = ''));
+      startGames();
+    });
     return;
   }
 
