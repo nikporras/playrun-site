@@ -14,9 +14,8 @@ test('the phone steps replace the computer ones, and the panel shows the console
   await expect(page.locator('.step__desktop').first()).toBeHidden();
   await expect(page.locator('.step__phone').first()).toBeVisible();
   for (const text of ['Rotate the phone', 'Pinch to zoom', 'VoiceOver', 'TalkBack', 'Reduce motion']) await expect(page.getByText(text).first()).toBeVisible();
-  await expect(page.locator('.step__note').first()).toBeVisible();
-  await expect(page.locator('.step__note').first()).toContainText('Checking on a computer?');
-  await expect(page.locator('.step__note').first()).toContainText('Pocket DevTools');
+  // (no note explaining the fold: the button says it)
+  await expect(page.locator('.step__note')).toHaveCount(0);
   // the computer steps are folded under a button, closed by default, and open on a tap
   const fold = page.locator('#step-responsive .step__fold');
   await expect(fold).toBeVisible();

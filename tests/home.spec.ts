@@ -1063,7 +1063,6 @@ test.describe('Home', () => {
       num: parseFloat(getComputedStyle(document.querySelector('.drum__num')!).fontSize),
       label: parseFloat(getComputedStyle(document.querySelector('.drum__label')!).fontSize),
       title: parseFloat(getComputedStyle(document.querySelector('#stats-title')!).fontSize),
-      lead: parseFloat(getComputedStyle(document.querySelector('.stats__head .level__lead')!).fontSize),
     }));
     expect(sizes.num).toBeGreaterThanOrEqual(94);
     expect(sizes.num).toBeLessThanOrEqual(98);
@@ -1071,7 +1070,6 @@ test.describe('Home', () => {
     expect(sizes.title).toBeGreaterThanOrEqual(44);
     expect(sizes.title).toBeLessThanOrEqual(50);
     expect(sizes.num).toBeGreaterThan(sizes.title);
-    expect(sizes.lead).toBeGreaterThanOrEqual(16);
     // number and label on one line, clear of the buttons
     const fit = await page.evaluate(() => {
       const row = document.querySelector<HTMLElement>('.drum__row[data-d="0"]')!;

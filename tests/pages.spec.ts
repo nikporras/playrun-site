@@ -516,3 +516,24 @@ test('Skills lists the VR headsets the games were tested on beside the consoles 
   // the logos themselves stay pictures, not links
   await expect(page.locator('.ticker a')).toHaveCount(0);
 });
+
+test('no line explains the page to itself: the helper lines that read like a template are gone', { tag: ['@pages'] }, async () => {
+  const gone = [
+    'Counted from the portfolio',
+    'Every card has one button',
+    'The skills behind the titles',
+    'The titles these skills shipped',
+    'The tools, the way I work',
+    'One run, from the build landing',
+    'Each step runs as you reach it',
+    'The computer steps are folded',
+    'What F12 would show',
+    'the suite that deployed this page',
+    'This is the shape of a report',
+    'Nothing else, and no account',
+  ];
+  for (const page of ['index.html', 'skills/index.html', 'portfolio/index.html', 'quality/index.html', 'contact/index.html']) {
+    const html = readFileSync(join(process.cwd(), 'dist', page), 'utf8');
+    for (const line of gone) expect(html, `${page}: ${line}`).not.toContain(line);
+  }
+});

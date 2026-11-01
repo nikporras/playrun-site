@@ -84,7 +84,6 @@ test.describe('Quality, the guided test run', () => {
     }
     // the fold is a phone thing: not shown on a desktop
     await expect(page.locator('.step__fold').first()).toBeHidden();
-    await expect(page.locator('.step__note').first()).toBeHidden();
     // and the claim holds: after a reload, one Tab lands on Skip to content, visible, outlined
     await page.reload();
     await page.keyboard.press('Tab');

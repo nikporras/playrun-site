@@ -105,7 +105,6 @@ const steps = [
     phone: ['Pocket DevTools shows the load timings from this phone: time to first byte, first paint, loaded.'],
   },
 ];
-const computerNote = 'The computer steps are folded under Checking on a computer?, below. Pocket DevTools, further down, shows what the developer tools would.';
 ---
 
 <Base
@@ -126,7 +125,7 @@ const computerNote = 'The computer steps are folded under Checking on a computer
       </p>
       <div class="level__actions" data-load style="--d: 440ms">
         <button class="button" type="button" id="run-all" aria-describedby="run-status">Run every step</button>
-        <p id="run-status" class="qa__status" aria-live="polite">Each step runs as you reach it.</p>
+        <p id="run-status" class="qa__status" aria-live="polite">Scroll on and watch them run.</p>
       </div>
     </div>
     <Join kind="clouds" from="var(--pr-navy)" to="var(--field-blue)" seed="quality-plan" />
@@ -175,7 +174,6 @@ const computerNote = 'The computer steps are folded under Checking on a computer
                     <li>{line}</li>
                   ))}
                 </ol>
-                <p class="step__note">{computerNote}</p>
               </div>
               <!-- On a phone the computer steps fold under this button, so a visitor who has just
                    switched the browser to its phone view still has them. Open on a desktop. -->
@@ -231,7 +229,7 @@ const computerNote = 'The computer steps are folded under Checking on a computer
     <!-- Pocket DevTools: on a phone, what F12 would show, from the page's own records -->
     <section class="devtools" aria-labelledby="devtools-title" data-enter>
       <h3 id="devtools-title" class="devtools__title">Pocket DevTools</h3>
-      <p class="devtools__lead">What F12 would show on a computer, read from this page's own records.</p>
+      <p class="devtools__lead">What you'd see in the developer tools on a computer, right here on your phone.</p>
       <div class="devtools__tabs">
         <section class="devtools__pane" aria-labelledby="dev-console">
           <h4 id="dev-console" class="devtools__tab">Console</h4>
@@ -268,7 +266,7 @@ const computerNote = 'The computer steps are folded under Checking on a computer
     <div class="level__head">
       <p class="flag" data-nosnippet data-enter><span>Level 3 &middot; The report</span></p>
       <h2 id="report-title" class="level__title" data-enter="wipe">Test report: your run and the suite's</h2>
-      <p class="level__lead" data-enter style="--enter-delay: 80ms">Your run on this device, and the suite that deployed this page.</p>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">How your run went, next to the checks this page passed before it went live.</p>
     </div>
     <div class="level__body report__body">
       <p class="report__score" data-report-score data-enter>Not run yet. Scroll through the steps, or press Run every step.</p>
@@ -297,7 +295,7 @@ const computerNote = 'The computer steps are folded under Checking on a computer
       </p>
       <div class="report__template" data-enter style="--enter-delay: 180ms">
         <h3 class="report__subtitle">Bug report template</h3>
-        <p class="report__hint">Found something? This is the shape of a report I can act on. Fill it in your head, or copy it.</p>
+        <p class="report__hint">Found something? Here's how I'd write it up. Copy it and fill it in.</p>
         <pre class="report__pre" data-template tabindex="0">Title: [what broke, in one line]
 Build: playrunqa.com, {runDate ?? 'this build'}
 Device: [browser, OS, screen size]
@@ -540,12 +538,6 @@ Attachments: [screenshot or video]</pre>
     margin-top: 0.5em;
     font-size: 1rem;
     color: var(--accent-2);
-    max-width: 48ch;
-  }
-  .step__note {
-    margin-top: var(--s-2);
-    font-size: 1rem;
-    color: var(--muted);
     max-width: 48ch;
   }
   /* The fold: a phone-only disclosure for the computer steps. */
