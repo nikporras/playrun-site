@@ -8,6 +8,16 @@ import path, { join } from 'node:path';
 
 const require = createRequire(import.meta.url);
 
+// The hero's foot as the headline break measures it (the hero pins at its top, or by its bottom
+// edge when it is taller than the screen), and a scroll just past the line where the name breaks.
+const footOf = (page: Page) =>
+  page.locator('.hero').evaluate((el) => Math.min(innerHeight, (parseFloat(getComputedStyle(el).top) || 0) + el.offsetHeight));
+const pastBreak = async (page: Page) => {
+  const foot = await footOf(page);
+  const mark = await page.locator('.wall__trip[data-trip="break"]').evaluate((el) => el.getBoundingClientRect().top + scrollY);
+  return Math.round(mark - foot + 60);
+};
+
 /**
  * Routes that are planned but not built yet. Links to them are reported, not failed,
  * so the suite stays green while the site is built page by page. Remove entries as pages land.
@@ -370,7 +380,8 @@ test.describe('Home', () => {
     await at(850);
     await expect.poll(opacity, { timeout: 1000 }).toBe(0);
     // then the page scrolls on with the heap riding on the title by itself
-    await at(1000);
+    // (the title under the row of logos, well on screen)
+    await at(await page.locator('.wall__title').evaluate((el) => Math.round(el.getBoundingClientRect().top + scrollY - 300)));
     await page.waitForTimeout(1300);
     await expect(canvas).toBeVisible();
     expect(await canvas.evaluate((el) => getComputedStyle(el).position), 'in the page, so it scrolls with the title').toBe('absolute');
@@ -456,7 +467,7 @@ test.describe('Home', () => {
       const spot = width < 1024 ? ticket.locator('.ticket__dock') : chip;
       const box = async () => (await spot.boundingBox())!;
       const wallTop = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
-      const breakAt = width < 1024 ? Math.round(wallTop - height + 260) : 300;
+      const breakAt = width < 1024 ? await pastBreak(page) : 300;
       await page.evaluate((y) => window.scrollTo(0, y), breakAt);
       // the first time in a visit: kept, the card open
       await expect(ticket).toHaveClass(/is-in/);
@@ -648,7 +659,7 @@ test.describe('Home', () => {
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(500);
       const wallTop = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
-      await page.evaluate((y) => window.scrollTo(0, y), width < 768 ? Math.round(wallTop - height + 260) : 300);
+      await page.evaluate((y) => window.scrollTo(0, y), width < 768 ? await pastBreak(page) : 300);
       const ticket = page.locator('.hero__ticket');
       const chip = ticket.locator('[data-ticket-chip]');
       await expect(ticket).toHaveClass(/is-in/);
@@ -802,7 +813,8 @@ test.describe('Home', () => {
     const canvas = page.locator('.hero__break');
     // the two markers: the break lower than the mend, so a stop at the threshold cannot flicker
     const markAt = (k: string) => page.locator(`.wall__trip[data-trip="${k}"]`).evaluate((el) => el.getBoundingClientRect().top + scrollY);
-    const [breakY, mendY] = (await Promise.all([markAt('break'), markAt('mend')])).map((m) => Math.round(m - 900));
+    const foot = await footOf(page);
+    const [breakY, mendY] = (await Promise.all([markAt('break'), markAt('mend')])).map((m) => Math.round(m - foot));
     expect(breakY - mendY, 'a gap between the two').toBeGreaterThanOrEqual(16);
     // one jump far past the threshold: the animation still takes its own time
     await page.evaluate((y) => window.scrollTo(0, y), breakY + 600);
@@ -1400,3 +1412,39 @@ test.describe('Home', () => {
     });
   }
 });
+
+for (const [width, height] of [
+  [1280, 720],
+  [1440, 900],
+  [375, 812],
+] as const) {
+  test(`the games are on the first screen (${width}x${height}): the row of logos rests on the clouds at the hero's foot, whole on screen, rolling, unlinked, covering nothing of the hero; the heading, Pause and the link follow`, { tag: ['@viewports'] }, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(300);
+    const geo = await page.evaluate(() => {
+      const box = (el: Element) => el.getBoundingClientRect();
+      const bar = document.querySelector('.tabbar');
+      const floor = bar && bar.getClientRects().length ? box(bar).top : innerHeight;
+      const marks = [...document.querySelectorAll('.ticker__seq:not(.ticker__copy) .wall__mark > *')].map(box).filter((r) => r.right > 0 && r.left < innerWidth);
+      const band = box(document.querySelector('.wall .join--top')!);
+      const hero = [...document.querySelectorAll('.hero :is(h1, .hero__post, .hero__value)')].map(box);
+      return { floor, logoBottom: Math.max(...marks.map((r) => r.bottom)), logoTop: Math.min(...marks.map((r) => r.top)), shown: marks.length, band: [band.top, band.bottom], heroBottom: Math.max(...hero.map((r) => r.bottom)) };
+    });
+    expect(geo.shown, 'logos on show').toBeGreaterThanOrEqual(2);
+    expect(geo.logoBottom, 'the whole row on the first screen').toBeLessThanOrEqual(geo.floor);
+    expect(geo.logoTop, 'resting in the clouds').toBeGreaterThan(geo.band[0]);
+    expect(geo.logoTop).toBeLessThan(geo.band[1]);
+    expect(geo.heroBottom, 'the hero text above the clouds').toBeLessThanOrEqual(geo.band[0]);
+    // rolling, unlinked, with Pause; then the heading, Pause and the link below the row
+    expect(await page.locator('.ticker a').count()).toBe(0);
+    expect(await page.locator('.ticker__track').evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
+    const order = await page.locator('.ticker__view, .wall__title, .ticker__pause, .wall__more').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+    expect(order[0], 'the logos first on screen').toBeLessThan(order[1]);
+    await expect(page.locator('.wall__more')).toHaveAttribute('href', '/portfolio/');
+    await page.locator('.ticker__pause').click();
+    await expect(page.locator('.wall')).toHaveClass(/is-paused/);
+    await expect(page.locator('.ticker__pause')).toHaveAccessibleName('Play the logos');
+  });
+}

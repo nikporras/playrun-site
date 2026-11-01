@@ -43,7 +43,9 @@ for (const path of PAGES) {
             const covered = Array.from(document.querySelectorAll(text))
               .filter((t) => {
                 const b = t.getBoundingClientRect();
-                // (the clipped content of a folded card on a phone is hidden, not covered)
+                // (the clipped content of a folded card on a phone is hidden, not covered; Home's row of
+                // logos is drawn above its clouds)
+                if (top && t.closest('.ticker')) return false;
                 return b.width > 0 && b.height > 0 && getComputedStyle(t).visibility !== 'hidden' && b.left < r.right && b.right > r.left && b.top < r.bottom - 0.5 && b.bottom > r.top + 0.5;
               })
               .map((t) => `${t.tagName}: ${(t.textContent ?? '').trim().slice(0, 30)}`);
@@ -78,6 +80,7 @@ for (const path of PAGES) {
               after: fieldOf(next),
               covered,
               room: parseFloat(getComputedStyle(level)[top ? 'paddingTop' : 'paddingBottom']),
+              ticker: top && !!level.querySelector('.ticker') && Number(getComputedStyle(level.querySelector('.ticker')!).zIndex) > Number(cs.zIndex || 0),
             };
           });
         },
@@ -98,7 +101,10 @@ for (const path of PAGES) {
         expect(j.fills[j.fills.length - 1], 'the front layer is the colour of what follows').toBe(j.after);
         expect(new Set(j.fills).size, 'each layer its own tone').toBe(j.layers);
         if (j.kind === 'clouds') expect(j.highlights, 'lighter pixels on the cloud tops').toBeGreaterThan(0);
-        expect(j.room, 'the level made room for the band').toBeGreaterThanOrEqual(j.height);
+        // (Home's curtain carries the row of logos resting in its clouds, drawn above them; every other
+        // level makes room for the whole band)
+        if (j.ticker) expect(j.room, 'the logos rest in the lower part of the band').toBeGreaterThanOrEqual(j.height * 0.35);
+        else expect(j.room, 'the level made room for the band').toBeGreaterThanOrEqual(j.height);
         expect(j.covered, 'covers no text or control').toEqual([]);
         // the edge between the two colours is the front layer's own silhouette: no flat run longer
         // than 64px on a desktop (scaled down with the art on tablets and phones), and bumps at
