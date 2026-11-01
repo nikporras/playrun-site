@@ -7,7 +7,7 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
  * hits is game over, and Try again starts afresh. The suite's build carries a handle on the game
  * (`sweepTest`, test builds only; the production build leaves it out, checked in CI).
  */
-type State = { mode: string; lives: number; shipX: number; left: number; shots: number; touch: boolean; scale: number; bugs: { x: number; y: number; alive: boolean; diving: boolean }[] };
+type State = { mode: string; lives: number; shipX: number; shipW: number; bugW: number; stars: { x: number; y: number }[]; left: number; shots: number; touch: boolean; scale: number; bugs: { x: number; y: number; alive: boolean; diving: boolean }[] };
 // (before the game's code has arrived there is no handle yet: the mode reads 'none')
 const state = (page: Page) => page.locator('[data-sweep]').evaluate((el) => (el as unknown as { sweepTest?: { state: () => unknown } }).sweepTest?.state() ?? { mode: 'none' }) as Promise<State>;
 const hook = (page: Page, name: string, arg?: unknown) =>
@@ -53,6 +53,29 @@ for (const [width, height] of SIZES) {
     expect(field.h).toBe((field.w / 160) * 128);
     expect(Math.abs(field.css * field.dpr - field.w)).toBeLessThan(0.5);
     expect(field.rendering).toBe('pixelated');
+    // the ship one and a half bugs wide at most; the stars scattered over the whole field
+    const st0 = await state(page);
+    expect(st0.shipW / st0.bugW).toBeGreaterThanOrEqual(1.3);
+    expect(st0.shipW / st0.bugW).toBeLessThanOrEqual(1.5);
+    const xs = st0.stars.map((p) => p.x);
+    const ys = st0.stars.map((p) => p.y);
+    expect(new Set(xs.map((x) => Math.floor(x / 16))).size, 'stars across the width').toBeGreaterThanOrEqual(6);
+    expect(Math.max(...ys) - Math.min(...ys), 'and down the height').toBeGreaterThan(80);
+    // a keyboard: the keys line (no touch here)
+    await expect(page.getByText('Arrow keys or A and D to move, Space to fire, Esc to pause.')).toBeVisible();
+    await expect(page.getByText('Hold Left or Right to move, tap Fire to shoot.')).toBeHidden();
+    // from a tablet up, the heading, the line and the game centred in the level
+    if (width >= 768) {
+      const centre = async (sel: string | ReturnType<Page['locator']>) => {
+        const b = (await (typeof sel === 'string' ? page.locator(sel) : sel).boundingBox())!;
+        return b.x + b.width / 2;
+      };
+      const level = await centre('section.play .level__body');
+      const head = await page.locator('section.play .level__title').evaluate((el) => getComputedStyle(el).textAlign);
+      expect(head).toBe('center');
+      expect(Math.abs((await centre('[data-sweep-stage]')) - (await centre('section.play .level__head'))), 'the game under the heading').toBeLessThanOrEqual(2);
+      expect(level).toBeGreaterThan(0);
+    }
     // the focus on the field, the bar reads three lives and ten bugs
     await expect(page.locator('[data-sweep-stage]')).toBeFocused();
     await expect(page.locator('[data-sweep-lives]')).toHaveText('3');
@@ -142,6 +165,9 @@ test('Bug Sweep by touch at 375x812: held Left and Right move the ship, Fire fir
   await page.getByRole('button', { name: 'Play Bug Sweep' }).tap();
   await expect.poll(async () => (await state(page)).mode).toBe('play');
   expect((await state(page)).touch, 'a touch screen').toBe(true);
+  // the buttons' line instead of the keys
+  await expect(page.getByText('Hold Left or Right to move, tap Fire to shoot.')).toBeVisible();
+  await expect(page.getByText('Arrow keys or A and D to move, Space to fire, Esc to pause.')).toBeHidden();
   await hook(page, 'calm', true);
   const x0 = (await state(page)).shipX;
   await press(page.getByRole('button', { name: 'Right', exact: true }), 400);
@@ -174,13 +200,13 @@ test('Bug Sweep is winnable with the touch buttons at 375x812, playing at a thum
   // A player with thumbs: every 250 ms, look, then press one thing for that long. Get out from
   // under a bug diving close; otherwise line up under the nearest bug in formation and fire.
   while (s.mode === 'play' && Date.now() - t0 < 120_000) {
-    const ship = s.shipX + 12;
+    const ship = s.shipX + s.shipW / 2;
     const danger = s.bugs.filter((b) => b.alive && b.diving && b.y > 40 && b.y < 118 && Math.abs(b.x + 5 - ship) < 30).sort((a, b) => b.y - a.y)[0];
     let move: Locator | null = null;
     if (danger) {
       const away = danger.x + 5 > ship ? left : right;
       // (against a wall, the only way out is past it)
-      move = (away === left && s.shipX < 4) || (away === right && s.shipX > 132) ? (away === left ? right : left) : away;
+      move = (away === left && s.shipX < 4) || (away === right && s.shipX > 156 - s.shipW) ? (away === left ? right : left) : away;
     } else {
       const target = s.bugs.filter((b) => b.alive && !b.diving).sort((a, b) => Math.abs(a.x + 5 - ship) - Math.abs(b.x + 5 - ship))[0];
       if (target && Math.abs(target.x + 5 - ship) > 4) move = target.x + 5 > ship ? right : left;

@@ -1,7 +1,7 @@
 /**
  * Bug Sweep, the small arcade game on the About page. Loaded only when Play is pressed.
  *
- * The site's own pixel ship moves along the bottom and fires upward at ten of the site's bugs,
+ * The site's own pixel ship (the logo icon, one and a half bugs wide here) moves along the bottom and fires upward at ten of the site's bugs,
  * two rows of five swaying at the top; every few seconds one dives at the ship in a curve and, if
  * it misses, comes back round to its place. Sweep all ten to clear the level ("Bug Sweep cleared",
  * an achievement on the scoreboard); a bug that touches the ship costs a life, and three is game
@@ -15,7 +15,7 @@
  * with Esc or the Pause button, when the tab is hidden and when the field leaves the screen. It
  * plays whatever the motion setting: the player starts it on purpose.
  */
-import { SHIP, BUG, shipBand } from '../data/sprites';
+import { SHIP_SMALL as SHIP, BUG, smallBand } from '../data/sprites';
 
 const W = 160;
 const H = 128;
@@ -81,7 +81,7 @@ export function startSweep(root: HTMLElement) {
     green: colour('--pr-green', '#67C18C'),
     light: colour('--pr-light', '#E5E7EA'),
   };
-  const shipArt = bitmap(SHIP, (ch, y) => (ch === '#' ? C[shipBand(y) as 'blue' | 'cyan' | 'green'] : null));
+  const shipArt = bitmap(SHIP, (ch, y) => (ch === '#' ? C[smallBand(y) as 'blue' | 'cyan' | 'green'] : null));
   const bugArt = bitmap(BUG, (ch) => ({ B: C.green, E: C.navy, L: C.cyan })[ch] ?? null);
 
   // Touch screens, and the tablets and phones that show the bottom bar: the buttons under the field.
@@ -123,7 +123,15 @@ export function startSweep(root: HTMLElement) {
   let bugs: Bug[] = [];
   let shots: Shot[] = [];
   let bursts: Burst[] = [];
-  const stars = Array.from({ length: 22 }, (_, i) => ({ x: (i * 53 + 17) % W, y: (i * 37 + 11) % (H - 30), on: i % 3 === 0 }));
+  // the stars: scattered over the whole field, the same on every game (a fixed seed)
+  let seed = 0x5eed;
+  const scatter = () => {
+    seed = (seed + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const stars = Array.from({ length: 16 }, () => ({ x: Math.floor(scatter() * W), y: Math.floor(scatter() * (H - 6)) }));
   const slot = (b: Bug) => {
     const sway = calm ? 0 : Math.sin((clock / 5) * Math.PI * 2) * 18 * tune().sway;
     return { x: 35 + b.col * 20 + sway, y: 12 + b.row * 15 };
@@ -289,7 +297,7 @@ export function startSweep(root: HTMLElement) {
         }
       }
       // touching the ship
-      if (overlaps(b.x + 1, b.y + 1, BUG_W - 2, BUG_H - 2, shipX + 6, SHIP_Y + 3, SHIP_W - 12, SHIP_H - 5) && hurt === 0) {
+      if (overlaps(b.x + 1, b.y + 1, BUG_W - 2, BUG_H - 2, shipX + 3, SHIP_Y + 2, SHIP_W - 6, SHIP_H - 3) && hurt === 0) {
         hitShip();
         if (b.dive) {
           b.dive.phase = 'back';
@@ -334,7 +342,7 @@ export function startSweep(root: HTMLElement) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.globalAlpha = 0.35;
     ctx.fillStyle = C.light;
-    for (const star of stars) if (star.on) px(star.x, star.y, 1, 1);
+    for (const star of stars) px(star.x, star.y, 1, 1);
     ctx.globalAlpha = 1;
     // the ground line
     ctx.fillStyle = C.blue;
@@ -432,7 +440,7 @@ export function startSweep(root: HTMLElement) {
   // production build leaves this out entirely, so nothing can be unlocked from the console.
   if (import.meta.env.DEV || import.meta.env.PUBLIC_TEST_HOOKS === '1') {
     (root as HTMLElement & { sweepTest?: unknown }).sweepTest = {
-      state: () => ({ mode, lives, shipX, left: left(), shots: shots.length, touch: touchQuery.matches, bugs: bugs.map((b) => ({ x: b.x, y: b.y, alive: b.alive, diving: !!b.dive })), scale: s }),
+      state: () => ({ mode, lives, shipX, shipW: SHIP_W, bugW: BUG_W, stars, left: left(), shots: shots.length, touch: touchQuery.matches, bugs: bugs.map((b) => ({ x: b.x, y: b.y, alive: b.alive, diving: !!b.dive })), scale: s }),
       calm: (on: boolean) => (calm = on),
       seed: (n: number) => {
         let a = n >>> 0;

@@ -75,7 +75,10 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
           <button type="button" class="button sweep__action" data-sweep-action>Play Bug Sweep</button>
         </div>
       </div>
-      <p id="sweep-keys" class="sweep__keys">Arrow keys or A and D to move, Space to fire, Esc to pause.</p>
+      <p id="sweep-keys" class="sweep__keys">
+        <span class="sweep__keys-desk">Arrow keys or A and D to move, Space to fire, Esc to pause.</span>
+        <span class="sweep__keys-touch">Hold Left or Right to move, tap Fire to shoot.</span>
+      </p>
       <div class="sweep__pad" data-sweep-pad hidden>
         <button type="button" class="sweep__key" data-sweep-left>
           <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 3h1v1H1zM2 2h1v3H2zM3 1h1v5H3zM4 0h1v7H4z" fill="currentColor" /></svg>
@@ -368,6 +371,34 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
     margin: 0;
     font-size: 0.9375rem;
     color: var(--field-cyan-ink);
+  }
+  /* the keys on a keyboard; the buttons on a touch screen */
+  .sweep__keys-touch {
+    display: none;
+  }
+  @media (pointer: coarse) {
+    .sweep__keys-desk {
+      display: none;
+    }
+    .sweep__keys-touch {
+      display: inline;
+    }
+  }
+  /* From a tablet up: the heading, the line and the game centred in the level. */
+  @media (min-width: 48rem) {
+    .play .level__head {
+      align-items: center;
+      text-align: center;
+    }
+    .play .level__lead {
+      margin-inline: auto;
+    }
+    .sweep {
+      margin-inline: auto;
+    }
+    .sweep__keys {
+      text-align: center;
+    }
   }
   .sweep__pad {
     display: grid;

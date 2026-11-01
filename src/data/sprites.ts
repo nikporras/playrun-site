@@ -32,6 +32,25 @@ export const shipBand = (y: number) => (y < 6 ? 'blue' : y < 12 ? 'cyan' : 'gree
 export const FLAME_A = ['..........####', '...........##.'];
 export const FLAME_B = ['..........####', '..........####', '...........##.'];
 
+/**
+ * The same ship for Bug Sweep, rasterised again from the logo icon at 15 by 11, so in the game it is
+ * one and a half bugs wide; banded the same way (blue, cyan, green from the top).
+ */
+export const SHIP_SMALL = [
+  '......#.#......',
+  '....###.###....',
+  '..#####.#####..',
+  '#####.....#####',
+  '.####.....####.',
+  '..#####.#####..',
+  '....###.###....',
+  '.....##.####...',
+  '.....##.####...',
+  '......#.#..#...',
+  '......#.#...#..',
+];
+export const smallBand = (y: number) => (y < 4 ? 'blue' : y < 8 ? 'cyan' : 'green');
+
 export const BUG = [
   '..L..BB..L',
   '...LBBBB..',
