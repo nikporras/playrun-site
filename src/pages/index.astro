@@ -7,6 +7,7 @@ import CrossMark from '../components/CrossMark.astro';
 import Bug from '../components/Bug.astro';
 import Join from '../components/Join.astro';
 import GameIcon from '../components/GameIcon.astro';
+import HeroHalo from '../components/HeroHalo.astro';
 import { suite } from '../data/suite';
 import { logos } from '../data/logos';
 import { contact, employers, leadRoles, listed, playrun, primaryAction, since, site } from '../config';
@@ -107,6 +108,9 @@ const checks = [
     </div>
     <!-- The player character: the one photo on the site, standing on the bottom edge of the level -->
     <div class="hero__figure" data-load style="--d: 200ms">
+      <!-- (the pixel halo behind it, drawn for the desktop photo and for the smaller one) -->
+      <HeroHalo photo={500} class="hero__halo hero__halo--wide" />
+      <HeroHalo photo={264} class="hero__halo hero__halo--small" />
       <Picture
         src={portrait}
         alt={ALT}
@@ -725,17 +729,9 @@ const checks = [
       radial-gradient(ellipse 78% 92% at 50% 30%, #000 62%, rgba(0, 0, 0, 0.7) 78%, rgba(0, 0, 0, 0.3) 91%, transparent 100%);
     mask-composite: intersect;
   }
-  /* The glow: an ellipse that reaches transparent well inside its own box, so it has no edge. */
-  .hero__figure::before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 200%;
-    height: 150%;
-    transform: translate(-50%, -46%);
-    background: radial-gradient(ellipse 42% 40% at 50% 50%, rgba(86, 189, 218, 0.36), rgba(81, 108, 179, 0.18) 50%, transparent 72%);
-    pointer-events: none;
+  /* The halo (HeroHalo.astro): pixel bands behind the photo, one size a screen. */
+  :global(.hero__halo--small) {
+    display: none;
   }
   .hero__figure :global(img) {
     position: relative;
@@ -750,6 +746,12 @@ const checks = [
     }
     .hero__figure {
       width: min(34vw, 20rem);
+    }
+    :global(.hero__halo--wide) {
+      display: none;
+    }
+    :global(.hero__halo--small) {
+      display: block;
     }
   }
   @media (max-width: 47.99rem) {

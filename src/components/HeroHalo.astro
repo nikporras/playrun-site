@@ -1,0 +1,86 @@
+---
+/**
+ * The halo behind the hero photo: three concentric bands of the brand cyan and blue at falling
+ * opacity, cut on an 8px grid like the rest of the pixel art, so every edge is a hard step. It is
+ * built here, at build time, as runs of cells per row. The photo's foot fades into the navy, so
+ * the halo fades with it, row by row in 8px steps, and ends where the photo ends: no straight edge
+ * anywhere. Two sizes, as the steps stay 8px while the photo scales: one for the desktop photo and
+ * one for phones and tablets.
+ */
+interface Props {
+  /** the photo's width the halo is drawn for, in px */
+  photo: number;
+  class?: string;
+}
+const { photo, class: className } = Astro.props;
+
+const CELL = 8;
+const ASPECT = 1541 / 1491; // the portrait's height over its width
+// The halo's box: twice the photo's width and one and a half times its height, its middle a little
+// below the photo's (the photo's middle sits at 46% of the box).
+const cols = Math.round((photo * 2) / CELL);
+const rows = Math.round((photo * ASPECT * 1.5) / CELL);
+const photoH = rows / 1.5;
+const mid = 0.46 * rows; // the photo's middle
+const cx = cols / 2;
+const cy = rows / 2;
+const rx = 0.42 * cols;
+const ry = 0.4 * rows;
+// the photo's fade: whole to 68% of its height, gone at its foot
+const fadeFrom = mid - photoH / 2 + 0.68 * photoH;
+const fadeTo = mid + photoH / 2;
+const fade = (y: number) => Math.max(0, Math.min(1, 1 - (y - fadeFrom) / (fadeTo - fadeFrom)));
+
+// outermost first: the reach of each band (a share of the radii), its colour and its opacity
+const BANDS = [
+  { reach: 0.7, color: '#516CB3', alpha: 0.1 },
+  { reach: 0.48, color: '#5495C6', alpha: 0.16 },
+  { reach: 0.26, color: '#56BDDA', alpha: 0.22 },
+];
+const LEVELS = 8; // the fade's steps
+
+const layers = BANDS.flatMap((band) => {
+  const byLevel = new Map<number, string[]>();
+  for (let j = 0; j < rows; j++) {
+    const y = j + 0.5;
+    const level = Math.round(fade(y) * LEVELS);
+    if (!level) continue;
+    const dy = (y - cy) / (ry * band.reach);
+    if (Math.abs(dy) >= 1) continue;
+    // the cells whose middles fall inside the ellipse, as one run
+    const half = rx * band.reach * Math.sqrt(1 - dy * dy);
+    const from = Math.ceil(cx - half - 0.5);
+    const to = Math.floor(cx + half - 0.5);
+    if (to < from) continue;
+    const runs = byLevel.get(level) ?? [];
+    runs.push(`M${from} ${j}h${to - from + 1}v1h${-(to - from + 1)}z`);
+    byLevel.set(level, runs);
+  }
+  return [...byLevel].map(([level, runs]) => ({ d: runs.join(''), fill: band.color, opacity: +(band.alpha * (level / LEVELS)).toFixed(3) }));
+});
+---
+
+<svg
+  class:list={['halo', className]}
+  viewBox={`0 0 ${cols} ${rows}`}
+  width={cols * CELL}
+  height={rows * CELL}
+  shape-rendering="crispEdges"
+  style={`top: calc(100% - ${(fadeTo * CELL).toFixed(1)}px)`}
+  aria-hidden="true"
+  focusable="false"
+>
+  {layers.map((l) => <path d={l.d} fill={l.fill} fill-opacity={l.opacity} />)}
+</svg>
+
+<style>
+  /* behind the photo, centred across it, its fade ending on the photo's foot whatever the photo's
+     size (the top is set on the element) */
+  .halo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: none;
+    pointer-events: none;
+  }
+</style>

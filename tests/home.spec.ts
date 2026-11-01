@@ -223,13 +223,12 @@ test.describe('Home', () => {
     const figure = page.locator('.hero__figure img');
     await expect(figure).toBeVisible();
     expect(await page.locator('main img:not([alt=""]):not(.wall__logo)').count(), 'the photo appears once on the site').toBe(1);
-    // the cutout fades at the top (a short fade) and the bottom (a long one); the glow behind it is
-    // an ellipse that ends inside its own box, so neither has a hard edge
+    // the cutout fades at the bottom; the halo behind it is pixel bands on an 8px grid that fade
+    // with it, so neither has a straight edge
     const mask = await page.locator('.hero__figure').evaluate((el) => {
       const pic = el.querySelector('picture')!;
       const cs = getComputedStyle(pic) as CSSStyleDeclaration & { webkitMaskImage?: string };
-      const glow = getComputedStyle(el, '::before');
-      return { mask: cs.maskImage || cs.webkitMaskImage || '', composite: (cs as CSSStyleDeclaration & { maskComposite?: string }).maskComposite || '', figMask: getComputedStyle(el).maskImage, glow: glow.backgroundImage, glowW: parseFloat(glow.width), figW: el.getBoundingClientRect().width };
+      return { mask: cs.maskImage || cs.webkitMaskImage || '', composite: (cs as CSSStyleDeclaration & { maskComposite?: string }).maskComposite || '', figMask: getComputedStyle(el).maskImage, glow: getComputedStyle(el, '::before').backgroundImage };
     });
     // the vertical fade (short at the top, eased over the last third) meets an ellipse, so the
     // lower sides and the bottom corners fade too and no straight edge is left
@@ -238,10 +237,51 @@ test.describe('Home', () => {
     expect(mask.mask).toContain('radial-gradient(');
     expect(mask.mask.match(/gradient\(/g)?.length).toBe(2);
     expect(mask.composite, 'the two masks intersect').toMatch(/^intersect/);
-    expect(mask.figMask, 'the figure itself is not masked, so the glow is not cut at its edges').toBe('none');
-    expect(mask.glow).toContain('radial-gradient');
-    expect(mask.glow, 'the glow reaches transparent inside its box').toMatch(/rgba\(0, 0, 0, 0\) 72%/);
-    expect(mask.glowW, 'the glow is wider than the figure').toBeGreaterThan(mask.figW * 1.5);
+    expect(mask.figMask, 'the figure itself is not masked, so the halo is not cut at its edges').toBe('none');
+    expect(mask.glow, 'no soft gradient glow any more').toBe('none');
+    // the halo: one shown a screen, behind the photo, wider than it, hard 8px steps in the brand
+    // cyan and blue at falling opacity, fading row by row and ending at the photo's foot
+    for (const [width, height] of [
+      [1920, 1080],
+      [1280, 720],
+      [375, 812],
+    ] as const) {
+      await page.setViewportSize({ width, height });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const halo = await page.locator('.hero__figure').evaluate((el) => {
+        const shown = [...el.querySelectorAll<SVGSVGElement>('svg.halo')].filter((s) => s.getClientRects().length);
+        const svg = shown[0];
+        const vb = svg.viewBox.baseVal;
+        const paths = [...svg.querySelectorAll('path')];
+        const img = el.querySelector('img')!.getBoundingClientRect();
+        const r = svg.getBoundingClientRect();
+        const lastRow = Math.max(...paths.flatMap((p) => [...p.getAttribute('d')!.matchAll(/M-?\d+ (\d+)h/g)].map((m) => Number(m[1]))));
+        return {
+          count: shown.length,
+          crisp: svg.getAttribute('shape-rendering'),
+          hidden: svg.getAttribute('aria-hidden'),
+          cell: r.width / vb.width,
+          integers: paths.every((p) => /^(M-?\d+ \d+h\d+v1h-\d+z)+$/.test(p.getAttribute('d')!)),
+          fills: [...new Set(paths.map((p) => p.getAttribute('fill')))],
+          opacities: paths.map((p) => Number(p.getAttribute('fill-opacity'))),
+          wider: r.width / img.width,
+          behind: svg.compareDocumentPosition(el.querySelector('picture')!) & Node.DOCUMENT_POSITION_FOLLOWING,
+          endsAt: r.top + ((lastRow + 1) * r.height) / vb.height - img.bottom,
+        };
+      });
+      expect(halo.count, `one halo at ${width}`).toBe(1);
+      expect(halo.crisp).toBe('crispEdges');
+      expect(halo.hidden).toBe('true');
+      expect(halo.cell, '8px steps').toBe(8);
+      expect(halo.integers, 'whole cells only').toBe(true);
+      expect(halo.fills).toEqual(['#516CB3', '#5495C6', '#56BDDA']);
+      expect(Math.max(...halo.opacities)).toBeLessThanOrEqual(0.25);
+      expect(new Set(halo.opacities).size, 'falling opacity, faded in steps').toBeGreaterThan(6);
+      expect(halo.wider).toBeGreaterThan(1.5);
+      expect(halo.behind, 'drawn before the photo, so behind it').toBeTruthy();
+      expect(halo.endsAt, "it ends with the photo's fade").toBeLessThanOrEqual(1);
+    }
+    await page.setViewportSize({ width: 1440, height: 900 });
     // the photo keeps its full height on screen at every desktop width (nothing is cut off above the hero's foot)
     for (const width of [768, 1280, 1440, 1920]) {
       await page.setViewportSize({ width, height: 900 });
