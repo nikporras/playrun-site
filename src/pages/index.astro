@@ -169,24 +169,15 @@ const checks = [
     </div>
   </div>
 
-  <!-- Level 2: the ticker of titles, their official logos in one colour, rolling slowly left. The
-       row rests on the clouds at the top of the level, on the first screen (it comes first on
-       screen, after the heading in the page); the heading, Pause and the link follow below. -->
+  <!-- Level 2: the ticker of titles, their official logos in one colour, rolling slowly left. All
+       centred, on the clouds at the top of the level and on the first screen: the label, the row of
+       logos, then Pause and the link. The heading is for the outline and screen readers only. -->
   <section class="level level--blue level--tight has-join-top has-join-bottom wall" data-level="2" data-ticker aria-labelledby="wall-title">
     <Join kind="clouds" at="top" from="var(--pr-navy)" to="var(--field-blue)" seed="home-wall" />
     <Join kind="terrain" from="var(--field-blue)" to="var(--pr-navy)" seed="home-stats" />
     <div class="level__head wall__head">
       <p class="flag" data-nosnippet data-enter><span>Level 2 &middot; Games</span></p>
-      <h2 id="wall-title" class="level__title wall__title" data-enter="wipe">Games I've tested</h2>
-      <div class="level__actions wall__actions" data-enter style="--enter-delay: 80ms">
-        <button type="button" class="ticker__pause" data-ticker-pause aria-label="Pause the logos">
-          <svg class="ticker__glyph ticker__glyph--pause" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 0h2v7H1zM4 0h2v7H4z" fill="currentColor" /></svg>
-          <svg class="ticker__glyph ticker__glyph--play" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 0h1v7H1zM2 1h1v5H2zM3 1h1v5H3zM4 2h1v3H4zM5 3h1v1H5z" fill="currentColor" /></svg>
-          <span data-ticker-word>Pause</span>
-        </button>
-        <!-- the logos are pictures only; the way on to the games is this link -->
-        <a class="textlink wall__more" href="/portfolio/">See every game I've tested</a>
-      </div>
+      <h2 id="wall-title" class="wall__title visually-hidden">Games I've tested</h2>
     </div>
     <div class="ticker">
       <div class="ticker__view">
@@ -216,7 +207,16 @@ const checks = [
         </div>
       </div>
     </div>
-    <Bug id="wall-1" style="right: 14%; bottom: calc(var(--join-h) + 3rem)" tablet="right: 10%; bottom: calc(var(--join-h) + 1rem)" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <div class="level__actions wall__actions" data-enter style="--enter-delay: 80ms">
+      <button type="button" class="ticker__pause" data-ticker-pause aria-label="Pause the logos">
+        <svg class="ticker__glyph ticker__glyph--pause" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 0h2v7H1zM4 0h2v7H4z" fill="currentColor" /></svg>
+        <svg class="ticker__glyph ticker__glyph--play" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 0h1v7H1zM2 1h1v5H2zM3 1h1v5H3zM4 2h1v3H4zM5 3h1v1H5z" fill="currentColor" /></svg>
+        <span data-ticker-word>Pause</span>
+      </button>
+      <!-- the logos are pictures only; the way on to the games is this link -->
+      <a class="textlink wall__more" href="/portfolio/">See every game I've tested</a>
+    </div>
+    <Bug id="wall-1" style="right: 14%; bottom: calc(var(--join-h) + 0.5rem)" tablet="right: 6%; bottom: calc(var(--join-h) + 0.5rem)" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
   <!-- Level 3: the numbers, counted from the portfolio, on a drum that turns: five rows on show,
@@ -355,8 +355,9 @@ const checks = [
   .hero,
   .wall {
     --cell-h: 8rem; /* the logo row */
-    --ticker-top: calc(var(--join-h) * 0.4); /* where the row sits in the cloud band */
-    --peek: calc(var(--ticker-top) + var(--cell-h));
+    --ticker-top: calc(var(--join-h) * 0.3); /* where the label sits in the cloud band */
+    --flag-room: 2.5rem; /* the label and its space above the row */
+    --peek: calc(var(--ticker-top) + var(--flag-room) + var(--cell-h));
   }
   .hero {
     min-height: calc(100svh - var(--hud-space, 0px) - 4.5rem - var(--peek));
@@ -868,16 +869,27 @@ const checks = [
     z-index: 1;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
   .wall.has-join-top {
     padding-top: var(--ticker-top);
   }
-  /* first on screen, in the clouds and above them */
-  .wall .ticker {
-    order: -1;
+  .wall__head {
     position: relative;
     z-index: 1;
-    margin-bottom: var(--s-4);
+    align-items: center;
+    height: calc(var(--flag-room) - var(--s-2));
+  }
+  .wall__head .flag {
+    margin: 0;
+  }
+  /* the row of logos, in the clouds and above them, the whole width of the column */
+  .wall .ticker {
+    align-self: stretch;
+    position: relative;
+    z-index: 1;
+    margin-top: var(--s-2);
   }
   /* A desktop: the scoreboard's pill stands bottom right, beside the column on a wide screen and
      over its end on a narrower one. The row stops short of the pill's column at both ends (so it
@@ -887,13 +899,14 @@ const checks = [
       margin-inline: max(0px, calc(13rem - max(clamp(1.25rem, 5vw, 6rem), calc((100vw - 77.5rem) / 2))));
     }
   }
+  /* Pause and the link, side by side under the row */
   .wall__actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
-  }
-  /* The title is an introduction to the logos, not a second hero: the section-head size. */
-  .wall__title {
-    font-size: var(--step-head);
-    font-size: round(var(--step-head), 16px);
+    gap: var(--s-2) var(--s-3);
+    margin-top: var(--s-2);
   }
   .ticker {
     --k: 1; /* the scale of every logo: smaller on tablets and phones */

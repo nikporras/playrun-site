@@ -1431,7 +1431,7 @@ for (const [width, height] of [
   [1440, 900],
   [375, 812],
 ] as const) {
-  test(`the games are on the first screen (${width}x${height}): the row of logos rests on the clouds at the hero's foot, whole on screen, rolling, unlinked, covering nothing of the hero; the heading, Pause and the link follow`, { tag: ['@viewports'] }, async ({ page }) => {
+  test(`the games are on the first screen (${width}x${height}): the row of logos rests on the clouds at the hero's foot, whole on screen, rolling, unlinked, covering nothing of the hero; centred under its label, with Pause and the link under it`, { tag: ['@viewports'] }, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
@@ -1447,14 +1447,22 @@ for (const [width, height] of [
     });
     expect(geo.shown, 'logos on show').toBeGreaterThanOrEqual(2);
     expect(geo.logoBottom, 'the whole row on the first screen').toBeLessThanOrEqual(geo.floor);
-    expect(geo.logoTop, 'resting in the clouds').toBeGreaterThan(geo.band[0]);
-    expect(geo.logoTop).toBeLessThan(geo.band[1]);
+    expect(geo.logoTop, 'resting on the clouds').toBeGreaterThan(geo.band[0]);
     expect(geo.heroBottom, 'the hero text above the clouds').toBeLessThanOrEqual(geo.band[0]);
-    // rolling, unlinked, with Pause; then the heading, Pause and the link below the row
+    // rolling, unlinked; the label above the row, Pause and the link side by side under it, all
+    // centred; the heading there for the outline and screen readers only
     expect(await page.locator('.ticker a').count()).toBe(0);
     expect(await page.locator('.ticker__track').evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);
-    const order = await page.locator('.ticker__view, .wall__title, .ticker__pause, .wall__more').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
-    expect(order[0], 'the logos first on screen').toBeLessThan(order[1]);
+    const [flag, row, pause, more] = await Promise.all(['.wall .flag', '.ticker__view', '.ticker__pause', '.wall__more'].map(async (s) => (await page.locator(s).boundingBox())!));
+    expect(flag.y + flag.height).toBeLessThanOrEqual(row.y + 1);
+    expect(pause.y).toBeGreaterThanOrEqual(row.y + row.height - 1);
+    expect(Math.abs(pause.y + pause.height / 2 - (more.y + more.height / 2)), 'side by side').toBeLessThanOrEqual(4);
+    const mid = (b: { x: number; width: number }) => b.x + b.width / 2;
+    expect(Math.abs(mid(flag) - width / 2), 'the label centred').toBeLessThanOrEqual(10);
+    expect(Math.abs(mid(row) - width / 2), 'the row centred').toBeLessThanOrEqual(10);
+    expect(Math.abs((pause.x + more.x + more.width) / 2 - width / 2), 'Pause and the link centred').toBeLessThanOrEqual(10);
+    await expect(page.getByRole('heading', { level: 2, name: "Games I've tested" })).toHaveCount(1);
+    expect(await page.locator('#wall-title').evaluate((el) => el.getBoundingClientRect().width), 'not shown').toBeLessThanOrEqual(1);
     await expect(page.locator('.wall__more')).toHaveAttribute('href', '/portfolio/');
     await page.locator('.ticker__pause').click();
     await expect(page.locator('.wall')).toHaveClass(/is-paused/);

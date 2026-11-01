@@ -44,8 +44,8 @@ for (const path of PAGES) {
               .filter((t) => {
                 const b = t.getBoundingClientRect();
                 // (the clipped content of a folded card on a phone is hidden, not covered; Home's row of
-                // logos is drawn above its clouds)
-                if (top && t.closest('.ticker')) return false;
+                // logos and its label are drawn above its clouds)
+                if (top && t.closest('.ticker, .wall__head')) return false;
                 return b.width > 0 && b.height > 0 && getComputedStyle(t).visibility !== 'hidden' && b.left < r.right && b.right > r.left && b.top < r.bottom - 0.5 && b.bottom > r.top + 0.5;
               })
               .map((t) => `${t.tagName}: ${(t.textContent ?? '').trim().slice(0, 30)}`);
@@ -101,9 +101,9 @@ for (const path of PAGES) {
         expect(j.fills[j.fills.length - 1], 'the front layer is the colour of what follows').toBe(j.after);
         expect(new Set(j.fills).size, 'each layer its own tone').toBe(j.layers);
         if (j.kind === 'clouds') expect(j.highlights, 'lighter pixels on the cloud tops').toBeGreaterThan(0);
-        // (Home's curtain carries the row of logos resting in its clouds, drawn above them; every other
+        // (Home's curtain carries its label and the row of logos resting in its clouds, drawn above them; every other
         // level makes room for the whole band)
-        if (j.ticker) expect(j.room, 'the logos rest in the lower part of the band').toBeGreaterThanOrEqual(j.height * 0.35);
+        if (j.ticker) expect(j.room, 'the label and the logos rest in the lower part of the band').toBeGreaterThanOrEqual(j.height * 0.25);
         else expect(j.room, 'the level made room for the band').toBeGreaterThanOrEqual(j.height);
         expect(j.covered, 'covers no text or control').toEqual([]);
         // the edge between the two colours is the front layer's own silhouette: no flat run longer
