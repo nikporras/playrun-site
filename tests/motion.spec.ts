@@ -48,15 +48,15 @@ for (const [width, height] of [
     expect(await drift(page), 'no join drift').toBe(0);
     expect(await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running' && (a as CSSAnimation).animationName).length), 'no CSS animation running').toBe(0);
     expect(await page.locator('.hero').evaluate((el) => getComputedStyle(el).position)).not.toBe('sticky');
-    // no headline break, no ticket
+    // no glitch, no card
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(200);
     const wallTop = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
     await page.evaluate((y) => window.scrollTo(0, y), Math.round(wallTop - height + 300));
     await page.waitForTimeout(1500);
-    await expect(page.locator('.hero__break')).toBeHidden();
+    await expect(page.locator('[data-glitch]')).toBeHidden();
     await expect(page.locator('h1')).toHaveCSS('opacity', '1');
-    await expect(page.locator('.hero__ticket')).not.toHaveClass(/is-in/);
+    await expect(page.locator('[data-glitch-card]')).toBeHidden();
     // a still drum
     await page.locator('[data-drum]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
     const i0 = await page.locator('.drum__list').evaluate((el) => el.style.getPropertyValue('--i'));

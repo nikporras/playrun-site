@@ -16,7 +16,7 @@ test.describe('Games', () => {
     await expect(page.locator('.hud__floor')).toBeVisible();
     // the controls live on the scoreboard card, which the pill opens
     const pill = page.getByRole('button', { name: /^Scoreboard/ });
-    await expect(pill).toHaveAccessibleName(/level\s*Lv\s*1\s*\/\s*5\s*00 bugs caught\s*0\/4 achievements/);
+    await expect(pill).toHaveAccessibleName(/level\s*Lv\s*1\s*\/\s*5\s*00 bugs caught\s*0\/5 achievements/);
     await pill.click();
     await page.getByRole('button', { name: /Games on/ }).click();
     await expect(page.locator('html')).not.toHaveClass(/(^|\s)games(\s|$)/);
@@ -45,7 +45,7 @@ test.describe('Games', () => {
     await expect(page.locator('[data-hud-bugs]')).toHaveText('01');
     await expect(page.locator('[data-toast]')).toContainText('Caught your first bug');
     await expect(page.locator('[data-toast]')).toHaveClass(/is-in/);
-    await expect(page.locator('[data-hud-ach]')).toHaveText('1/4');
+    await expect(page.locator('[data-hud-ach]')).toHaveText('1/5');
     await expect(page.locator(`[data-bug="${id}"]`)).toBeHidden();
     // the toast sits above the scoreboard, bottom right
     const toast = (await page.locator('[data-toast]').boundingBox())!;
@@ -168,7 +168,7 @@ test.describe('Games', () => {
       await pill.click();
       await expect(panel).toBeVisible();
       await expect(panel.getByText('Bugs caught')).toBeVisible();
-      await expect(panel.locator('.score__ach li')).toHaveCount(4);
+      await expect(panel.locator('.score__ach li')).toHaveCount(5);
       const pb = (await panel.boundingBox())!;
       expect(pb.y + pb.height, `${path}: the card opens above the pill`).toBeLessThanOrEqual(p.y + 1);
       // the pill closes it again, with the pointer still on it

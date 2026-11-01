@@ -13,6 +13,7 @@ const ACHIEVEMENTS: Record<string, string> = {
   'all-bugs': 'Caught every bug',
   services: 'Read every skill',
   selftest: 'Tested the page',
+  glitch: 'Glitch spotted',
 };
 const defaults = (): State => ({ on: true, bugs: [], achievements: [] });
 
@@ -556,10 +557,8 @@ export function startGames() {
   }
 
   // Controls. The pill opens the card and closes it (a tap, a click or Enter); Escape and a click
-  // or tap anywhere outside the scoreboard (the bug ticket docked beside it included) close it too.
+  // or tap anywhere outside the scoreboard close it too.
   const open = (on: boolean) => {
-    // (the bug ticket docked below folds first, so the card never moves under the pointer)
-    if (on) document.dispatchEvent(new CustomEvent('playrun:scoreopen'));
     score.classList.toggle('is-open', on);
     pill.setAttribute('aria-expanded', String(on));
   };
@@ -587,9 +586,9 @@ export function startGames() {
     state.bugs = [];
     state.achievements = [];
     write(state);
-    // the bug ticket on Home starts over too: the next break is its first again
+    // the glitch on Home can happen again, and ask again
     try {
-      sessionStorage.removeItem('playrun.ticket');
+      sessionStorage.removeItem('playrun.glitch');
     } catch {
       /* storage off: nothing was kept */
     }

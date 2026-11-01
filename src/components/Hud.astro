@@ -71,7 +71,7 @@ import PassMark from './PassMark.astro';
       </span>
       <span class="score__item score__item--ach">
         <PassMark class="score__tick" />
-        <b data-hud-ach>0/4</b>
+        <b data-hud-ach>0/5</b>
         <span class="visually-hidden">achievements</span>
       </span>
       <span class="visually-hidden" data-hud-off-sr></span>
@@ -254,9 +254,9 @@ import PassMark from './PassMark.astro';
     display: none;
   }
 
-  /* The dock: the scoreboard, the bug ticket when the headline breaks (Home docks it here: above
-     the pill on a desktop, a strip on the bar on phones and tablets), and above them all the toast and the
-     scoreboard's card. Bottom right, in the bar on small screens. */
+  /* The dock: the scoreboard, and above it the toast, the scoreboard's card and, on Home, the card
+     the glitch raises (docked here; the other two rise above it while it is up, --prompt-lift).
+     Bottom right, in the bar on small screens. */
   .dock {
     position: fixed;
     right: 0;
@@ -271,7 +271,7 @@ import PassMark from './PassMark.astro';
   .dock[hidden] {
     display: none;
   }
-  /* (the card and the toast open from the dock, above the ticket too) */
+  /* (the card and the toast open from the dock) */
   .score {
     display: flex;
     flex-direction: column;
@@ -325,7 +325,7 @@ import PassMark from './PassMark.astro';
     font-size: 0.875rem;
     color: var(--accent);
   }
-  /* The card opens above the dock (and the bug ticket when it is docked there) by a tap, a click
+  /* The card opens above the dock by a tap, a click
      or Enter on the pill, which is a disclosure; the pill, Escape or a click anywhere else closes
      it. No hover: a card held up by the pointer could not be closed from the pill under it. */
   .score__panel {
@@ -373,7 +373,7 @@ import PassMark from './PassMark.astro';
     font-size: 1.25rem;
     color: var(--accent);
   }
-  /* The four achievements, ticked as they unlock. */
+  /* The five achievements, ticked as they unlock. */
   .score__ach {
     margin: var(--s-2) 0 0;
     padding-top: var(--s-2);
@@ -527,7 +527,7 @@ import PassMark from './PassMark.astro';
     }
     .score__panel,
     .toast {
-      margin-bottom: calc(var(--floor-h) + var(--s-1) + var(--ticket-lift, 0px));
+      margin-bottom: calc(var(--floor-h) + var(--s-1) + var(--prompt-lift, 0px));
     }
     /* With the bar gone the pill keeps its corner, flush with the bottom. */
     .dock.dock--off {
@@ -539,9 +539,8 @@ import PassMark from './PassMark.astro';
      scoreboard is the counter at the bar's right end (the bugs over the achievements; the level is
      still in its name), and the card and the toasts open above the bar, clear of the ship. */
   @media (max-width: 63.99rem) {
-    /* (the bug ticket's strip, when there is one, joins the bar: the line rides on top of it) */
     .hud {
-      bottom: calc(var(--hud-h) + var(--ticket-room, 0px));
+      bottom: var(--hud-h);
       height: 3px;
       z-index: 41;
       border-top: 0;
@@ -616,7 +615,7 @@ import PassMark from './PassMark.astro';
     }
     .score__panel,
     .toast {
-      margin-bottom: calc(3px + var(--ship-w) + var(--s-1) + var(--ticket-room, 0px) + var(--ticket-lift, 0px));
+      margin-bottom: calc(3px + var(--ship-w) + var(--s-1) + var(--prompt-lift, 0px));
     }
   }
 
@@ -707,10 +706,10 @@ import PassMark from './PassMark.astro';
       background: var(--bg);
     }
     .score__panel {
-      margin-bottom: var(--s-1);
+      margin-bottom: calc(var(--s-1) + var(--prompt-lift, 0px));
     }
     .toast {
-      margin-bottom: var(--s-1);
+      margin-bottom: calc(var(--s-1) + var(--prompt-lift, 0px));
     }
   }
 </style>

@@ -24,7 +24,7 @@ interface Props {
   scan?: boolean;
   /** Open in a phone's folded list (the first game of each company); the desktop always shows it whole. */
   open?: boolean;
-  /** Its tracker ID (PR-001...), shown small like the bug ticket's; decorative. */
+  /** Its tracker ID (PR-001...), shown small like a bug tracker's; decorative. */
   trackerId?: string;
 }
 const { project: p, via, delay = 0, scan = false, open = false, trackerId } = Astro.props;
@@ -176,7 +176,7 @@ const store = p.data.store ?? 'Steam';
     max-width: none;
     padding-top: 0.25rem;
   }
-  /* The tracker ID, small and spaced like the key on the bug ticket. */
+  /* The tracker ID, small and spaced like a key in a bug tracker. */
   .card__id {
     display: block;
     font-family: var(--font-display);

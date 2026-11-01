@@ -59,9 +59,9 @@ test('/llms.txt says who the site is about in the shared summary, lists the page
   expect(sitemap).not.toContain('llms.txt');
 });
 
-test('only the decorative game UI is kept out of snippets: level labels, +1s, the bug ticket, the HUD and scoreboard, the Proof status; never a heading, the hero intro, a card or Skills content', { tag: ['@pages'] }, async ({ page }) => {
+test('only the decorative game UI is kept out of snippets: level labels, +1s, the glitch card, the HUD and scoreboard, the Proof status; never a heading, the hero intro, a card or Skills content', { tag: ['@pages'] }, async ({ page }) => {
   await page.goto('/');
-  for (const sel of ['.flag', '.bug__plus', '.hero__ticket', '#hud', '#dock', '#selftest-status', '#selftest-score']) {
+  for (const sel of ['.flag', '.bug__plus', '[data-glitch-card]', '#hud', '#dock', '#selftest-status', '#selftest-score']) {
     const marked = await page.locator(sel).evaluateAll((els) => els.map((el) => el.hasAttribute('data-nosnippet')));
     expect(marked.length, sel).toBeGreaterThan(0);
     expect(marked.every(Boolean), `${sel} carries data-nosnippet`).toBe(true);

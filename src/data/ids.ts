@@ -1,5 +1,5 @@
 /**
- * Tracker IDs for the games, in the style of the bug ticket: PR-001, PR-002 and so on. The order
+ * Tracker IDs for the games, in the style of a bug tracker: PR-001, PR-002 and so on. The order
  * is stable and comes from the data alone: the posts from the first to the latest (the reverse of
  * `employers`), then each post's titles by year (titles in development last), then by slug. A new
  * game at a new post takes the next number and moves no other; nothing is random.

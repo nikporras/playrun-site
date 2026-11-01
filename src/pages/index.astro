@@ -98,6 +98,16 @@ const checks = [
           <span class="hero__mask"><span class="hero__line" style="--i: 0">Nicolás</span></span>{' '}
           <span class="hero__mask"><span class="hero__line" style="--i: 1">Porras</span></span>
         </h1>
+        <!-- The glitch: four slices of a copy of the name, shown for a moment as the hero scrolls
+             away (decorative; the real heading never moves) -->
+        <div class="hero__title hero__glitch" aria-hidden="true" data-glitch>
+          {[0, 1, 2, 3].map((i) => (
+            <span class="hero__slice" style={`--i: ${i}`}>
+              <span>Nicolás</span>{' '}
+              <span>Porras</span>
+            </span>
+          ))}
+        </div>
       </div>
       <p class="hero__post" data-load style="--d: 400ms">{playrun.role}, {site.name}</p>
       <p class="hero__value" data-load style="--d: 500ms">
@@ -127,44 +137,15 @@ const checks = [
     <Bug id="hero-1" style="left: 40%; top: 2rem" tablet="right: 4%; top: 0.5rem" walk="x 2rem" />
   </section>
 
-  <!-- The visual copy of the name for its break, so its pixels can land on the next title
-       (click-through, decorative), and the ticket the break raises -->
-  <canvas class="hero__break" aria-hidden="true" hidden></canvas>
-  <!-- (the script docks it with the scoreboard: above the pill on a desktop, on the bottom
-       bar's top edge on a phone or a tablet) -->
-  <div class="hero__ticket" data-nosnippet hidden>
-    <div class="ticket__card" id="ticket-card">
-      <div class="ticket__cardin">
-        <div class="ticket__body" aria-hidden="true">
-          <p class="ticket__key">BUG-001</p>
-          <p class="ticket__title">Headline broke</p>
-          <dl class="ticket__meta">
-            <dt class="ticket__severity">Severity</dt>
-            <dd class="ticket__severity">Cosmetic</dd>
-            <dt>Status</dt>
-            <dd><span class="ticket__status" data-ticket-status>Open</span></dd>
-          </dl>
-          <p class="ticket__hint">Scroll back up to fix</p>
-        </div>
-        <button type="button" class="ticket__close" aria-label="Dismiss ticket" data-ticket-close>
-          <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" width="14" height="14">
-          <path d="M0 0h1v1H0zM6 0h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM2 2h1v1H2zM4 2h1v1H4zM3 3h1v1H3zM2 4h1v1H2zM4 4h1v1H4zM1 5h1v1H1zM5 5h1v1H5zM0 6h1v1H0zM6 6h1v1H6z" fill="currentColor"></path>
-        </svg>
-        </button>
-      </div>
-    </div>
-    <div class="ticket__dock">
-      <button type="button" class="ticket__chip" aria-expanded="false" aria-controls="ticket-card" data-ticket-chip>
-        <span class="visually-hidden">Bug ticket</span>
-        <span class="ticket__chipkey">BUG-001</span>
-        <span class="ticket__chipsep" aria-hidden="true">&middot;</span>
-        <span class="ticket__chipstatus" data-ticket-chipstatus>Open</span>
-        <span class="ticket__chiphint"><span aria-hidden="true">&middot;</span> Scroll back up to fix</span>
+  <!-- The card the glitch raises (the script docks it with the scoreboard, where the toasts open) -->
+  <div class="glitchcard" data-glitch-card data-nosnippet hidden>
+    <p class="glitchcard__text" tabindex="-1" aria-live="polite" data-glitch-text>Glitch on the name. Track it?</p>
+    <div class="glitchcard__actions" data-glitch-actions>
+      <button type="button" class="glitchcard__btn glitchcard__btn--yes" data-glitch-yes>
+        <span aria-hidden="true"><PassMark /></span><span class="visually-hidden">Track the bug</span>
       </button>
-      <button type="button" class="ticket__close ticket__close--strip" aria-label="Dismiss ticket" data-ticket-close>
-        <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" width="14" height="14">
-          <path d="M0 0h1v1H0zM6 0h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM2 2h1v1H2zM4 2h1v1H4zM3 3h1v1H3zM2 4h1v1H2zM4 4h1v1H4zM1 5h1v1H1zM5 5h1v1H5zM0 6h1v1H0zM6 6h1v1H6z" fill="currentColor"></path>
-        </svg>
+      <button type="button" class="glitchcard__btn glitchcard__btn--no" data-glitch-no>
+        <span aria-hidden="true"><CrossMark /></span><span class="visually-hidden">Ignore</span>
       </button>
     </div>
   </div>
@@ -415,280 +396,143 @@ const checks = [
   .hero__line {
     display: block;
   }
-  /* The break: the real heading fades while its pixel copy is up; the copy is one canvas. */
-  .hero__title.is-broken {
-    opacity: 0;
-  }
-  /* (placed and sized by the script: in the page while the pixels fall to the title, fixed on the
-     screen while they fly home) */
-  .hero__break {
+  /* The glitch: four slices of a copy of the name over the real one (the heading's own size at
+     every width), each jumping a few pixels
+     sideways with a thin cyan and pink split and snapping back, about 0.36 s in all. Shown only
+     while the script holds it on (never under reduced motion or with motion off). */
+  .hero__glitch {
+    display: none;
     position: absolute;
-    left: 0;
-    top: 0;
+    inset: 0;
     pointer-events: none;
-    z-index: 30;
-  }
-  .hero__break[hidden] {
-    display: none;
-  }
-  /* The ticket: a tracker card in the same family as the achievement toasts and the scoreboard
-     card (the light field, navy ink, a navy outline, Pixel Operator). It lives with the scoreboard
-     (the script docks it there) and never moves: the chip sits in one spot, and the card opens
-     above it and folds back into it (grid rows and opacity). Transform and opacity for the rest. */
-  .hero__ticket {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
     font-family: var(--font-display);
-    font-size: 0.875rem;
-    line-height: 1.4;
-    letter-spacing: 0.04em;
-    color: var(--field-light-ink);
-    opacity: 0;
-    transform: translateY(0.5rem);
-    visibility: hidden;
-    transition:
-      transform 320ms var(--ease-out),
-      opacity 240ms ease,
-      visibility 0s linear 240ms;
-    --sel-bg: var(--pr-navy);
-    --sel-ink: var(--pr-light);
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--ink);
   }
-  .hero__ticket[hidden] {
+  .hero__glitch.is-on {
+    display: block;
+  }
+  .hero__slice {
+    position: absolute;
+    inset: 0;
+    text-shadow:
+      -2px 0 var(--pr-cyan),
+      2px 0 #ff5fa2;
+  }
+  .hero__slice span {
+    display: block;
+  }
+  .hero__slice:nth-child(1) {
+    clip-path: inset(6% 0 76% 0);
+    --dx: -7px;
+  }
+  .hero__slice:nth-child(2) {
+    clip-path: inset(30% 0 54% 0);
+    --dx: 6px;
+  }
+  .hero__slice:nth-child(3) {
+    clip-path: inset(56% 0 30% 0);
+    --dx: -5px;
+  }
+  .hero__slice:nth-child(4) {
+    clip-path: inset(80% 0 4% 0);
+    --dx: 8px;
+  }
+  .hero__glitch.is-on .hero__slice {
+    animation: glitch-slice 360ms steps(1, end) both;
+    animation-delay: calc(var(--i) * 20ms);
+  }
+  @keyframes glitch-slice {
+    0% {
+      transform: translateX(var(--dx));
+    }
+    25% {
+      transform: translateX(calc(var(--dx) * -0.6));
+    }
+    50% {
+      transform: translateX(calc(var(--dx) * 0.8));
+    }
+    75% {
+      transform: translateX(calc(var(--dx) * -0.3));
+    }
+    100% {
+      transform: none;
+      opacity: 0;
+    }
+  }
+  /* The card the glitch raises: the toasts' family (the light field, navy ink, a navy outline,
+     Pixel Operator), in the scoreboard's corner where they open, sliding in the same way. */
+  .glitchcard {
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    margin-bottom: var(--s-1);
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    width: max-content;
+    max-width: calc(100vw - 2 * var(--margin));
+    padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+    background: var(--field-light);
+    color: var(--field-light-ink);
+    outline: 2px solid var(--pr-navy);
+    font-family: var(--font-display);
+    line-height: 1.1;
+    opacity: 0;
+    transform: translateX(calc(100% + var(--margin)));
+    transition:
+      transform var(--dur-base) var(--ease-out),
+      opacity var(--dur-base) var(--ease-out);
+  }
+  .glitchcard[hidden] {
     display: none;
   }
-  .hero__ticket.is-in {
+  .glitchcard.is-in {
     opacity: 1;
     transform: none;
-    visibility: visible;
-    transition-delay: 0s;
   }
-  .ticket__card {
-    display: grid;
-    grid-template-rows: 0fr;
-    opacity: 0;
-    visibility: hidden;
-    transition:
-      grid-template-rows 360ms var(--ease-out),
-      opacity 240ms ease,
-      visibility 0s linear 360ms;
+  .glitchcard__text {
+    margin: 0;
+    max-width: 16rem;
+    font-size: 1.125rem;
+    outline: 0;
   }
-  .hero__ticket.is-snap .ticket__card {
-    transition: none;
-  }
-  .hero__ticket.is-expanded .ticket__card {
-    grid-template-rows: 1fr;
-    opacity: 1;
-    visibility: visible;
-    transition-delay: 0s;
-  }
-  .ticket__cardin {
-    min-height: 0;
-    overflow: hidden;
+  .glitchcard__actions {
     display: flex;
-    align-items: flex-start;
-    gap: var(--s-1);
-    width: 18rem;
+    gap: 0.5rem;
   }
-  /* (the card's own box, inside the fold, with room for its outline) */
-  .ticket__body {
-    flex: 1;
-    min-width: 0;
-  }
-  .ticket__cardin {
-    margin: 2px 2px calc(var(--s-1) + 2px);
-    padding: 0.75rem 0.5rem 0.75rem 0.875rem;
-    background: var(--field-light);
-    outline: 2px solid var(--pr-navy);
-    border-left: 4px solid var(--pr-blue);
-  }
-  .hero__ticket[data-status='fixed'] .ticket__cardin {
-    border-left-color: var(--pr-green);
-  }
-  .ticket__key {
-    font-size: 0.8125rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: #3d4a66; /* 7.2:1 on the light field */
-    max-width: none;
-  }
-  .ticket__title {
-    font-size: 1.25rem;
-    line-height: 1.1;
-    margin: 0.2em 0 0.45em;
-    max-width: none;
-  }
-  .ticket__meta {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    gap: 0.25em 0.75em;
-    margin: 0;
-  }
-  .ticket__meta dt {
-    color: #3d4a66;
-  }
-  .ticket__meta dd {
-    margin: 0;
-  }
-  /* The status, a coloured label: Open in cyan on navy, Fixed in navy on green (both above 8:1). */
-  .ticket__status,
-  .ticket__chipstatus {
-    display: inline-block;
-    padding: 0.1em 0.5em;
-    background: var(--pr-navy);
-    color: var(--pr-cyan);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-  .hero__ticket[data-status='fixed'] :is(.ticket__status, .ticket__chipstatus) {
-    background: var(--pr-green);
-    color: var(--pr-navy);
-  }
-  .hero__ticket[data-status='fixed'] .ticket__status::before {
-    content: '✓ ';
-  }
-  .ticket__hint {
-    margin-top: 0.5em;
-    max-width: none;
-  }
-  .hero__ticket[data-status='fixed'] :is(.ticket__hint, .ticket__chiphint) {
+  .glitchcard__actions[hidden] {
     display: none;
   }
-  .ticket__close {
+  .glitchcard__btn {
     flex: none;
     width: 2.75rem;
     height: 2.75rem;
-    margin: -0.5rem -0.25rem 0 0;
     display: grid;
     place-items: center;
-    color: var(--pr-navy);
+    background: var(--pr-navy);
+    color: var(--ink);
+    font-size: 1.25rem;
   }
-  .ticket__close:hover {
-    color: var(--pr-blue);
+  .glitchcard__btn--yes {
+    color: var(--accent);
   }
-  .ticket__close:focus-visible,
-  .ticket__chip:focus-visible {
-    outline: 3px solid var(--pr-cyan);
+  .glitchcard__btn:hover {
+    background: var(--pr-blue);
+  }
+  .glitchcard__btn:focus-visible {
+    outline: 3px solid var(--pr-navy);
     outline-offset: 2px;
   }
-  /* The chip, the ticket folded: BUG-001 over its status, narrow enough for the gutter on a desktop. */
-  .ticket__dock {
-    display: flex;
-  }
-  .ticket__chip {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.2rem;
-    min-height: 2.75rem;
-    padding: 0.3rem 0.35rem;
-    background: var(--field-light);
-    color: var(--field-light-ink);
-    outline: 2px solid var(--pr-navy);
-    outline-offset: -2px;
-    font: inherit;
-    font-size: 0.75rem;
-    line-height: 1;
-    letter-spacing: 0.06em;
-    white-space: nowrap;
-  }
-  .ticket__chipstatus {
-    font-size: 0.6875rem;
-    padding: 0.15em 0.35em;
-  }
-  /* Folded but still open: a gentle pulse, a cyan ring breathing round the chip (opacity only). */
-  .ticket__chip {
-    position: relative;
-  }
-  .ticket__chip::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    box-shadow:
-      inset 0 0 0 2px var(--pr-cyan),
-      0 0 10px 1px var(--pr-cyan);
-    opacity: 0;
-    pointer-events: none;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .hero__ticket.is-kept:not(.is-expanded) .ticket__chip::after {
-      animation: chip-pulse 1.8s ease-in-out infinite;
-    }
-  }
-  @keyframes chip-pulse {
-    0%,
-    100% {
-      opacity: 0;
-    }
-    50% {
-      opacity: 0.9;
-    }
-  }
-  .ticket__chipsep,
-  .ticket__chiphint,
-  .ticket__close--strip {
-    display: none;
-  }
-  /* A phone or a tablet: a slim strip along the top edge of the bottom bar, the whole width: the
-     chip on one line with its hint, and Dismiss; the card opens above it. */
+  /* Phones and tablets: above the bottom bar and the ship riding on it, inset from the edge. */
   @media (max-width: 63.99rem) {
-    .hero__ticket {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: var(--hud-h);
-      align-items: stretch;
-    }
-    .ticket__cardin {
-      width: auto;
-      margin-inline: var(--s-1);
-    }
-    .ticket__dock {
-      align-items: stretch;
-      background: var(--field-light);
-      border-top: 2px solid var(--pr-navy);
-    }
-    .ticket__chip {
-      flex: 1;
-      flex-direction: row;
-      justify-content: flex-start;
-      gap: 0.5rem;
-      min-width: 0;
-      min-height: 2.75rem;
-      padding: 0 var(--s-2);
-      outline: 0;
-      font-size: 0.875rem;
-    }
-    .ticket__chip:focus-visible {
-      outline: 3px solid var(--pr-navy);
-      outline-offset: -3px;
-    }
-    .ticket__chipsep,
-    .ticket__chiphint {
-      display: inline;
-    }
-    .ticket__chiphint {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .ticket__close--strip {
-      display: grid;
-      margin: 0;
-    }
-    /* (open, the card's own Dismiss is the one) */
-    .hero__ticket.is-expanded .ticket__close--strip {
-      visibility: hidden;
+    .glitchcard {
+      right: var(--s-2);
+      margin-bottom: calc(3px + var(--ship-w) + var(--s-1));
     }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .ticket__card,
-    .hero__ticket {
-      transition: none;
-    }
-  }
-  /* The two markers the break watches, from near the top of Level 2 to the end of the page
+  /* The markers the hero's exit watches, from near the top of Level 2 to the end of the page
      (placed by the script; invisible, click-through). */
   :global(.wall__trip) {
     position: absolute;
@@ -1464,11 +1308,11 @@ const checks = [
 </style>
 
 <script>
-  import { startBreak } from '../scripts/break';
+  import { startHeroExit } from '../scripts/glitch';
   import { checks as engine } from '../scripts/checks';
   import { reducedMotion } from '../scripts/motion';
   const reduce = reducedMotion();
-  startBreak();
+  startHeroExit();
 
   // The curtain: the hero is pinned while the next level slides over it. A hero taller than the
   // screen (a phone) pins with its bottom edge on the bottom of the screen instead of its top.

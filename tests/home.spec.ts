@@ -8,13 +8,13 @@ import path, { join } from 'node:path';
 
 const require = createRequire(import.meta.url);
 
-// The hero's foot as the headline break measures it (the hero pins at its top, or by its bottom
-// edge when it is taller than the screen), and a scroll just past the line where the name breaks.
+// The hero's foot as the hero's exit measures it (the hero pins at its top, or by its bottom edge
+// when it is taller than the screen), and a scroll just past the line where the name glitches.
 const footOf = (page: Page) =>
   page.locator('.hero').evaluate((el) => Math.min(innerHeight, (parseFloat(getComputedStyle(el).top) || 0) + el.offsetHeight));
 const pastBreak = async (page: Page) => {
   const foot = await footOf(page);
-  const mark = await page.locator('.wall__trip[data-trip="break"]').evaluate((el) => el.getBoundingClientRect().top + scrollY);
+  const mark = await page.locator('.wall__trip[data-trip="glitch"]').evaluate((el) => el.getBoundingClientRect().top + scrollY);
   return Math.round(mark - foot + 60);
 };
 
@@ -183,18 +183,13 @@ test.describe('Home', () => {
   test('on a phone the bottom bar covers nothing: the last button and the footer end above it and the ship, the achievement toast rises above it, and it is there without script and under reduced motion', async ({ page, browser }) => {
     await page.setViewportSize({ width: 375, height: 780 });
     await page.goto('/');
-    // (once the page has laid out: a page that opens past the headline shows no ticket)
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(400);
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    // (passing the headline docks the bug ticket's strip on the bar; the page grows by it)
-    await expect(page.locator('.hero__ticket')).toHaveClass(/is-in/);
-    await page.waitForTimeout(600);
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
     await page.waitForTimeout(300);
-    const top = (await page.locator('.ticket__dock').boundingBox())!.y;
+    const top = (await page.locator('.tabbar').boundingBox())!.y;
     const ship = (await page.locator('.hud__runner').boundingBox())!;
-    expect(ship.y + ship.height, 'the ship rides on the bar (and the strip on it)').toBeLessThanOrEqual(top + 1);
+    expect(ship.y + ship.height, 'the ship rides on the bar').toBeLessThanOrEqual(top + 1);
     const last = (await page.locator('.footer__legal').boundingBox())!;
     expect(last.y + last.height, 'the footer ends above the ship').toBeLessThanOrEqual(ship.y);
     const button = (await page.getByRole('link', { name: 'Get in touch' }).last().boundingBox())!;
@@ -359,537 +354,219 @@ test.describe('Home', () => {
     await context.close();
   });
 
-  test("the hero's exit, triggered at thresholds and played on the clock: the name breaks and its pixels land, the hero fades on the next title's top edge without covering it, the first ticket waits for the fix, a later one shows for three seconds, and everything mends on the way back", async ({ page }) => {
-    test.setTimeout(60_000);
-    await page.setViewportSize({ width: 1440, height: 900 });
+  // The glitch: the name glitches once as the hero scrolls away, then a card asks to track it.
+  const SIZES = [
+    [1440, 900],
+    [768, 1024],
+    [375, 812],
+  ] as const;
+  // (scrolled just past the line where it plays: the clouds a little way over the hero's foot)
+  const toGlitch = async (page: Page) => {
+    await page.evaluate(async (y) => window.scrollTo(0, y), await pastBreak(page));
+  };
+  const openHome = async (page: Page, width: number, height: number) => {
+    await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
     await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(600);
-    const h1 = page.locator('h1');
-    const canvas = page.locator('.hero__break');
-    const ticket = page.locator('.hero__ticket');
-    await expect(canvas).toBeHidden();
-    await expect(ticket).toBeHidden();
-    const opacity = () => page.locator('.hero').evaluate((el) => Number(getComputedStyle(el).opacity));
-    const at = async (y: number) => {
-      await page.evaluate((y) => window.scrollTo(0, y), y);
-      await page.waitForTimeout(120);
-    };
-    // above the threshold nothing moves: the scroll alone never scrubs it
-    await at(120);
     await page.waitForTimeout(500);
-    await expect(canvas).toBeHidden();
-    expect(await opacity()).toBe(1);
-    // past it, the break plays by itself on the clock, the pixels landed in about 0.6 s whatever the
-    // scroll does meanwhile (here it stands still); the hero stays, the photo showing through the clouds
-    await at(260);
-    await expect(canvas).toBeVisible();
-    await expect(h1).toHaveCSS('opacity', '0');
-    await expect(h1).toHaveText(/Nicolás\s*Porras/);
-    await page.waitForTimeout(700);
-    expect(await opacity(), 'the hero still there early in the slide').toBe(1);
-    // once Level 2 covers most of it, the hero fades out on the clock too, in about 0.4 s
-    await at(850);
-    await expect.poll(opacity, { timeout: 1000 }).toBe(0);
-    // then the page scrolls on with the heap riding on the title by itself
-    // (the title under the row of logos, well on screen)
-    await at(await page.locator('.wall__title').evaluate((el) => Math.round(el.getBoundingClientRect().top + scrollY - 300)));
-    await page.waitForTimeout(1300);
-    await expect(canvas).toBeVisible();
-    expect(await canvas.evaluate((el) => getComputedStyle(el).position), 'in the page, so it scrolls with the title').toBe('absolute');
-    // the pixels: landed on the tops of the title's letters, none on them, a heap along them. The
-    // letters are read from a screenshot with the copy hidden (the copy is the same colour)
-    await page.waitForTimeout(200);
-    const text = await page.locator('.wall__title').evaluate((el) => {
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      const r = range.getBoundingClientRect();
-      return { x: Math.floor(r.left), y: Math.floor(r.top), w: Math.ceil(r.width), h: Math.ceil(r.height) };
-    });
-    expect(text.y, 'the title is on screen').toBeGreaterThan(0);
-    await page.addStyleTag({ content: '.hero__break, .hero__ticket { visibility: hidden !important; }' }).then((h) => h.evaluate((el) => el.setAttribute('id', 'zz-hide')));
-    const png = await page.screenshot({ clip: { x: text.x, y: text.y, width: text.w, height: text.h } });
-    await page.evaluate(() => document.getElementById('zz-hide')!.remove());
-    const { data: shot, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
-    const letters: boolean[] = [];
-    for (let i = 0; i < info.width * info.height; i++) letters.push(shot[i * info.channels] > 200 && shot[i * info.channels + 1] > 200 && shot[i * info.channels + 2] > 200);
-    const inkTop = text.y + Math.floor(letters.findIndex(Boolean) / info.width);
-    const land = await page.evaluate(
-      ({ text, letters, width, inkTop }) => {
-        // every lit pixel of the canvas, on the screen
-        const points: [number, number][] = [];
-        for (const c of document.querySelectorAll<HTMLCanvasElement>('.hero__break')) {
-          if (c.hidden) continue;
-          const r = c.getBoundingClientRect();
-          const k = c.width / r.width;
-          const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
-          for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3] >= 128) points.push([r.left + x / k, r.top + y / k]);
-        }
-        const lit = new Set(points.map(([x, y]) => `${Math.floor(x)},${Math.floor(y)}`));
-        let onLetters = 0;
-        for (let y = 0; y < text.h; y++) for (let x = 0; x < width; x++) if (letters[y * width + x] && lit.has(`${text.x + x},${text.y + y}`)) onLetters++;
-        const onEdge = points.filter(([, vy]) => vy >= inkTop - 16 && vy <= inkTop).length;
-        const below = points.filter(([, vy]) => vy > inkTop + 0.5).length;
-        return { onLetters, onEdge, below };
-      },
-      { text, letters, width: info.width, inkTop },
-    );
-    expect(land.onLetters, 'no pixel on the letters').toBe(0);
-    expect(land.below, 'nothing drawn below their tops').toBe(0);
-    expect(land.onEdge, 'a heap along their tops').toBeGreaterThan(20);
-    // on the way back the pixels fly home on the clock and the name is whole again
-    await at(0);
-    await expect(canvas).toBeHidden({ timeout: 2000 });
-    await expect(h1).toHaveCSS('opacity', '1');
-    await expect.poll(opacity, { timeout: 1000 }).toBe(1);
-    await expect(ticket).toContainText('Fixed');
-    await expect(ticket.locator('.ticket__hint')).toBeHidden();
-    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 5000 });
-    // a later break in the same visit: Open with the hint for three seconds, then it tucks away
-    await at(300);
-    await expect(ticket).toHaveClass(/is-in/);
-    await expect(ticket).toContainText('BUG-001');
-    await expect(ticket).toContainText('Open');
-    await expect(ticket).not.toHaveClass(/is-kept/);
-    await expect(ticket.locator('.ticket__hint')).toHaveText('Scroll back up to fix');
-    await expect(ticket.locator('.ticket__hint')).toBeVisible();
-    const t0 = Date.now();
-    await at(700);
-    await page.waitForTimeout(Math.max(0, 2500 - (Date.now() - t0)));
-    await expect(ticket, 'still there after two and a half seconds').toHaveClass(/is-in/);
-    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 1500 });
-    expect(Date.now() - t0).toBeLessThan(4000);
-  });
+  };
+  const box = async (page: Page, sel: string) => (await page.locator(sel).boundingBox())!;
+  const overlap = (a: { x: number; y: number; width: number; height: number }, b: typeof a) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 
-  for (const [width, height] of [
-    [1440, 900],
-    [768, 1000],
-    [375, 780],
-  ] as const) {
-    test(`the bug ticket (${width}px) docks by the scoreboard in one spot that never moves, hides or fades at any scroll position and covers nothing outside the game layer; the first shows the card for four seconds and then the pulsing chip until fixed or dismissed; the toast and the scoreboard's card open above it; Fixed, then gone; later ones for three seconds; Dismiss`, async ({ page, browser }) => {
-      test.setTimeout(120_000);
-      await page.setViewportSize({ width, height });
-      await page.goto('/');
-      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
-      await page.evaluate(() => document.fonts.ready);
-      await page.waitForTimeout(600);
-      const ticket = page.locator('.hero__ticket');
-      const card = ticket.locator('.ticket__cardin');
-      const chip = ticket.locator('[data-ticket-chip]');
-      const spot = width < 1024 ? ticket.locator('.ticket__dock') : chip;
-      const box = async () => (await spot.boundingBox())!;
-      const wallTop = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
-      const breakAt = width < 1024 ? await pastBreak(page) : 300;
-      await page.evaluate((y) => window.scrollTo(0, y), breakAt);
-      // the first time in a visit: kept, the card open
-      await expect(ticket).toHaveClass(/is-in/);
-      await expect(ticket).toHaveClass(/is-kept/);
+  for (const [width, height] of SIZES) {
+    test(`the glitch (${width}x${height}): as the hero scrolls away the name glitches once, slices of a hidden copy jumping with a cyan and pink split for about 0.36 s while the heading never moves; then the card asks to track it, clear of the pill, the bar and the HUD, without taking the focus`, async ({ page }) => {
+      await openHome(page, width, height);
+      const h1 = page.locator('h1');
+      const before = await h1.boundingBox();
+      const copy = page.locator('[data-glitch]');
+      await expect(copy).toHaveAttribute('aria-hidden', 'true');
+      await expect(copy).toBeHidden();
+      const card = page.locator('[data-glitch-card]');
+      await expect(card).toBeHidden();
+      // above the line nothing happens
+      await page.evaluate(async (y) => window.scrollTo(0, y - 120), await pastBreak(page));
+      await page.waitForTimeout(400);
+      await expect(copy).toBeHidden();
+      // past it: the slices, four of them, each its own band of the name, jumping sideways
+      await toGlitch(page);
+      await expect(copy).toBeVisible();
+      const slices = await copy.locator('.hero__slice').evaluateAll((els) =>
+        els.map((e) => {
+          const cs = getComputedStyle(e);
+          return { clip: cs.clipPath, shadow: cs.textShadow, text: e.textContent!.replace(/\s+/g, ' ').trim(), running: e.getAnimations().length };
+        }),
+      );
+      expect(slices).toHaveLength(4);
+      for (const s of slices) {
+        expect(s.clip).toMatch(/^inset\(/);
+        expect(s.shadow, 'a cyan and a pink edge').toMatch(/rgb\(86, 189, 218\).*rgb\(255, 95, 162\)/);
+        expect(s.text).toBe('Nicolás Porras');
+        expect(s.running).toBeGreaterThan(0);
+      }
+      expect(new Set(slices.map((s) => s.clip)).size, 'each slice its own band').toBe(4);
+      // the real heading never moves or changes
+      await expect(h1).toHaveText(/Nicolás\s*Porras/);
+      await expect(h1).toHaveCSS('opacity', '1');
+      const during = await h1.boundingBox();
+      expect(during!.x).toBe(before!.x);
+      // over in about 0.36 s, then the card, the focus left where it was
+      await expect(copy).toBeHidden({ timeout: 800 });
       await expect(card).toBeVisible();
-      await expect(chip).toHaveAttribute('aria-expanded', 'true');
-      await expect(card).toContainText('Scroll back up to fix');
-      // the same family as the toasts: the light field, navy ink, a navy outline, Pixel Operator
-      const look = await page.evaluate(() => {
-        const t = getComputedStyle(document.querySelector('.ticket__cardin')!);
-        const o = getComputedStyle(document.querySelector('.toast')!);
-        return { bg: [t.backgroundColor, o.backgroundColor], outline: [t.outlineColor, o.outlineColor], font: [t.fontFamily, o.fontFamily] };
-      });
-      for (const [k, [a, b]] of Object.entries(look)) expect(a, k).toBe(b);
-      // every piece of text reads at AA on what is behind it
-      const ratios = await ticket.evaluate((el) => {
-        const lum = (c: string) => {
-          const [r, g, b] = (c.match(/[\d.]+/g) ?? []).slice(0, 3).map((v) => {
-            const s = Number(v) / 255;
-            return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+      await expect(card).toHaveClass(/is-in/);
+      await expect(card.locator('[data-glitch-text]')).toHaveText('Glitch on the name. Track it?');
+      await expect(page.getByRole('button', { name: 'Track the bug' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Ignore' })).toBeVisible();
+      expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+      await page.waitForTimeout(400);
+      // in the scoreboard's corner, clear of the pill, the bar, the track and the ship, and on screen
+      const c = await box(page, '[data-glitch-card]');
+      expect(c.x).toBeGreaterThanOrEqual(0);
+      expect(c.x + c.width).toBeLessThanOrEqual(width);
+      for (const sel of ['.score__pill', '.hud__runner', '#hud', ...(width < 1024 ? ['.tabbar'] : [])]) expect(overlap(c, await box(page, sel)), `clear of ${sel}`).toBe(false);
+      // AA on its own field
+      const ratio = await card.locator('[data-glitch-text]').evaluate((el) => {
+        const lum = (s: string) => {
+          const [r, g, b] = (s.match(/[\d.]+/g) ?? []).slice(0, 3).map((v) => {
+            const k = Number(v) / 255;
+            return k <= 0.03928 ? k / 12.92 : ((k + 0.055) / 1.055) ** 2.4;
           });
           return 0.2126 * r + 0.7152 * g + 0.0722 * b;
         };
-        const bgOf = (n: Element | null): string => {
-          for (; n; n = n.parentElement) {
-            const c = getComputedStyle(n).backgroundColor;
-            if (c !== 'rgba(0, 0, 0, 0)') return c;
-          }
-          return 'rgb(12, 21, 42)';
-        };
-        return Array.from(el.querySelectorAll('.ticket__key, .ticket__title, dt, .ticket__status, .ticket__hint, .ticket__close, .ticket__chipkey, .ticket__chipstatus, .ticket__chiphint'))
-          .filter((n) => n.getClientRects().length && getComputedStyle(n).visibility !== 'hidden')
-          .map((n) => {
-            const a = lum(getComputedStyle(n).color);
-            const b = lum(bgOf(n));
-            return { what: n.className || n.tagName, ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) };
-          });
+        const a = lum(getComputedStyle(el).color);
+        const b = lum(getComputedStyle(el.parentElement!).backgroundColor);
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
       });
-      expect(ratios.length).toBeGreaterThanOrEqual(6);
-      for (const r of ratios) expect(r.ratio, `${r.what} at AA`).toBeGreaterThanOrEqual(4.5);
-      // the first ticket of a visit: the full card for four seconds (none of these widths fits it in
-      // the gutter), then folded into the chip, which stays, pulsing, and never moves
-      const first = await box();
-      if (width >= 1024) {
-        // the card stacked above the chip and the pill, right-aligned with them
-        const c = (await card.boundingBox())!;
-        expect(c.y + c.height).toBeLessThanOrEqual(first.y + 1);
-        expect(Math.abs(c.x + c.width - (first.x + first.width))).toBeLessThanOrEqual(4);
-      }
-      await page.waitForTimeout(3300);
-      await expect(chip, 'the card for four seconds').toHaveAttribute('aria-expanded', 'true');
-      await expect(chip).toHaveAttribute('aria-expanded', 'false', { timeout: 2000 });
-      await expect(card).toBeHidden();
-      await expect(ticket, 'folded, not gone').toHaveClass(/is-in/);
-      expect(await chip.evaluate((el) => getComputedStyle(el, '::after').animationName), 'a gentle pulse while it is still open').toBe('chip-pulse');
-      await page.waitForTimeout(500);
-      const home = await box();
-      expect(home, 'folding never moves the chip').toEqual(first);
-      // where it lives
-      const pill = (await page.locator('.score__pill').boundingBox())!;
-      if (width >= 1024) {
-        // above the pill, right-aligned with it, in the gutter beside the column
-        expect(Math.abs(home.x + home.width - (pill.x + pill.width))).toBeLessThanOrEqual(1);
-        expect(home.y + home.height).toBeLessThanOrEqual(pill.y);
-        const column = await page.locator('.level').first().evaluate((el) => innerWidth - parseFloat(getComputedStyle(el).paddingRight));
-        expect(home.x, 'in the gutter, clear of the column').toBeGreaterThanOrEqual(column);
-      } else {
-        // phones and tablets: a strip the whole width on the bar's top edge, the track riding on top of it
-        const bar = (await page.locator('.tabbar').boundingBox())!;
-        const line = (await page.locator('#hud').boundingBox())!;
-        expect(home.x).toBe(0);
-        expect(home.width).toBe(width);
-        expect(Math.abs(home.y + home.height - bar.y)).toBeLessThanOrEqual(1);
-        expect(Math.abs(line.y + line.height - home.y)).toBeLessThanOrEqual(1);
-      }
-      // at every scroll position: the same spot, on show, not faded, and (on a desktop, where it
-      // stands beside the column rather than in a bar) over no heading, link, button or field
-      const end = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
-      for (let y = breakAt; y <= end + height; y += Math.round(height * 0.3)) {
-        await page.evaluate((y) => window.scrollTo(0, y), Math.min(y, end));
-        await page.waitForTimeout(80);
-        expect(await box(), `the same spot at ${y}`).toEqual(home);
-        const shown = await ticket.evaluate((el) => {
-          const cs = getComputedStyle(el);
-          return el.classList.contains('is-in') && cs.visibility === 'visible' && cs.opacity === '1';
-        });
-        expect(shown, `on show at ${y}`).toBe(true);
-        if (width >= 1024) {
-          const hits = await page.evaluate((b) => {
-            return Array.from(document.querySelectorAll<HTMLElement>(':is(main, footer) :is(h1, h2, h3, h4, a, button, input, textarea, select)'))
-              .filter((el) => !el.closest('.hero__ticket, .bug, .dock, .hud') && el.getClientRects().length)
-              .filter((el) => {
-                const r = el.getBoundingClientRect();
-                return r.left < b.x + b.width && r.right > b.x && r.top < b.y + b.height && r.bottom > b.y;
-              })
-              .map((el) => `${el.tagName} ${(el.textContent ?? '').trim().slice(0, 30)}`);
-          }, home);
-          expect(hits, `clear at ${y}`).toEqual([]);
-        }
-      }
-      // at the foot of the page the last line and button end above it
-      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-      await page.waitForTimeout(150);
-      const legal = (await page.locator('.footer__legal').boundingBox())!;
-      if (width < 1024) expect(legal.y + legal.height, 'the page ends above the ticket').toBeLessThanOrEqual(home.y);
-      else expect(legal.x + legal.width <= home.x || legal.y + legal.height <= home.y).toBe(true);
-      // the chip opens the card and closes it, and folds it after three seconds
-      await chip.click();
-      await expect(chip).toHaveAttribute('aria-expanded', 'true');
-      await expect(card).toBeVisible();
-      expect(await box(), 'opening never moves it').toEqual(home);
-      // the toast and the scoreboard's card open above it, open card and all
-      const overlap = (a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }) =>
-        a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
-      await page.evaluate(() => document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'selftest' })));
-      await expect(page.locator('[data-toast]')).toHaveClass(/is-in/);
-      await page.waitForTimeout(450);
-      const toast = (await page.locator('[data-toast]').boundingBox())!;
-      expect(overlap(toast, (await card.boundingBox())!), 'the toast above the open card').toBe(false);
-      expect(overlap(toast, home), 'the toast above the chip').toBe(false);
-      await chip.click();
-      await expect(chip).toHaveAttribute('aria-expanded', 'false');
-      await page.locator('.score__pill').click();
-      const panel = page.locator('.score__panel');
-      await expect(panel).toBeVisible();
-      expect(overlap((await panel.boundingBox())!, home), "the scoreboard's card above the chip").toBe(false);
-      await page.keyboard.press('Escape');
-      // opened again, it folds again after four seconds
-      await chip.click();
-      await expect(card).toBeVisible();
-      expect(await chip.evaluate((el) => getComputedStyle(el, '::after').animationName), 'no pulse while open').toBe('none');
-      await page.waitForTimeout(3300);
-      await expect(chip).toHaveAttribute('aria-expanded', 'true');
-      await expect(chip).toHaveAttribute('aria-expanded', 'false', { timeout: 2000 });
-      // back to the top: the name is whole, Fixed for three seconds, then it goes; the visit is done
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
+      // the buttons are in the tab order
+      await page.getByRole('button', { name: 'Track the bug' }).focus();
+      await expect(page.getByRole('button', { name: 'Track the bug' })).toBeFocused();
+      // once a visit: back up and down again, nothing
+      await page.getByRole('button', { name: 'Ignore' }).click();
       await page.evaluate(() => window.scrollTo(0, 0));
-      await expect(ticket).toContainText('Fixed', { timeout: 2500 });
-      await expect(card).toBeVisible();
-      await expect(ticket).not.toHaveClass(/is-in/, { timeout: 4500 });
-      expect(await page.evaluate(() => sessionStorage.getItem('playrun.ticket'))).toBe('done');
-      // later in the visit (a reload too): the card for three seconds, then away
-      await page.reload();
-      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
-      await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(400);
-      await page.evaluate((y) => window.scrollTo(0, y), breakAt);
-      await expect(ticket).toHaveClass(/is-in/);
-      await expect(ticket).not.toHaveClass(/is-kept/);
-      await expect(card).toBeVisible();
-      await expect(ticket).not.toHaveClass(/is-in/, { timeout: 4500 });
-      // Dismiss: a real button, closes it, counts as done, and no Fixed after it
-      const fresh = await browser.newContext({ viewport: { width, height } });
-      const p2 = await fresh.newPage();
-      await p2.goto('/');
-      await p2.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
-      await p2.evaluate(() => document.fonts.ready);
-      await p2.waitForTimeout(400);
-      await p2.evaluate((y) => window.scrollTo(0, y), breakAt);
-      const t2 = p2.locator('.hero__ticket');
-      await expect(t2).toHaveClass(/is-kept/);
-      await p2.getByRole('button', { name: 'Dismiss ticket' }).click();
-      await expect(t2).not.toHaveClass(/is-in/);
-      expect(await p2.evaluate(() => sessionStorage.getItem('playrun.ticket'))).toBe('done');
-      await p2.evaluate(() => window.scrollTo(0, 0));
-      await p2.waitForTimeout(1500);
-      await expect(t2).not.toHaveClass(/is-in/);
-      await fresh.close();
-    });
-  }
-
-  for (const [width, height] of [
-    [1440, 900],
-    [768, 1000],
-    [375, 780],
-  ] as const) {
-    test(`the scoreboard's card with the bug ticket docked (${width}px): it opens and closes on the pill, Escape and a click outside; Reset clears the progress at once; Games toggles; the ticket and the card never block each other's clicks`, async ({ browser }) => {
-      test.setTimeout(60_000);
-      const context = await browser.newContext({ viewport: { width, height }, hasTouch: width < 768 });
-      const page = await context.newPage();
-      // some progress to clear
-      await page.addInitScript(() => {
-        if (!sessionStorage.getItem('seeded')) {
-          localStorage.setItem('playrun.games', JSON.stringify({ on: true, bugs: ['hero-1', 'wall-1'], achievements: ['first-bug', 'selftest'] }));
-          sessionStorage.setItem('seeded', '1');
-        }
-      });
-      await page.goto('/');
-      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
-      await page.evaluate(() => document.fonts.ready);
-      await page.waitForTimeout(500);
-      const wallTop = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
-      await page.evaluate((y) => window.scrollTo(0, y), width < 768 ? await pastBreak(page) : 300);
-      const ticket = page.locator('.hero__ticket');
-      const chip = ticket.locator('[data-ticket-chip]');
-      await expect(ticket).toHaveClass(/is-in/);
-      await page.waitForTimeout(500);
-      const pill = page.getByRole('button', { name: /^Scoreboard/ });
-      const panel = page.locator('.score__panel');
-      const press = (l: typeof pill) => (width < 768 ? l.tap() : l.click());
-      // the pill opens it and closes it, with the pointer still on it
-      await press(pill);
-      await expect(panel).toBeVisible();
-      await expect(pill).toHaveAttribute('aria-expanded', 'true');
-      await press(pill);
-      await expect(panel).toBeHidden();
-      await expect(pill).toHaveAttribute('aria-expanded', 'false');
-      // Escape
-      await press(pill);
-      await expect(panel).toBeVisible();
-      await page.keyboard.press('Escape');
-      await expect(panel).toBeHidden();
-      // a click (or a tap) anywhere outside, on the page or on the ticket
-      await press(pill);
-      await expect(panel).toBeVisible();
-      if (width < 768) await page.touchscreen.tap(width / 2, 120);
-      else await page.mouse.click(width / 2, 120);
-      await expect(panel).toBeHidden();
-      await press(pill);
-      await expect(panel).toBeVisible();
-      // the ticket is not under the card: its chip takes the click (and that closes the card)
-      const c = (await chip.boundingBox())!;
-      expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('[data-ticket-chip]') !== null, [c.x + c.width / 2, c.y + c.height / 2])).toBe(true);
-      const was = await chip.getAttribute('aria-expanded');
-      await press(chip);
-      await expect(chip).not.toHaveAttribute('aria-expanded', was!);
-      await expect(panel).toBeHidden();
-      // nothing lies over the card's buttons
-      await press(pill);
-      await expect(panel).toBeVisible();
-      for (const sel of ['[data-hud-toggle]', '[data-hud-reset]']) {
-        const b = (await page.locator(sel).boundingBox())!;
-        expect(await page.evaluate(([x, y, s]) => document.elementFromPoint(x as number, y as number)?.closest(s as string) !== null, [b.x + b.width / 2, b.y + b.height / 2, sel] as const), `${sel} takes the click`).toBe(true);
-      }
-      // Reset: bugs and achievements cleared, the card, the pill and the stored progress at once
-      await expect(page.locator('[data-panel-bugs]')).toHaveText('2');
-      await expect(page.locator('[data-hud-ach]')).toHaveText('2/4');
-      await press(page.locator('[data-hud-reset]'));
-      await expect(page.locator('[data-panel-bugs]')).toHaveText('0');
-      await expect(page.locator('[data-panel-ach]')).toHaveText('0');
-      await expect(page.locator('[data-hud-bugs]')).toHaveText('00');
-      await expect(page.locator('[data-hud-ach]')).toHaveText('0/4');
-      await expect(page.locator('.score__ach li.is-done')).toHaveCount(0);
-      expect(await page.evaluate(() => JSON.parse(localStorage.getItem('playrun.games')!))).toMatchObject({ bugs: [], achievements: [] });
-      await expect(panel, 'Reset keeps the card open').toBeVisible();
-      // Games off and on again
-      const toggle = page.locator('[data-hud-toggle]');
-      await press(toggle);
-      await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-      await expect(page.locator('html')).toHaveClass(/games-off/);
-      await press(toggle);
-      await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-      await expect(page.locator('html')).not.toHaveClass(/games-off/);
-      await context.close();
-    });
-  }
-
-  test("the first ticket's full card covers no content on a desktop: it stays open where it fits the gutter (1920), and folds into the chip in the gutter where it does not (1440), with no room kept for the card", async ({ browser }) => {
-    test.setTimeout(60_000);
-    for (const [width, height] of [
-      [1920, 1080],
-      [1440, 900],
-    ] as const) {
-      const context = await browser.newContext({ viewport: { width, height } });
-      const page = await context.newPage();
-      await page.goto('/');
-      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
-      await page.evaluate(() => document.fonts.ready);
-      await page.waitForTimeout(500);
-      await page.evaluate(() => window.scrollTo(0, 300));
-      const card = page.locator('.ticket__cardin');
-      const chip = page.locator('[data-ticket-chip]');
-      await expect(card).toBeVisible();
+      await toGlitch(page);
       await page.waitForTimeout(600);
-      const column = await page.locator('.level').first().evaluate((el) => innerWidth - parseFloat(getComputedStyle(el).paddingRight));
-      const c = (await card.boundingBox())!;
-      await page.waitForTimeout(4400);
-      if (width === 1920) {
-        expect(c.x, 'the card in the gutter').toBeGreaterThanOrEqual(column);
-        await expect(chip, 'and it stays open').toHaveAttribute('aria-expanded', 'true');
-      } else {
-        expect(c.x, 'the card does not fit the gutter').toBeLessThan(column);
-        await expect(chip, 'so it folds').toHaveAttribute('aria-expanded', 'false');
-        expect((await chip.boundingBox())!.x, 'the chip in the gutter').toBeGreaterThanOrEqual(column);
-      }
-      // the room at the foot is the chip's only, never the card's
-      const pad = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ticket-pad')));
-      expect(pad).toBeLessThan(80);
-      await context.close();
-    }
+      await expect(copy).toBeHidden();
+      await expect(card).toBeHidden();
+    });
+  }
+
+  test('track the glitch: the card says Bug tracked, then the achievement Glitch spotted unlocks with the toast and the counter goes up; the toast never sits on the card', async ({ page }) => {
+    await openHome(page, 1440, 900);
+    await expect(page.locator('[data-hud-ach]')).toHaveText('0/5');
+    await toGlitch(page);
+    const card = page.locator('[data-glitch-card]');
+    await expect(card).toHaveClass(/is-in/);
+    // while it is up, the scoreboard's card opens above it
+    await page.getByRole('button', { name: /^Scoreboard/ }).click();
+    await page.waitForTimeout(200);
+    expect(overlap(await box(page, '.score__panel'), await box(page, '[data-glitch-card]')), 'the scoreboard card above it').toBe(false);
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Track the bug' }).click();
+    await expect(card.locator('[data-glitch-text]')).toHaveText('Bug tracked');
+    await expect(page.getByRole('button', { name: 'Track the bug' })).toBeHidden();
+    const toast = page.locator('[data-toast]');
+    await expect(toast).toHaveClass(/is-in/, { timeout: 3000 });
+    await expect(toast).toContainText('Achievement unlocked');
+    await expect(toast).toContainText('Glitch spotted');
+    await expect(card).not.toHaveClass(/is-in/);
+    await expect(page.locator('[data-hud-ach]')).toHaveText('1/5');
+    await page.getByRole('button', { name: /^Scoreboard/ }).click();
+    await expect(page.locator('.score__ach li.is-done')).toHaveText(['Glitch spotted']);
   });
 
-  test('Reset on the scoreboard starts the bug ticket over: after it, the next break shows the first-time ticket again', async ({ page }) => {
-    test.setTimeout(60_000);
-    await page.addInitScript(() => {
-      if (!sessionStorage.getItem('seeded')) {
-        sessionStorage.setItem('playrun.ticket', 'done');
-        sessionStorage.setItem('seeded', '1');
-      }
-    });
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/');
-    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+  test('ignore the glitch: the card closes quietly, no achievement, and it does not ask again this visit', async ({ page }) => {
+    await openHome(page, 375, 812);
+    await toGlitch(page);
+    const card = page.locator('[data-glitch-card]');
+    await expect(card).toHaveClass(/is-in/);
+    await page.getByRole('button', { name: 'Ignore' }).click();
+    await expect(card).toBeHidden();
+    await page.waitForTimeout(1500);
+    await expect(page.locator('[data-toast]')).not.toHaveClass(/is-in/);
+    await expect(page.locator('[data-hud-ach]')).toHaveText(/^0/);
+    await page.reload();
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(500);
-    const ticket = page.locator('.hero__ticket');
-    // the visit has had its first ticket: this one is a three-second one
-    await page.evaluate(() => window.scrollTo(0, 300));
-    await expect(ticket).toHaveClass(/is-in/);
-    await expect(ticket).not.toHaveClass(/is-kept/);
-    await page.getByRole('button', { name: /^Scoreboard/ }).click();
-    await page.locator('[data-hud-reset]').click();
-    expect(await page.evaluate(() => sessionStorage.getItem('playrun.ticket'))).toBeNull();
-    await page.keyboard.press('Escape');
-    // back up and down again: the first-time ticket, kept until the fix
     await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(page.locator('.hero__break')).toBeHidden({ timeout: 2500 });
-    await expect(ticket).not.toHaveClass(/is-in/, { timeout: 4500 });
-    await page.evaluate(() => window.scrollTo(0, 300));
-    await expect(ticket).toHaveClass(/is-in/);
-    await expect(ticket).toHaveClass(/is-kept/);
-    await page.waitForTimeout(5500);
-    await expect(ticket, 'still there, folded into the chip').toHaveClass(/is-in/);
-  });
-
-  test("the hero's exit is triggered, not scrubbed: it plays for a fixed time (1.2 s down, 1 s back) whatever the scroll speed, holds still at the threshold, and draws nothing while the page scrolls between crossings", async ({ page }) => {
-    test.setTimeout(60_000);
-    // count every pixel drawn on the break's canvas
-    await page.addInitScript(() => {
-      const w = window as unknown as { draws: number };
-      w.draws = 0;
-      const fill = CanvasRenderingContext2D.prototype.fillRect;
-      CanvasRenderingContext2D.prototype.fillRect = function (...args: [number, number, number, number]) {
-        if (this.canvas.classList.contains('hero__break')) w.draws++;
-        return fill.apply(this, args);
-      };
-    });
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/');
-    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
-    await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(600);
-    const draws = () => page.evaluate(() => (window as unknown as { draws: number }).draws);
-    const canvas = page.locator('.hero__break');
-    // the two markers: the break lower than the mend, so a stop at the threshold cannot flicker
-    const markAt = (k: string) => page.locator(`.wall__trip[data-trip="${k}"]`).evaluate((el) => el.getBoundingClientRect().top + scrollY);
-    const foot = await footOf(page);
-    const [breakY, mendY] = (await Promise.all([markAt('break'), markAt('mend')])).map((m) => Math.round(m - foot));
-    expect(breakY - mendY, 'a gap between the two').toBeGreaterThanOrEqual(16);
-    // one jump far past the threshold: the animation still takes its own time
-    await page.evaluate((y) => window.scrollTo(0, y), breakY + 600);
-    await expect(canvas).toBeVisible();
-    const t0 = Date.now();
-    await page.waitForTimeout(150);
-    const early = await draws();
-    await page.waitForTimeout(850);
-    const later = await draws();
-    expect(later, 'still drawing a second after the jump, on its own clock (1.2 s)').toBeGreaterThan(early);
+    await page.waitForTimeout(300);
+    await toGlitch(page);
     await page.waitForTimeout(800);
-    const done = await draws();
-    expect(done, 'and still a little more before it settles').toBeGreaterThan(later);
-    // settled: scrolling around this side of the threshold draws nothing at all
-    for (const y of [breakY + 300, breakY + 900, breakY + 80, breakY + 1400]) {
-      await page.evaluate((y) => window.scrollTo(0, y), y);
-      await page.waitForTimeout(150);
-    }
-    expect(await draws(), 'no drawing on scroll').toBe(done);
-    expect(Date.now() - t0).toBeGreaterThan(600);
-    // between the two markers it holds whichever state it was in
-    await page.evaluate((y) => window.scrollTo(0, y), Math.round((breakY + mendY) / 2));
-    await page.waitForTimeout(1500);
-    await expect(canvas, 'still broken between the markers').toBeVisible();
-    await page.evaluate((y) => window.scrollTo(0, y), mendY - 40);
-    await page.waitForTimeout(600);
-    await expect(canvas, 'the way home takes about a second').toBeVisible();
-    await expect(canvas).toBeHidden({ timeout: 2000 });
-    await page.evaluate((y) => window.scrollTo(0, y), Math.round((breakY + mendY) / 2));
-    await page.waitForTimeout(1500);
-    await expect(canvas, 'still whole between the markers').toBeHidden();
-    await expect(page.locator('h1')).toHaveCSS('opacity', '1');
+    await expect(card).toBeHidden();
   });
 
-  test("the hero's exit is off under reduced motion and with the games off: the name stays whole, the hero simply goes behind, no ticket", async ({ page, browser }) => {
-    const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
-    const quiet = await context.newPage();
-    await quiet.goto('/');
-    await quiet.evaluate(() => window.scrollTo(0, 500));
-    await quiet.waitForTimeout(300);
-    await expect(quiet.locator('.hero__break')).toBeHidden();
-    await expect(quiet.locator('.hero__ticket')).toBeHidden();
-    await expect(quiet.locator('h1')).toHaveCSS('opacity', '1');
-    await expect(quiet.locator('.hero')).toHaveCSS('opacity', '1');
-    await context.close();
-    // games off from the scoreboard
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/');
-    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
-    await page.getByRole('button', { name: /^Scoreboard/ }).click();
-    await page.getByRole('button', { name: 'Games on' }).click();
-    await page.mouse.click(700, 120);
-    await page.evaluate(() => document.fonts.ready);
-    for (const y of [200, 500, 800]) {
-      await page.evaluate((y) => window.scrollTo(0, y), y);
-      await page.waitForTimeout(250);
-      await expect(page.locator('.hero__break')).toBeHidden();
-      await expect(page.locator('.hero__ticket')).not.toHaveClass(/is-in/);
-      await expect(page.locator('h1')).toHaveCSS('opacity', '1');
-      await expect(page.locator('.hero')).toHaveCSS('opacity', '1');
-    }
+  test('left alone, the card closes by itself after about eight seconds, with no achievement', async ({ page }) => {
+    test.setTimeout(30_000);
+    await openHome(page, 768, 1024);
+    await toGlitch(page);
+    const card = page.locator('[data-glitch-card]');
+    await expect(card).toHaveClass(/is-in/);
+    const t0 = Date.now();
+    await page.waitForTimeout(6500);
+    await expect(card, 'still there after six and a half seconds').toHaveClass(/is-in/);
+    await expect(card).toBeHidden({ timeout: 3000 });
+    expect(Date.now() - t0).toBeLessThan(9500);
+    await expect(page.locator('[data-toast]')).not.toHaveClass(/is-in/);
+    await expect(page.locator('[data-hud-ach]')).toHaveText(/^0/);
   });
+
+  test('Reset on the scoreboard clears Glitch spotted, and the glitch and the card can happen again', async ({ page }) => {
+    await openHome(page, 1440, 900);
+    await toGlitch(page);
+    await page.getByRole('button', { name: 'Track the bug' }).click();
+    await expect(page.locator('[data-hud-ach]')).toHaveText('1/5', { timeout: 3000 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(400);
+    await page.getByRole('button', { name: /^Scoreboard/ }).click();
+    await page.getByRole('button', { name: 'Reset' }).click();
+    await expect(page.locator('[data-hud-ach]')).toHaveText('0/5');
+    await page.keyboard.press('Escape');
+    await toGlitch(page);
+    await expect(page.locator('[data-glitch]')).toBeVisible();
+    await expect(page.locator('[data-glitch-card]')).toHaveClass(/is-in/, { timeout: 1500 });
+  });
+
+  for (const [width, height] of SIZES) {
+    test(`no glitch and no card (${width}x${height}) under reduced motion, with the motion switch off or with the games off, and none for a page that opens past the line`, async ({ browser, page }) => {
+      const reduced = await browser.newContext({ reducedMotion: 'reduce', viewport: { width, height } });
+      const quiet = await reduced.newPage();
+      await quiet.goto('/');
+      await quiet.evaluate(() => document.fonts.ready);
+      await quiet.evaluate(() => window.scrollTo(0, 600));
+      await quiet.waitForTimeout(800);
+      await expect(quiet.locator('[data-glitch]')).toBeHidden();
+      await expect(quiet.locator('[data-glitch-card]')).toBeHidden();
+      await reduced.close();
+      for (const setup of [
+        () => localStorage.setItem('playrun.motion', 'off'),
+        () => localStorage.setItem('playrun.games', JSON.stringify({ on: false, bugs: [], achievements: [] })),
+      ]) {
+        const context = await browser.newContext({ viewport: { width, height } });
+        const p = await context.newPage();
+        await p.addInitScript(setup);
+        await p.goto('/');
+        await p.evaluate(() => document.fonts.ready);
+        await p.waitForTimeout(400);
+        await p.evaluate(() => window.scrollTo(0, 700));
+        await p.waitForTimeout(800);
+        await expect(p.locator('[data-glitch]')).toBeHidden();
+        await expect(p.locator('[data-glitch-card]')).toBeHidden();
+        await context.close();
+      }
+      // a page that opens already past the line: nothing for a glitch nobody saw
+      await page.setViewportSize({ width, height });
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const y = await pastBreak(page);
+      await page.goto('/');
+      await page.evaluate((y) => window.scrollTo(0, y + 200), y);
+      await page.reload();
+      await page.waitForTimeout(1000);
+      await expect(page.locator('[data-glitch]')).toBeHidden();
+      await expect(page.locator('[data-glitch-card]')).toBeHidden();
+    });
+  }
 
   test('the ticker rolls every title left as a plain image or its icon, named for a screen reader, the biggest names first; it pauses with the button', async ({ page }) => {
     await page.goto('/');
