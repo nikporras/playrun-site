@@ -1,36 +1,41 @@
 /**
  * The hero's exit, triggered by the scroll, never scrubbed by it. Markers sit near the top of
  * Level 2; one IntersectionObserver watches them cross the foot of the hero as Level 2 slides up
- * over it. When the first one passes, the name glitches once: four slices of a copy of it (CSS,
- * decorative, hidden from assistive tech) jump a few pixels sideways with a thin cyan and pink
- * split and snap back, in about 0.36 s. The real heading never moves or changes. Once a visit:
- * scrolling back up does not replay it (Reset on the scoreboard lets it happen again). A second
+ * over it. Each time the first one crosses, on the way down and back up to the name, the name
+ * glitches: four slices of a copy of it (CSS, decorative, hidden from assistive tech) jump sideways
+ * with a strong cyan and pink split, in two quick bursts over about 0.7 s. The real heading never
+ * moves or changes. Two flashes a glitch, and never a new glitch within 1.2 s of the last, so it
+ * stays under three flashes a second (WCAG 2.3.1). It repeats until the visitor tracks it; then it
+ * stops for good, on every later visit too, until Reset on the scoreboard. A second
  * pair of markers fades the hero out in 0.4 s once Level 2 covers most of it and back in on the
  * way up; the gap between them keeps it from flickering at the threshold. Nothing here reads or
  * follows the scroll position frame by frame, so the page scrolls natively.
  *
  * Right after the glitch a small card asks "Glitch on the name. Track it?", in the scoreboard's
- * corner with the toasts. Track it (✓): "Bug tracked", then the achievement "Glitch spotted".
- * Ignore (✗), or nothing for eight seconds: it closes quietly. Real buttons in the tab order; it
- * never takes the focus. While it is up, the toast and the scoreboard's card open above it.
+ * corner with the toasts, and stays until it is answered (a glitch while it is up opens no second
+ * one). Track it (✓): "Bug tracked", then the achievement "Glitch spotted", and no more glitches.
+ * Ignore (✗): it closes for now, and the next pass glitches and asks again. Real buttons in the
+ * tab order; it never takes the focus. While it is up, the toast and the scoreboard's card open
+ * above it.
  *
  * Off without script, under reduced motion, with the motion switch off and with the games off: the
  * hero simply goes behind, with no glitch and no card.
  */
-const TIMING = { glitch: 360, fade: 400, tracked: 1200, prompt: 8000 };
+const TIMING = { glitch: 700, gap: 1200, fade: 400, tracked: 1200 };
+// Tracked for good (kept across visits; Reset on the scoreboard clears it).
 const KEY = 'playrun.glitch';
-const seen = () => {
+const tracked = () => {
   try {
-    return sessionStorage.getItem(KEY) === 'done';
+    return localStorage.getItem(KEY) === 'tracked';
   } catch {
     return false;
   }
 };
-const markSeen = () => {
+const markTracked = () => {
   try {
-    sessionStorage.setItem(KEY, 'done');
+    localStorage.setItem(KEY, 'tracked');
   } catch {
-    /* storage off: it may glitch again on the next visit to Home */
+    /* storage off: it stops for this page view */
   }
 };
 
@@ -65,6 +70,7 @@ export function startHeroExit() {
   dock.prepend(card);
   let timer = 0;
   const lift = () => html.style.setProperty('--prompt-lift', card.classList.contains('is-in') ? `${card.offsetHeight + 8}px` : '0px');
+  let stopped = false;
   const close = () => {
     window.clearTimeout(timer);
     // (focus inside it goes to the scoreboard, never to nowhere)
@@ -73,11 +79,10 @@ export function startHeroExit() {
     lift();
     timer = window.setTimeout(() => (card.hidden = true), 300);
   };
-  const wait = () => {
-    window.clearTimeout(timer);
-    timer = window.setTimeout(close, TIMING.prompt);
-  };
+  const open = () => card.classList.contains('is-in');
   const prompt = () => {
+    // (already up, it stays as it is: one card at a time)
+    if (open()) return;
     window.clearTimeout(timer);
     actions.hidden = false;
     card.hidden = false;
@@ -85,10 +90,11 @@ export function startHeroExit() {
     void card.offsetHeight;
     card.classList.add('is-in');
     lift();
-    wait();
   };
   yes.addEventListener('click', () => {
     window.clearTimeout(timer);
+    stopped = true;
+    markTracked();
     // (the focus stays in the card, on its message, until it closes)
     text.focus();
     actions.hidden = true;
@@ -100,20 +106,21 @@ export function startHeroExit() {
     }, TIMING.tracked);
   });
   no.addEventListener('click', close);
-  // (ignored means untouched: not while the visitor is in it)
-  card.addEventListener('focusin', () => card.classList.contains('is-in') && !actions.hidden && window.clearTimeout(timer));
-  card.addEventListener('focusout', (e) => {
-    if (!card.contains(e.relatedTarget as Node) && card.classList.contains('is-in') && !actions.hidden) wait();
-  });
+  // (Reset on the scoreboard: it glitches again)
+  document.addEventListener('playrun:reset', () => (stopped = false));
 
-  // ---- The glitch, once a visit
+  // ---- The glitch, on every pass until it is tracked
+  let last = -Infinity;
   const glitch = () => {
-    if (seen()) return;
-    markSeen();
+    if (stopped || tracked()) return;
+    const now = performance.now();
+    // (never a new one within 1.2 s of the last: at most three flashes in any second)
+    if (now - last < TIMING.gap) return;
+    last = now;
     copy.classList.add('is-on');
     window.setTimeout(() => {
       copy.classList.remove('is-on');
-      if (!off()) prompt();
+      if (!off() && !stopped) prompt();
     }, TIMING.glitch);
   };
 
@@ -140,8 +147,8 @@ export function startHeroExit() {
   const past: Record<Mark, boolean> = { glitch: false, fadeOut: false, fadeIn: false }; // each line above the foot
   const decide = (instant: boolean) => {
     if (off()) return;
-    // (only on the way down, past the line, and never for a page that opened past it)
-    if (past.glitch && !wasPast && !instant && armed) glitch();
+    // (each time the line is crossed, down or back up, never for the page as it opened)
+    if (past.glitch !== wasPast && !instant && armed) glitch();
     wasPast = past.glitch;
     if (past.fadeOut && !faded) fadeTo(true, instant);
     else if (!past.fadeIn && faded) fadeTo(false, instant);

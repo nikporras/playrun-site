@@ -416,9 +416,10 @@ const checks = [
     display: block;
   }
   /* The glitch: four slices of a copy of the name over the real one (the heading's own size at
-     every width), each jumping a few pixels
-     sideways with a thin cyan and pink split and snapping back, about 0.36 s in all. Shown only
-     while the script holds it on (never under reduced motion or with motion off). */
+     every width), each jumping 12 to 20px sideways (8 to 12px on a phone) with a strong cyan and
+     pink split, in two quick bursts over about 0.7 s: two flashes, and the script never starts
+     another within 1.2 s, so never more than three a second. Shown only while the script holds it
+     on (never with motion off). */
   .hero__glitch {
     display: none;
     position: absolute;
@@ -433,51 +434,68 @@ const checks = [
     display: block;
   }
   .hero__slice {
+    --amp: 1;
+    --split: 4px;
     position: absolute;
     inset: 0;
     text-shadow:
-      -2px 0 var(--pr-cyan),
-      2px 0 #ff5fa2;
+      calc(var(--split) * -1) 0 var(--pr-cyan),
+      var(--split) 0 #ff5fa2;
+  }
+  @media (max-width: 47.99rem) {
+    .hero__slice {
+      --amp: 0.6;
+      --split: 3px;
+    }
   }
   .hero__slice span {
     display: block;
   }
   .hero__slice:nth-child(1) {
     clip-path: inset(6% 0 76% 0);
-    --dx: -7px;
+    --dx: calc(-15px * var(--amp));
   }
   .hero__slice:nth-child(2) {
     clip-path: inset(30% 0 54% 0);
-    --dx: 6px;
+    --dx: calc(18px * var(--amp));
   }
   .hero__slice:nth-child(3) {
     clip-path: inset(56% 0 30% 0);
-    --dx: -5px;
+    --dx: calc(-14px * var(--amp));
   }
   .hero__slice:nth-child(4) {
     clip-path: inset(80% 0 4% 0);
-    --dx: 8px;
+    --dx: calc(20px * var(--amp));
   }
+  /* two bursts (0 to 0.24 s and 0.45 to 0.7 s), each a jump one way then the other, the copy gone
+     between them */
   .hero__glitch.is-on .hero__slice {
-    animation: glitch-slice 360ms steps(1, end) both;
-    animation-delay: calc(var(--i) * 20ms);
+    animation: glitch-slice 700ms steps(1, end) both;
   }
   @keyframes glitch-slice {
     0% {
+      opacity: 1;
       transform: translateX(var(--dx));
     }
-    25% {
-      transform: translateX(calc(var(--dx) * -0.6));
+    17% {
+      opacity: 1;
+      transform: translateX(calc(var(--dx) * -0.75));
     }
-    50% {
-      transform: translateX(calc(var(--dx) * 0.8));
+    34% {
+      opacity: 0;
+      transform: none;
     }
-    75% {
-      transform: translateX(calc(var(--dx) * -0.3));
+    64% {
+      opacity: 1;
+      transform: translateX(calc(var(--dx) * -1));
+    }
+    82% {
+      opacity: 1;
+      transform: translateX(calc(var(--dx) * 0.7));
     }
     100% {
-      transform: none;
       opacity: 0;
+      transform: none;
     }
   }
   /* The card the glitch raises: the toasts' family (the light field, navy ink, a navy outline,

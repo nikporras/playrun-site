@@ -366,7 +366,8 @@ test.describe('Home', () => {
     await context.close();
   });
 
-  // The glitch: the name glitches once as the hero scrolls away, then a card asks to track it.
+  // The glitch: the name glitches each time the hero scrolls away and back, until it is tracked;
+  // a card asks to track it and stays until it is answered.
   const SIZES = [
     [1440, 900],
     [768, 1024],
@@ -376,6 +377,12 @@ test.describe('Home', () => {
   const toGlitch = async (page: Page) => {
     await page.evaluate(async (y) => window.scrollTo(0, y), await pastBreak(page));
   };
+  // (and back above it, to the name)
+  const backUp = async (page: Page) => {
+    await page.evaluate(async (y) => window.scrollTo(0, y - 120), await pastBreak(page));
+  };
+  // (the glitch never starts within 1.2 s of the last one)
+  const rest = (page: Page) => page.waitForTimeout(1300);
   const openHome = async (page: Page, width: number, height: number) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
@@ -385,9 +392,27 @@ test.describe('Home', () => {
   };
   const box = async (page: Page, sel: string) => (await page.locator(sel).boundingBox())!;
   const overlap = (a: { x: number; y: number; width: number; height: number }, b: typeof a) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+  // Records the glitch frame by frame: when the copy shows, and how far each slice jumps.
+  const record = (page: Page) =>
+    page.evaluate(() => {
+      const copy = document.querySelector<HTMLElement>('[data-glitch]')!;
+      const slices = [...copy.querySelectorAll<HTMLElement>('.hero__slice')];
+      const frames: { t: number; on: boolean; dx: number }[] = [];
+      (window as unknown as { __glitch: typeof frames }).__glitch = frames;
+      const t0 = performance.now();
+      const tick = () => {
+        const shown = getComputedStyle(copy).display !== 'none' && Number(getComputedStyle(slices[0]).opacity) > 0.5;
+        const dx = Math.max(...slices.map((s) => Math.abs(new DOMMatrix(getComputedStyle(s).transform).m41)));
+        frames.push({ t: performance.now() - t0, on: shown, dx: shown ? dx : 0 });
+        if (performance.now() - t0 < 2500) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  const frames = (page: Page) => page.evaluate(() => (window as unknown as { __glitch: { t: number; on: boolean; dx: number }[] }).__glitch);
 
   for (const [width, height] of SIZES) {
-    test(`the glitch (${width}x${height}): as the hero scrolls away the name glitches once, slices of a hidden copy jumping with a cyan and pink split for about 0.36 s while the heading never moves; then the card asks to track it, clear of the pill, the bar and the HUD, without taking the focus`, async ({ page }) => {
+    test(`the glitch (${width}x${height}): as the hero scrolls away the name glitches in two quick bursts over about 0.7 s, slices of a hidden copy jumping well sideways with a strong cyan and pink split, never more than three flashes a second, while the heading never moves; the card asks to track it, clear of the pill, the bar and the HUD, without taking the focus, and stays`, async ({ page }) => {
+      test.setTimeout(45_000);
       await openHome(page, width, height);
       const h1 = page.locator('h1');
       const before = await h1.boundingBox();
@@ -397,22 +422,35 @@ test.describe('Home', () => {
       const card = page.locator('[data-glitch-card]');
       await expect(card).toBeHidden();
       // above the line nothing happens
-      await page.evaluate(async (y) => window.scrollTo(0, y - 120), await pastBreak(page));
+      await backUp(page);
       await page.waitForTimeout(400);
       await expect(copy).toBeHidden();
       // past it: the slices, four of them, each its own band of the name, jumping sideways
+      await record(page);
       await toGlitch(page);
       await expect(copy).toBeVisible();
       const slices = await copy.locator('.hero__slice').evaluateAll((els) =>
         els.map((e) => {
           const cs = getComputedStyle(e);
-          return { clip: cs.clipPath, shadow: cs.textShadow, text: e.textContent!.replace(/\s+/g, ' ').trim(), running: e.getAnimations().length };
+          return { clip: cs.clipPath, shadow: cs.textShadow, dx: (() => {
+            // (the jump, resolved: a probe's margin set from it)
+            const probe = document.createElement('i');
+            probe.style.marginLeft = 'var(--dx)';
+            e.append(probe);
+            const v = Math.abs(parseFloat(getComputedStyle(probe).marginLeft));
+            probe.remove();
+            return v;
+          })(), text: e.textContent!.replace(/\s+/g, ' ').trim(), running: e.getAnimations().length };
         }),
       );
       expect(slices).toHaveLength(4);
+      const [lo, hi] = width < 768 ? [7, 12] : [12, 20];
       for (const s of slices) {
         expect(s.clip).toMatch(/^inset\(/);
-        expect(s.shadow, 'a cyan and a pink edge').toMatch(/rgb\(86, 189, 218\).*rgb\(255, 95, 162\)/);
+        // a strong split: the cyan and the pink edges at least 3px out
+        expect(s.shadow, 'a cyan and a pink edge').toMatch(/rgb\(86, 189, 218\) -[3-9]px 0px 0px.*rgb\(255, 95, 162\) [3-9]px 0px 0px/);
+        expect(s.dx, `a jump of ${lo} to ${hi}px`).toBeGreaterThanOrEqual(lo);
+        expect(s.dx).toBeLessThanOrEqual(hi);
         expect(s.text).toBe('Nicolás Porras');
         expect(s.running).toBeGreaterThan(0);
       }
@@ -422,15 +460,25 @@ test.describe('Home', () => {
       await expect(h1).toHaveCSS('opacity', '1');
       const during = await h1.boundingBox();
       expect(during!.x).toBe(before!.x);
-      // over in about 0.36 s, then the card, the focus left where it was
-      await expect(copy).toBeHidden({ timeout: 800 });
+      // over in about 0.7 s, then the card, the focus left where it was
+      await expect(copy).toBeHidden({ timeout: 1200 });
       await expect(card).toBeVisible();
       await expect(card).toHaveClass(/is-in/);
       await expect(card.locator('[data-glitch-text]')).toHaveText('Glitch on the name. Track it?');
       await expect(page.getByRole('button', { name: 'Track the bug' })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Ignore' })).toBeVisible();
       expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
-      await page.waitForTimeout(400);
+      // two bursts, about 0.7 s from the first frame to the last, never more than three flashes in a second
+      await page.waitForTimeout(1500);
+      const f = await frames(page);
+      const starts = f.filter((x, k) => x.on && (k === 0 || !f[k - 1].on)).map((x) => x.t);
+      const shown = f.filter((x) => x.on);
+      expect(starts.length, 'two bursts').toBe(2);
+      const span = shown[shown.length - 1].t - shown[0].t;
+      expect(span, 'about 0.7 s').toBeGreaterThan(500);
+      expect(span).toBeLessThan(900);
+      for (const t of starts) expect(starts.filter((u) => u >= t && u < t + 1000).length, 'at most three flashes a second').toBeLessThanOrEqual(3);
+      expect(Math.max(...shown.map((x) => x.dx)), 'the slices really jump').toBeGreaterThanOrEqual(lo * 0.7);
       // in the scoreboard's corner, clear of the pill, the bar, the track and the ship, and on screen
       const c = await box(page, '[data-glitch-card]');
       expect(c.x).toBeGreaterThanOrEqual(0);
@@ -453,22 +501,72 @@ test.describe('Home', () => {
       // the buttons are in the tab order
       await page.getByRole('button', { name: 'Track the bug' }).focus();
       await expect(page.getByRole('button', { name: 'Track the bug' })).toBeFocused();
-      // once a visit: back up and down again, nothing
-      await page.getByRole('button', { name: 'Ignore' }).click();
-      await page.evaluate(() => window.scrollTo(0, 0));
-      await page.waitForTimeout(400);
-      await toGlitch(page);
-      await page.waitForTimeout(600);
-      await expect(copy).toBeHidden();
-      await expect(card).toBeHidden();
     });
   }
 
-  test('track the glitch: the card says Bug tracked, then the achievement Glitch spotted unlocks with the toast and the counter goes up; the toast never sits on the card', async ({ page }) => {
+  test('the glitch repeats on every pass, down and back up to the name; the card stays until it is answered (no auto close), and a glitch while it is up opens no second card', async ({ page }) => {
+    test.setTimeout(45_000);
+    await openHome(page, 1440, 900);
+    const copy = page.locator('[data-glitch]');
+    const card = page.locator('[data-glitch-card]');
+    await toGlitch(page);
+    await expect(card).toHaveClass(/is-in/, { timeout: 1500 });
+    // no auto close: still there after ten seconds, with the focus never taken
+    await page.waitForTimeout(10_000);
+    await expect(card).toHaveClass(/is-in/);
+    await expect(card.locator('[data-glitch-text]')).toHaveText('Glitch on the name. Track it?');
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+    // back up to the name: it glitches again, and the card stays the one card, untouched
+    await backUp(page);
+    await expect(copy).toBeVisible();
+    await expect(copy).toBeHidden({ timeout: 1200 });
+    await expect(page.locator('[data-glitch-card]')).toHaveCount(1);
+    await expect(card).toHaveClass(/is-in/);
+    await expect(card.locator('[data-glitch-text]')).toHaveText('Glitch on the name. Track it?');
+    // and down again
+    await rest(page);
+    await toGlitch(page);
+    await expect(copy).toBeVisible();
+    await expect(copy).toBeHidden({ timeout: 1200 });
+    await expect(page.locator('[data-glitch-card]')).toHaveCount(1);
+    await expect(card).toHaveClass(/is-in/);
+  });
+
+  test('ignore the glitch: the card closes for now, no achievement; the next pass glitches and asks again', async ({ page }) => {
+    test.setTimeout(30_000);
+    await openHome(page, 375, 812);
+    const copy = page.locator('[data-glitch]');
+    await toGlitch(page);
+    const card = page.locator('[data-glitch-card]');
+    await expect(card).toHaveClass(/is-in/);
+    await page.getByRole('button', { name: 'Ignore' }).click();
+    await expect(card).toBeHidden();
+    await page.waitForTimeout(1500);
+    await expect(page.locator('[data-toast]')).not.toHaveClass(/is-in/);
+    await expect(page.locator('[data-hud-ach]')).toHaveText(/^0/);
+    // the next pass (back up to the name): the glitch and the card again
+    await backUp(page);
+    await expect(copy).toBeVisible();
+    await expect(card).toHaveClass(/is-in/, { timeout: 1500 });
+    await expect(card.locator('[data-glitch-text]')).toHaveText('Glitch on the name. Track it?');
+    // and on a later visit too
+    await page.getByRole('button', { name: 'Ignore' }).click();
+    await page.reload();
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(500);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(300);
+    await toGlitch(page);
+    await expect(card).toHaveClass(/is-in/, { timeout: 1500 });
+  });
+
+  test('track the glitch: the card says Bug tracked, then the achievement Glitch spotted unlocks with the toast and the counter goes up; the toast never sits on the card; then it never glitches again, not on the next pass and not after a reload', async ({ page }) => {
+    test.setTimeout(30_000);
     await openHome(page, 1440, 900);
     await expect(page.locator('[data-hud-ach]')).toHaveText('0/5');
     await toGlitch(page);
     const card = page.locator('[data-glitch-card]');
+    const copy = page.locator('[data-glitch]');
     await expect(card).toHaveClass(/is-in/);
     // while it is up, the scoreboard's card opens above it
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
@@ -486,44 +584,31 @@ test.describe('Home', () => {
     await expect(page.locator('[data-hud-ach]')).toHaveText('1/5');
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
     await expect(page.locator('.score__ach li.is-done')).toHaveText(['Glitch spotted']);
-  });
-
-  test('ignore the glitch: the card closes quietly, no achievement, and it does not ask again this visit', async ({ page }) => {
-    await openHome(page, 375, 812);
+    await page.keyboard.press('Escape');
+    // stopped for good: back up and down, nothing
+    await rest(page);
+    await backUp(page);
+    await page.waitForTimeout(600);
+    await expect(copy).toBeHidden();
+    await rest(page);
     await toGlitch(page);
-    const card = page.locator('[data-glitch-card]');
-    await expect(card).toHaveClass(/is-in/);
-    await page.getByRole('button', { name: 'Ignore' }).click();
+    await page.waitForTimeout(900);
+    await expect(copy).toBeHidden();
     await expect(card).toBeHidden();
-    await page.waitForTimeout(1500);
-    await expect(page.locator('[data-toast]')).not.toHaveClass(/is-in/);
-    await expect(page.locator('[data-hud-ach]')).toHaveText(/^0/);
+    // and after a reload (a later visit)
     await page.reload();
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(500);
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(400);
     await toGlitch(page);
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(900);
+    await expect(copy).toBeHidden();
     await expect(card).toBeHidden();
   });
 
-  test('left alone, the card closes by itself after about eight seconds, with no achievement', async ({ page }) => {
+  test('Reset on the scoreboard clears Glitch spotted, and the glitch and the card come back', async ({ page }) => {
     test.setTimeout(30_000);
-    await openHome(page, 768, 1024);
-    await toGlitch(page);
-    const card = page.locator('[data-glitch-card]');
-    await expect(card).toHaveClass(/is-in/);
-    const t0 = Date.now();
-    await page.waitForTimeout(6500);
-    await expect(card, 'still there after six and a half seconds').toHaveClass(/is-in/);
-    await expect(card).toBeHidden({ timeout: 3000 });
-    expect(Date.now() - t0).toBeLessThan(9500);
-    await expect(page.locator('[data-toast]')).not.toHaveClass(/is-in/);
-    await expect(page.locator('[data-hud-ach]')).toHaveText(/^0/);
-  });
-
-  test('Reset on the scoreboard clears Glitch spotted, and the glitch and the card can happen again', async ({ page }) => {
     await openHome(page, 1440, 900);
     await toGlitch(page);
     await page.getByRole('button', { name: 'Track the bug' }).click();
@@ -534,6 +619,7 @@ test.describe('Home', () => {
     await page.getByRole('button', { name: 'Reset' }).click();
     await expect(page.locator('[data-hud-ach]')).toHaveText('0/5');
     await page.keyboard.press('Escape');
+    await rest(page);
     await toGlitch(page);
     await expect(page.locator('[data-glitch]')).toBeVisible();
     await expect(page.locator('[data-glitch-card]')).toHaveClass(/is-in/, { timeout: 1500 });

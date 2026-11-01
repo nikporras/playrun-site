@@ -593,10 +593,11 @@ export function startGames() {
     write(state);
     // the glitch on Home can happen again, and ask again
     try {
-      sessionStorage.removeItem('playrun.glitch');
+      localStorage.removeItem('playrun.glitch');
     } catch {
       /* storage off: nothing was kept */
     }
+    document.dispatchEvent(new CustomEvent('playrun:reset'));
     bugs().forEach((b) => {
       b.classList.remove('is-caught');
       b.removeAttribute('aria-disabled');
