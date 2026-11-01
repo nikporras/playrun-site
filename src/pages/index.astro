@@ -125,8 +125,8 @@ const checks = [
   <!-- The visual copy of the name for its break, so its pixels can land on the next title
        (click-through, decorative), and the ticket the break raises -->
   <canvas class="hero__break" aria-hidden="true" hidden></canvas>
-  <!-- (the script docks it with the scoreboard: above the pill on a desktop, in the bar on a tablet,
-       on the bar's top edge on a phone) -->
+  <!-- (the script docks it with the scoreboard: above the pill on a desktop, on the bottom
+       bar's top edge on a phone or a tablet) -->
   <div class="hero__ticket" data-nosnippet hidden>
     <div class="ticket__card" id="ticket-card">
       <div class="ticket__cardin">
@@ -614,26 +614,9 @@ const checks = [
   .ticket__close--strip {
     display: none;
   }
-  /* A tablet: the chip sits in the bottom bar beside the pill (as tall as it); the card opens above
-     the bar. */
-  @media (min-width: 48rem) and (max-width: 63.99rem) {
-    .hero__ticket {
-      position: relative;
-      align-self: stretch;
-      justify-content: flex-end;
-    }
-    .ticket__card {
-      position: absolute;
-      right: 0;
-      bottom: calc(100% + var(--floor-h));
-    }
-    .ticket__chip {
-      height: calc(var(--hud-h) - var(--floor-h));
-    }
-  }
-  /* A phone: a slim strip along the top edge of the bottom bar, the whole width: the chip on one
-     line with its hint, and Dismiss; the card opens above it. */
-  @media (max-width: 47.99rem) {
+  /* A phone or a tablet: a slim strip along the top edge of the bottom bar, the whole width: the
+     chip on one line with its hint, and Dismiss; the card opens above it. */
+  @media (max-width: 63.99rem) {
     .hero__ticket {
       position: fixed;
       left: 0;

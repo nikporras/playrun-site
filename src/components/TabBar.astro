@@ -1,20 +1,24 @@
 ---
 /**
- * The bar along the foot of a phone (below 48rem), a game's HUD: the five pages, each a small
- * pixel icon over a short label, the page you are on in green. Plain links, so it works without
+ * The bar along the foot of a phone or a tablet (below 64rem), a game's HUD: About, Skills, Games,
+ * Quality and Contact, each a small pixel icon over a short label, the page you are on in green.
+ * Home is the logo in the header, so on Home no item is current. Plain links, so it works without
  * script, under reduced motion and with the games off. Its right end is left for the scoreboard's
  * counter (Hud.astro places it there while the games run), and the ship's progress line rides on
- * its top edge. It clears the iPhone's home indicator. Tablets and desktops keep the header nav.
+ * its top edge. It clears the iPhone's home indicator. Desktops keep the header nav.
  */
 import { nav, primaryAction } from '../config';
 
 // The build writes file routes (/skills.html, /index.html); the bar compares the clean address.
 const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '/').replace(/([^/])$/, '$1/');
-// the five pages (About is in the footer on a phone)
-const items = [...nav.filter((n) => n.href !== '/about/'), { label: 'Contact', href: primaryAction.href }];
+// the five pages, About first (Home is the header's logo); the Portfolio is called Games here
+const about = nav.find((n) => n.href === '/about/')!;
+const items = [about, ...nav.filter((n) => n.href !== '/' && n !== about), { label: 'Contact', href: primaryAction.href }].map((n) =>
+  n.href === '/portfolio/' ? { ...n, label: 'Games' } : n,
+);
 // 8 by 8 pixel icons, one path each
 const icons: Record<string, string> = {
-  '/': 'M3 0h2v1H3zM2 1h4v1H2zM1 2h6v1H1zM0 3h8v1H0zM1 4h6v1H1zM1 5h2v3H1zM5 5h2v3H5z',
+  '/about/': 'M3 0h2v1H3zM2 1h4v2H2zM3 3h2v1H3zM1 5h6v1H1zM0 6h8v2H0z',
   '/skills/': 'M3 0h2v2H3zM0 2h8v1H0zM1 3h6v1H1zM2 4h4v1H2zM1 5h6v1H1zM1 6h2v1H1zM5 6h2v1H5zM1 7h1v1H1zM6 7h1v1H6z',
   '/portfolio/': 'M0 0h6v1H0zM0 1h7v1H0zM0 2h2v2H0zM6 2h2v2H6zM0 4h8v3H0zM0 7h1v1H0zM2 7h1v1H2zM4 7h1v1H4zM6 7h1v1H6z',
   '/quality/': 'M6 1h2v1H6zM5 2h2v1H5zM0 3h1v1H0zM4 3h2v1H4zM0 4h2v1H0zM3 4h2v1H3zM1 5h3v1H1zM2 6h1v1H2z',
@@ -43,7 +47,7 @@ const icons: Record<string, string> = {
   .tabbar {
     display: none;
   }
-  @media (max-width: 47.99rem) {
+  @media (max-width: 63.99rem) {
     .tabbar {
       display: block;
       position: fixed;
@@ -66,10 +70,6 @@ const icons: Record<string, string> = {
       flex: 1 1 0;
       min-width: 0;
       display: flex;
-    }
-    /* the longest label has a little more room */
-    .tabbar__list li:has([href='/portfolio/']) {
-      flex-grow: 1.3;
     }
     .tabbar__link {
       flex: 1;

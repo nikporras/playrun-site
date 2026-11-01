@@ -2,10 +2,10 @@
 /**
  * The track and the scoreboard. On desktop (64rem and up) the track is a slim vertical rail on
  * the left edge, inside the gutter, no wider than the ship: the ship moves down it as the page
- * scrolls and a marker per level (or per year on the Portfolio) sits beside it. On tablets the
- * same bar lies along the bottom of the screen; on phones it is a thin line on the top edge of the
- * bottom bar (TabBar.astro). The scoreboard is a small card in the bottom right corner (inside the
- * bar on tablets, the counter at the bottom bar's right end on phones): compact by default, it opens on
+ * scrolls and a marker per level (or per year on the Portfolio) sits beside it. On phones and
+ * tablets it is a thin line on the top edge of the bottom bar (TabBar.astro). The scoreboard is a
+ * small card in the bottom right corner (the counter at the bottom bar's right end on phones and
+ * tablets): compact by default, it opens on
  * hover, focus or a tap into the full card (level, year on the Portfolio, bugs caught, the
  * achievements, games on or off, reset). Achievement unlocks appear above it. Hidden until script
  * turns it on; removed under reduced motion.
@@ -255,7 +255,7 @@ import PassMark from './PassMark.astro';
   }
 
   /* The dock: the scoreboard, the bug ticket when the headline breaks (Home docks it here: above
-     the pill on a desktop, beside it in the bar on a tablet), and above them all the toast and the
+     the pill on a desktop, a strip on the bar on phones and tablets), and above them all the toast and the
      scoreboard's card. Bottom right, in the bar on small screens. */
   .dock {
     position: fixed;
@@ -534,19 +534,11 @@ import PassMark from './PassMark.astro';
       bottom: 0;
     }
   }
-  /* A tablet: the ticket's chip stands in the bar beside the pill. */
-  @media (min-width: 48rem) and (max-width: 63.99rem) {
-    .dock {
-      flex-direction: row;
-      align-items: flex-end;
-      gap: 0.5rem;
-    }
-  }
-  /* A phone: the bottom bar (TabBar.astro) holds the pages. The track is a thin line along its top
+  /* A phone or a tablet: the bottom bar (TabBar.astro) holds the pages. The track is a thin line along its top
      edge, filling green behind the ship that rides on it, the markers notches in the line. The
      scoreboard is the counter at the bar's right end (the bugs over the achievements; the level is
      still in its name), and the card and the toasts open above the bar, clear of the ship. */
-  @media (max-width: 47.99rem) {
+  @media (max-width: 63.99rem) {
     /* (the bug ticket's strip, when there is one, joins the bar: the line rides on top of it) */
     .hud {
       bottom: calc(var(--hud-h) + var(--ticket-room, 0px));

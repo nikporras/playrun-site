@@ -111,9 +111,17 @@ test.describe('Home', () => {
     expect(outline).not.toBe('none');
   });
 
-  for (const width of [375, 360]) {
-    test(`on a phone (${width}px) the pages are in a bottom bar: Home, Skills, Portfolio, Quality, Contact as real links with pixel icons and labels of 16px, the current page in green, at least 44px tall with a visible focus; the header keeps the logo and has no Menu`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 780 });
+  for (const [width, height] of [
+    [375, 780],
+    [360, 780],
+    [768, 1024],
+  ] as const) {
+    test(`on a phone or a tablet (${width}px) the pages are in a bottom bar: About, Skills, Games, Quality, Contact as real links with pixel icons and labels of 16px, the current page in green, at least 44px tall with a visible focus; the header keeps the logo, the way home, and has no Menu`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto('/');
+      // Home is the logo: on Home no item in the bar is current
+      await expect(page.locator('.tabbar [aria-current]')).toHaveCount(0);
+      await expect(page.getByRole('link', { name: 'PlayRun, home' })).toHaveAttribute('href', '/');
       await page.goto('/portfolio/');
       await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
       await expect(page.locator('.header__nav')).toBeHidden();
@@ -121,14 +129,14 @@ test.describe('Home', () => {
       const bar = page.getByRole('navigation', { name: 'Site' });
       await expect(bar).toHaveCount(1);
       const links = bar.getByRole('link');
-      await expect(links).toHaveText(['Home', 'Skills', 'Portfolio', 'Quality', 'Contact']);
-      expect(await links.evaluateAll((els) => els.map((a) => a.getAttribute('href')))).toEqual(['/', '/skills/', '/portfolio/', '/quality/', '/contact/']);
-      await expect(bar.getByRole('link', { name: 'Portfolio' })).toHaveAttribute('aria-current', 'page');
+      await expect(links).toHaveText(['About', 'Skills', 'Games', 'Quality', 'Contact']);
+      expect(await links.evaluateAll((els) => els.map((a) => a.getAttribute('href')))).toEqual(['/about/', '/skills/', '/portfolio/', '/quality/', '/contact/']);
+      await expect(bar.getByRole('link', { name: 'Games' })).toHaveAttribute('aria-current', 'page');
       await expect(bar.locator('[aria-current]')).toHaveCount(1);
       const box = (await bar.boundingBox())!;
       expect(box.x).toBe(0);
       expect(box.width).toBe(width);
-      expect(box.y + box.height, 'on the foot of the screen').toBe(780);
+      expect(box.y + box.height, 'on the foot of the screen').toBe(height);
       const cells = await links.evaluateAll((els) =>
         els.map((a) => {
           const r = a.getBoundingClientRect();
@@ -195,7 +203,7 @@ test.describe('Home', () => {
       const context = await browser.newContext({ ...options, viewport: { width: 375, height: 780 } });
       const p = await context.newPage();
       await p.goto('/skills/');
-      await expect(p.getByRole('navigation', { name: 'Site' }).getByRole('link')).toHaveText(['Home', 'Skills', 'Portfolio', 'Quality', 'Contact']);
+      await expect(p.getByRole('navigation', { name: 'Site' }).getByRole('link')).toHaveText(['About', 'Skills', 'Games', 'Quality', 'Contact']);
       await expect(p.locator('.hud__runner')).toHaveCount(options.reducedMotion ? 0 : 1);
       const links = await p.locator('.tabbar__link').evaluateAll((els) => els.map((a) => a.getBoundingClientRect().right));
       expect(links[4], 'the five take the whole bar').toBeGreaterThan(370);
@@ -405,10 +413,10 @@ test.describe('Home', () => {
       const ticket = page.locator('.hero__ticket');
       const card = ticket.locator('.ticket__cardin');
       const chip = ticket.locator('[data-ticket-chip]');
-      const spot = width < 768 ? ticket.locator('.ticket__dock') : chip;
+      const spot = width < 1024 ? ticket.locator('.ticket__dock') : chip;
       const box = async () => (await spot.boundingBox())!;
       const wallTop = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
-      const breakAt = width < 768 ? Math.round(wallTop - height + 260) : 300;
+      const breakAt = width < 1024 ? Math.round(wallTop - height + 260) : 300;
       await page.evaluate((y) => window.scrollTo(0, y), breakAt);
       // the first time in a visit: kept, the card open
       await expect(ticket).toHaveClass(/is-in/);
@@ -475,14 +483,8 @@ test.describe('Home', () => {
         expect(home.y + home.height).toBeLessThanOrEqual(pill.y);
         const column = await page.locator('.level').first().evaluate((el) => innerWidth - parseFloat(getComputedStyle(el).paddingRight));
         expect(home.x, 'in the gutter, clear of the column').toBeGreaterThanOrEqual(column);
-      } else if (width >= 768) {
-        // inside the bottom bar, beside the pill
-        const bar = (await page.locator('#hud').boundingBox())!;
-        expect(home.y).toBeGreaterThanOrEqual(bar.y - 1);
-        expect(home.y + home.height).toBeLessThanOrEqual(bar.y + bar.height + 1);
-        expect(home.x + home.width).toBeLessThanOrEqual(pill.x);
       } else {
-        // a strip the whole width on the bar's top edge, the track riding on top of it
+        // phones and tablets: a strip the whole width on the bar's top edge, the track riding on top of it
         const bar = (await page.locator('.tabbar').boundingBox())!;
         const line = (await page.locator('#hud').boundingBox())!;
         expect(home.x).toBe(0);

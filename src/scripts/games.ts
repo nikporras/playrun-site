@@ -431,8 +431,8 @@ export function startGames() {
   // On desktop the bar stands on the left edge and the ship runs down it; otherwise it lies
   // along the bottom and the ship runs across, with the scoreboard pill at the right end.
   const vertical = matchMedia('(min-width: 64rem)');
-  // (on a phone the line runs the whole width, over the bottom bar; the pill sits in the bar)
-  const phone = matchMedia('(max-width: 47.99rem)');
+  // (on a phone or a tablet the line runs the whole width, over the bottom bar; the pill sits in the bar)
+  const bar = matchMedia('(max-width: 63.99rem)');
   const floor = pick(hud, '.hud__floor');
   let range = 1;
   let track = 0;
@@ -443,8 +443,7 @@ export function startGames() {
   let yearTops: number[] = [];
   const layout = () => {
     range = Math.max(1, html.scrollHeight - innerHeight);
-    // (on a tablet the dock in the bar holds the pill and, when there is one, the bug ticket's chip)
-    const free = vertical.matches ? hud.clientHeight : phone.matches ? hud.clientWidth : hud.clientWidth - dock.offsetWidth;
+    const free = vertical.matches ? hud.clientHeight : hud.clientWidth;
     ship = vertical.matches ? runner.offsetHeight : runner.offsetWidth;
     track = Math.max(0, free - ship);
     lineW = Math.max(1, hud.clientWidth);
@@ -522,7 +521,7 @@ export function startGames() {
         lastP = p;
         const at = p * track;
         runner.style.transform = vertical.matches ? `translateY(${at}px)` : `translateX(${at}px)`;
-        floor.style.transform = phone.matches ? `scaleX(${(at + ship / 2) / lineW})` : '';
+        floor.style.transform = bar.matches ? `scaleX(${(at + ship / 2) / lineW})` : '';
       }
       const line = y + innerHeight * 0.45;
       let now = 1;
@@ -540,7 +539,7 @@ export function startGames() {
   addEventListener('scroll', onScroll, { passive: true });
   addEventListener('resize', layout);
   vertical.addEventListener('change', layout);
-  phone.addEventListener('change', layout);
+  bar.addEventListener('change', layout);
   // the page grows and shrinks (fonts, images, a card opened on a phone): measure again
   if ('ResizeObserver' in window) {
     let queued = false;

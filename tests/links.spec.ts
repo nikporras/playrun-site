@@ -35,3 +35,15 @@ for (const path of PAGES) {
     expect(external).toBeGreaterThan(0);
   });
 }
+
+test('on phones and tablets the logo in the header is the way home on every page: a visible link named PlayRun, home', { tag: ['@links'] }, async ({ page }) => {
+  for (const width of [375, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const path of ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/']) {
+      await page.goto(path);
+      const home = page.locator('header').getByRole('link', { name: 'PlayRun, home', exact: true });
+      await expect(home, `${path} at ${width}`).toBeVisible();
+      await expect(home).toHaveAttribute('href', '/');
+    }
+  }
+});

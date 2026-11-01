@@ -90,14 +90,14 @@
 @media (max-width: 63.99rem) {
   :root {
     --join-h: 6.75rem; /* the join art at 6px pixels */
+    --bar-h: 3.5rem; /* the bottom bar's row (phones and tablets): the five pages and the scoreboard's counter */
+    --hud-h: calc(var(--bar-h) + 2px + env(safe-area-inset-bottom, 0px)); /* the room it takes, its edge and the home indicator */
+    --floor-h: 0.5rem;
+    --ship-w: 1.5rem;
   }
 }
 @media (max-width: 47.99rem) {
   :root {
-    --bar-h: 3.5rem; /* the bottom bar's row: the five pages and the scoreboard's counter */
-    --hud-h: calc(var(--bar-h) + 2px + env(safe-area-inset-bottom, 0px)); /* the room it takes, its edge and the home indicator */
-    --floor-h: 0.5rem;
-    --ship-w: 1.5rem;
     --join-h: 4.5rem; /* the join art at 4px pixels */
   }
 }

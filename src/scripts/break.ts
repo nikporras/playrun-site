@@ -21,8 +21,8 @@
  * then left alone; the hero's fade is a Web Animation.
  *
  * A tracker ticket pops when the name breaks ("Open", with "Scroll back up to fix"). It docks with
- * the scoreboard, in the game layer's corner (above the pill on a desktop, in the bar on a tablet,
- * a strip on the bar's top edge on a phone), and never moves, hides or fades while it is there. The
+ * the scoreboard, in the game layer's corner (above the pill on a desktop, a strip
+ * on the bottom bar's top edge on a phone or a tablet), and never moves, hides or fades while it is there. The
  * first time in a visit (and after Reset) it stays until the name is whole again or the visitor
  * dismisses it: the full card where it fits the gutter, elsewhere the card for four seconds and
  * then the chip, pulsing gently, which opens it again; when the name is fixed it shows "Fixed" for
@@ -76,7 +76,8 @@ export function startBreak() {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const html = document.documentElement;
-  const phone = matchMedia('(max-width: 47.99rem)');
+  // (phones and tablets have the bottom bar: the ticket is a strip on its top edge)
+  const bar = matchMedia('(max-width: 63.99rem)');
   // (the games off, or motion off from the switch: the hero simply goes behind)
   const off = () => html.classList.contains('games-off') || html.classList.contains('motion-off');
   const dpr = Math.min(2, devicePixelRatio || 1);
@@ -358,14 +359,13 @@ export function startBreak() {
   };
 
   // ---- The ticket. It lives with the scoreboard, in the game layer's corner, and never moves: the
-  // chip keeps its one spot (above the pill on a desktop, in the bar on a tablet, a strip on the
-  // bar's top edge on a phone) and the card opens above it. The first time in a visit it stays
+  // chip keeps its one spot (above the pill on a desktop, a strip on the bottom
+  // bar's top edge on a phone or a tablet) and the card opens above it. The first time in a visit it stays
   // until the name is fixed or the ticket is dismissed (the card, or the chip where the card does
   // not fit). Later breaks, and the fix, show the card for three seconds and go. The page keeps
   // room at its foot for the chip or the strip (--ticket-pad), and the toast and the scoreboard's
   // card open above it (--ticket-lift where the card opens above the bar).
   dock.prepend(ticket);
-  const tablet = matchMedia('(min-width: 48rem) and (max-width: 63.99rem)');
   let wanted = false; // on show
   let kept = false; // the first appearance of the visit, staying until the fix
   let expanded = false;
@@ -381,10 +381,10 @@ export function startBreak() {
     const dockRow = ticket.querySelector('.ticket__dock') as HTMLElement;
     // (the card's full height, whatever its fold is doing this instant, and its margins)
     const card = on && expanded ? (ticket.querySelector('.ticket__cardin') as HTMLElement).scrollHeight + 16 : 0;
-    const strip = on && phone.matches ? dockRow.offsetHeight : 0;
+    const strip = on && bar.matches ? dockRow.offsetHeight : 0;
     // (the card itself either fits the gutter or folds away after a few seconds: no room for it)
-    const pad = !on ? 0 : phone.matches ? strip : tablet.matches ? 0 : dockRow.offsetHeight + 8;
-    const lift = phone.matches || tablet.matches ? card : 0;
+    const pad = !on ? 0 : bar.matches ? strip : dockRow.offsetHeight + 8;
+    const lift = bar.matches ? card : 0;
     // (a visitor at the very foot of the page stays there as the room grows)
     const atFoot = scrollY + innerHeight >= html.scrollHeight - 2;
     const grew = pad - padRoom;
@@ -400,7 +400,7 @@ export function startBreak() {
   // again after it is opened), the chip pulsing gently while the ticket is still open. Any other
   // ticket leaves three seconds after it opens (or after it is folded).
   const fits = () => {
-    if (phone.matches || tablet.matches) return false;
+    if (bar.matches) return false;
     const gutter = parseFloat(getComputedStyle(wall).paddingRight) || 0;
     const card = (ticket.querySelector('.ticket__cardin') as HTMLElement).offsetWidth + 4;
     const inset = innerWidth - dock.getBoundingClientRect().right;

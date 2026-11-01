@@ -87,13 +87,14 @@ test('the About page: one h1, the summary, a real table of key facts and the que
   await expect(page.locator('.bug, #hud, #dock, [data-enter], [data-load]')).toHaveCount(0);
 });
 
-test('About is in the desktop nav and the footer, the phone bar keeps its five, and Home links to it from the intro', { tag: ['@links'] }, async ({ page }) => {
+test('About is in the desktop nav, the footer and first in the bottom bar of phones and tablets, and Home links to it from the intro', { tag: ['@links'] }, async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await expect(page.locator('.header__nav').getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about/');
   await expect(page.locator('footer').getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about/');
   await expect(page.locator('.hero__value').getByRole('link', { name: 'More about me' })).toHaveAttribute('href', '/about/');
   await page.setViewportSize({ width: 375, height: 780 });
-  await expect(page.locator('.tabbar').getByRole('link')).toHaveText(['Home', 'Skills', 'Portfolio', 'Quality', 'Contact']);
+  await expect(page.locator('.tabbar').getByRole('link')).toHaveText(['About', 'Skills', 'Games', 'Quality', 'Contact']);
+  await expect(page.locator('.tabbar').getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about/');
   await expect(page.locator('footer').getByRole('link', { name: 'About' })).toBeVisible();
 });

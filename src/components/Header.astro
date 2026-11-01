@@ -8,7 +8,7 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
 
 <header class="header wrap">
   <div class="header__start">
-    <a class="header__brand" href="/" aria-label={`${site.name} home`}>
+    <a class="header__brand" href="/" aria-label={`${site.name}, home`}>
       <Lockup class="header__lockup" aria-hidden="true" role="presentation" />
     </a>
     <!-- Motion on or off for this site (with script; it follows the device's setting until set) -->
@@ -99,8 +99,9 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
   .header__links a[aria-current='page']::after {
     background: var(--accent);
   }
-  /* A phone has the bottom bar (TabBar.astro) instead: the header keeps the logo. */
-  @media (max-width: 47.99rem) {
+  /* Phones and tablets have the bottom bar (TabBar.astro) instead: the header keeps the logo, the
+     way home. */
+  @media (max-width: 63.99rem) {
     .header__nav {
       display: none;
     }
