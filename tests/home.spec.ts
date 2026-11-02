@@ -1380,3 +1380,48 @@ test("no hairline where a level's clouds meet its blue: the field starts under t
     }
   }
 });
+
+// The photo at every width from 320 to 1280 (20px steps) and three heights: under the text it is
+// centred, the halo exactly behind it, and never under 220px tall; beside the text (from 640px)
+// it is never a thumbnail either, and it covers none of the text. "More about me" stays on one line. Nothing scrolls sideways.
+test('the hero photo is never a thumbnail and its halo is centred behind it, at every width from 320 to 1280 and three heights', { tag: ['@viewports'] }, async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  // (the text and the photo rise into place as the page opens: measured once they are there)
+  await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline && a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => null))));
+  const problems: string[] = [];
+  for (const height of [667, 852, 1024]) {
+    for (let width = 320; width <= 1280; width += 20) {
+      await page.setViewportSize({ width, height });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const m = await page.evaluate(() => {
+        const img = document.querySelector('.hero__figure img')!.getBoundingClientRect();
+        const svg = [...document.querySelectorAll<SVGSVGElement>('.hero__figure svg.halo')].find((s) => s.getClientRects().length)!.getBoundingClientRect();
+        const clip = [...document.querySelectorAll('.hero__figure .halo__clip')].find((c) => c.getClientRects().length && getComputedStyle(c).display !== 'none')!.getBoundingClientRect();
+        const text = [...document.querySelectorAll('.hero__head :is(h1, p)')].map((e) => e.getBoundingClientRect());
+        const stacked = text.every((t) => img.top >= t.bottom - 1);
+        return {
+          stacked,
+          h: img.height,
+          photoMid: img.left + img.width / 2,
+          screenMid: document.documentElement.clientWidth / 2,
+          haloMid: svg.left + svg.width / 2,
+          clipMid: clip.left + clip.width / 2,
+          linkLines: document.querySelector('.hero__value a')!.getClientRects().length,
+          overlaps: !stacked && text.some((t) => img.left < t.right && img.right > t.left && img.top < t.bottom && img.bottom > t.top),
+          sideways: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        };
+      });
+      const at = `${width}x${height}`;
+      if (m.h < 219.5) problems.push(`${at}: the photo is ${m.h.toFixed(0)}px tall (${m.stacked ? 'under' : 'beside'} the text)`);
+      if (Math.abs(m.haloMid - m.photoMid) > 4 || Math.abs(m.clipMid - m.photoMid) > 4) problems.push(`${at}: halo ${m.haloMid.toFixed(0)}, clip ${m.clipMid.toFixed(0)}, photo ${m.photoMid.toFixed(0)}`);
+      if (m.stacked && Math.abs(m.photoMid - m.screenMid) > 4) problems.push(`${at}: under the text the photo is not centred (${m.photoMid.toFixed(0)} of ${m.screenMid * 2})`);
+      if (m.stacked !== width < 640) problems.push(`${at}: ${m.stacked ? 'under' : 'beside'} the text`);
+      if (m.overlaps) problems.push(`${at}: the photo covers text`);
+      if (m.linkLines !== 1) problems.push(`${at}: "More about me" breaks across ${m.linkLines} lines`);
+      if (m.sideways > 0) problems.push(`${at}: scrolls sideways`);
+    }
+  }
+  expect(problems).toEqual([]);
+});

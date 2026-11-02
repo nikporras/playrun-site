@@ -145,7 +145,7 @@ const checks = [
         src={portrait}
         alt={ALT}
         widths={[320, 400, 640, 960, 1280]}
-        sizes="(max-width: 47.99rem) 50vw, 36vw"
+        sizes="(max-width: 39.99rem) 50vw, 36vw"
         formats={['avif']}
         fallbackFormat="webp"
         loading="eager"
@@ -607,6 +607,10 @@ const checks = [
     max-width: 52ch;
     font-size: var(--step-body);
   }
+  /* (the link moves to the next line whole, never split across two) */
+  .hero__value a {
+    white-space: nowrap;
+  }
   /* The figure floats in the space the text leaves free, centred on the text block (the head is
      centred in the level, so the level's middle is the block's middle). `translate` keeps clear
      of the load animation's transform. */
@@ -642,15 +646,15 @@ const checks = [
   /* The halo (HeroHalo.astro): pixel bands behind the photo, drawn at a few sizes, as the 8px steps
      cannot scale with the photo. The one shown is the largest that fits the room either side of
      the photo (the clip reaches to the edge of the screen), so it is never cut by a straight edge:
-     chosen by the photo's width on tablets and desktops, by its height on a phone, where it takes
-     the height the text leaves. */
+     chosen by the photo's width beside the text, by its height where the photo stands under the
+     text (below 40rem), taking the height the text leaves. */
   :global(.hero__halo) {
     display: none;
   }
   .hero__figure {
     container: halo / inline-size;
   }
-  @media (min-width: 48rem) {
+  @media (min-width: 40rem) {
     @container halo (min-width: 480px) {
       :global(.hero__halo--500) {
         display: block;
@@ -667,9 +671,15 @@ const checks = [
       }
     }
   }
-  @media (max-width: 47.99rem) {
+  @media (max-width: 39.99rem) {
     .hero__figure {
       container: halo / size;
+    }
+    /* (the photo is centred under the text: the clip reaches from its middle to both edges of the
+       screen, the same either side) */
+    .hero__figure :global(.halo__clip) {
+      left: calc(50% - 50vw);
+      right: calc(50% - 50vw);
     }
     /* (the photo and its halo show once the text face is in, see head-inline.js: until then the text
        may wrap differently and the photo, sized by what the text leaves, would move; hidden, it
@@ -738,11 +748,13 @@ const checks = [
     .hero__head {
       max-width: 62%;
     }
+    /* (beside the text from 40rem: never smaller than about 220px tall) */
     .hero__figure {
-      width: min(34vw, 20rem);
+      width: max(13.5rem, min(34vw, 20rem));
     }
   }
-  @media (max-width: 47.99rem) {
+  /* Below 40rem the photo stands under the text, centred, the halo behind it. */
+  @media (max-width: 39.99rem) {
     .hero {
       min-height: 0;
       justify-content: flex-start;
@@ -765,26 +777,30 @@ const checks = [
     .hero__value {
       font-size: 1rem;
     }
-    /* On a phone the photo comes under the text, on the bottom edge, as tall as the room the text
-       leaves above the peek of the next level (and no wider than before). */
-    .hero {
-      height: max(calc(100svh - var(--hud-h) - 4.5rem - var(--peek)), 30rem);
+    /* The photo comes under the text, centred, on the bottom edge, as tall as the room the text
+       leaves above the peek of the next level, and never under 220px: where the text leaves less,
+       the hero grows and the next level only peeks in (its clouds and its label). A grid, so the
+       photo's row has a definite height for the photo to fill. */
+    .hero,
+    :global(.games) .hero {
+      display: grid;
+      grid-template-rows: auto minmax(220px, 1fr);
+      min-height: max(calc(100svh - var(--hud-h) - 4.5rem - var(--peek)), 30rem);
     }
     .hero__figure {
       position: relative;
       right: auto;
       top: auto;
       translate: none;
-      flex: 1 1 0;
-      min-height: 0;
-      max-height: calc(min(70vw, 20rem) * 1.0335);
+      min-height: 220px;
       width: auto;
       display: flex;
-      justify-content: flex-end;
-      margin: var(--s-2) 0 0;
+      justify-content: center;
+      align-items: flex-end;
+      margin: 0; /* (the room above the headset in the cutout, and the halo, are the gap) */
     }
     .hero__photo {
-      height: 100%;
+      height: min(100%, calc(min(70vw, 20rem) * 1.0335));
     }
     .hero__figure :global(picture) {
       height: 100%;
