@@ -384,15 +384,9 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
       display: inline;
     }
   }
-  /* From a tablet up: the heading, the line and the game centred in the level. */
+  /* From a tablet up: the game centred in the level (its label, heading and line stay on the left
+     edge, like every level's). */
   @media (min-width: 48rem) {
-    .play .level__head {
-      align-items: center;
-      text-align: center;
-    }
-    .play .level__lead {
-      margin-inline: auto;
-    }
     .sweep {
       margin-inline: auto;
     }

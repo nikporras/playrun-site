@@ -56,6 +56,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'games.spec.ts': ['The games', 'The track, the runner, the bug hunt and the achievements by mouse, touch and keyboard, and off under reduced motion.'],
   'home.spec.ts': ['Home', 'Loads clean, the bottom bar on a phone, the curtain, the glitch and its card, the wall, the stats, three widths, axe, the self test.'],
   'indexing.spec.ts': ['Search and AI access', 'robots.txt welcomes the AI crawlers and disallows nothing, the IndexNow key and step, llms.txt and its pages, snippets kept to the content.'],
+  'labels.spec.ts': ['Level labels', 'Every level label on every page starts at the same left edge, at three widths.'],
   'links.spec.ts': ['Links', 'Links that leave the site open a new tab and say so. Internal links stay.'],
   'motion.spec.ts': ['The Motion switch', 'Follows your device setting until you choose. Your choice is remembered, and turning Motion on works even when your device asks for less motion.'],
   'validity.spec.ts': ['Valid HTML', 'Every page as the server sends it passes html-validate, offline: elements, content, attributes, ids and the document.'],

@@ -64,17 +64,14 @@ for (const [width, height] of SIZES) {
     // a keyboard: the keys line (no touch here)
     await expect(page.getByText('Arrow keys or A and D to move, Space to fire, Esc to pause.')).toBeVisible();
     await expect(page.getByText('Hold Left or Right to move, tap Fire to shoot.')).toBeHidden();
-    // from a tablet up, the heading, the line and the game centred in the level
+    // the heading and the line on the left like every level's; from a tablet up the game centred in the level
+    expect(await page.locator('section.play .level__title').evaluate((el) => getComputedStyle(el).textAlign)).not.toBe('center');
     if (width >= 768) {
-      const centre = async (sel: string | ReturnType<Page['locator']>) => {
-        const b = (await (typeof sel === 'string' ? page.locator(sel) : sel).boundingBox())!;
+      const centre = async (sel: string) => {
+        const b = (await page.locator(sel).boundingBox())!;
         return b.x + b.width / 2;
       };
-      const level = await centre('section.play .level__body');
-      const head = await page.locator('section.play .level__title').evaluate((el) => getComputedStyle(el).textAlign);
-      expect(head).toBe('center');
-      expect(Math.abs((await centre('[data-sweep-stage]')) - (await centre('section.play .level__head'))), 'the game under the heading').toBeLessThanOrEqual(2);
-      expect(level).toBeGreaterThan(0);
+      expect(Math.abs((await centre('[data-sweep-stage]')) - (await centre('section.play .level__head'))), 'the game centred in the level').toBeLessThanOrEqual(2);
     }
     // the focus on the field, the bar reads three lives and ten bugs
     await expect(page.locator('[data-sweep-stage]')).toBeFocused();

@@ -820,12 +820,15 @@ const checks = [
   .wall.has-join-bottom {
     padding-bottom: calc(var(--edge) + var(--join-h));
   }
-  /* the label, at the foot of its zone, just above the logos */
+  /* the label, at the foot of its zone, just above the logos, on the left edge of the column like
+     every level's label (the logos, Pause and the link stay centred) */
   .wall__head {
+    align-self: stretch;
     height: var(--zone);
     justify-content: flex-end;
-    align-items: center;
+    align-items: flex-start;
     gap: 0;
+    text-align: left;
   }
   .wall__head .flag {
     margin: 0;

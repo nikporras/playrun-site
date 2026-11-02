@@ -1248,7 +1248,7 @@ for (const [width, height] of [
   [1440, 900],
   [375, 812],
 ] as const) {
-  test(`the games are on the first screen (${width}x${height}): the row of logos whole on screen (on a phone the clouds and the label peeking in), rolling, unlinked, its first logos there with the page; Level 2 one centred block on the blue (the label, the logos, Pause and the link), even gaps, the same gap to the clouds above and below, nothing over the joins`, { tag: ['@viewports'] }, async ({ page }) => {
+  test(`the games are on the first screen (${width}x${height}): the row of logos whole on screen (on a phone the clouds and the label peeking in), rolling, unlinked, its first logos there with the page; Level 2 one block on the blue (the label on the left, the logos, Pause and the link centred), even gaps, the same gap to the clouds above and below, nothing over the joins`, { tag: ['@viewports'] }, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
     // the first logos load with the page, not after it: there at its load event, no wait
@@ -1310,7 +1310,9 @@ for (const [width, height] of [
     expect(pause.y).toBeGreaterThanOrEqual(row.y + row.height - 1);
     expect(Math.abs(pause.y + pause.height / 2 - (more.y + more.height / 2)), 'side by side').toBeLessThanOrEqual(4);
     const mid = (b: { x: number; width: number }) => b.x + b.width / 2;
-    expect(Math.abs(mid(flag) - width / 2), 'the label centred').toBeLessThanOrEqual(10);
+    // the label on the left edge of the column, like every level's (labels.spec.ts); the rest centred
+    const edge = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().left + parseFloat(getComputedStyle(el).paddingLeft));
+    expect(Math.abs(flag.x - edge), 'the label on the left edge').toBeLessThanOrEqual(1);
     expect(Math.abs(mid(row) - width / 2), 'the row centred').toBeLessThanOrEqual(10);
     expect(Math.abs((pause.x + more.x + more.width) / 2 - width / 2), 'Pause and the link centred').toBeLessThanOrEqual(10);
     await expect(page.getByRole('heading', { level: 2, name: "Games I've tested" })).toHaveCount(1);
