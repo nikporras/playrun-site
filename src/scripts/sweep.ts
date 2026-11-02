@@ -16,6 +16,7 @@
  * plays whatever the motion setting: the player starts it on purpose.
  */
 import { SHIP_SMALL as SHIP, BUG, smallBand } from '../data/sprites';
+import { track } from './track';
 
 const W = 160;
 const H = 128;
@@ -404,6 +405,7 @@ export function startSweep(root: HTMLElement) {
     stage.tabIndex = 0;
     stage.focus({ preventScroll: true });
     say('Bug Sweep started. Ten bugs, three lives.');
+    track('bug-sweep-play');
     run();
   };
   const end = (won: boolean) => {
@@ -416,9 +418,11 @@ export function startSweep(root: HTMLElement) {
       show('Level cleared', 'All ten bugs swept.', 'Play again');
       say('Level cleared. All ten bugs swept.');
       document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'bugsweep' }));
+      track('bug-sweep-cleared');
     } else {
       show('Game over', 'A bug got through three times.', 'Try again');
       say('Game over.');
+      track('bug-sweep-game-over');
     }
     action.focus({ preventScroll: true });
   };

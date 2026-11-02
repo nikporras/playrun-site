@@ -15,7 +15,7 @@ import { contact, legal } from '../config';
     <h2>Who is responsible</h2>
     <p>
       The controller is {legal.controller}{legal.address ? `, ${legal.address}` : `, ${contact.location}`}. Email{' '}
-      <a href={`mailto:${contact.email}`}>{contact.email}</a> for anything in this notice.
+      <a href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="legal-email">{contact.email}</a> for anything in this notice.
     </p>
   </section>
 
@@ -100,7 +100,7 @@ import { contact, legal } from '../config';
     <h2>Your rights</h2>
     <p>
       You can ask for a copy of the personal data I hold about you, ask me to correct or delete it, and object to how I
-      use it. Email <a href={`mailto:${contact.email}`}>{contact.email}</a> and I will answer. If you are not happy with
+      use it. Email <a href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="legal-email">{contact.email}</a> and I will answer. If you are not happy with
       my answer you can complain to the Information Commissioner's Office at{' '}
       <ExternalLink href="https://ico.org.uk/">ico.org.uk</ExternalLink>.
     </p>

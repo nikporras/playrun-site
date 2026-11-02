@@ -33,7 +33,7 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
         ))
       }
     </ul>
-    <a class="button header__action" href={primaryAction.href}>{primaryAction.label}</a>
+    <a class="button header__action" href={primaryAction.href} data-umami-event="get-in-touch" data-umami-event-where="header">{primaryAction.label}</a>
   </nav>
 </header>
 
@@ -199,6 +199,7 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
 
 <script>
   import { reducedMotion, offByDevice, setMotion, onMotionChange } from '../scripts/motion';
+  import { track } from '../scripts/track';
   const button = document.querySelector<HTMLButtonElement>('[data-motion]');
   const note = button?.querySelector<HTMLElement>('[data-motion-note]');
   if (button && note) {
@@ -210,7 +211,11 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
       button.classList.toggle('is-device', device);
       note.textContent = device ? ', off by your device setting' : '';
     };
-    button.addEventListener('click', () => setMotion(reducedMotion()));
+    button.addEventListener('click', () => {
+      const on = reducedMotion();
+      setMotion(on);
+      track(on ? 'motion-on' : 'motion-off');
+    });
     onMotionChange(show);
     show();
   }

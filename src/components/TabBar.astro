@@ -29,7 +29,13 @@ const icons: Record<string, string> = {
     {
       items.map((item) => (
         <li>
-          <a class="tabbar__link" href={item.href} aria-current={current === item.href ? 'page' : undefined}>
+          <a
+            class="tabbar__link"
+            href={item.href}
+            aria-current={current === item.href ? 'page' : undefined}
+            data-umami-event={item.href === primaryAction.href ? 'get-in-touch' : undefined}
+            data-umami-event-where={item.href === primaryAction.href ? 'bar' : undefined}
+          >
             <svg class="tabbar__icon" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
               <path d={icons[item.href]} fill="currentColor" />
             </svg>

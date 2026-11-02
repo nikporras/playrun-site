@@ -11,9 +11,11 @@ interface Props {
 }
 const { href, class: className, rel, ...rest } = Astro.props;
 const relList = [...new Set(['noopener', 'noreferrer', ...(rel ? rel.split(/\s+/) : [])])].join(' ');
+// (a LinkedIn link is counted in the visit statistics, wherever it is)
+const event = /(^|\.)linkedin\.com$/.test(new URL(href).hostname) ? 'linkedin' : undefined;
 ---
 
-<a href={href} class={className} target="_blank" rel={relList} data-external {...rest}>
+<a href={href} class={className} target="_blank" rel={relList} data-external data-umami-event={event} {...rest}>
   <slot />
   <span class="visually-hidden"> (opens in a new tab)</span>
   <svg class="extlink__mark" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" focusable="false">

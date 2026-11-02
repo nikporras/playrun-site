@@ -40,7 +40,7 @@ const steps = [
       <ul role="list" class="contact__direct" data-load style="--d: 480ms">
         <li>
           <span class="contact__key">Email</span>
-          <a class="contact__big" href={`mailto:${contact.email}`}>{contact.email}</a>
+          <a class="contact__big" href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="contact-email">{contact.email}</a>
         </li>
         <li>
           <span class="contact__key">Based in</span>
@@ -496,6 +496,7 @@ const steps = [
 </style>
 
 <script>
+  import { track } from '../scripts/track';
   // The form: checks each field before anything leaves the page and names what is missing beside
   // the field. With script it posts a JSON string to the Apps Script endpoint (a text/plain body,
   // so no preflight) and reads {ok} back. Without script the browser opens the mail app.
@@ -537,6 +538,7 @@ const steps = [
         if (short) short.hidden = !trimmed;
       }
       fallback.hidden = false;
+      track('contact-fallback');
     };
     // After a message has gone, the form is done: nothing can send it twice.
     const lock = () => {
@@ -590,6 +592,7 @@ const steps = [
           form.classList.add('is-sent');
           lock();
           status.textContent = 'Sent. I reply from studio@playrunqa.com.';
+          track('contact-sent');
           return;
         }
         const errors = data.errors ?? ['server'];

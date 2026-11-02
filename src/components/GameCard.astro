@@ -95,7 +95,7 @@ const store = p.data.store ?? 'Steam';
           )
         }
         <p class="card__platforms">{p.data.platforms.join(', ')}</p>
-        {p.data.url && <ExternalLink class="button button--outline card__store" href={p.data.url}>View on {store}</ExternalLink>}
+        {p.data.url && <ExternalLink class="button button--outline card__store" href={p.data.url} data-umami-event="store-link" data-umami-event-game={p.data.title}>View on {store}</ExternalLink>}
       </div>
     </div>
   </div>

@@ -13,7 +13,7 @@ import { contact, legal } from '../config';
     <h2>Who this site belongs to</h2>
     <p>
       playrunqa.com is run by {legal.controller}{legal.address ? `, ${legal.address}` : `, ${contact.location}`}. Questions
-      go to <a href={`mailto:${contact.email}`}>{contact.email}</a>.
+      go to <a href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="legal-email">{contact.email}</a>.
     </p>
   </section>
 

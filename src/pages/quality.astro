@@ -165,7 +165,7 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
         Five steps, the way I would test a build. Each one runs live on this page, then you can check it yourself.
       </p>
       <div class="level__actions" data-load style="--d: 440ms">
-        <button class="button" type="button" id="run-all" aria-describedby="run-status">Run every step</button>
+        <button class="button" type="button" id="run-all" aria-describedby="run-status" data-umami-event="quality-run">Run every step</button>
         <p id="run-status" class="qa__status" aria-live="polite">Scroll on and watch them run.</p>
       </div>
     </div>
@@ -190,7 +190,7 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
       <p class="picker__label" id="picker-label">Testing on:</p>
       <div class="picker__options">
         {devices.map((d) => (
-          <button type="button" class="picker__btn" data-device={d.id} aria-pressed="false">
+          <button type="button" class="picker__btn" data-device={d.id} aria-pressed="false" data-umami-event="quality-device" data-umami-event-device={d.id}>
             {d.label}
           </button>
         ))}

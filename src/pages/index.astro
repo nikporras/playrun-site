@@ -146,10 +146,10 @@ const checks = [
   <div class="glitchcard" data-glitch-card data-nosnippet hidden>
     <p class="glitchcard__text" tabindex="-1" aria-live="polite" data-glitch-text>Glitch on the name. Track it?</p>
     <div class="glitchcard__actions" data-glitch-actions>
-      <button type="button" class="glitchcard__btn glitchcard__btn--yes" data-glitch-yes>
+      <button type="button" class="glitchcard__btn glitchcard__btn--yes" data-glitch-yes data-umami-event="glitch-tracked">
         <span aria-hidden="true"><PassMark /></span><span class="visually-hidden">Track the bug</span>
       </button>
-      <button type="button" class="glitchcard__btn glitchcard__btn--no" data-glitch-no>
+      <button type="button" class="glitchcard__btn glitchcard__btn--no" data-glitch-no data-umami-event="glitch-ignored">
         <span aria-hidden="true"><CrossMark /></span><span class="visually-hidden">Ignore</span>
       </button>
     </div>
@@ -209,7 +209,7 @@ const checks = [
         <span data-ticker-word>Pause</span>
       </button>
       <!-- the logos are pictures only; the way on to the games is this link -->
-      <a class="textlink wall__more" href="/portfolio/">See every game I've tested</a>
+      <a class="textlink wall__more" href="/portfolio/" data-umami-event="see-all-games">See every game I've tested</a>
     </div>
     <Bug id="wall-1" style="right: 5%; bottom: calc(var(--join-h) + 0.25rem)" tablet="right: 5%; bottom: calc(var(--join-h) + 0.25rem)" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
@@ -334,8 +334,8 @@ const checks = [
         and play most sports.
       </p>
       <div class="level__actions final__actions" data-enter style="--enter-delay: 160ms">
-        <a class="button" href={primaryAction.href}>{primaryAction.label}</a>
-        <a class="final__mail" href={`mailto:${contact.email}`}>{contact.email}</a>
+        <a class="button" href={primaryAction.href} data-umami-event="get-in-touch" data-umami-event-where="home">{primaryAction.label}</a>
+        <a class="final__mail" href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="home-email">{contact.email}</a>
       </div>
     </div>
     <Bug id="final-1" style="right: 10%; top: 2rem" tablet="right: 8%; bottom: 1rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />

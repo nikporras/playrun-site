@@ -55,6 +55,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'bugs.spec.ts': ['Bugs off the text', 'Every bug sits in empty field on five pages at four widths, all along its walk.'],
   'contact.spec.ts': ['Contact form', 'Validation, every answer the script can give, and the mailto fallback.'],
   'credits.spec.ts': ['Credits', 'Every typeface, tool and sprite is credited, and the page passes axe.'],
+  'events.spec.ts': ['What the statistics count', 'Each counted click carries its event name, and what a click cannot see is counted by name, never with anything a visitor typed.'],
   'firefox.spec.ts': ['In Firefox', 'Every page loads clean in Firefox, the Quality picker knows it, and the five steps finish without a fail.'],
   'games.spec.ts': ['The games', 'The track, the runner, the bug hunt and the achievements by mouse, touch and keyboard, and off under reduced motion.'],
   'home.spec.ts': ['Home', 'Loads clean, the bottom bar on a phone, the curtain, the glitch and its card, the wall, the stats, three widths, axe, the self test.'],

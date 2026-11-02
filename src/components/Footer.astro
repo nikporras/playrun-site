@@ -19,7 +19,7 @@ const year = new Date().getFullYear();
         <p class="footer__name">{contact.name}</p>
         <p>{playrun.role}, {site.name}. {contact.location}.</p>
         <p class="footer__contact">
-          <a href={`mailto:${contact.email}`}>{contact.email}</a>
+          <a href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="footer-email">{contact.email}</a>
           {social.map((s) => (
             <>
               <span class="footer__dot" aria-hidden="true">&middot;</span>
@@ -31,7 +31,7 @@ const year = new Date().getFullYear();
       <nav class="footer__site" aria-label="Footer">
         <ul role="list" class="footer__links">
           {nav.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
-          <li><a href="/contact/">Contact</a></li>
+          <li><a href="/contact/" data-umami-event="get-in-touch" data-umami-event-where="footer">Contact</a></li>
         </ul>
       </nav>
     </div>

@@ -5,6 +5,8 @@
  * without script, and the page underneath never depends on it.
  */
 import { reducedMotion, offByDevice, whenMotion } from './motion';
+// (as count: track here is the HUD's level track)
+import { track as count } from './track';
 
 type State = { on: boolean; bugs: string[]; achievements: string[] };
 
@@ -78,6 +80,7 @@ export function startGames() {
       if (!s.on || !ACHIEVEMENTS[id] || s.achievements.includes(id)) return;
       s.achievements.push(id);
       write(s);
+      count('achievement', { name: ACHIEVEMENTS[id] });
     };
     document.addEventListener('playrun:achieve', record);
     whenMotion(() => {
@@ -194,6 +197,7 @@ export function startGames() {
     if (!state.on || !ACHIEVEMENTS[id] || state.achievements.includes(id)) return;
     state.achievements.push(id);
     write(state);
+    count('achievement', { name: ACHIEVEMENTS[id] });
     render();
     queue.push(id);
     next();
