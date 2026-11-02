@@ -30,23 +30,52 @@ export const internalLinks = () => {
 };
 
 /** What the Performance API knows about this load, in milliseconds and bytes. */
+/** The page fully loaded: after its load event, once the browser has written the load's end time. */
+export const pageLoaded = () =>
+  new Promise<void>((resolve) => {
+    const settle = () => setTimeout(resolve, 0);
+    if (document.readyState === 'complete') settle();
+    else addEventListener('load', settle, { once: true });
+  });
+
+/** The first paint, waited for a moment if it has not been recorded yet (it can land after load). */
+const firstPaint = () =>
+  new Promise<void>((resolve) => {
+    if (performance.getEntriesByType('paint').some((p) => p.name === 'first-contentful-paint')) return resolve();
+    const done = setTimeout(resolve, 1500);
+    try {
+      new PerformanceObserver((list, obs) => {
+        if (list.getEntries().some((p) => p.name === 'first-contentful-paint')) {
+          obs.disconnect();
+          clearTimeout(done);
+          resolve();
+        }
+      }).observe({ type: 'paint', buffered: true });
+    } catch {
+      /* no paint timing in this browser: the wait runs out */
+    }
+  });
+
+// (a timing of 0 is one the browser has not reported: never a real figure)
+const real = (n: number | undefined) => (n && n > 0 ? Math.round(n) : null);
 export const timings = () => {
   const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
   const paint = performance.getEntriesByType('paint').find((p) => p.name === 'first-contentful-paint');
   const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
   const bytes = resources.reduce((n, r) => n + (r.transferSize || 0), 0) + (nav?.transferSize || 0);
   return {
-    ttfb: nav ? Math.round(nav.responseStart) : null,
-    fcp: paint ? Math.round(paint.startTime) : null,
-    domReady: nav ? Math.round(nav.domContentLoadedEventEnd) : null,
-    loaded: nav ? Math.round(nav.loadEventEnd) : null,
+    ttfb: real(nav?.responseStart),
+    fcp: real(paint?.startTime),
+    domReady: real(nav?.domContentLoadedEventEnd),
+    loaded: real(nav?.loadEventEnd),
     requests: resources.length + 1,
     bytes,
     resources,
   };
 };
 
-const ms = (n: number | null) => (n === null ? 'n/a' : n >= 1000 ? `${(n / 1000).toFixed(1)}s` : `${n}ms`);
+export const NOT_REPORTED = 'not reported by this browser';
+const ms = (n: number | null) => (n === null ? NOT_REPORTED : n >= 1000 ? `${(n / 1000).toFixed(1)}s` : `${n}ms`);
 export const kb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`);
 
 export const checks: Record<string, Check> = {
@@ -178,16 +207,25 @@ export const checks: Record<string, Check> = {
     id: 'performance',
     title: 'Performance',
     run: async () => {
+      // (only once the page has fully loaded, so the figures are real)
+      await pageLoaded();
+      await firstPaint();
       const t = timings();
       const problems: string[] = [];
-      if (t.fcp !== null && t.fcp > 2500) problems.push(`first paint at ${ms(t.fcp)}`);
+      // a pass needs a figure to rest on: no first paint reported, no pass
+      if (t.fcp === null) problems.push(`first paint ${NOT_REPORTED}`);
+      else if (t.fcp > 2500) problems.push(`first paint at ${ms(t.fcp)}`);
       if (t.bytes > 1.5 * 1024 * 1024) problems.push(`${kb(t.bytes)} fetched`);
       if (t.requests > 80) problems.push(`${t.requests} requests`);
       const n = problems.length;
       return {
         passed: n ? 0 : 1,
         failed: n ? 1 : 0,
-        detail: n ? `Slow: ${problems.join(', ')}` : `First paint at ${ms(t.fcp)}, loaded in ${ms(t.loaded)}, ${t.requests} requests, ${kb(t.bytes)}`,
+        detail: n
+          ? t.fcp === null
+            ? `Cannot pass without timings: ${problems.join(', ')}; loaded ${t.loaded === null ? NOT_REPORTED : `in ${ms(t.loaded)}`}`
+            : `Slow: ${problems.join(', ')}`
+          : `First paint at ${ms(t.fcp)}, ${t.loaded === null ? `load time ${NOT_REPORTED}` : `loaded in ${ms(t.loaded)}`}, ${t.requests} requests, ${kb(t.bytes)}`,
       };
     },
   },

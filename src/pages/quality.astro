@@ -832,7 +832,7 @@ Attachments: [screenshot or video]</pre>
 
 <script>
   import { reducedMotion } from '../scripts/motion';
-  import { checks, errorsSinceLoad, kb, timings, type Result } from '../scripts/checks';
+  import { checks, errorsSinceLoad, kb, timings, pageLoaded, NOT_REPORTED, type Result } from '../scripts/checks';
   import { startDeck } from '../scripts/deck';
   startDeck();
 
@@ -933,9 +933,11 @@ Attachments: [screenshot or video]</pre>
     if (results.size === steps.length) document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'selftest' }));
   };
 
-  // Each step runs as it comes into view; under reduced motion, or without the observer, all at once.
+  // Each step runs as it comes into view; under reduced motion, or without the observer, all at once,
+  // once the page has fully loaded (so Performance has real figures).
   if (reduce || !('IntersectionObserver' in window)) {
     (async () => {
+      await pageLoaded();
       for (const s of steps) await runStep(s);
     })();
   } else {
@@ -998,7 +1000,7 @@ Attachments: [screenshot or video]</pre>
       net.replaceChildren(...rows);
     }
     if (perf) {
-      const ms = (n: number | null) => (n === null ? 'n/a' : `${n} ms`);
+      const ms = (n: number | null) => (n === null ? NOT_REPORTED : `${n} ms`);
       const pairs: [string, string][] = [
         ['Time to first byte', ms(t.ttfb)],
         ['First paint', ms(t.fcp)],

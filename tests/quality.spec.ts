@@ -198,3 +198,55 @@ for (const [width, height] of [
     await context.close();
   });
 }
+
+test.describe('Performance under reduced motion', () => {
+  const run = async (browser: import('@playwright/test').Browser, setup?: () => void) => {
+    const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    if (setup) await page.addInitScript(setup);
+    await page.goto('/quality/');
+    await expect(page.locator('.step.is-pass, .step.is-fail')).toHaveCount(5, { timeout: 15_000 });
+    const step = page.locator('#step-performance');
+    return { context, page, step, detail: (await step.locator('[data-step-result]').textContent()) ?? '' };
+  };
+
+  test('the steps wait for the page to load, so Performance reports real figures: never n/a, never 0ms', { tag: ['@a11y'] }, async ({ browser }) => {
+    const { context, page, step, detail } = await run(browser);
+    await expect(step).toHaveClass(/is-pass/);
+    expect(detail).toMatch(/First paint at \d+(ms|\.\d+s|s), loaded in \d+(ms|\.\d+s|s)/);
+    expect(detail).not.toMatch(/n\/a|\b0ms/);
+    // the load really had happened when it ran
+    expect(await page.evaluate(() => (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming).loadEventEnd)).toBeGreaterThan(0);
+    await expect(page.locator('[data-report-row="performance"] [data-report-detail]')).not.toContainText('n/a');
+    await expect(page.locator('[data-dev-perf]')).not.toContainText('n/a');
+    await context.close();
+  });
+
+  test('a browser that reports no first paint: Performance says so and does not pass', async ({ browser }) => {
+    const { context, step, detail } = await run(browser, () => {
+      const get = performance.getEntriesByType.bind(performance);
+      performance.getEntriesByType = ((type: string) => (type === 'paint' ? [] : get(type))) as typeof performance.getEntriesByType;
+      // (and no observer to hear of it later)
+      (window as unknown as { PerformanceObserver: unknown }).PerformanceObserver = class {
+        observe() {}
+        disconnect() {}
+      };
+    });
+    await expect(step).toHaveClass(/is-fail/);
+    expect(detail).toContain('first paint not reported by this browser');
+    expect(detail).not.toMatch(/n\/a|\b0ms/);
+    await context.close();
+  });
+
+  test('a browser that reports no load timing: Performance says so in words, never 0ms', async ({ browser }) => {
+    const { context, page, step, detail } = await run(browser, () => {
+      const get = performance.getEntriesByType.bind(performance);
+      performance.getEntriesByType = ((type: string) => (type === 'navigation' ? [] : get(type))) as typeof performance.getEntriesByType;
+    });
+    await expect(step).toHaveClass(/is-pass/);
+    expect(detail).toContain('load time not reported by this browser');
+    expect(detail).not.toMatch(/n\/a|\b0ms/);
+    await expect(page.locator('[data-dev-perf]')).toContainText('not reported by this browser');
+    await context.close();
+  });
+});
