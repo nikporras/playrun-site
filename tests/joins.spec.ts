@@ -282,3 +282,54 @@ for (const [width, height, scale] of SCALED) {
     await context.close();
   });
 }
+
+// The sky (the upper level's own field) keeps to the top third of every join: below it, the back
+// and middle layers always cover the valleys between the front layer's bumps, so no notch of the
+// dark sky cuts down to the front. Every join on every page, read from a screenshot of the band at
+// rest (the drift is at its middle when the band is centred, and off under reduced motion), column
+// by column: the lowest pixel of the sky's colour must sit in the top third (one device pixel over).
+for (const width of [375, 1280, 1920]) {
+  test(`the sky keeps to the top third of every join at ${width}px: the back layers fill the valleys of the front`, { tag: ['@brand'] }, async ({ browser }) => {
+    test.setTimeout(120_000);
+    const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    const deep: string[] = [];
+    for (const path of PAGES) {
+      await page.goto(path);
+      // (nothing in front of the bands: the bugs, the HUD and the scoreboard, or the hero behind the curtain)
+      await page.addStyleTag({ content: '.bug, #hud, #dock, .tabbar, .hero { visibility: hidden !important; }' });
+      await page.evaluate(() => document.fonts.ready);
+      const n = await page.locator('.join').count();
+      for (let j = 0; j < n; j++) {
+        const join = page.locator('.join').nth(j);
+        await join.evaluate((el) => {
+          const r = el.getBoundingClientRect();
+          window.scrollTo(0, r.top + scrollY - (innerHeight - r.height) / 2);
+        });
+        await page.waitForTimeout(100);
+        const band = await join.evaluate((el) => {
+          const r = el.getBoundingClientRect();
+          const name = (el as HTMLElement).style.getPropertyValue('--from').match(/var\((--[\w-]+)\)/)![1];
+          const hex = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+          return { top: r.top, height: r.height, sky: [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) };
+        });
+        const png = await page.screenshot({ clip: { x: 0, y: Math.round(band.top), width, height: Math.round(band.height) } });
+        const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+        let lowest = 0;
+        let at = 0;
+        for (let x = 0; x < info.width; x += 2) {
+          for (let y = info.height - 1; y >= 0; y--) {
+            const i = (y * info.width + x) * info.channels;
+            if (Math.abs(data[i] - band.sky[0]) + Math.abs(data[i + 1] - band.sky[1]) + Math.abs(data[i + 2] - band.sky[2]) <= 24) {
+              if (y + 1 > lowest) [lowest, at] = [y + 1, x];
+              break;
+            }
+          }
+        }
+        if (lowest > Math.ceil(info.height / 3) + 1) deep.push(`${path} join ${j}: the sky reaches ${lowest} of ${info.height}px at x=${at}`);
+      }
+    }
+    expect(deep).toEqual([]);
+    await context.close();
+  });
+}
