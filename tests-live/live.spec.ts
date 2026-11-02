@@ -115,3 +115,47 @@ test("the contact form's script is up: its GET health check answers ok (nothing 
   const body = await res.json();
   expect(body.ok).toBe(true);
 });
+
+test("Cloudflare's security headers are on every page: HSTS, no framing (X-Frame-Options and the header policy's frame-ancestors), nosniff, the referrer and permissions policies", async ({ request }) => {
+  const missing: string[] = [];
+  for (const url of pages) {
+    const h = (await request.get(url)).headers();
+    const at = new URL(url).pathname;
+    const check = (name: string, ok: (v: string) => boolean) => {
+      const v = h[name];
+      if (v === undefined || !ok(v)) missing.push(`${at}: ${name} = ${v ?? 'missing'}`);
+    };
+    check('strict-transport-security', (v) => /max-age=(\d+)/.test(v) && Number(v.match(/max-age=(\d+)/)![1]) >= 15_552_000);
+    check('x-frame-options', (v) => v.toUpperCase() === 'DENY');
+    check('content-security-policy', (v) => /frame-ancestors 'none'/.test(v));
+    check('permissions-policy', (v) => v.length > 0);
+    check('referrer-policy', (v) => v === 'strict-origin-when-cross-origin');
+    check('x-content-type-options', (v) => v === 'nosniff');
+  }
+  expect(missing).toEqual([]);
+});
+
+test("the header policy and the page's own both allow everything the site does: the pages, Bug Sweep, the Quality run, the forms, with no violation anywhere", async ({ page }) => {
+  await quiet(page);
+  const violations: string[] = [];
+  // (heard from the very start of every page, before any of its own scripts)
+  await page.exposeFunction('__violation', (v: string) => violations.push(v));
+  await page.addInitScript(() =>
+    addEventListener('securitypolicyviolation', (e) => {
+      if (/umami\.(is|dev)/.test(e.blockedURI)) return;
+      (window as unknown as { __violation: (v: string) => void }).__violation(`${location.pathname}: ${e.violatedDirective} blocked ${e.blockedURI || 'inline'}`);
+    }),
+  );
+  for (const url of pages) {
+    await page.goto(url, { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts.ready);
+  }
+  // what loads or runs on demand: Bug Sweep's code, and the Quality run's own requests
+  await page.goto('/about/');
+  await page.getByRole('button', { name: 'Play Bug Sweep' }).click();
+  await expect(page.locator('[data-sweep-pause]')).toBeVisible();
+  await page.goto('/quality/');
+  await page.getByRole('button', { name: 'Run every step' }).click();
+  await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 30_000 });
+  expect(violations).toEqual([]);
+});

@@ -111,7 +111,10 @@ test('the Privacy page says what is counted and how, and that Do Not Track is re
   expect(text).toContain('If your browser sends Do Not Track, nothing is sent at all.');
   expect(text).toContain('There are no cookies.');
   expect(text).toMatch(/LinkedIn links, a game's store link \(with the game's name\)/);
-  await expect(page.getByRole('link', { name: /privacy policy/ })).toHaveAttribute('href', 'https://umami.is/privacy');
+  await expect(page.locator('main a[href="https://umami.is/privacy"]')).toHaveText(/privacy policy/);
+  // and Cloudflare, in front of every request
+  expect(text).toContain('The site is hosted on GitHub Pages, behind Cloudflare.');
+  await expect(page.locator('main a[href="https://www.cloudflare.com/privacypolicy/"]')).toHaveText(/privacy policy/);
   for (const path of PAGES) {
     const html = await (await request.get(path)).text();
     expect(html, path).not.toMatch(/no analytics|no third-party requests/i);

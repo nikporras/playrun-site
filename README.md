@@ -31,14 +31,14 @@ Every push runs a Playwright suite before anything deploys. Among other things i
 
 Most checks run in Chromium; a few also run in WebKit and Firefox. If a check fails, the site does not ship.
 
-Every Monday at 07:00 UTC a separate check runs against the live site itself (`.github/workflows/live-check.yml`, `tests-live/`): every page in the sitemap loads with no console errors and with its security policy, every internal and external link answers (a rate limit is only a warning), the contact form's script answers its health check (nothing is ever sent), and robots.txt, the sitemap and llms.txt are served. It never counts as a visit in the statistics. The Quality page and the Home scoreboard read their numbers from the suite itself: the list of checks from Playwright at build time, and the results from the run that deployed the page.
+Every Monday at 07:00 UTC a separate check runs against the live site itself (`.github/workflows/live-check.yml`, `tests-live/`): every page in the sitemap loads with no console errors and with its security policy and Cloudflare's six security headers, with nothing blocked by either policy, every internal and external link answers (a rate limit is only a warning), the contact form's script answers its health check (nothing is ever sent), and robots.txt, the sitemap and llms.txt are served. It never counts as a visit in the statistics. The Quality page and the Home scoreboard read their numbers from the suite itself: the list of checks from Playwright at build time, and the results from the run that deployed the page.
 
 ## Stack
 
 - [Astro](https://astro.build), static output
 - Plain CSS with design tokens, small vanilla TypeScript, a canvas for Bug Sweep
 - [Playwright](https://playwright.dev) and axe-core for testing
-- GitHub Actions and GitHub Pages for deploys
+- GitHub Actions and GitHub Pages for deploys, with Cloudflare in front: it adds the security headers on every response (Strict-Transport-Security, X-Frame-Options, a Content-Security-Policy with `frame-ancestors 'none'` beside the stricter one in each page, Permissions-Policy, Referrer-Policy and X-Content-Type-Options), which GitHub Pages alone cannot send
 - A Google Apps Script web app behind the contact form
 - [Umami](https://umami.is) Cloud for cookieless visit statistics (the tracker served from this site, only counting on playrunqa.com, never with Do Not Track on)
 
