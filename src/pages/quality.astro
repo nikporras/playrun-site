@@ -437,8 +437,13 @@ Attachments: [screenshot or video]</pre>
     display: none;
   }
   .step.is-idle .step__idle,
-  .step.is-running .step__idle {
+  .step.is-running .step__idle,
+  .step.is-unmeasured .step__idle {
     display: block;
+  }
+  /* Not measured: neither a pass nor a fail, in grey */
+  .step.is-unmeasured .step__state {
+    color: var(--muted);
   }
   .step.is-pass .step__mark :global(.step__pass) {
     display: block;
@@ -887,13 +892,20 @@ Attachments: [screenshot or video]</pre>
       const row = document.querySelector<HTMLElement>(`[data-report-row="${id}"]`);
       const r = results.get(id);
       if (!row) continue;
-      row.querySelector('[data-report-result]')!.textContent = r ? (r.failed ? 'Fail' : 'Pass') : 'Not run';
+      row.querySelector('[data-report-result]')!.textContent = r ? (r.failed ? 'Fail' : r.unmeasured ? 'Not measured' : 'Pass') : 'Not run';
       row.querySelector('[data-report-detail]')!.textContent = r ? r.details.join('. ') : '';
-      if (r && !r.failed) pass++;
+      if (r && !r.failed && !r.unmeasured) pass++;
     }
     if (score && results.size) {
       const done = results.size === steps.length;
-      score.textContent = done ? `${pass} of ${steps.length} steps passed on your device.` : `${pass} of ${results.size} steps passed so far. ${steps.length - results.size} to go.`;
+      // (a step that could not measure on this browser is neither a pass nor a fail)
+      const unmeasured = [...results.values()].filter((r) => !r.failed && r.unmeasured).length;
+      const measured = results.size - unmeasured;
+      score.textContent = !done
+        ? `${pass} of ${results.size} steps passed so far. ${steps.length - results.size} to go.`
+        : unmeasured
+          ? `${pass} of ${measured} measured steps passed on your device, ${unmeasured} not measured.`
+          : `${pass} of ${steps.length} steps passed on your device.`;
     }
   };
 
@@ -904,18 +916,20 @@ Attachments: [screenshot or video]</pre>
     const ids: string[] = JSON.parse(step.dataset.checks ?? '[]');
     const word = step.querySelector<HTMLElement>('[data-step-word]')!;
     const out = step.querySelector<HTMLElement>('[data-step-result]')!;
-    step.classList.remove('is-idle', 'is-pass', 'is-fail');
+    step.classList.remove('is-idle', 'is-pass', 'is-fail', 'is-unmeasured');
     step.classList.add('is-running');
     word.textContent = 'Running';
     if (!reduce) await wait(320);
     let passed = 0;
     let failed = 0;
+    let unmeasured = 0;
     const details: string[] = [];
     for (const c of ids) {
       try {
         const r = await checks[c].run();
         passed += r.passed;
         failed += r.failed;
+        unmeasured += r.unmeasured ?? 0;
         details.push(r.detail);
       } catch (e) {
         // a check that throws is a failed check, not a stuck page
@@ -924,10 +938,12 @@ Attachments: [screenshot or video]</pre>
       }
     }
     step.classList.remove('is-running');
-    step.classList.add(failed ? 'is-fail' : 'is-pass');
-    word.textContent = failed ? 'Fail' : 'Pass';
+    // a fail only on a real figure over budget; nothing measured is neither a pass nor a fail
+    const state = failed ? 'fail' : unmeasured ? 'unmeasured' : 'pass';
+    step.classList.add(`is-${state}`);
+    word.textContent = { fail: 'Fail', unmeasured: 'Not measured', pass: 'Pass' }[state];
     out.textContent = `${details.join('. ')}.`;
-    results.set(id, { passed, failed, detail: details.join('. '), details });
+    results.set(id, { passed, failed, unmeasured, detail: details.join('. '), details });
     report();
     if (status) status.textContent = results.size === steps.length ? 'Every step has run. The report is at the end.' : `${results.size} of ${steps.length} steps run.`;
     if (results.size === steps.length) document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'selftest' }));
@@ -959,7 +975,7 @@ Attachments: [screenshot or video]</pre>
     results.clear();
     for (const s of steps) {
       delete s.dataset.done;
-      s.classList.remove('is-pass', 'is-fail');
+      s.classList.remove('is-pass', 'is-fail', 'is-unmeasured');
       s.classList.add('is-idle');
       s.querySelector('[data-step-word]')!.textContent = 'Not run yet';
     }
@@ -1003,7 +1019,7 @@ Attachments: [screenshot or video]</pre>
       const ms = (n: number | null) => (n === null ? NOT_REPORTED : `${n} ms`);
       const pairs: [string, string][] = [
         ['Time to first byte', ms(t.ttfb)],
-        ['First paint', ms(t.fcp)],
+        [t.paint === null ? 'First paint' : t.paintLabel, ms(t.paint)],
         ['DOM ready', ms(t.domReady)],
         ['Loaded', ms(t.loaded)],
         ['Requests', String(t.requests)],

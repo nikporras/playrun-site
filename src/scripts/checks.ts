@@ -5,7 +5,8 @@
  * answers with what passed, what failed and one line that says what it saw.
  */
 /** `value` and `of` stand in for the counts where a figure says more (a page's weight). */
-export type Result = { passed: number; failed: number; detail: string; value?: string; of?: string };
+// (unmeasured: a check that could not measure on this browser, neither a pass nor a fail)
+export type Result = { passed: number; failed: number; unmeasured?: number; detail: string; value?: string; of?: string };
 export type Check = { id: string; title: string; run: () => Promise<Result> };
 
 const routes = (): string[] => {
@@ -29,7 +30,6 @@ export const internalLinks = () => {
     .filter((h, i, arr) => arr.indexOf(h) === i);
 };
 
-/** What the Performance API knows about this load, in milliseconds and bytes. */
 /** The page fully loaded: after its load event, once the browser has written the load's end time. */
 export const pageLoaded = () =>
   new Promise<void>((resolve) => {
@@ -38,14 +38,17 @@ export const pageLoaded = () =>
     else addEventListener('load', settle, { once: true });
   });
 
+// The paint timings, by preference: first-paint where the browser reports it (Chromium), else
+// first-contentful-paint (Safari and Firefox report only that one).
+const PAINTS = ['first-paint', 'first-contentful-paint'];
 /** The first paint, waited for a moment if it has not been recorded yet (it can land after load). */
 const firstPaint = () =>
   new Promise<void>((resolve) => {
-    if (performance.getEntriesByType('paint').some((p) => p.name === 'first-contentful-paint')) return resolve();
+    if (performance.getEntriesByType('paint').some((p) => PAINTS.includes(p.name))) return resolve();
     const done = setTimeout(resolve, 1500);
     try {
       new PerformanceObserver((list, obs) => {
-        if (list.getEntries().some((p) => p.name === 'first-contentful-paint')) {
+        if (list.getEntries().some((p) => PAINTS.includes(p.name))) {
           obs.disconnect();
           clearTimeout(done);
           resolve();
@@ -58,14 +61,18 @@ const firstPaint = () =>
 
 // (a timing of 0 is one the browser has not reported: never a real figure)
 const real = (n: number | undefined) => (n && n > 0 ? Math.round(n) : null);
+/** What the Performance API knows about this load, in milliseconds and bytes. */
 export const timings = () => {
   const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
-  const paint = performance.getEntriesByType('paint').find((p) => p.name === 'first-contentful-paint');
+  const paints = performance.getEntriesByType('paint');
+  const paint = PAINTS.map((name) => paints.find((p) => p.name === name)).find((p) => p && p.startTime > 0);
   const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
   const bytes = resources.reduce((n, r) => n + (r.transferSize || 0), 0) + (nav?.transferSize || 0);
   return {
     ttfb: real(nav?.responseStart),
-    fcp: real(paint?.startTime),
+    // the first paint and what it is called: First paint, or First contentful paint
+    paint: real(paint?.startTime),
+    paintLabel: paint?.name === 'first-paint' ? 'First paint' : 'First contentful paint',
     domReady: real(nav?.domContentLoadedEventEnd),
     loaded: real(nav?.loadEventEnd),
     requests: resources.length + 1,
@@ -212,21 +219,15 @@ export const checks: Record<string, Check> = {
       await firstPaint();
       const t = timings();
       const problems: string[] = [];
-      // a pass needs a figure to rest on: no first paint reported, no pass
-      if (t.fcp === null) problems.push(`first paint ${NOT_REPORTED}`);
-      else if (t.fcp > 2500) problems.push(`first paint at ${ms(t.fcp)}`);
+      // a fail only on a real figure over its budget
+      if (t.paint !== null && t.paint > 2500) problems.push(`${t.paintLabel.toLowerCase()} at ${ms(t.paint)}`);
       if (t.bytes > 1.5 * 1024 * 1024) problems.push(`${kb(t.bytes)} fetched`);
       if (t.requests > 80) problems.push(`${t.requests} requests`);
-      const n = problems.length;
-      return {
-        passed: n ? 0 : 1,
-        failed: n ? 1 : 0,
-        detail: n
-          ? t.fcp === null
-            ? `Cannot pass without timings: ${problems.join(', ')}; loaded ${t.loaded === null ? NOT_REPORTED : `in ${ms(t.loaded)}`}`
-            : `Slow: ${problems.join(', ')}`
-          : `First paint at ${ms(t.fcp)}, ${t.loaded === null ? `load time ${NOT_REPORTED}` : `loaded in ${ms(t.loaded)}`}, ${t.requests} requests, ${kb(t.bytes)}`,
-      };
+      const loaded = t.loaded === null ? `load time ${NOT_REPORTED}` : `loaded in ${ms(t.loaded)}`;
+      if (problems.length) return { passed: 0, failed: 1, detail: `Slow: ${problems.join(', ')}` };
+      // no paint timing at all: not measured, neither a pass nor a fail
+      if (t.paint === null) return { passed: 0, failed: 0, unmeasured: 1, detail: `Not measured: paint timing ${NOT_REPORTED}; ${loaded}, ${t.requests} requests, ${kb(t.bytes)}` };
+      return { passed: 1, failed: 0, detail: `${t.paintLabel} at ${ms(t.paint)}, ${loaded}, ${t.requests} requests, ${kb(t.bytes)}` };
     },
   },
 };

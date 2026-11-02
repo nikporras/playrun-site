@@ -205,7 +205,7 @@ test.describe('Performance under reduced motion', () => {
     const page = await context.newPage();
     if (setup) await page.addInitScript(setup);
     await page.goto('/quality/');
-    await expect(page.locator('.step.is-pass, .step.is-fail')).toHaveCount(5, { timeout: 15_000 });
+    await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 15_000 });
     const step = page.locator('#step-performance');
     return { context, page, step, detail: (await step.locator('[data-step-result]').textContent()) ?? '' };
   };
@@ -222,19 +222,45 @@ test.describe('Performance under reduced motion', () => {
     await context.close();
   });
 
-  test('a browser that reports no first paint: Performance says so and does not pass', async ({ browser }) => {
+  test('Safari-like (no first-paint, a first-contentful-paint): Performance passes on it, named First contentful paint', async ({ browser }) => {
     const { context, step, detail } = await run(browser, () => {
       const get = performance.getEntriesByType.bind(performance);
+      performance.getEntriesByType = ((type: string) => (type === 'paint' ? get(type).filter((p) => p.name !== 'first-paint') : get(type))) as typeof performance.getEntriesByType;
+    });
+    await expect(step).toHaveClass(/is-pass/);
+    expect(detail).toMatch(/^First contentful paint at \d+(ms|\.\d+s|s), loaded in /);
+    await context.close();
+  });
+
+  test('no paint timings at all: Performance is NOT MEASURED in grey, neither a pass nor a fail, and the report counts the measured steps', async ({ browser }) => {
+    const { context, page, step, detail } = await run(browser, () => {
+      const get = performance.getEntriesByType.bind(performance);
       performance.getEntriesByType = ((type: string) => (type === 'paint' ? [] : get(type))) as typeof performance.getEntriesByType;
-      // (and no observer to hear of it later)
+      // (and no observer to hear of one later)
       (window as unknown as { PerformanceObserver: unknown }).PerformanceObserver = class {
         observe() {}
         disconnect() {}
       };
     });
+    await expect(step).toHaveClass(/is-unmeasured/);
+    await expect(step).not.toHaveClass(/is-pass|is-fail/);
+    await expect(step.locator('[data-step-word]')).toHaveText('Not measured');
+    await expect(step.locator('.step__state')).toHaveCSS('text-transform', 'uppercase');
+    expect(await step.locator('.step__state').evaluate((el) => getComputedStyle(el).color), 'grey').toBe('rgb(170, 179, 197)');
+    expect(detail).toContain('paint timing not reported by this browser');
+    expect(detail).not.toMatch(/n\/a|0ms/);
+    await expect(page.locator('[data-report-row="performance"] [data-report-result]')).toHaveText('Not measured');
+    await expect(page.locator('[data-report-score]')).toHaveText('4 of 4 measured steps passed on your device, 1 not measured.');
+    await context.close();
+  });
+
+  test('a slow real figure fails: a first paint over its budget', async ({ browser }) => {
+    const { context, step, detail } = await run(browser, () => {
+      const get = performance.getEntriesByType.bind(performance);
+      performance.getEntriesByType = ((type: string) => (type === 'paint' ? [{ name: 'first-paint', startTime: 4000, entryType: 'paint', duration: 0 }] : get(type))) as typeof performance.getEntriesByType;
+    });
     await expect(step).toHaveClass(/is-fail/);
-    expect(detail).toContain('first paint not reported by this browser');
-    expect(detail).not.toMatch(/n\/a|\b0ms/);
+    expect(detail).toBe('Slow: first paint at 4.0s.');
     await context.close();
   });
 

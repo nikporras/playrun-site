@@ -28,5 +28,9 @@ export default defineConfig({
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
       },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /webkit\.spec\.ts/ },
+    // (Safari's engine, for what only it does differently: tests/webkit.spec.ts)
+    { name: 'webkit', use: { ...devices['Desktop Safari'] }, testMatch: /webkit\.spec\.ts/ },
+  ],
 });

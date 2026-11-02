@@ -60,6 +60,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'links.spec.ts': ['Links', 'Links that leave the site open a new tab and say so. Internal links stay.'],
   'motion.spec.ts': ['The Motion switch', 'Follows your device setting until you choose. Your choice is remembered, and turning Motion on works even when your device asks for less motion.'],
   'validity.spec.ts': ['Valid HTML', 'Every page as the server sends it passes html-validate, offline: elements, content, attributes, ids and the document.'],
+  'webkit.spec.ts': ['In WebKit', "Safari's engine: the Quality steps run, and Performance passes on the paint timing it reports or says it is not measured, never a fail for a missing figure."],
   'weight.spec.ts': ['Page weight', 'Each page under its budget on a first visit with nothing cached (Home 250 KB): HTML, CSS, script, fonts and images.'],
   'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, stacked level headers, labels that read, no stale facts, and passes axe.'],
   'polish.spec.ts': ['The finish', 'The 404 kept out of search, a commit date for every page in the sitemap, no broken or doubled attribute in any page.'],
