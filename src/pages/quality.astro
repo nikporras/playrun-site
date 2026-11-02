@@ -36,6 +36,20 @@ const openTools = (b: Browser): How => ({
 const reload = (b: Browser) => (b === 'safari' ? 'Cmd+R' : 'Ctrl+R (Cmd+R on a Mac)');
 // (the phones' Reduce motion line, the same ending on both)
 const motionLine = (lead: string) => `${lead}come back: the games, the curtain and every animation stop, unless you've turned Motion on in the header.`;
+// Each step's accent (its border, number and title) and its 8 by 8 pixel icon.
+const looks: Record<string, { accent: string; icon: string[] }> = {
+  // a puff of smoke, two small ones rising from it
+  smoke: { accent: 'var(--accent-sky)', icon: ['.....#..', '....#.#.', '.....#..', '..##....', '.####...', '######..', '#######.', '.######.'] },
+  // a phone
+  responsive: { accent: 'var(--pr-cyan)', icon: ['.######.', '.#....#.', '.#....#.', '.#....#.', '.#....#.', '.######.', '.###.##.', '.######.'] },
+  // an eye
+  a11y: { accent: 'var(--pr-blue-ink)', icon: ['........', '..####..', '.#....#.', '#..##..#', '#..##..#', '.#....#.', '..####..', '........'] },
+  // a chain link
+  links: { accent: 'var(--accent-steel)', icon: ['....###.', '...#...#', '...#..#.', '.###.#..', '#..#.##.', '.#..#...', '#...#...', '.###....'] },
+  // a lightning bolt
+  performance: { accent: 'var(--accent-pink)', icon: ['....###.', '...###..', '..###...', '.######.', '...###..', '..###...', '.##.....', '#.......'] },
+};
+const iconPath = (rows: string[]) => rows.flatMap((row, y) => [...row].map((c, x) => (c === '#' ? `M${x} ${y}h1v1H${x}z` : ''))).join('');
 const steps: { id: string; title: string; ask: string; checks: string[]; computer: (b: Browser) => How[]; iphone: string[]; android: string[] }[] = [
   {
     id: 'smoke',
@@ -188,10 +202,15 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
         <ol class="steps deck__stage">
       {
         steps.map((s, i) => (
-          <li class="step is-idle deck__card" id={`step-${s.id}`} data-step={s.id} data-checks={JSON.stringify(s.checks)} data-enter style={`--enter-delay: ${i * 60}ms; --i: ${i}; --tilt: ${[-2.5, 2, -1.5, 2.5, -2][i]}deg`}>
+          <li class="step is-idle deck__card" id={`step-${s.id}`} data-step={s.id} data-checks={JSON.stringify(s.checks)} data-enter style={`--enter-delay: ${i * 60}ms; --i: ${i}; --tilt: ${[-2.5, 2, -1.5, 2.5, -2][i]}deg; --step-accent: ${looks[s.id].accent}`}>
             <div class="step__head">
               <p class="step__num">Step {i + 1}</p>
-              <h3 class="step__title">{s.title}</h3>
+              <h3 class="step__title">
+                <svg class="step__icon" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+                  <path d={iconPath(looks[s.id].icon)} fill="currentColor" />
+                </svg>
+                {s.title}
+              </h3>
               <p class="step__ask">{s.ask}</p>
             </div>
             <div class="step__run">
@@ -361,10 +380,11 @@ Attachments: [screenshot or video]</pre>
     --ink-2: var(--accent-2);
     --sel-bg: var(--accent);
     --sel-ink: var(--accent-ink);
-    border: 2px solid var(--surface-2);
-    border-top: 0.25rem solid var(--accent);
+    border: 2px solid color-mix(in srgb, var(--step-accent, var(--surface-2)) 35%, var(--pr-navy));
+    border-top: 0.25rem solid var(--step-accent, var(--accent-2));
   }
   .step__num {
+    color: var(--step-accent, var(--pr-light));
     font-family: var(--font-display);
     font-size: 0.9375rem;
     letter-spacing: 0.12em;
@@ -372,8 +392,17 @@ Attachments: [screenshot or video]</pre>
     max-width: none;
   }
   .step__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
     font-size: 2rem;
     margin-top: var(--s-1);
+    color: var(--step-accent, var(--pr-light));
+  }
+  .step__icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex: none;
   }
   .step__ask {
     font-family: var(--font-display);

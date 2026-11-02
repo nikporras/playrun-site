@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 
 /**
  * The Quality page as a guided test run: five steps that run live on the page with the shared
@@ -142,3 +143,58 @@ test.describe('Quality, the guided test run', () => {
     await context.close();
   });
 });
+
+for (const [width, height] of [
+  [1440, 900],
+  [768, 1024],
+  [375, 812],
+  [320, 640],
+] as const) {
+  test(`each step its own accent and pixel icon (${width}x${height}): five accents on the border, the number and the title, none like a pass or a fail, every text AA (axe)`, { tag: ['@a11y'] }, async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto('/quality/');
+    const looks = await page.locator('.step').evaluateAll((els) =>
+      els.map((el) => {
+        const cs = (sel: string) => getComputedStyle(el.querySelector(sel)!);
+        const lum = (c: string) => {
+          const [r, g, b] = (c.match(/[\d.]+/g) ?? []).slice(0, 3).map((v) => {
+            const k = Number(v) / 255;
+            return k <= 0.03928 ? k / 12.92 : ((k + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        };
+        const ratio = (a: string, b: string) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+        const bg = getComputedStyle(el).backgroundColor;
+        const icon = el.querySelector('.step__title svg.step__icon');
+        return {
+          border: getComputedStyle(el).borderTopColor,
+          num: cs('.step__num').color,
+          title: cs('.step__title').color,
+          icon: icon ? { hidden: icon.getAttribute('aria-hidden'), path: icon.querySelector('path')!.getAttribute('d'), color: getComputedStyle(icon).color, w: icon.getBoundingClientRect().width } : null,
+          numRatio: ratio(cs('.step__num').color, bg),
+        };
+      }),
+    );
+    const accents = ['rgb(158, 210, 226)', 'rgb(86, 189, 218)', 'rgb(159, 178, 228)', 'rgb(84, 148, 198)', 'rgb(255, 95, 162)'];
+    expect(looks.map((l) => l.border), 'sky, cyan, periwinkle, steel, pink').toEqual(accents);
+    for (const [i, l] of looks.entries()) {
+      expect(l.num).toBe(accents[i]);
+      expect(l.title).toBe(accents[i]);
+      expect(l.icon, 'a pixel icon').not.toBeNull();
+      expect(l.icon!.hidden).toBe('true');
+      expect(l.icon!.color).toBe(accents[i]);
+      expect(l.icon!.w).toBeGreaterThanOrEqual(16);
+      expect(l.numRatio, 'the small number AA on the card').toBeGreaterThanOrEqual(4.5);
+      // never the pass green or the fail light
+      expect(['rgb(103, 193, 140)', 'rgb(229, 231, 234)']).not.toContain(l.border);
+    }
+    expect(new Set(looks.map((l) => l.icon!.path)).size, 'five different icons').toBe(5);
+    // the marks keep their colours: a pass is green
+    await expect(page.locator('.step.is-pass')).toHaveCount(5, { timeout: 15_000 });
+    expect(await page.locator('.step__mark').first().evaluate((el) => getComputedStyle(el).color)).toBe('rgb(103, 193, 140)');
+    const results = await new AxeBuilder({ page }).include('.plan').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
+    await context.close();
+  });
+}
