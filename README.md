@@ -38,6 +38,7 @@ Most checks run in Chromium; a few also run in WebKit and Firefox. If a check fa
 - [Playwright](https://playwright.dev) and axe-core for testing
 - GitHub Actions and GitHub Pages for deploys
 - A Google Apps Script web app behind the contact form
+- [Umami](https://umami.is) Cloud for cookieless visit statistics (the tracker served from this site, only counting on playrunqa.com, never with Do Not Track on)
 
 ## Run it locally
 

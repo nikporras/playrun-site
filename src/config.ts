@@ -18,6 +18,16 @@ export const contact = {
 
 // The contact form posts a JSON string to this Google Apps Script web app (text/plain body, so
 // there is no CORS preflight). It answers {ok:true} or {ok:false, errors:[...]}.
+// Visit statistics: Umami Cloud, cookieless. The tracker is served from this site (public/umami.js,
+// refreshed by scripts/umami.mjs) and reports to Umami's gateway, only on the live domain and never
+// with Do Not Track on.
+export const analytics = {
+  websiteId: '1b852413-81ed-4ebf-bbfc-fd63237d3cc4',
+  src: '/umami.js',
+  host: 'https://gateway.umami.is',
+  domains: 'playrunqa.com',
+};
+
 export const contactEndpoint =
   'https://script.google.com/macros/s/AKfycbxuVMg4V94B0QBAu-bLOox8zFTYRgZgWnPRiilkS7Sl0qt7w_R8dYw3gts3sy6Mk5CYMQ/exec';
 

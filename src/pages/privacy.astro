@@ -7,7 +7,7 @@ import { contact, legal } from '../config';
 <LegalPage
   title="Privacy notice"
   kicker="Privacy"
-  description="How PlayRun handles the details you send through the contact form, what the site stores in your browser, and your rights under UK GDPR."
+  description="How PlayRun handles the details you send through the contact form, the anonymous visit statistics, what the site stores in your browser, and your rights."
   lead="This site collects very little. Here is exactly what, why, where it goes, and how long I keep it."
   updated="2026-11-02"
 >
@@ -37,8 +37,30 @@ import { contact, legal } from '../config';
     <h2>Hosting</h2>
     <p>
       The site is hosted on GitHub Pages. GitHub may log the IP address of each request for security, under its own
-      privacy statement. The fonts are served from this site. There are no third-party requests, apart from the
-      contact form, which is sent to my Google Workspace. There are no analytics and no cookies.
+      privacy statement. The fonts and every script are served from this site. Two services outside it receive
+      anything: the contact form, which is sent to my Google Workspace, and the visit statistics below, which are sent
+      to Umami. There are no cookies.
+    </p>
+  </section>
+
+  <section class="row">
+    <h2>Visit statistics</h2>
+    <p>
+      I use Umami for anonymous, cookieless visit statistics. It sets no cookies and stores nothing in your browser.
+      For each page you view it receives the page's address and title, the site you came from, your browser, operating
+      system and type of device, your screen size and language, and your country, which Umami works out from your IP
+      address without keeping the address.
+    </p>
+    <p>
+      It also counts a few clicks, with no personal details and nothing you type: Get in touch and email links,
+      LinkedIn links, a game's store link (with the game's name), See every game I've tested, a message sent through
+      the form or the email way round being offered, starting and finishing Bug Sweep, running the Quality steps and
+      the device you pick there, tracking or ignoring the glitch, unlocking an achievement, and the Motion switch.
+    </p>
+    <p>
+      None of this identifies you. If your browser sends Do Not Track, nothing is sent at all. The lawful basis is my
+      legitimate interest in knowing which pages people read. Umami processes the statistics on my behalf under its{' '}
+      <ExternalLink href="https://umami.is/privacy">privacy policy</ExternalLink>.
     </p>
   </section>
 
@@ -69,6 +91,7 @@ import { contact, legal } from '../config';
     <h2>How long I keep it</h2>
     <ul>
       <li>Messages in my records are deleted after 24 months.</li>
+      <li>Visit statistics stay in my Umami account for as long as its plan keeps them. They hold nothing that identifies you.</li>
       <li>Nothing else is collected, so there is nothing else to keep.</li>
     </ul>
   </section>

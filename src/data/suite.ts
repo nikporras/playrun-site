@@ -51,6 +51,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'a11y.spec.ts': ['Accessibility everywhere', 'axe on every page at desktop and phone widths, and on what opens on demand: the scoreboard, a toast, the glitch card, Bug Sweep and the Quality steps for a phone.'],
   'about.spec.ts': ['The About page', 'The facts and the questions and answers, built from the data, in the nav and the footer, with nothing hidden at first.'],
   'brand.spec.ts': ['Brand assets', 'Both typefaces load, the logo renders, favicon and Open Graph image present.'],
+  'analytics.spec.ts': ['Visit statistics', 'Umami on every page from the site itself, reporting only to its gateway on the live domain, never with Do Not Track, never from the suite.'],
   'bugs.spec.ts': ['Bugs off the text', 'Every bug sits in empty field on five pages at four widths, all along its walk.'],
   'contact.spec.ts': ['Contact form', 'Validation, every answer the script can give, and the mailto fallback.'],
   'credits.spec.ts': ['Credits', 'Every typeface, tool and sprite is credited, and the page passes axe.'],

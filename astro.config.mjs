@@ -61,7 +61,9 @@ const cspDirectives = /** @type {any[]} */ ([
   "default-src 'self'",
   "img-src 'self' data:",
   "font-src 'self'",
-  "connect-src 'self' https://script.google.com https://script.googleusercontent.com",
+  // (the contact form's Apps Script, and Umami's gateway for the visit statistics; the tracker
+  // itself is served from this site, so script-src stays 'self')
+  "connect-src 'self' https://script.google.com https://script.googleusercontent.com https://gateway.umami.is",
   "form-action 'self' mailto:",
   "base-uri 'self'",
   "object-src 'none'",

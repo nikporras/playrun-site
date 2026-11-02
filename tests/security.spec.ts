@@ -12,7 +12,7 @@ const POLICY = [
   "default-src 'self'",
   "img-src 'self' data:",
   "font-src 'self'",
-  "connect-src 'self' https://script.google.com https://script.googleusercontent.com",
+  "connect-src 'self' https://script.google.com https://script.googleusercontent.com https://gateway.umami.is",
   "form-action 'self' mailto:",
   "base-uri 'self'",
   "object-src 'none'",

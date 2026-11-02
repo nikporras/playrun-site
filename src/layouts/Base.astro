@@ -13,7 +13,7 @@ import portrait from '../assets/photos/nicolas.png';
 import ogCard from '../assets/og-card.png';
 import headScript from '../scripts/head-inline.js?raw';
 import { graph, type PageKind } from '../data/schema';
-import { contact, site } from '../config';
+import { analytics, contact, site } from '../config';
 
 interface Props {
   title: string;
@@ -100,6 +100,16 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
     <link rel="preload" href={montserrat400} as="font" type="font/woff2" crossorigin />
 
     <script is:inline set:html={headScript} />
+    <!-- Visit statistics (Umami, cookieless): deferred, so nothing waits for it; only on the live
+         domain, and not at all with Do Not Track on -->
+    <script
+      is:inline
+      defer
+      src={analytics.src}
+      data-website-id={analytics.websiteId}
+      data-host-url={analytics.host}
+      data-domains={analytics.domains}
+      data-do-not-track="true"></script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>

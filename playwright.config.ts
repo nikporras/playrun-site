@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const port = 4322;
+// Umami's hosts, never reached from a test
+const UMAMI = ['cloud.umami.is', 'gateway.umami.is', 'api-gateway.umami.dev'];
 // Point the suite at a running server (the dev server, say) with PLAYWRIGHT_BASE_URL; without it
 // the suite builds the site and serves the build, as CI does.
 const external = process.env.PLAYWRIGHT_BASE_URL;
@@ -29,10 +31,16 @@ export default defineConfig({
         timeout: 180_000,
       },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /(webkit|firefox)\.spec\.ts/ },
+    // (no browser in the suite can reach Umami: its hosts do not resolve; the tracker also counts
+    // only on playrunqa.com, which the suite never is)
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], launchOptions: { args: [`--host-resolver-rules=${UMAMI.map((h) => `MAP ${h} ~NOTFOUND`).join(', ')}`] } },
+      testIgnore: /(webkit|firefox)\.spec\.ts/,
+    },
     // (Safari's engine, for what only it does differently: tests/webkit.spec.ts)
     { name: 'webkit', use: { ...devices['Desktop Safari'] }, testMatch: /webkit\.spec\.ts/ },
     // (and Firefox's: tests/firefox.spec.ts)
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testMatch: /firefox\.spec\.ts/ },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'], launchOptions: { firefoxUserPrefs: { 'network.dns.localDomains': UMAMI.join(',') } } }, testMatch: /firefox\.spec\.ts/ },
   ],
 });
