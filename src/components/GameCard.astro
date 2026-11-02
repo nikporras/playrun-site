@@ -134,9 +134,11 @@ const store = p.data.store ?? 'Steam';
   }
   .card__top {
     display: flex;
+    /* (on the narrowest phones the year and status go under the logo rather than past the edge) */
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: flex-start;
-    gap: var(--s-2);
+    gap: var(--s-1) var(--s-2);
     margin-bottom: var(--s-3);
   }
   .card__logo {
