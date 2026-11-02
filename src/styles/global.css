@@ -742,7 +742,14 @@ html:not(.games) .bug {
   --bug-leg: var(--pr-blue);
   --bug-eye: var(--pr-cyan);
 }
-/* The tap hint on a touch screen: a small pixel label beside the first bug, light on navy. */
+/* The box a label rides in: over the bug, beside it in the page, following its walk (games.ts). */
+.bug__anchor {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+}
+/* The hint (TAP on a touch screen, CLICK ME with a mouse): a small pixel label beside the first
+   bug, light on navy. */
 .bug__tap {
   position: absolute;
   left: 100%;
@@ -764,6 +771,93 @@ html:not(.games) .bug {
   left: auto;
   right: 100%;
   translate: -0.25rem -50%;
+}
+.bug__tap--above,
+.bug__tap--below {
+  left: 50%;
+  translate: -50% 0;
+}
+.bug__tap--above {
+  top: auto;
+  bottom: 100%;
+}
+.bug__tap--below {
+  top: 100%;
+}
+/* The speech bubble a bug says when the mouse is over it: the hint's look, a little larger, with a
+   pixel tail toward the bug. It pops in (two steps), or simply shows with motion off. */
+.bug__say {
+  position: absolute;
+  z-index: 1;
+  padding: 0.375rem 0.5rem;
+  background: var(--pr-light);
+  color: var(--pr-navy);
+  outline: 2px solid var(--pr-navy);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: say-pop 0.16s steps(2, jump-none) both;
+}
+.bug__say::after {
+  content: '';
+  position: absolute;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--pr-light);
+  box-shadow: 0 0 0 2px var(--pr-navy);
+  clip-path: inset(0 -2px -2px 0);
+}
+.bug__say--above {
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  translate: -50% 0;
+}
+.bug__say--above::after {
+  top: 100%;
+  left: calc(50% - 0.25rem);
+  clip-path: inset(0 -2px -2px -2px);
+}
+.bug__say--below {
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  translate: -50% 0;
+}
+.bug__say--below::after {
+  bottom: 100%;
+  left: calc(50% - 0.25rem);
+  clip-path: inset(-2px -2px 0 -2px);
+}
+.bug__say--right {
+  left: calc(100% + 0.5rem);
+  top: 50%;
+  translate: 0 -50%;
+}
+.bug__say--right::after {
+  right: 100%;
+  top: calc(50% - 0.25rem);
+  clip-path: inset(-2px 0 -2px -2px);
+}
+.bug__say--left {
+  right: calc(100% + 0.5rem);
+  top: 50%;
+  translate: 0 -50%;
+}
+.bug__say--left::after {
+  left: 100%;
+  top: calc(50% - 0.25rem);
+  clip-path: inset(-2px -2px -2px 0);
+}
+@keyframes say-pop {
+  from {
+    opacity: 0;
+    scale: 0.8;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
 }
 .bug__tap {
   animation: tap-blink 1s steps(2, jump-none) infinite;
@@ -809,6 +903,9 @@ html:not(.games) .bug {
 @media (hover: hover) and (pointer: fine) {
   .bug:hover .bug__body {
     transform: scale(1.15);
+  }
+  .bug:hover {
+    animation-play-state: paused;
   }
   /* Over a bug the pointer is the net; everywhere else it is the normal cursor */
   .games .bug {

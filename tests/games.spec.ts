@@ -1,4 +1,4 @@
-import { test, expect, type Locator } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 
 // A bug paces while the games are on; a click waits for a still target, so the walk is paused first.
 const still = (bug: Locator) => bug.evaluate((el) => el.getAnimations().forEach((a) => a.pause()));
@@ -276,7 +276,7 @@ test.describe('The tap hint', () => {
     await expect(hint).toHaveText('TAP');
     await expect(hint).toHaveAttribute('aria-hidden', 'true');
     // beside a bug that is on screen, and inside the screen
-    const bug = hint.locator('xpath=..');
+    const bug = hint.locator('xpath=../preceding-sibling::button[1]');
     await expect(bug).toHaveAttribute('data-bug', /.+/);
     const h = (await hint.boundingBox())!;
     expect(h.x).toBeGreaterThanOrEqual(0);
@@ -297,22 +297,15 @@ test.describe('The tap hint', () => {
     await page.goto('/');
     const hint = page.locator('.bug__tap');
     await expect(hint).toHaveCount(1, { timeout: 5000 });
-    const bug = hint.locator('xpath=..');
+    const bug = hint.locator('xpath=../preceding-sibling::button[1]');
     await bug.evaluate((b) => b.getAnimations().forEach((a) => a.pause()));
     await bug.tap();
     await expect(hint).toHaveCount(0);
     await context.close();
   });
 
-  test('no hint with a mouse, with motion off, or with the games off', async ({ browser }) => {
-    // a mouse
-    const desk = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-    let page = await desk.newPage();
-    await page.goto('/');
-    await page.waitForTimeout(2500);
-    await expect(page.locator('.bug__tap')).toHaveCount(0);
-    await desk.close();
-    // motion off, games off
+  test('no hint with motion off, or with the games off', async ({ browser }) => {
+    let page: Page;
     for (const store of [{ 'playrun.motion': 'off' }, { 'playrun.games': JSON.stringify({ on: false, bugs: [], achievements: [] }) }]) {
       const context = await browser.newContext(phone);
       page = await context.newPage();
@@ -322,6 +315,153 @@ test.describe('The tap hint', () => {
       await expect(page.locator('.bug__tap')).toHaveCount(0);
       await context.close();
     }
+  });
+});
+
+// What a hint or a bubble must never cover: text, tiles and controls, the header, the HUD, the
+// scoreboard and the bottom bar; and it stays inside the screen and its level (which clips it).
+const coversNothing = (label: Locator) =>
+  label.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const out: string[] = [];
+    if (r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight) out.push('off screen');
+    const level = el.closest('.level')!.getBoundingClientRect();
+    if (r.left < level.left || r.top < level.top || r.right > level.right || r.bottom > level.bottom) out.push('clipped by its level');
+    const sel =
+      'header, #hud, #dock, .tabbar, main :is(p, li, dt, dd, h1, h2, h3, h4, label, input, textarea, button:not(.bug), a, img, figure, picture, svg:not([aria-hidden="true"]), .flag, .card, .row, .panel, .stat, .drum, .ticker, .step, .tile, form, .hero__figure)';
+    for (const o of document.querySelectorAll<HTMLElement>(sel)) {
+      if (o.closest('.bug') || !o.getClientRects().length || getComputedStyle(o).visibility === 'hidden') continue;
+      const b = o.getBoundingClientRect();
+      if (r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top) out.push(`${o.tagName}.${String(o.className).split(' ')[0]}`);
+    }
+    return out;
+  });
+
+const LINES = ['Not a bug, a feature', 'Works on my machine', "Can't reproduce?", 'Severity: cosmetic', "Won't fix", 'Steps to reproduce: catch me'];
+
+test.describe('The click hint and the speech bubble, with a mouse', () => {
+  test('at 1440px with a mouse, CLICK ME sits beside the first bug on screen, in the TAP style, covering nothing, once a visit, gone after a catch', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    const hint = page.locator('.bug__tap');
+    await expect(hint).toHaveCount(1, { timeout: 5000 });
+    await expect(hint).toHaveText('CLICK ME');
+    await expect(hint).toHaveAttribute('aria-hidden', 'true');
+    const bug = hint.locator('xpath=../preceding-sibling::button[1]');
+    await expect(bug).toHaveAccessibleName('Catch this bug');
+    expect(await coversNothing(hint)).toEqual([]);
+    // the same look as TAP: the light pixel label with a navy edge, in the display face, blinking
+    const look = await hint.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { bg: cs.backgroundColor, font: cs.fontFamily, blink: el.getAnimations().map((a) => (a as CSSAnimation).animationName) };
+    });
+    expect(look.bg).toBe('rgb(229, 231, 234)');
+    expect(look.font).toMatch(/Pixel Operator/);
+    expect(look.blink).toEqual(['tap-blink']);
+    // it walks with the bug: the same distance from it a second later
+    const gap = () =>
+      hint.evaluate((el) => {
+        const h = el.getBoundingClientRect();
+        const b = el.parentElement!.previousElementSibling!.getBoundingClientRect();
+        return [Math.round(h.left - b.left), Math.round(h.top - b.top)];
+      });
+    const before = await gap();
+    await page.waitForTimeout(1000);
+    const after = await gap();
+    expect(Math.abs(after[0] - before[0]) + Math.abs(after[1] - before[1])).toBeLessThanOrEqual(2);
+    // a catch takes it away at once, and it does not come back this visit
+    await bug.evaluate((b) => b.getAnimations().forEach((a) => a.pause()));
+    await bug.click();
+    await expect(hint).toHaveCount(0);
+    await page.goto('/skills/');
+    await page.waitForTimeout(2000);
+    await expect(page.locator('.bug__tap')).toHaveCount(0);
+  });
+
+  test('at 1440px CLICK ME also goes by itself after five seconds', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await expect(page.locator('.bug__tap')).toHaveCount(1, { timeout: 5000 });
+    await expect(page.locator('.bug__tap')).toHaveCount(0, { timeout: 7000 });
+  });
+
+  test('at 1440px hovering a bug shows a pixel speech bubble: decorative, covering nothing, every line once before any repeats, gone when the pointer leaves or the bug is caught', async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.addInitScript(() => sessionStorage.setItem('playrun.taphint', 'shown'));
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto('/skills/');
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    const bugs = page.locator('.bug:not([hidden])');
+    const n = await bugs.count();
+    expect(n).toBeGreaterThan(1);
+    const said: string[] = [];
+    const say = page.locator('.bug__say');
+    // every bug on the page, near an edge or not: the bubble flips to stay on screen and off the text
+    for (let round = 0; said.length < LINES.length * 2 && round < 60; round++) {
+      const bug = bugs.nth(round % n);
+      await bug.evaluate((b) => {
+        b.getAnimations().forEach((a) => a.pause());
+        b.scrollIntoView({ block: 'center' });
+      });
+      await page.waitForTimeout(150);
+      await page.mouse.move(2, 2);
+      await bug.hover();
+      // (when no side is clear the bubble does not show at all: then this bug says nothing)
+      if ((await say.count()) === 0) continue;
+      await expect(say).toHaveCount(1);
+      await expect(say).toHaveAttribute('aria-hidden', 'true');
+      // outside the button (its name stays its own), in a box beside it, not focusable
+      expect(await say.evaluate((el) => !el.closest('button') && el.parentElement!.previousElementSibling === document.querySelector('.bug:hover') && el.tabIndex < 0 && !el.querySelector('*'))).toBe(true);
+      await expect(bug).toHaveAccessibleName('Catch this bug');
+      expect(await coversNothing(say), await say.innerText()).toEqual([]);
+      said.push(await say.innerText());
+      // the pointer leaves: gone
+      await page.mouse.move(2, 2);
+      await expect(say).toHaveCount(0);
+    }
+    // six lines, none twice until all six had been said; then the next six again
+    expect(new Set(said.slice(0, 6))).toEqual(new Set(LINES));
+    expect(new Set(said.slice(6, 12))).toEqual(new Set(LINES));
+    // a catch takes it away
+    const bug = bugs.first();
+    await bug.evaluate((b) => b.scrollIntoView({ block: 'center' }));
+    await bug.hover();
+    await bug.click();
+    await expect(say).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
+  test('at 1440px with motion off the bubble shows still, and there is no CLICK ME', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
+    await page.goto('/skills/');
+    await page.waitForTimeout(2500);
+    await expect(page.locator('.bug__tap')).toHaveCount(0);
+    const bug = page.locator('.bug:not([hidden])').first();
+    await bug.evaluate((b) => b.scrollIntoView({ block: 'center' }));
+    await bug.hover();
+    const say = page.locator('.bug__say');
+    await expect(say).toHaveCount(1);
+    expect(await say.evaluate((el) => el.getAnimations().length)).toBe(0);
+    expect(await say.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+  });
+
+  test('at 375px on a touch screen: TAP, never CLICK ME, and no speech bubble on a tap', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 375, height: 780 }, hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    await page.goto('/');
+    const hint = page.locator('.bug__tap');
+    await expect(hint).toHaveCount(1, { timeout: 5000 });
+    await expect(hint).toHaveText('TAP');
+    expect(await coversNothing(hint)).toEqual([]);
+    const bug = hint.locator('xpath=../preceding-sibling::button[1]');
+    await bug.evaluate((b) => b.getAnimations().forEach((a) => a.pause()));
+    await bug.tap();
+    await page.waitForTimeout(300);
+    await expect(page.locator('.bug__say')).toHaveCount(0);
+    await context.close();
   });
 });
 

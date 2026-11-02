@@ -223,10 +223,54 @@ export function startGames() {
     }, CATCH_MS);
   });
 
-  // The tap hint, on a touch screen: a small pixel TAP beside the first bug that comes on screen,
-  // once a visit, until a bug is caught or for five seconds. Not with the games off or motion off.
-  // Decorative: the bug is already a button named for what it does.
+  // A label beside a bug (the hint, the speech bubble) goes where it covers nothing: no text, no
+  // tile, no control, not the header, the HUD, the scoreboard or the bottom bar, and inside the
+  // screen and the bug's level. The sides are tried in turn (beside the bug first, flipping away from a screen edge);
+  // when none is clear the label does not show.
+  const CLEAR_OF =
+    'header, #hud, #dock, .tabbar, main :is(p, li, dt, dd, h1, h2, h3, h4, label, input, textarea, button:not(.bug), a, img, figure, picture, svg:not([aria-hidden="true"]), .flag, .card, .row, .panel, .stat, .drum, .ticker, .step, .tile, form, .hero__figure)';
+  // The label is not inside the bug's button (its words would not match the button's name): it
+  // sits in an anchor beside it, a box over the bug that follows its walk for as long as it shows.
+  const attach = (label: HTMLElement, bug: HTMLElement) => {
+    const anchor = document.createElement('span');
+    anchor.className = 'bug__anchor';
+    anchor.setAttribute('aria-hidden', 'true');
+    Object.assign(anchor.style, { left: `${bug.offsetLeft}px`, top: `${bug.offsetTop}px`, width: `${bug.offsetWidth}px`, height: `${bug.offsetHeight}px` });
+    const follow = () => {
+      if (!anchor.isConnected) return;
+      anchor.style.translate = getComputedStyle(bug).translate;
+      requestAnimationFrame(follow);
+    };
+    anchor.append(label);
+    bug.after(anchor);
+    follow();
+    return anchor;
+  };
+  const place = (label: HTMLElement, bug: HTMLElement, sides: string[], kind: string) => {
+    const others = [...document.querySelectorAll<HTMLElement>(CLEAR_OF)]
+      .filter((e) => !e.closest('.bug') && e.getClientRects().length)
+      .map((e) => e.getBoundingClientRect());
+    const b = bug.getBoundingClientRect();
+    // (and inside the bug's own level, which clips what overflows it)
+    const box = bug.closest('.level')?.getBoundingClientRect() ?? { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
+    // beside the bug on the side with more room first
+    const order = b.left + b.width / 2 > innerWidth / 2 ? sides.map((x) => (x === 'right' ? 'left' : x === 'left' ? 'right' : x)) : sides;
+    for (const side of order) {
+      sides.forEach((x) => label.classList.remove(`${kind}--${x}`));
+      label.classList.add(`${kind}--${side}`);
+      const r = label.getBoundingClientRect();
+      const inside =
+        r.left >= Math.max(4, box.left) && r.right <= Math.min(innerWidth - 4, box.right) && r.top >= Math.max(4, box.top + 4) && r.bottom <= Math.min(innerHeight - 4, box.bottom - 4);
+      if (inside && !others.some((o) => r.left < o.right + 4 && r.right > o.left - 4 && r.top < o.bottom + 4 && r.bottom > o.top - 4)) return true;
+    }
+    return false;
+  };
+
+  // The hint, once a visit, beside the first bug that comes on screen: a small pixel TAP on a touch
+  // screen, CLICK ME with a mouse. Until a bug is caught or for five seconds; not with the games
+  // off or motion off. Decorative: the bug is already a button named for what it does.
   const touch = matchMedia('(hover: none) and (pointer: coarse)');
+  const mouse = matchMedia('(hover: hover) and (pointer: fine)');
   const HINT = 'playrun.taphint';
   const hinted = () => {
     try {
@@ -235,34 +279,41 @@ export function startGames() {
       return false;
     }
   };
-  if (touch.matches && !hinted() && 'IntersectionObserver' in window) {
+  let dropHint = () => {};
+  if ((touch.matches || mouse.matches) && !hinted() && 'IntersectionObserver' in window) {
     let hint: HTMLElement | null = null;
     let hintTimer = 0;
     const drop = () => {
       window.clearTimeout(hintTimer);
-      hint?.remove();
+      hint?.parentElement?.remove();
       hint = null;
     };
+    dropHint = drop;
     const seen = new IntersectionObserver(
       (entries) => {
         if (hint || hinted() || !state.on || reducedMotion()) return;
-        const e = entries.find((x) => x.isIntersecting && !(x.target as HTMLButtonElement).hidden);
-        if (!e) return;
-        const bug = e.target as HTMLElement;
-        hint = document.createElement('span');
-        hint.className = 'bug__tap';
-        hint.setAttribute('aria-hidden', 'true');
-        hint.textContent = 'TAP';
-        // beside the bug, on the side with room
-        if (e.boundingClientRect.right + 64 > innerWidth) hint.classList.add('bug__tap--left');
-        bug.append(hint);
-        try {
-          sessionStorage.setItem(HINT, 'shown');
-        } catch {
-          /* storage off: once on this page */
+        for (const e of entries) {
+          if (!e.isIntersecting || (e.target as HTMLButtonElement).hidden) continue;
+          const bug = e.target as HTMLElement;
+          const label = document.createElement('span');
+          label.className = 'bug__tap';
+          label.setAttribute('aria-hidden', 'true');
+          label.textContent = touch.matches ? 'TAP' : 'CLICK ME';
+          const anchor = attach(label, bug);
+          if (!place(label, bug, ['right', 'left', 'above', 'below'], 'bug__tap')) {
+            anchor.remove();
+            continue;
+          }
+          hint = label;
+          try {
+            sessionStorage.setItem(HINT, 'shown');
+          } catch {
+            /* storage off: once on this page */
+          }
+          seen.disconnect();
+          hintTimer = window.setTimeout(drop, 5000);
+          return;
         }
-        seen.disconnect();
-        hintTimer = window.setTimeout(drop, 5000);
       },
       { threshold: 0.9 },
     );
@@ -271,6 +322,54 @@ export function startGames() {
       if ((e.target as HTMLElement).closest('[data-bug]')) drop();
     });
     toggle.addEventListener('click', drop);
+  }
+
+  // With a mouse, a bug answers back: hovering it shows a small pixel speech bubble with one of six
+  // lines, none repeated (across the visit) until all six have been said. Gone when the pointer
+  // leaves or the bug is caught. Decorative: hidden from assistive tech, never focusable, the bug's
+  // name its own. Not on a touch screen.
+  const LINES = ['Not a bug, a feature', 'Works on my machine', "Can't reproduce?", 'Severity: cosmetic', "Won't fix", 'Steps to reproduce: catch me'];
+  const BAG = 'playrun.quips';
+  const nextLine = () => {
+    let left: number[] = [];
+    try {
+      left = (JSON.parse(sessionStorage.getItem(BAG) ?? '[]') as unknown[]).filter((n): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) < LINES.length);
+    } catch {
+      left = [];
+    }
+    if (!left.length) left = LINES.map((_, i) => i);
+    const i = left.splice(Math.floor(Math.random() * left.length), 1)[0];
+    try {
+      sessionStorage.setItem(BAG, JSON.stringify(left));
+    } catch {
+      /* storage off: the bag lives as long as the page */
+    }
+    return LINES[i];
+  };
+  if (mouse.matches) {
+    const SIDES = ['above', 'right', 'left', 'below'];
+    let bubble: HTMLElement | null = null;
+    const hush = () => {
+      bubble?.parentElement?.remove();
+      bubble = null;
+    };
+    bugs().forEach((bug) => {
+      bug.addEventListener('pointerenter', (e) => {
+        if (e.pointerType !== 'mouse' || !state.on || bug.classList.contains('is-caught')) return;
+        hush();
+        dropHint();
+        const say = document.createElement('span');
+        say.className = 'bug__say';
+        say.setAttribute('aria-hidden', 'true');
+        say.textContent = nextLine();
+        const anchor = attach(say, bug);
+        if (place(say, bug, SIDES, 'bug__say')) bubble = say;
+        else anchor.remove();
+      });
+      bug.addEventListener('pointerleave', hush);
+      bug.addEventListener('click', hush);
+    });
+    toggle.addEventListener('click', hush);
   }
 
   // Discoveries: an achievement unlocks when every element carrying its id has been on screen.
