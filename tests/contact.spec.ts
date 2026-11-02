@@ -172,3 +172,74 @@ test.describe('Contact', () => {
     });
   }
 });
+
+test.describe('Contact, when things go slowly or twice', () => {
+  test('no answer within 15 seconds: the form stops waiting, says so and offers email', async ({ page }) => {
+    await page.clock.install();
+    // (the script never answers)
+    await page.route(ENDPOINT, () => new Promise(() => {}));
+    await page.goto('/contact/');
+    await fillValid(page);
+    await page.getByRole('button', { name: 'Send the message' }).click();
+    await expect(page.locator('#form-status')).toHaveText('Sending');
+    await page.clock.runFor(14_000);
+    await expect(page.locator('#form-status')).toHaveText('Sending');
+    await page.clock.runFor(1_500);
+    await expect(page.locator('#form-status')).toHaveText('No answer from the form after 15 seconds. Email me at studio@playrunqa.com and I will pick it up.');
+    await expect(page.getByRole('link', { name: 'Email me instead' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send the message' })).toBeEnabled();
+  });
+
+  test('after Sent the form is done: nothing can send it twice', async ({ page }) => {
+    let posts = 0;
+    await page.route(ENDPOINT, (route) => {
+      posts++;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
+    });
+    await page.goto('/contact/');
+    await fillValid(page);
+    await page.getByRole('button', { name: 'Send the message' }).click();
+    await expect(page.locator('#form-status')).toHaveText(/^Sent/);
+    const send = page.locator('.form button[type="submit"]');
+    await expect(send).toBeDisabled();
+    for (const f of ['#f-name', '#f-email', '#f-message']) await expect(page.locator(f)).toBeDisabled();
+    await page.locator('#f-message').evaluate((el) => (el as HTMLTextAreaElement).form!.requestSubmit());
+    await page.waitForLoadState('networkidle');
+    expect(posts, 'one message, sent once').toBe(1);
+  });
+
+  test('a long message in the email fallback is trimmed to fit a mail app, with a note to paste the rest', async ({ page }) => {
+    await page.route(ENDPOINT, (route) => route.abort('failed'));
+    await page.goto('/contact/');
+    await fillValid(page);
+    const long = 'Testing notes. '.repeat(250);
+    await page.fill('#f-message', long);
+    await page.getByRole('button', { name: 'Send the message' }).click();
+    const mail = page.getByRole('link', { name: 'Email me instead' });
+    await expect(mail).toBeVisible();
+    const body = decodeURIComponent((await mail.getAttribute('href'))!.split('&body=')[1]);
+    expect(body.length).toBeLessThan(1700);
+    expect(body).toContain('[Message shortened: please paste the rest here.]');
+    await expect(page.getByText('Your message is long, so the email starts with the first part of it')).toBeVisible();
+    // a short message goes whole, with no note
+    await page.fill('#f-message', 'Short and sweet, all of it.');
+    await page.getByRole('button', { name: 'Send the message' }).click();
+    await expect.poll(async () => decodeURIComponent((await mail.getAttribute('href'))!.split('&body=')[1])).toContain('Short and sweet, all of it.');
+    expect(decodeURIComponent((await mail.getAttribute('href'))!)).not.toContain('Message shortened');
+    await expect(page.getByText('Your message is long')).toBeHidden();
+  });
+
+  test('a message under ten characters is stopped in the browser, as the script would', async ({ page }) => {
+    let posts = 0;
+    await page.route(ENDPOINT, (route) => {
+      posts++;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
+    });
+    await page.goto('/contact/');
+    await fillValid(page);
+    await page.fill('#f-message', 'Hi there');
+    await page.getByRole('button', { name: 'Send the message' }).click();
+    await expect(page.locator('#e-message')).toBeVisible();
+    expect(posts).toBe(0);
+  });
+});

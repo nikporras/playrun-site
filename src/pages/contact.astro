@@ -91,7 +91,7 @@ const steps = [
         </div>
         <div class="form__row">
           <label class="form__label" for="f-message">Your message</label>
-          <textarea class="form__input form__input--area" id="f-message" name="message" rows="7" maxlength="5000" required aria-describedby="e-message"
+          <textarea class="form__input form__input--area" id="f-message" name="message" rows="7" minlength="10" maxlength="5000" required aria-describedby="e-message"
           ></textarea>
           <p class="form__error" id="e-message" hidden>A line or two is enough.</p>
         </div>
@@ -105,6 +105,9 @@ const steps = [
         </div>
         <p class="form__fallback" id="form-fallback" hidden>
           <a class="textlink" data-fallback-link href={action}>Email me instead</a>
+          <span class="form__shortened" data-fallback-short hidden>
+            Your message is long, so the email starts with the first part of it: paste the rest in before you send.
+          </span>
         </p>
         <p class="form__note small" id="form-note" data-note-js="It comes straight to me. I reply from studio@playrunqa.com.">
           This opens your mail app with the message written out, addressed to studio@playrunqa.com.
@@ -359,6 +362,14 @@ const steps = [
   .form__fallback[hidden] {
     display: none;
   }
+  .form__shortened {
+    display: block;
+    margin-top: var(--s-1);
+    font-size: 0.9375rem;
+  }
+  .form__shortened[hidden] {
+    display: none;
+  }
   .form.is-sent .form__row,
   .form.is-sent .form__actions .button {
     display: none;
@@ -510,17 +521,36 @@ const steps = [
     };
     fields.forEach((f) => f.addEventListener('input', () => f.getAttribute('aria-invalid') === 'true' && check(f)));
     const value = (name: string) => (form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | null)?.value ?? '';
+    // The email way round: the message written out in a mailto: link. Mail apps cut long links short,
+    // so a long message is trimmed to its first part, with a note to paste the rest.
+    const MAIL_BODY_MAX = 1500;
     const offerMail = () => {
       const link = fallback.querySelector<HTMLAnchorElement>('[data-fallback-link]');
+      const short = fallback.querySelector<HTMLElement>('[data-fallback-short]');
       if (link) {
+        const message = value('message');
+        const trimmed = message.length > MAIL_BODY_MAX;
+        const text = trimmed ? message.slice(0, MAIL_BODY_MAX).trimEnd() + '\n\n[Message shortened: please paste the rest here.]' : message;
         const subject = encodeURIComponent('Hello from playrunqa.com');
-        const body = encodeURIComponent(value('name') + ' (' + value('email') + ')\n\n' + value('message'));
+        const body = encodeURIComponent(value('name') + ' (' + value('email') + ')\n\n' + text);
         link.href = form.action + '?subject=' + subject + '&body=' + body;
+        if (short) short.hidden = !trimmed;
       }
       fallback.hidden = false;
     };
+    // After a message has gone, the form is done: nothing can send it twice.
+    const lock = () => {
+      form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement>('input, textarea, button').forEach((el) => (el.disabled = true));
+    };
+    // (no answer within 15 seconds counts as a failure: the email way round is offered)
+    const TIMEOUT_MS = 15_000;
 
     form.addEventListener('submit', async (e) => {
+      // (sent once already: Enter, or a script, cannot send it again)
+      if (form.classList.contains('is-sent')) {
+        e.preventDefault();
+        return;
+      }
       const bad = fields.filter((f) => !check(f));
       if (bad.length) {
         e.preventDefault();
@@ -537,8 +567,12 @@ const steps = [
       status.textContent = 'Sending';
       const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
       if (button) button.disabled = true;
+      const abort = new AbortController();
+      const timer = window.setTimeout(() => abort.abort(), TIMEOUT_MS);
+      let sent = false;
       try {
         const res = await fetch(endpoint, {
+          signal: abort.signal,
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
@@ -552,7 +586,9 @@ const steps = [
         });
         const data = (await res.json()) as { ok: boolean; errors?: string[] };
         if (data.ok) {
+          sent = true;
           form.classList.add('is-sent');
+          lock();
           status.textContent = 'Sent. I reply from studio@playrunqa.com.';
           return;
         }
@@ -571,10 +607,13 @@ const steps = [
           throw new Error(errors.join(','));
         }
       } catch {
-        status.textContent = 'That did not send. Email me at studio@playrunqa.com and I will pick it up.';
+        status.textContent = abort.signal.aborted
+          ? 'No answer from the form after 15 seconds. Email me at studio@playrunqa.com and I will pick it up.'
+          : 'That did not send. Email me at studio@playrunqa.com and I will pick it up.';
         offerMail();
       } finally {
-        if (button) button.disabled = false;
+        window.clearTimeout(timer);
+        if (button && !sent) button.disabled = false;
       }
     });
   }
