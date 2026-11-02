@@ -8,9 +8,11 @@ import { contactEndpoint } from '../src/config';
  * and Umami is never reached, so the check is never counted as a visit.
  */
 const UMAMI = /umami\.(is|dev)/;
-// An answer that only means "not now" or "not for robots": a warning, never a failure. LinkedIn
-// answers 999 to anything that is not a person in a browser.
-const SOFT = new Set([429, 999]);
+// An answer that only means "not now" or "not for robots": a warning, never a failure. 429 is a rate
+// limit; LinkedIn answers 999 to anything that is not a person in a browser; and some sites (2K, the
+// ICO) answer 403 to requests from a data centre, such as GitHub's runners, while serving people
+// normally. A page that is really gone answers 404 or 410, or nothing, and that fails.
+const SOFT = new Set([403, 429, 999]);
 
 let pages: string[] = [];
 test.beforeAll(async ({ request }) => {
@@ -102,7 +104,8 @@ test('every internal link answers, and every external link answers without an er
     else if (status === 0 || status >= 400) broken.push(`${status || 'no answer'} ${url}`);
   }
   for (const w of warnings) test.info().annotations.push({ type: 'warning', description: `rate limited or refused to a robot: ${w}` });
-  if (warnings.length) console.warn(`Warnings (not failures):\n${warnings.join('\n')}`);
+  // (shown on the run in GitHub as warnings, so they are seen without failing it)
+  for (const w of warnings) console.log(`::warning title=Link refused to the check::${w} (a rate limit or a block on robots; check it by hand if it stays)`);
   expect(broken, 'links that do not answer').toEqual([]);
 });
 
