@@ -6,7 +6,7 @@ import Bug from '../components/Bug.astro';
 import Join from '../components/Join.astro';
 import PassMark from '../components/PassMark.astro';
 
-const services = [
+const skills = [
   {
     id: 'functional',
     title: 'Functional testing',
@@ -68,10 +68,10 @@ const platforms = [...basePlatforms, ...vrPlatforms.filter((v) => titles.some((t
   description="How Nicolás Porras tests games: functional and regression testing, platform compliance on Switch, Xbox and PS5, performance, playtesting and bug reports."
 >
   <!-- Level 1 -->
-  <section class="level level--navy level--sky has-join-bottom svc" data-level="1" aria-labelledby="services-title">
+  <section class="level level--navy level--sky has-join-bottom svc" data-level="1" aria-labelledby="skills-title">
     <div class="level__head">
       <p class="flag" data-nosnippet data-load style="--d: 0ms"><span>Skills</span></p>
-      <h1 id="services-title" class="page__title">
+      <h1 id="skills-title" class="page__title">
         <span class="mask"><span class="mask__line" style="--i: 0">What I test</span></span>{' '}
         <span class="mask"><span class="mask__line" style="--i: 1">and how</span></span>
       </h1>
@@ -81,14 +81,14 @@ const platforms = [...basePlatforms, ...vrPlatforms.filter((v) => titles.some((t
     </div>
     <ol class="svc__jump level__body" data-load style="--d: 440ms">
       {
-        services.map((s) => (
+        skills.map((s) => (
           <li>
             <a href={`#${s.id}`}>{s.title}</a>
           </li>
         ))
       }
     </ol>
-    <Bug id="services-1" style="right: 12%; top: 9rem" tablet="left: 55%; bottom: 0.75rem" walk="x -2rem" />
+    <Bug id="skills-1" style="right: 12%; top: 9rem" tablet="left: 55%; bottom: 0.75rem" walk="x -2rem" />
     <Join kind="clouds" from="var(--pr-navy)" to="var(--field-blue)" seed="skills-six" />
   </section>
 
@@ -102,8 +102,8 @@ const platforms = [...basePlatforms, ...vrPlatforms.filter((v) => titles.some((t
     </div>
     <ol class="rows level__body">
       {
-        services.map((s, i) => (
-          <li class="row six__row" id={s.id} data-enter data-achieve="services" style={`--enter-delay: ${i * 70}ms`}>
+        skills.map((s, i) => (
+          <li class="row six__row" id={s.id} data-enter data-achieve="skills" style={`--enter-delay: ${i * 70}ms`}>
             <div class="six__name">
               <h3 class="row__title">{s.title}</h3>
               <p class="six__get">In practice</p>
@@ -118,7 +118,7 @@ const platforms = [...basePlatforms, ...vrPlatforms.filter((v) => titles.some((t
         ))
       }
     </ol>
-    <Bug id="services-2" style="right: 10%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <Bug id="skills-2" style="right: 10%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
   <!-- Level 3: what I bring -->
@@ -144,7 +144,7 @@ const platforms = [...basePlatforms, ...vrPlatforms.filter((v) => titles.some((t
         ))
       }
     </div>
-    <Bug id="services-3" style="right: 10%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <Bug id="skills-3" style="right: 10%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
   <!-- Level 4: the run -->
@@ -166,7 +166,7 @@ const platforms = [...basePlatforms, ...vrPlatforms.filter((v) => titles.some((t
         ))
       }
     </ol>
-    <Bug id="services-4" style="right: 12%; top: 1.5rem" tablet="right: 25%; top: 0.75rem" walk="x -2rem" />
+    <Bug id="skills-4" style="right: 12%; top: 1.5rem" tablet="right: 25%; top: 0.75rem" walk="x -2rem" />
   </section>
 
   <!-- Level 5: platforms and stores -->
@@ -187,7 +187,7 @@ const platforms = [...basePlatforms, ...vrPlatforms.filter((v) => titles.some((t
         ))
       }
     </div>
-    <Bug id="services-5" style="right: 10%; bottom: 1rem" tablet="right: 30%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <Bug id="skills-5" style="right: 10%; bottom: 1rem" tablet="right: 30%; top: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
   </section>
 
   <!-- Level 6: a short way on -->
@@ -200,7 +200,7 @@ const platforms = [...basePlatforms, ...vrPlatforms.filter((v) => titles.some((t
         <a class="textlink" href="/quality/">How I test this site</a>
       </div>
     </div>
-    <Bug id="services-6" style="right: 12%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" phone="right: 1rem; top: 0.25rem" walk="y 1.5rem" />
+    <Bug id="skills-6" style="right: 12%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" phone="right: 1rem; top: 0.25rem" walk="y 1.5rem" />
   </section>
 </Base>
 

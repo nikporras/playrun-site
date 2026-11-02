@@ -431,7 +431,8 @@ export function startSweep(root: HTMLElement) {
   // ---- Away: the tab hidden or the field off screen pauses it
   document.addEventListener('visibilitychange', () => document.hidden && pause(false));
   if ('IntersectionObserver' in window) {
-    new IntersectionObserver((entries) => entries.forEach((e) => !e.isIntersecting && pause(false)), { threshold: 0.35 }).observe(stage);
+    // (only once the field is wholly off screen: a phone held sideways shows part of it while playing)
+    new IntersectionObserver((entries) => entries.forEach((e) => !e.isIntersecting && pause(false)), { threshold: 0 }).observe(stage);
   }
   if ('ResizeObserver' in window) new ResizeObserver(() => fit()).observe(stage);
   addEventListener('resize', fit);

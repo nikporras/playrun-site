@@ -38,3 +38,24 @@ test('in WebKit the Quality steps run, and Performance passes on first contentfu
   // the picker knows it as Safari
   await expect(page.locator('[data-picker] [aria-pressed="true"]')).toHaveText('Safari');
 });
+
+test('in WebKit the joins between levels draw their tones from colours worked out at build time, never black', async ({ page }) => {
+  await page.goto('/');
+  const fills = await page.locator('.join').evaluateAll((joins) =>
+    joins.flatMap((j) =>
+      ['back', 'mid', 'front'].map((l) => {
+        const f = j.querySelector(`.join__layer--${l} .join__fill`);
+        const light = j.querySelector(`.join__layer--${l} .join__light`);
+        return { fill: f ? getComputedStyle(f).fill : '', light: light ? getComputedStyle(light).fill : 'none' };
+      }),
+    ),
+  );
+  expect(fills.length).toBeGreaterThan(6);
+  for (const f of fills) {
+    expect(f.fill).toMatch(/^rgb\(/);
+    expect(f.fill).not.toBe('rgb(0, 0, 0)');
+    expect(f.light).not.toBe('rgb(0, 0, 0)');
+  }
+  // the tones are plain colours in the page itself, no color-mix() needed
+  expect(await page.locator('.join').first().getAttribute('style')).toMatch(/--join-back: #[0-9a-f]{6}/);
+});

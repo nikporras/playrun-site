@@ -62,7 +62,7 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
-    {ld && <script is:inline type="application/ld+json" set:html={JSON.stringify(ld)} />}
+    {ld && <script is:inline type="application/ld+json" set:html={JSON.stringify(ld).replace(/</g, '\\' + 'u003c')} />}
     <meta name="theme-color" content={site.themeColor} />
     <meta name="color-scheme" content="dark" />
     <meta name="playrun-routes" content={JSON.stringify(builtRoutes)} />

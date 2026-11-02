@@ -9,7 +9,7 @@ url: "https://www.meta.com/en-gb/experiences/a-township-tale/2913958855307200/"
 store: "Meta Quest"
 employer: "universally-speaking-2021"
 icon: "hut"
-logoSource: "http://web.archive.org/web/20230223184920/http://presskit.townshiptale.com/townshiptale/index.html"
+logoSource: "https://web.archive.org/web/20230223184920/https://presskit.townshiptale.com/townshiptale/index.html"
 public: true
 ---
 

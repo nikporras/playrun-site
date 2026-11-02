@@ -274,7 +274,11 @@ test('three hits is game over, with Try again; the field pauses when the tab is 
   await page.evaluate(() => Object.defineProperty(document, 'hidden', { value: false, configurable: true }));
   await page.locator('[data-sweep-action]').click();
   await expect.poll(async () => (await state(page)).mode).toBe('play');
-  // scrolled away
+  // partly scrolled away (a phone held sideways): it carries on
+  await page.locator('[data-sweep-stage]').evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + scrollY + el.getBoundingClientRect().height * 0.8));
+  await page.waitForTimeout(300);
+  expect((await state(page)).mode, 'a fifth still on screen: still playing').toBe('play');
+  // wholly scrolled away
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await expect.poll(async () => (await state(page)).mode).toBe('paused');
   await expect(page.locator('[data-sweep-text]')).toHaveText('Paused while you were away.');

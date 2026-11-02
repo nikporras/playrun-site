@@ -36,7 +36,8 @@ const LOGOS = {
   'londinium-ad-215': 'HVR_secondary_white-gold.png', // the studio logo, as on Guildford Castle VR
   'lous-lagoon': 'LOU-Logo-4K.png',
   'nba-2k21': 'NBA 2K21 Logo.png',
-  'pathfinder-abomination-vaults': 'pav-logo.png',
+  // (its fine texture made a heavy file: hard edges keep the shape at a fraction of the weight)
+  'pathfinder-abomination-vaults': ['pav-logo.png', { tight: 0.5 }],
   'space-pirate-trainer': ['Logo_80s-Dark_HIRES.png', { luma: [0.3, 0.8], thicken: 7 }],
   synapse: 'synapse-logo-white.png',
   'the-climb-2': 'the-climb-2-logo-from-site.svg',
@@ -64,7 +65,10 @@ async function bands(buffer) {
 }
 
 mkdirSync(OUT, { recursive: true });
+// (node scripts/logos.mjs <slug> ... makes only those)
+const only = process.argv.slice(2);
 for (const [slug, entry] of Object.entries(LOGOS)) {
+  if (only.length && !only.includes(slug)) continue;
   const [file, opts] = Array.isArray(entry) ? entry : [entry, {}];
   let src = await sharp(join(RAW, slug, file), { limitInputPixels: false, density: 300 }).ensureAlpha().png().toBuffer();
   if (opts.keepBands) {

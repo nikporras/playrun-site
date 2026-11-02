@@ -14,14 +14,14 @@ import Sprite from './Sprite.astro';
 import PassMark from './PassMark.astro';
 ---
 
-<div class="hud" id="hud" data-nosnippet hidden>
+<nav class="hud" id="hud" aria-label="Level track" data-nosnippet hidden>
   <ol class="hud__levels" aria-label="Levels"></ol>
   <div class="hud__runner" aria-hidden="true" data-dir="1">
     <div class="hud__ship"><Sprite name="ship" /></div>
   </div>
   <div class="hud__floor" aria-hidden="true"></div>
   <p class="visually-hidden" aria-live="polite" data-hud-live></p>
-</div>
+</nav>
 <!-- The shot, in pixels: a bolt of twelve squares (a bright glowing head of four, a cyan trail
      thinning behind) that fly the same path one after another, a muzzle flash of five at the
      ship's nose, a burst of twelve at the hit. Each square is moved by script (the Web Animations
@@ -38,7 +38,7 @@ import PassMark from './PassMark.astro';
   </div>
 </div>
 
-<div class="dock" id="dock" data-nosnippet hidden>
+<aside class="dock" id="dock" aria-label="Scoreboard" data-nosnippet hidden>
   <!-- The toast, Steam style: slides in above the scoreboard, leaves the same way. -->
   <div class="toast" role="status" aria-live="polite" data-toast>
     <div class="toast__icon" aria-hidden="true"><PassMark class="toast__mark" /></div>
@@ -102,7 +102,7 @@ import PassMark from './PassMark.astro';
       </div>
     </div>
   </div>
-</div>
+</aside>
 
 <style>
   /* The bar along the bottom: phones and tablets. */
@@ -544,6 +544,7 @@ import PassMark from './PassMark.astro';
       height: 3px;
       z-index: 41;
       border-top: 0;
+      background: #585e6d; /* (where color-mix is missing) */
       background: color-mix(in srgb, var(--pr-light) 35%, var(--pr-navy));
     }
     .hud__floor {
@@ -640,6 +641,7 @@ import PassMark from './PassMark.astro';
       bottom: 0;
       width: 2px;
       height: auto;
+      background: #838894; /* (where color-mix is missing) */
       background: color-mix(in srgb, var(--pr-light) 55%, var(--pr-navy));
       box-shadow:
         -1px 0 0 var(--pr-navy),
@@ -669,6 +671,7 @@ import PassMark from './PassMark.astro';
     .hud__levels :global(li span) {
       padding: 2px 3px;
       background: var(--bg);
+      outline: 1px solid #585e6d; /* (where color-mix is missing) */
       outline: 1px solid color-mix(in srgb, var(--pr-light) 35%, var(--pr-navy));
     }
     /* (44px tall; as wide as the gutter allows, never into the column) */

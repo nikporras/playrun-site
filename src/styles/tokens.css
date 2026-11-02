@@ -107,3 +107,10 @@
     --join-h: 4.5rem; /* the join art at 4px pixels */
   }
 }
+
+/* (a browser without color-mix(): the thin divider in a plain grey that reads on every field) */
+@supports not (color: color-mix(in srgb, red, blue)) {
+  :root {
+    --rule: rgb(127 135 150 / 0.45);
+  }
+}

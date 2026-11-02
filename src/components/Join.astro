@@ -26,6 +26,28 @@ interface Props {
 }
 const { kind, from, to, seed, at = 'bottom' } = Astro.props;
 
+// The tones between the two colours, worked out here rather than with color-mix() in the browser:
+// a browser without color-mix (Safari before 16.2) would paint the back layers black. The fields'
+// colours are the brand's (src/styles/tokens.css); an unknown one stops the build.
+const HEX: Record<string, string> = {
+  'var(--pr-navy)': '#0c152a',
+  'var(--field-blue)': '#516cb3',
+  'var(--field-cyan)': '#56bdda',
+  'var(--field-green)': '#67c18c',
+  'var(--field-light)': '#e5e7ea',
+};
+const hexOf = (c: string) => {
+  if (!HEX[c]) throw new Error(`Join: no hex for ${c}; add it to HEX in Join.astro`);
+  return HEX[c];
+};
+// a share of colour a, the rest b, mixed in sRGB as color-mix(in srgb, a t, b) would
+const mix = (a: string, b: string, t: number) =>
+  '#' + [1, 3, 5].map((i) => Math.round(parseInt(a.slice(i, i + 2), 16) * t + parseInt(b.slice(i, i + 2), 16) * (1 - t)).toString(16).padStart(2, '0')).join('');
+const LIGHT = '#e5e7ea';
+const back = mix(hexOf(to), hexOf(from), 0.5);
+const mid = mix(hexOf(to), hexOf(from), 0.76);
+const tones = [`--join-back: ${back}`, `--join-mid: ${mid}`, `--join-light-back: ${mix(back, LIGHT, 0.84)}`, `--join-light-mid: ${mix(mid, LIGHT, 0.84)}`, `--join-light-front: ${mix(hexOf(to), LIGHT, 0.86)}`].join('; ');
+
 // a small seeded generator (mulberry32), so the shapes are the same on every build
 let state = [...`${kind}:${seed}`].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 2654435761) >>> 0, 2166136261);
 const rand = () => {
@@ -157,7 +179,7 @@ const layers = spec.map((s) => {
 });
 ---
 
-<div class={`join join--${kind} join--${at}`} aria-hidden="true" style={`--from: ${from}; --to: ${to}`}>
+<div class={`join join--${kind} join--${at}`} aria-hidden="true" style={`--from: ${from}; --to: ${to}; ${tones}`}>
   <div class="join__far">
     {
       layers
@@ -207,8 +229,6 @@ const layers = spec.map((s) => {
     background: transparent;
     pointer-events: none;
     z-index: 0;
-    --join-back: color-mix(in srgb, var(--to) 50%, var(--from));
-    --join-mid: color-mix(in srgb, var(--to) 76%, var(--from));
   }
   /* The back and mid layers stop 6px above the band's foot, where the front layer always covers
      them (it is at least two art pixels deep there, 8px on a phone). On a screen scaled by a
@@ -250,13 +270,13 @@ const layers = spec.map((s) => {
     fill: var(--to);
   }
   .join__layer--back .join__light {
-    fill: color-mix(in srgb, var(--join-back) 84%, var(--pr-light));
+    fill: var(--join-light-back);
   }
   .join__layer--mid .join__light {
-    fill: color-mix(in srgb, var(--join-mid) 84%, var(--pr-light));
+    fill: var(--join-light-mid);
   }
   .join__layer--front .join__light {
-    fill: color-mix(in srgb, var(--to) 86%, var(--pr-light));
+    fill: var(--join-light-front);
   }
   /* The level under a bottom join keeps a little of its own padding above the band (the band reads
      as space too). A level with a top join (the curtain) paints its field only below the band, so

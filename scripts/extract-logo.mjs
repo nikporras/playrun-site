@@ -116,18 +116,15 @@ const head = (vb, title) =>
 // Mono parts in currentColor
 files['icon.svg'] = head(box(B.icon), 'PlayRun icon') + `<g fill="currentColor">\n${pathsOf(groups.icon)}\n</g>\n</svg>\n`;
 files['wordmark.svg'] = head(box(B.wordmark), 'playrun') + `<g fill="currentColor">\n${pathsOf(groups.wordmark)}\n</g>\n</svg>\n`;
-files['tagline.svg'] = head(box(B.tagline), 'test experts') + `<g fill="currentColor">\n${pathsOf(groups.tagline)}\n</g>\n</svg>\n`;
 
-// Stacked lock-ups (icon, wordmark, tagline), as on manual pages 7 to 10
+// The stacked lock-up (icon, wordmark, tagline), as on manual pages 7 to 10, in the primary colours
+// only (the positive, negative and mono versions were never used on the site)
 const stacked = (fillIcon, fillWord, fillTag, defs = '') =>
   head(box(Ball), 'PlayRun, test experts') +
   (defs ? `<defs>\n${defs}\n</defs>\n` : '') +
   `<g fill="${fillIcon}">\n${pathsOf(groups.icon)}\n</g>\n` +
   `<g fill="${fillWord}">\n${pathsOf(groups.wordmark)}\n</g>\n` +
   `<g fill="${fillTag}">\n${pathsOf(groups.tagline)}\n</g>\n</svg>\n`;
-files['logo-positive.svg'] = stacked(COLORS.navy, COLORS.navy, COLORS.navy);
-files['logo-negative.svg'] = stacked(COLORS.light, COLORS.light, COLORS.light);
-files['logo-mono.svg'] = stacked('currentColor', 'currentColor', 'currentColor');
 files['logo-primary.svg'] = stacked('url(#gi)', 'url(#gw)', COLORS.cyan, gradient('gi', B.icon) + '\n' + gradient('gw', B.wordmark));
 files['icon-primary.svg'] =
   head(box(B.icon), 'PlayRun icon') + `<defs>\n${gradient('gi', B.icon)}\n</defs>\n<g fill="url(#gi)">\n${pathsOf(groups.icon)}\n</g>\n</svg>\n`;

@@ -373,3 +373,43 @@ test.describe('Jump markers', () => {
     expect(names[names.length - 1]).toBe('Jump to ’21 (2021): Universally Speaking');
   });
 });
+
+test.describe('Kept in the browser', () => {
+  test('damaged games data starts afresh instead of stopping the games; old Skills ids carry over; keys from removed features are tidied away', async ({ browser }) => {
+    for (const bad of ['{"achievements":"x"}', '[1,2]', 'not json', '{"on":"yes"}', '{"bugs":[1]}']) {
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      await page.addInitScript((v) => localStorage.setItem('playrun.games', v), bad);
+      const errors: string[] = [];
+      page.on('pageerror', (e) => errors.push(e.message));
+      await page.goto('/');
+      await expect(page.locator('[data-hud-ach]'), bad).toHaveText('0/6');
+      expect(errors, bad).toEqual([]);
+      await context.close();
+    }
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.addInitScript(() => {
+      if (sessionStorage.getItem('seeded')) return;
+      sessionStorage.setItem('seeded', '1');
+      localStorage.setItem('playrun.games', JSON.stringify({ on: true, bugs: ['services-1', 'home-1'], achievements: ['services', 'first-bug'] }));
+      sessionStorage.setItem('playrun.ticket', 'kept');
+      sessionStorage.setItem('playrun.glitch', 'done');
+    });
+    await page.goto('/skills/');
+    await expect(page.locator('[data-hud-ach]')).toHaveText('2/6');
+    await page.getByRole('button', { name: /^Scoreboard/ }).click();
+    await expect(page.locator('.score__ach li.is-done')).toHaveText(['Caught your first bug', 'Read every skill']);
+    // the bug caught under its old id stays caught under its new one
+    await expect(page.locator('[data-bug="skills-1"]')).toBeHidden();
+    expect(await page.evaluate(() => [sessionStorage.getItem('playrun.ticket'), sessionStorage.getItem('playrun.glitch')])).toEqual([null, null]);
+    await context.close();
+  });
+
+  test('the level track is a navigation landmark and the scoreboard a complementary one, each named', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/skills/');
+    await expect(page.getByRole('navigation', { name: 'Level track' })).toBeAttached();
+    await expect(page.getByRole('complementary', { name: 'Scoreboard' })).toBeVisible();
+  });
+});

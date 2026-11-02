@@ -1010,6 +1010,9 @@ html:not(.games) .bug {
 .bolt__px--head {
   box-shadow:
     0 0 10px var(--accent),
+    0 0 22px rgb(103 193 140 / 0.55); /* (where color-mix is missing) */
+  box-shadow:
+    0 0 10px var(--accent),
     0 0 22px color-mix(in srgb, var(--accent) 55%, transparent);
 }
 .bolt__px--trail {

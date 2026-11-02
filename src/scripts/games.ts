@@ -12,21 +12,46 @@ const KEY = 'playrun.games';
 const ACHIEVEMENTS: Record<string, string> = {
   'first-bug': 'Caught your first bug',
   'all-bugs': 'Caught every bug',
-  services: 'Read every skill',
+  skills: 'Read every skill',
   selftest: 'Tested the page',
   glitch: 'Glitch spotted',
   bugsweep: 'Bug Sweep cleared',
 };
 const defaults = (): State => ({ on: true, bugs: [], achievements: [] });
 
+// What the browser kept, if it is the right shape: lists of names for the bugs and achievements and
+// a yes or no for the games. Anything else (an old version, a hand edit, a damaged value) starts
+// afresh instead of stopping the games on every page.
+const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
+const valid = (v: unknown): v is Partial<State> => {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+  const s = v as Record<string, unknown>;
+  return (s.on === undefined || typeof s.on === 'boolean') && (s.bugs === undefined || strings(s.bugs)) && (s.achievements === undefined || strings(s.achievements));
+};
 const read = (): State => {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...defaults(), ...JSON.parse(raw) };
+    if (raw) {
+      const kept: unknown = JSON.parse(raw);
+      if (valid(kept)) {
+        // (the Skills page's ids were once services: a visitor's catches and achievement carry over)
+        const was = (id: string) => id.replace(/^services(?=$|-)/, 'skills');
+        return { ...defaults(), ...kept, bugs: (kept.bugs ?? []).map(was), achievements: (kept.achievements ?? []).map(was) };
+      }
+    }
   } catch {
-    /* private mode or storage off: the game lives for this visit only */
+    /* private mode, storage off or a value that is not JSON: a fresh start */
   }
   return defaults();
+};
+// Keys from features that are gone (the bug ticket, the glitch's old once-a-visit flag), removed once.
+const tidy = () => {
+  try {
+    sessionStorage.removeItem('playrun.ticket');
+    if (sessionStorage.getItem('playrun.glitch') === 'done') sessionStorage.removeItem('playrun.glitch');
+  } catch {
+    /* storage off: nothing to tidy */
+  }
 };
 const write = (s: State) => {
   try {
@@ -37,6 +62,7 @@ const write = (s: State) => {
 };
 
 export function startGames() {
+  tidy();
   const hud = document.getElementById('hud');
   const dock = document.getElementById('dock');
   const toast = document.querySelector<HTMLElement>('[data-toast]');
