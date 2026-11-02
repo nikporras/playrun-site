@@ -117,3 +117,48 @@ test('the Privacy page says what is counted and how, and that Do Not Track is re
     expect(html, path).not.toMatch(/no analytics|no third-party requests/i);
   }
 });
+
+test('?notrack switches the statistics off for this browser and ?track back on: Umami\'s own opt-out set before the tracker loads, a short note, the address cleaned, nothing linked or indexed', async ({ page, request }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  // off: the opt-out set, the note shown, the word gone from the address (the rest of it kept)
+  await page.goto('/quality/?notrack&x=1#step-links');
+  expect(await page.evaluate(() => localStorage.getItem('umami.disabled'))).toBe('1');
+  await expect(page.getByRole('status').filter({ hasText: 'Stats off on this browser' })).toBeVisible();
+  expect(new URL(page.url()).search).toBe('?x=1');
+  expect(new URL(page.url()).hash).toBe('#step-links');
+  await expect(page.locator('.statsnote')).toHaveCount(0, { timeout: 6000 });
+  // on again
+  await page.goto('/about/?track');
+  expect(await page.evaluate(() => localStorage.getItem('umami.disabled'))).toBeNull();
+  await expect(page.getByRole('status').filter({ hasText: 'Stats on on this browser' })).toBeVisible();
+  expect(new URL(page.url()).search).toBe('');
+  // a plain visit says nothing
+  await page.goto('/about/');
+  await expect(page.locator('.statsnote')).toHaveCount(0);
+  // under the policy: no violation, no error
+  expect(await page.evaluate(() => (window as unknown as { __playrunErrors: string[] }).__playrunErrors)).toEqual([]);
+  expect(errors).toEqual([]);
+  // linked from nowhere, kept out of search: no page mentions the words in a link, robots says no, and the canonical is the clean address
+  for (const path of PAGES) {
+    const html = await (await request.get(path)).text();
+    expect(html, path).not.toMatch(/href="[^"]*[?&](no)?track\b/);
+  }
+  const robots = await (await request.get('/robots.txt')).text();
+  for (const group of robots.split(/\n\s*\n/).filter((g) => /User-agent/.test(g))) {
+    expect(group).toContain('Disallow: /*?notrack');
+    expect(group).toContain('Disallow: /*?track');
+  }
+});
+
+test('on the live domain, ?notrack stops even that first page view, and ?track lets the next one through', async ({ page }) => {
+  const sent = await asLive(page);
+  await page.goto('https://playrunqa.com/?notrack');
+  await page.waitForLoadState('networkidle');
+  await page.goto('https://playrunqa.com/skills/');
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(500);
+  expect(sent, 'nothing sent while off').toEqual([]);
+  await page.goto('https://playrunqa.com/?track');
+  await expect.poll(() => sent.length).toBeGreaterThan(0);
+});

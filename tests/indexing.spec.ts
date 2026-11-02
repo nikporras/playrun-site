@@ -9,11 +9,12 @@ import path from 'node:path';
  */
 const BOTS = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'Bingbot'];
 
-test('robots.txt allows every named AI and search crawler, then everyone, lists the sitemap and disallows nothing', { tag: ['@links'] }, async ({ request }) => {
+test('robots.txt allows every named AI and search crawler, then everyone, lists the sitemap and disallows only the statistics switches', { tag: ['@links'] }, async ({ request }) => {
   const res = await request.get('/robots.txt');
   expect(res.status()).toBe(200);
   const text = await res.text();
-  expect(text).not.toMatch(/^\s*Disallow/im);
+  // (the only addresses kept out: the switches for the visit statistics, ?notrack and ?track)
+  for (const line of text.match(/^\s*Disallow:.*$/gim) ?? []) expect(line.trim()).toMatch(/^Disallow: \/\*\?(no)?track$/);
   const groups = text.split(/\n\s*\n/).map((g) => g.trim()).filter((g) => /User-agent/i.test(g));
   const agents = groups.map((g) => g.match(/User-agent:\s*(\S+)/i)![1]);
   expect(agents).toEqual([...BOTS, '*']);

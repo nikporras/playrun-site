@@ -1119,3 +1119,21 @@ html.motion-off {
     transform: none;
   }
 }
+
+/* The note for ?notrack and ?track: small, light, top centre, above everything, for a few seconds. */
+.statsnote {
+  position: fixed;
+  top: var(--s-2);
+  left: 50%;
+  translate: -50% 0;
+  z-index: 100;
+  margin: 0;
+  max-width: calc(100vw - 2 * var(--s-2));
+  padding: 0.5rem 0.875rem;
+  background: var(--pr-light);
+  color: var(--pr-navy);
+  border: 2px solid var(--pr-navy);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+}

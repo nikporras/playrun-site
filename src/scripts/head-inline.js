@@ -12,6 +12,25 @@ document.documentElement.classList.add('js');
   } catch (e) {}
   if (off) document.documentElement.classList.add('motion-off');
 })();
+// The visit statistics, switched off or on for this browser (for the site owner's own devices,
+// linked from nowhere): ?notrack sets Umami's own opt-out, umami.disabled, and ?track clears it.
+// Here, before the tracker loads, so not even this page view counts; the address loses the word,
+// and the page says what happened (__statsNote, shown once the page is up).
+(function () {
+  try {
+    var q = new URLSearchParams(location.search);
+    var off = q.has('notrack');
+    var on = q.has('track');
+    if (!off && !on) return;
+    if (off) localStorage.setItem('umami.disabled', '1');
+    else localStorage.removeItem('umami.disabled');
+    window.__statsNote = off ? 'off' : 'on';
+    q.delete('notrack');
+    q.delete('track');
+    var rest = q.toString();
+    history.replaceState(history.state, '', location.pathname + (rest ? '?' + rest : '') + location.hash);
+  } catch (e) {}
+})();
 window.__playrunErrors = [];
 addEventListener('error', (e) => window.__playrunErrors.push(String(e.message || e)));
 addEventListener('unhandledrejection', (e) => window.__playrunErrors.push(String(e.reason || e)));

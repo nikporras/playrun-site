@@ -121,6 +121,20 @@ const builtRoutes = Object.keys(import.meta.glob('../pages/**/*.astro'))
     <TabBar />
     {games && <Hud />}
     <script>
+      // The visit statistics switched off or on for this browser (?notrack or ?track, read by the
+      // head script): a small note says so for a few seconds.
+      const note = (window as unknown as { __statsNote?: 'on' | 'off' }).__statsNote;
+      if (note) {
+        const el = document.createElement('p');
+        el.className = 'statsnote';
+        el.setAttribute('role', 'status');
+        el.setAttribute('data-nosnippet', '');
+        el.textContent = note === 'off' ? 'Stats off on this browser' : 'Stats on on this browser';
+        document.body.append(el);
+        window.setTimeout(() => el.remove(), 4000);
+      }
+    </script>
+    <script>
       // Section entrances: once, in reading order, with the stagger set per element in --enter-delay.
       // Nothing waits for anything else: whatever enters the screen shows.
       import { reducedMotion } from '../scripts/motion';

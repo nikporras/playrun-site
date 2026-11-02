@@ -1,38 +1,62 @@
 # Every crawler is welcome, AI search and assistants included.
 User-agent: GPTBot
 Allow: /
+Disallow: /*?notrack
+Disallow: /*?track
 
 User-agent: OAI-SearchBot
 Allow: /
+Disallow: /*?notrack
+Disallow: /*?track
 
 User-agent: ChatGPT-User
 Allow: /
+Disallow: /*?notrack
+Disallow: /*?track
 
 User-agent: ClaudeBot
 Allow: /
+Disallow: /*?notrack
+Disallow: /*?track
 
 User-agent: Claude-SearchBot
 Allow: /
+Disallow: /*?notrack
+Disallow: /*?track
 
 User-agent: Claude-User
 Allow: /
+Disallow: /*?notrack
+Disallow: /*?track
 
 User-agent: PerplexityBot
 Allow: /
+Disallow: /*?notrack
+Disallow: /*?track
 
 User-agent: Perplexity-User
 Allow: /
+Disallow: /*?notrack
+Disallow: /*?track
 
 User-agent: Google-Extended
 Allow: /
+Disallow: /*?notrack
+Disallow: /*?track
 
 User-agent: Applebot-Extended
 Allow: /
+Disallow: /*?notrack
+Disallow: /*?track
 
 User-agent: Bingbot
 Allow: /
+Disallow: /*?notrack
+Disallow: /*?track
 
 User-agent: *
 Allow: /
+Disallow: /*?notrack
+Disallow: /*?track
 
 Sitemap: https://playrunqa.com/sitemap-index.xml
