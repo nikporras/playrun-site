@@ -1,5 +1,7 @@
 import { test, expect, devices, type Page } from '@playwright/test';
 import { createHash } from 'node:crypto';
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 
 /**
  * The Content Security Policy: one meta tag at the top of every page's head, the inline script
@@ -145,4 +147,20 @@ test.describe('on a phone, under the policy', () => {
     await expect(page.locator('[data-dev-network] td.is-bad')).toHaveCount(0);
     expect(errors, errors.join('\n')).toEqual([]);
   });
+});
+
+test('every workflow pins its actions to a commit and starts read only; the weekly live check never writes and never counts as a visit', async () => {
+  const dir = path.join(process.cwd(), '.github', 'workflows');
+  for (const file of readdirSync(dir)) {
+    const yml = readFileSync(path.join(dir, file), 'utf8');
+    for (const [, uses] of yml.matchAll(/uses:\s*(\S+)/g)) expect(uses, `${file}: ${uses}`).toMatch(/@[0-9a-f]{40}$/);
+    expect(yml, file).toMatch(/^permissions:\n  contents: read\n/m);
+  }
+  const live = readFileSync(path.join(dir, 'live-check.yml'), 'utf8');
+  expect(live).toContain("cron: '0 7 * * 1'");
+  expect(live).toContain('workflow_dispatch:');
+  expect(live).not.toMatch(/write/);
+  const config = readFileSync(path.join(process.cwd(), 'playwright.live.config.ts'), 'utf8');
+  expect(config).toContain("baseURL: 'https://playrunqa.com'");
+  expect(config).toMatch(/MAP \$\{h\} ~NOTFOUND/);
 });

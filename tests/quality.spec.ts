@@ -39,6 +39,8 @@ test.describe('Quality, the guided test run', () => {
     // the suite's own numbers are on the report
     await expect(page.locator('.report__suite')).toContainText(/\d+ checks in \d+ spec files/);
     await expect(page.locator('.report__suite')).toContainText(/Playwright 1\./);
+    // (and the weekly check of the live site, .github/workflows/live-check.yml)
+    await expect(page.locator('.report__suite')).toContainText('Every Monday a separate check also runs against the live site');
   });
 
   test("the steps for a computer are one action each with that browser's keys, and say what to expect; Tab really lands on Skip to content", async ({ page }) => {

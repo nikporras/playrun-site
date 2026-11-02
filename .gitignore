@@ -5,6 +5,7 @@ dist/
 
 # tests
 test-results/
+live-report/
 playwright-report/
 blob-report/
 playwright/.cache/

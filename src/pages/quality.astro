@@ -316,8 +316,8 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
       </table>
       <p class="report__suite" data-enter style="--enter-delay: 120ms">
         {suite.run
-          ? `Before this page deployed, its own suite ran: ${suite.passed} of ${suite.total} checks in ${suite.files} spec files passed on ${runDate}, in ${spell(suite.run.seconds)}, on Node ${versions.node} and Playwright ${versions.playwright}. A failing check stops the deploy.`
-          : `Before every deploy, this page's own suite runs: ${suite.total} checks in ${suite.files} spec files, on Node ${versions.node} and Playwright ${versions.playwright}. A failing check stops the deploy.`}
+          ? `Before this page deployed, its own suite ran: ${suite.passed} of ${suite.total} checks in ${suite.files} spec files passed on ${runDate}, in ${spell(suite.run.seconds)}, on Node ${versions.node} and Playwright ${versions.playwright}. A failing check stops the deploy. Every Monday a separate check also runs against the live site: every page, every link and the contact form's script.`
+          : `Before every deploy, this page's own suite runs: ${suite.total} checks in ${suite.files} spec files, on Node ${versions.node} and Playwright ${versions.playwright}. A failing check stops the deploy. Every Monday a separate check also runs against the live site: every page, every link and the contact form's script.`}
       </p>
       <div class="report__template" data-enter style="--enter-delay: 180ms">
         <h3 class="report__subtitle">Bug report template</h3>

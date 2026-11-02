@@ -29,7 +29,9 @@ Every push runs a Playwright suite before anything deploys. Among other things i
 - the pixel joins between levels show no hairline on screens scaled by a fraction
 - the job titles and dates match LinkedIn, and the built HTML has no sales language and links to no code repository
 
-Most checks run in Chromium; a few also run in WebKit and Firefox. If a check fails, the site does not ship. The Quality page and the Home scoreboard read their numbers from the suite itself: the list of checks from Playwright at build time, and the results from the run that deployed the page.
+Most checks run in Chromium; a few also run in WebKit and Firefox. If a check fails, the site does not ship.
+
+Every Monday at 07:00 UTC a separate check runs against the live site itself (`.github/workflows/live-check.yml`, `tests-live/`): every page in the sitemap loads with no console errors and with its security policy, every internal and external link answers (a rate limit is only a warning), the contact form's script answers its health check (nothing is ever sent), and robots.txt, the sitemap and llms.txt are served. It never counts as a visit in the statistics. The Quality page and the Home scoreboard read their numbers from the suite itself: the list of checks from Playwright at build time, and the results from the run that deployed the page.
 
 ## Stack
 

@@ -23,7 +23,9 @@ test('in Firefox every page loads clean: no script errors, no console errors, no
   page.on('pageerror', (e) => problems.push(`script error: ${e.message}`));
   page.on('console', (m) => m.type() === 'error' && problems.push(`console: ${m.text()}`));
   page.on('response', (r) => r.status() >= 400 && problems.push(`${r.status()} ${r.url()}`));
-  page.on('requestfailed', (r) => problems.push(`failed ${r.url()}`));
+  // (a request Firefox cancels, NS_BINDING_ABORTED, is not a failure: the page served through the
+  // route above, or the next navigation, takes its place)
+  page.on('requestfailed', (r) => r.failure()?.errorText !== 'NS_BINDING_ABORTED' && problems.push(`failed ${r.url()} (${r.failure()?.errorText})`));
   for (const path of PAGES) {
     await page.goto(path, { waitUntil: 'load' });
     await page.evaluate(() => document.fonts.ready);
