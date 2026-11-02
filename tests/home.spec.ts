@@ -1,5 +1,22 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+
+// Waits until an element has stopped moving (its box the same twice running), instead of a fixed
+// sleep: as long as a slow machine needs, no longer than a fast one does.
+const settled = async (loc: Locator) => {
+  let last = '';
+  await expect
+    .poll(
+      async () => {
+        const b = JSON.stringify(await loc.boundingBox());
+        const same = b === last;
+        last = b;
+        return same;
+      },
+      { intervals: [150, 150, 200] },
+    )
+    .toBe(true);
+};
 import sharp from 'sharp';
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -184,9 +201,8 @@ test.describe('Home', () => {
     await page.setViewportSize({ width: 375, height: 780 });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(400);
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
-    await page.waitForTimeout(300);
+    await settled(page.locator('.hud__runner'));
     const top = (await page.locator('.tabbar').boundingBox())!.y;
     const ship = (await page.locator('.hud__runner').boundingBox())!;
     expect(ship.y + ship.height, 'the ship rides on the bar').toBeLessThanOrEqual(top + 1);
@@ -198,7 +214,7 @@ test.describe('Home', () => {
     await page.evaluate(() => document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'selftest' })));
     const toast = page.locator('[data-toast]');
     await expect(toast).toHaveClass(/is-in/);
-    await page.waitForTimeout(400);
+    await settled(toast);
     const t = (await toast.boundingBox())!;
     expect(t.y + t.height).toBeLessThanOrEqual(ship.y);
     expect(t.x).toBeGreaterThanOrEqual(0);
@@ -316,7 +332,7 @@ test.describe('Home', () => {
     for (const width of [768, 1280, 1440, 1920]) {
       await page.setViewportSize({ width, height: 900 });
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.waitForTimeout(150);
+      await settled(page.locator('.hero__figure'));
       const fit = await page.evaluate(() => {
         const hero = document.querySelector('.hero')!.getBoundingClientRect();
         const fig = document.querySelector('.hero__figure')!.getBoundingClientRect();
@@ -330,7 +346,7 @@ test.describe('Home', () => {
     for (const width of [1280, 1440, 1920]) {
       await page.setViewportSize({ width, height: 900 });
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.waitForTimeout(150);
+      await settled(page.locator('.hero__head'));
       const m = await page.evaluate(() => {
         const head = document.querySelector('.hero__head')!.getBoundingClientRect();
         const fig = document.querySelector('.hero__figure')!.getBoundingClientRect();
@@ -350,7 +366,7 @@ test.describe('Home', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.evaluate(() => window.scrollTo(0, 600));
-    await page.waitForTimeout(100);
+    await settled(page.locator('.hero'));
     const after = await page.evaluate(() => {
       const hero = document.querySelector('.hero')!.getBoundingClientRect();
       const next = document.querySelector('.wall')!.getBoundingClientRect();
@@ -570,7 +586,7 @@ test.describe('Home', () => {
     await expect(card).toHaveClass(/is-in/);
     // while it is up, the scoreboard's card opens above it
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
-    await page.waitForTimeout(200);
+    await settled(page.locator('.score__panel'));
     expect(overlap(await box(page, '.score__panel'), await box(page, '[data-glitch-card]')), 'the scoreboard card above it').toBe(false);
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Track the bug' }).click();
@@ -720,9 +736,7 @@ test.describe('Home', () => {
     await page.locator('.wall').scrollIntoViewIfNeeded();
     await page.mouse.move(10, 10);
     const a = await x();
-    await page.waitForTimeout(700);
-    const b = await x();
-    expect(b, 'the logos roll left').toBeLessThan(a - 5);
+    await expect.poll(x, { message: 'the logos roll left' }).toBeLessThan(a - 5);
     // the button pauses it, and plays it again
     const pause = page.getByRole('button', { name: 'Pause the logos' });
     await pause.click();
@@ -733,8 +747,7 @@ test.describe('Home', () => {
     expect(Math.abs((await x()) - c), 'paused').toBeLessThan(1);
     await page.getByRole('button', { name: 'Play the logos' }).click();
     await page.mouse.move(10, 10);
-    await page.waitForTimeout(500);
-    expect(await x(), 'rolling again').toBeLessThan(c - 5);
+    await expect.poll(x, { message: 'rolling again' }).toBeLessThan(c - 5);
     // Tab from the pause button leaves the ticker: no logo takes focus
     await page.getByRole('button', { name: 'Pause the logos' }).focus();
     await page.keyboard.press('Shift+Tab');
@@ -754,7 +767,7 @@ test.describe('Home', () => {
         await page.goto('/');
         await page.evaluate(() => document.fonts.ready);
         await page.locator('.wall').scrollIntoViewIfNeeded();
-        await page.waitForTimeout(400);
+        await settled(page.locator('.ticker__view'));
         expect(await page.locator('.ticker__track').evaluate((el) => getComputedStyle(el).animationName), how).toBe('none');
         await expect(page.locator('.ticker__copy')).toBeHidden();
         await expect(page.getByRole('button', { name: /the logos/ }), `${how}: no Pause`).toBeHidden();
@@ -866,7 +879,7 @@ test.describe('Home', () => {
     // the neighbours white at half strength and 32px right; the outer rows at a quarter and 64px
     await drum.scrollIntoViewIfNeeded();
     await page.mouse.move(10, 10);
-    await page.waitForTimeout(700);
+    await settled(drum);
     const state = () =>
       page.evaluate(() => {
         const view = document.querySelector('.drum__view')!.getBoundingClientRect();
@@ -1061,7 +1074,7 @@ test.describe('Home', () => {
     expect(box.y).toBeGreaterThanOrEqual(head.y + head.height - 1);
     expect(box.x + box.width).toBeLessThanOrEqual(375);
     await p1.locator('[data-drum]').scrollIntoViewIfNeeded();
-    await p1.waitForTimeout(500);
+    await settled(p1.locator('[data-drum]'));
     const xs = await p1.locator('.drum__row').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().right));
     expect(Math.max(...xs), 'the shifted rows stay inside the screen').toBeLessThanOrEqual(375);
     // the label never runs under the number or the buttons, even if it wraps
@@ -1257,6 +1270,8 @@ for (const [width, height] of [
     );
     expect(loaded, 'the first logos in with the page').toEqual([true, true, true]);
     await page.evaluate(() => document.fonts.ready);
+    // (kept as a pause: the hero's pin and the first entrances settle over a few frames, and
+    // nothing moves in the first ones for settled() to wait on)
     await page.waitForTimeout(300);
     const geo = await page.evaluate(() => {
       const box = (el: Element) => el.getBoundingClientRect();
@@ -1336,7 +1351,7 @@ test('on a desktop the scoreboard never covers the row of logos, wherever the pa
     const wall = await page.locator('.wall').evaluate((el) => el.getBoundingClientRect().top + scrollY);
     for (const y of [0, wall - height + 260, wall - height / 2, wall]) {
       await page.evaluate((y) => window.scrollTo(0, Math.max(0, y)), Math.round(y));
-      await page.waitForTimeout(100);
+      await settled(page.locator('.ticker__view'));
       const [pill, row] = await Promise.all(['.score__pill', '.ticker__view'].map((s) => page.locator(s).boundingBox()));
       const meet = pill!.x < row!.x + row!.width && pill!.x + pill!.width > row!.x && pill!.y < row!.y + row!.height && pill!.y + pill!.height > row!.y;
       expect(meet, `the pill clear of the row at ${width}, scrolled ${Math.round(y)}`).toBe(false);

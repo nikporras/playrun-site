@@ -29,8 +29,10 @@ export default defineConfig({
         timeout: 180_000,
       },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /webkit\.spec\.ts/ },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /(webkit|firefox)\.spec\.ts/ },
     // (Safari's engine, for what only it does differently: tests/webkit.spec.ts)
     { name: 'webkit', use: { ...devices['Desktop Safari'] }, testMatch: /webkit\.spec\.ts/ },
+    // (and Firefox's: tests/firefox.spec.ts)
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testMatch: /firefox\.spec\.ts/ },
   ],
 });

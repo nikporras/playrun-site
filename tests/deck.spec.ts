@@ -33,14 +33,14 @@ test.describe('The Quality deck', () => {
       );
     // at the start only the first card is on the stage; the rest wait below the screen
     await page.evaluate((y) => window.scrollTo(0, y), top);
-    await page.waitForTimeout(150);
+    await expect.poll(async () => (await state()).slice(1).every((c) => !c.onScreen)).toBe(true);
     let s = await state();
     expect(s[0].onScreen).toBe(true);
     expect(s.slice(1).every((c) => !c.onScreen), 'the other four are off screen').toBe(true);
     // half way: the third card has landed, the fifth has not; the pinned content has not moved
     const range = box.height - 900;
     await page.evaluate((y) => window.scrollTo(0, y), top + range / 2);
-    await page.waitForTimeout(150);
+    await expect.poll(async () => (await state())[2].e).toBeGreaterThanOrEqual(0.99);
     s = await state();
     expect(s[2].e, 'card three dealt').toBeGreaterThanOrEqual(0.99);
     expect(s[4].e, 'card five still to come').toBeLessThan(0.5);
@@ -48,7 +48,7 @@ test.describe('The Quality deck', () => {
     expect(await page.locator('.deck__pin').evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(0);
     // at the end: all five dealt, each tilted its own few degrees, each a little lower than the last
     await page.evaluate((y) => window.scrollTo(0, y), top + range);
-    await page.waitForTimeout(150);
+    await expect.poll(async () => (await state()).every((c) => c.e >= 0.99)).toBe(true);
     s = await state();
     expect(s.every((c) => c.e >= 0.99)).toBe(true);
     expect(s.map((c) => Math.abs(c.tilt) >= 1 && Math.abs(c.tilt) <= 4)).toEqual([true, true, true, true, true]);
@@ -67,6 +67,16 @@ test.describe('The Quality deck', () => {
     // the top card's text is readable and selectable
     const line = cards.last().locator('.step__for:not([hidden]) .step__list li').first();
     await expect(line).toBeVisible();
+    // (the card settled first: a drag on a card still moving can miss its text)
+    let last = '';
+    await expect
+      .poll(async () => {
+        const b = JSON.stringify(await line.boundingBox());
+        const still = b === last;
+        last = b;
+        return still;
+      })
+      .toBe(true);
     const r = (await line.boundingBox())!;
     await page.mouse.move(r.x + 2, r.y + 10);
     await page.mouse.down();
@@ -77,14 +87,11 @@ test.describe('The Quality deck', () => {
     await expect(page.locator('.step.is-pass')).toHaveCount(5, { timeout: 15_000 });
     // after the fifth card normal scrolling resumes: the report follows
     await page.evaluate((y) => window.scrollTo(0, y), top + range + 900);
-    await page.waitForTimeout(150);
-    expect(await page.locator('.report').evaluate((el) => el.getBoundingClientRect().top)).toBeLessThan(900);
+    await expect.poll(() => page.locator('.report').evaluate((el) => el.getBoundingClientRect().top)).toBeLessThan(900);
     // a jump to a step lands where it has been dealt
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.evaluate(() => (location.hash = '#step-performance'));
-    await page.waitForTimeout(300);
-    s = await state();
-    expect(s[4].e).toBeGreaterThanOrEqual(0.99);
+    await expect.poll(async () => (await state())[4].e).toBeGreaterThanOrEqual(0.99);
   });
 
   test('a phone slides the cards in one at a time beside Pocket DevTools; reduced motion and no script keep them still', async ({ browser }) => {
