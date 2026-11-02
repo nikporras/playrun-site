@@ -113,7 +113,8 @@ export default defineConfig({
   // one official form everywhere (links, canonicals, the sitemap, redirect targets): GitHub Pages
   // sends /portfolio to /portfolio/ itself, so the slash-free form is only ever a redirect.
   trailingSlash: 'always',
-  build: { format: 'directory' },
+  // (every page's CSS in its own HTML: nothing to fetch before the first paint)
+  build: { format: 'directory', inlineStylesheets: 'always' },
   // The About page was folded into Home, the Portfolio and Skills; its address goes home.
   // The Credits page was folded into the Terms page.
   redirects,

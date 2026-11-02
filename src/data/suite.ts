@@ -53,6 +53,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'brand.spec.ts': ['Brand assets', 'Both typefaces load, the logo renders, favicon and Open Graph image present.'],
   'analytics.spec.ts': ['Visit statistics', 'Umami on every page from the site itself, reporting only to its gateway on the live domain, never with Do Not Track, never from the suite.'],
   'bugs.spec.ts': ['Bugs off the text', 'Every bug sits in empty field on five pages at four widths, all along its walk.'],
+  'cls.spec.ts': ['Layout shift', 'Every page at a phone and a desktop width, with the fonts arriving late, shifts its layout by no more than 0.1.'],
   'contact.spec.ts': ['Contact form', 'Validation, every answer the script can give, and the mailto fallback.'],
   'credits.spec.ts': ['Credits', 'Every typeface, tool and sprite is credited, and the page passes axe.'],
   'events.spec.ts': ['What the statistics count', 'Each counted click carries its event name, and what a click cannot see is counted by name, never with anything a visitor typed.'],

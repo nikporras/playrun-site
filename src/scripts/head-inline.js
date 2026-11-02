@@ -31,6 +31,33 @@ document.documentElement.classList.add('js');
     history.replaceState(history.state, '', location.pathname + (rest ? '?' + rest : '') + location.hash);
   } catch (e) {}
 })();
+// The text face loaded: 'fonts-ready' on <html> once Montserrat is in (or after 3 s at most). On a
+// phone the hero's photo sits under its text and takes the height the text leaves, and the text can
+// wrap differently in the fallback face: the photo waits for this, so the swap moves nothing on screen.
+(function () {
+  var root = document.documentElement;
+  var done = function () {
+    root.classList.add('fonts-ready');
+  };
+  try {
+    var fonts = document.fonts;
+    if (!fonts || !fonts.forEach || !fonts.addEventListener) return done();
+    // (the face is known only once the stylesheet is in, so look whenever a font finishes loading
+    // and once the page is parsed, as the face may already be there from the cache)
+    var check = function () {
+      var ok = false;
+      fonts.forEach(function (f) {
+        if (f.family.replace(/["']/g, '') === 'Montserrat' && f.style === 'normal' && String(f.weight) === '400' && f.status === 'loaded') ok = true;
+      });
+      if (ok) done();
+    };
+    fonts.addEventListener('loadingdone', check);
+    document.addEventListener('DOMContentLoaded', check);
+    setTimeout(done, 3000);
+  } catch (e) {
+    done();
+  }
+})();
 window.__playrunErrors = [];
 addEventListener('error', (e) => window.__playrunErrors.push(String(e.message || e)));
 addEventListener('unhandledrejection', (e) => window.__playrunErrors.push(String(e.reason || e)));

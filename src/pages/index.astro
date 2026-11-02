@@ -32,9 +32,9 @@ const FEATURED = ['beat-saber', 'nba-2k21', 'cyberpunk-2077', 'ghostbusters-rise
 // Each logo's size on the ticker, by eye rather than by one height: the same visual weight for a
 // wide wordmark (shorter) and a tall stacked mark (narrower). From the file's own aspect ratio,
 // in rem at desktop; the CSS scales the whole set down on tablets and phones.
-const size = (id: string) => {
+const dims = (id: string) => {
   const img = logos[id];
-  if (!img) return '--lw: 12rem; --lh: 4rem';
+  if (!img) return { w: 12, h: 4 };
   const ratio = img.width / img.height;
   let h = Math.min(7, Math.max(2, 7.9 / Math.sqrt(ratio)));
   let w = h * ratio;
@@ -42,7 +42,22 @@ const size = (id: string) => {
     w = 18;
     h = w / ratio;
   }
+  return { w, h };
+};
+const size = (id: string) => {
+  const { w, h } = dims(id);
   return `--lw: ${w.toFixed(2)}rem; --lh: ${h.toFixed(2)}rem`;
+};
+// The files each logo is offered in, and which one a screen needs: the logos show at half size on
+// phones and 0.72 on tablets (--k), so a phone takes a small file, not the desktop's twice-size one.
+const SCALES = [0.5, 0.72, 1];
+const logoWidths = (id: string) => {
+  const css = dims(id).w * 16;
+  return [...new Set([...SCALES, 1.5, 2].map((k) => Math.round(css * k)))].filter((w) => w <= logos[id].width);
+};
+const logoSizes = (id: string) => {
+  const css = dims(id).w * 16;
+  return `(max-width: 47.99rem) ${Math.round(css * SCALES[0])}px, (max-width: 63.99rem) ${Math.round(css * SCALES[1])}px, ${Math.round(css)}px`;
 };
 const wall = [...FEATURED.flatMap((id) => byPost.filter((p) => p.id === id)), ...byPost.filter((p) => !FEATURED.includes(p.id))];
 
@@ -129,8 +144,8 @@ const checks = [
       <Picture
         src={portrait}
         alt={ALT}
-        widths={[400, 640, 960, 1280]}
-        sizes="(max-width: 63.99rem) 70vw, 36vw"
+        widths={[320, 400, 640, 960, 1280]}
+        sizes="(max-width: 47.99rem) 50vw, 36vw"
         formats={['avif']}
         fallbackFormat="webp"
         loading="eager"
@@ -179,8 +194,8 @@ const checks = [
                           class="wall__logo"
                           src={logos[p.id]}
                           alt={copy ? '' : p.data.title}
-                          height={120}
-                          densities={[1, 2]}
+                          widths={logoWidths(p.id)}
+                          sizes={logoSizes(p.id)}
                           loading={!copy && i < 5 ? 'eager' : 'lazy'}
                           fetchpriority={!copy && i < 5 ? 'high' : undefined}
                           decoding="async"
@@ -655,6 +670,12 @@ const checks = [
   @media (max-width: 47.99rem) {
     .hero__figure {
       container: halo / size;
+    }
+    /* (the photo and its halo show once the text face is in, see head-inline.js: until then the text
+       may wrap differently and the photo, sized by what the text leaves, would move; hidden, it
+       cannot shift, and it shows at its final size. Without script it shows at once.) */
+    :global(.js:not(.fonts-ready)) .hero__figure {
+      visibility: hidden;
     }
     @container halo (min-height: 290px) {
       :global(.hero__halo--264) {

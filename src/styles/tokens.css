@@ -41,7 +41,7 @@
   --rule: color-mix(in srgb, currentColor 24%, transparent); /* the thin divider on every field */
 
   /* Type */
-  --font-display: 'Pixel Operator', 'Lucida Console', 'Courier New', monospace;
+  --font-display: 'Pixel Operator', 'Pixel Operator Fallback', 'Lucida Console', 'Courier New', monospace;
   --font-text: 'Montserrat', 'Montserrat Fallback', Arial, Helvetica, sans-serif;
 
   /* Five steps. Display and head sizes snap to 16px multiples so Pixel Operator stays crisp. */

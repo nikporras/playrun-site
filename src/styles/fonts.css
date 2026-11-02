@@ -15,12 +15,60 @@
   font-display: swap;
 }
 
-/* Metric-matched fallback for Montserrat so the swap does not shift the layout. */
+/* The same for Pixel Operator: Arial and its twins scaled to its letters (0.3964 em against 0.4471 on
+   average, lower case, which the headings are mostly set in) and its line (1300 up, 300 down and 72
+   between, per 1600), so a heading takes about the same room before and after the face arrives. */
+@font-face {
+  font-family: 'Pixel Operator Fallback';
+  src: local('Arial'), local('Liberation Sans'), local('Arimo');
+  font-weight: 400;
+  size-adjust: 88.66%;
+  ascent-override: 91.64%;
+  descent-override: 21.15%;
+  line-gap-override: 5.08%;
+}
+@font-face {
+  font-family: 'Pixel Operator Fallback';
+  src: local('Arial Bold'), local('Liberation Sans Bold'), local('Arimo Bold');
+  font-weight: 700;
+  size-adjust: 88.66%;
+  ascent-override: 91.64%;
+  descent-override: 21.15%;
+  line-gap-override: 5.08%;
+}
+
+/* Metric-matched fallback for Montserrat, so the text takes the same room before and after the web
+   font arrives and the swap shifts nothing (it moved the phone hero's photo by 6px, CLS 0.19, on a
+   slow first visit). Arial and its metric twins (Liberation Sans on Linux, Arimo on ChromeOS) scaled
+   to Montserrat: size-adjust from the two faces' average letter widths (0.5119 em against 0.4471),
+   ascent and descent from Montserrat's own (968 and 251 per 1000), divided by that size. */
 @font-face {
   font-family: 'Montserrat Fallback';
-  src: local('Arial');
-  size-adjust: 111%;
-  ascent-override: 88%;
-  descent-override: 23%;
+  src: local('Arial'), local('Liberation Sans'), local('Arimo');
+  font-style: normal;
+  font-weight: 400;
+  size-adjust: 114.5%;
+  ascent-override: 84.54%;
+  descent-override: 21.92%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Montserrat Fallback';
+  src: local('Arial Italic'), local('Liberation Sans Italic'), local('Arimo Italic');
+  font-style: italic;
+  font-weight: 400;
+  size-adjust: 114.5%;
+  ascent-override: 84.54%;
+  descent-override: 21.92%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Montserrat Fallback';
+  src: local('Arial Bold'), local('Liberation Sans Bold'), local('Arimo Bold');
+  font-style: normal;
+  font-weight: 600 700;
+  size-adjust: 114.5%;
+  ascent-override: 84.54%;
+  descent-override: 21.92%;
   line-gap-override: 0%;
 }
