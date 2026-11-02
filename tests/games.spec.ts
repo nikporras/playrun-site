@@ -553,3 +553,27 @@ test.describe('Kept in the browser', () => {
     await expect(page.getByRole('complementary', { name: 'Scoreboard' })).toBeVisible();
   });
 });
+
+// On the bottom bar (phones and tablets) the ship rides over the level itself: no box behind it,
+// a thin navy outline round its own shape instead, at the size it always had.
+for (const width of [375, 768]) {
+  test(`at ${width}px the ship on the bar has no solid background: transparent, outlined by its own shape, the same size`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/skills/');
+    const ship = page.locator('.hud__ship');
+    await expect(ship).toBeVisible();
+    const look = await ship.evaluate((el) => {
+      const solid = (e: Element) => {
+        const cs = getComputedStyle(e);
+        return cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.backgroundImage !== 'none';
+      };
+      const runner = el.closest('.hud__runner')!;
+      const b = runner.getBoundingClientRect();
+      return { solid: solid(el) || solid(runner), filter: getComputedStyle(el.querySelector('.sprite')!).filter, w: b.width, h: b.height };
+    });
+    expect(look.solid, 'no box behind the ship').toBe(false);
+    expect(look.filter.match(/drop-shadow/g)?.length, 'an outline round its shape').toBe(4);
+    expect(look.w).toBe(24);
+    expect(look.h).toBe(24);
+  });
+}

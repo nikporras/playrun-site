@@ -580,6 +580,14 @@ import PassMark from './PassMark.astro';
       bottom: 100%;
       pointer-events: none; /* (it rides over the markers: they take the tap) */
     }
+    /* On the bar the ship rides over the level itself, so no plate: a thin navy outline round its
+       own shape (four one-pixel shadows) keeps it clear on every field, like the bugs' ring. */
+    .hud__ship {
+      background: transparent;
+    }
+    .hud__ship :global(.sprite) {
+      filter: drop-shadow(1px 0 0 var(--pr-navy)) drop-shadow(-1px 0 0 var(--pr-navy)) drop-shadow(0 1px 0 var(--pr-navy)) drop-shadow(0 -1px 0 var(--pr-navy));
+    }
     .dock,
     .dock.dock--off {
       right: 0;
