@@ -11,7 +11,7 @@ const require = createRequire(import.meta.url);
 // The hero's foot as the hero's exit measures it (the hero pins at its top, or by its bottom edge
 // when it is taller than the screen), and a scroll just past the line where the name glitches.
 const footOf = (page: Page) =>
-  page.locator('.hero').evaluate((el) => Math.min(innerHeight, (parseFloat(getComputedStyle(el).top) || 0) + el.offsetHeight));
+  page.locator('.hero').evaluate((el: HTMLElement) => Math.min(innerHeight, (parseFloat(getComputedStyle(el).top) || 0) + el.offsetHeight));
 const pastBreak = async (page: Page) => {
   const foot = await footOf(page);
   const mark = await page.locator('.wall__trip[data-trip="glitch"]').evaluate((el) => el.getBoundingClientRect().top + scrollY);

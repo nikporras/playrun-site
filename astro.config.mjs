@@ -15,12 +15,15 @@ const projectSlugs = readdirSync('./src/content/projects')
 const projectRedirects = Object.fromEntries([...projectSlugs, 'the-climb'].map((slug) => [`/portfolio/${slug}`, '/portfolio/']));
 // The sources of a page, for its date in the sitemap.
 const DATA = ['src/content/projects', 'src/config.ts'];
+/** @type {Record<string, string[]>} */
 const SOURCES = {
   '/': ['src/pages/index.astro', ...DATA],
   '/portfolio/': ['src/pages/portfolio.astro', 'src/components/GameCard.astro', ...DATA],
   '/about/': ['src/pages/about.astro', 'src/data/about.ts', ...DATA],
 };
+/** @param {string} path */
 const sourcesOf = (path) => SOURCES[path] ?? [`src/pages${path.replace(/\/$/, '')}.astro`];
+/** @param {string[]} paths */
 const lastCommit = (paths) => {
   try {
     return execFileSync('git', ['log', '-1', '--format=%cI', '--', ...paths], { encoding: 'utf8' }).trim() || undefined;
@@ -38,6 +41,7 @@ const redirects = { '/services': '/skills/', '/credits': '/terms/#credits', ...p
 const redirectTwins = {
   name: 'redirect-twins',
   hooks: {
+    /** @param {{ dir: URL }} options */
     'astro:build:done': ({ dir }) => {
       const out = fileURLToPath(dir);
       for (const from of Object.keys(redirects)) copyFileSync(`${out}${from.slice(1)}/index.html`, `${out}${from.slice(1)}.html`);
@@ -49,9 +53,11 @@ const redirectTwins = {
 // hash of each script it bundles; the one inline script (src/scripts/head-inline.js, written into
 // the head as it is) is hashed here. Styles may be inline: the pages set custom properties in style
 // attributes. The contact form posts to the Google Apps Script, which answers from googleusercontent.
+/** @param {string} text @returns {`sha256-${string}`} */
 const sha256 = (text) => `sha256-${createHash('sha256').update(text).digest('base64')}`;
 const headScript = sha256(readFileSync('./src/scripts/head-inline.js', 'utf8'));
-const cspDirectives = [
+// (typed loosely: Astro's directive type is a template literal for each name)
+const cspDirectives = /** @type {any[]} */ ([
   "default-src 'self'",
   "img-src 'self' data:",
   "font-src 'self'",
@@ -60,7 +66,7 @@ const cspDirectives = [
   "base-uri 'self'",
   "object-src 'none'",
   'upgrade-insecure-requests',
-];
+]);
 
 // After the build, on every page: the policy moves to the top of the head (a policy in a meta tag
 // only covers what comes after it, and Astro writes it after the head's own tags), the build stops
@@ -69,6 +75,7 @@ const cspDirectives = [
 const cspFirst = {
   name: 'csp-first',
   hooks: {
+    /** @param {{ dir: URL }} options */
     'astro:build:done': ({ dir }) => {
       const out = fileURLToPath(dir);
       const pages = readdirSync(out, { recursive: true }).filter((f) => String(f).endsWith('.html'));

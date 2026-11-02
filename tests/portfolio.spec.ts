@@ -169,7 +169,7 @@ test.describe('The Games page journey', () => {
     });
     // bring the first card to the middle and let the scroll settle
     const first = page.locator('.card').first();
-    const y = await first.evaluate((el) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
+    const y = await first.evaluate((el: HTMLElement) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
     await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
     await page.waitForFunction(() => document.querySelector('[data-shot]')?.getAttribute('data-to'), null, { timeout: 4000, polling: 16 });
     // the bolt: twelve pixel squares, a bright glowing head and a thinning trail, each flying the path in a third of a second
@@ -389,7 +389,7 @@ test.describe('The Games page journey', () => {
     await page.getByRole('button', { name: /Games on/ }).click();
     await page.mouse.click(640, 300);
     const first = page.locator('.card').first();
-    const y = await first.evaluate((el) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
+    const y = await first.evaluate((el: HTMLElement) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
     await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
     await page.waitForTimeout(1300);
     expect(await page.locator('.bolt__px').evaluateAll((els) => els.filter((el) => el.getAnimations().length).length), 'no bolt').toBe(0);
@@ -408,7 +408,7 @@ test.describe('The Games page journey', () => {
     await page.goto('/portfolio/');
     await noSmooth(page);
     const first = page.locator('.card').first();
-    const y = await first.evaluate((el) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
+    const y = await first.evaluate((el: HTMLElement) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
     await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
     await expect(first).toHaveClass(/is-scanned/, { timeout: 2500 });
     expect(await page.locator('.bolt__px, .muzzle__px, .burst__px').evaluateAll((els) => els.filter((el) => el.getAnimations().length).length), 'no bolt, no muzzle, no burst').toBe(0);
@@ -422,7 +422,7 @@ test.describe('The Games page journey', () => {
     await page.goto('/portfolio/');
     await expect(page.locator('.card').first()).toHaveCSS('opacity', '1');
     const first = page.locator('.card').first();
-    const y = await first.evaluate((el) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
+    const y = await first.evaluate((el: HTMLElement) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
     await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
     await page.waitForTimeout(1300);
     await expect(page.locator('[data-shot]')).toBeHidden();

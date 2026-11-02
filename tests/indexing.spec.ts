@@ -21,7 +21,7 @@ test('robots.txt allows every named AI and search crawler, then everyone, lists 
   expect(text).toMatch(/^Sitemap: https:\/\/playrunqa\.com\/sitemap-index\.xml$/m);
 });
 
-test('an IndexNow key is published at the site root, and the deploy reports the sitemap with it without ever failing on it', { tag: ['@links'] }, async ({ request }) => {
+test('an IndexNow key is published at the site root, and the deploy reports the pages that changed with it without ever failing on it', { tag: ['@links'] }, async ({ request }) => {
   const keys = readdirSync(path.join(process.cwd(), 'public')).filter((f) => /^[0-9a-f]{32}\.txt$/.test(f));
   expect(keys).toHaveLength(1);
   const key = keys[0].replace(/\.txt$/, '');
@@ -30,7 +30,10 @@ test('an IndexNow key is published at the site root, and the deploy reports the 
   expect((await res.text()).trim()).toBe(key);
   const workflow = readFileSync(path.join(process.cwd(), '.github', 'workflows', 'deploy.yml'), 'utf8');
   const job = workflow.slice(workflow.indexOf('  indexnow:'));
-  expect(job).toContain('needs: deploy');
+  expect(job).toContain('needs: [build, deploy]');
+  // (only the pages whose date in the sitemap changed, worked out by the build job)
+  expect(job).toContain('needs.build.outputs.changed');
+  expect(workflow).toContain('id: changed');
   expect(job).toContain("github.ref == 'refs/heads/main'");
   expect(job).toContain('continue-on-error: true');
   expect(job).toContain('https://api.indexnow.org/indexnow');

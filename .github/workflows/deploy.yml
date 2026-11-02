@@ -6,31 +6,38 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Read only, everywhere: only the deploy job may write to Pages (its own permissions below).
 permissions:
   contents: read
-  pages: write
-  id-token: write
+
+# The npm every job uses, the same for the tests and the build that ships.
+env:
+  NPM_VERSION: 11.12.1
 
 jobs:
   test:
     name: Playwright tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # (the whole history: the sitemap's dates are each page's last commit, and a test checks them)
           fetch-depth: 0
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: npm
+      - name: npm ${{ env.NPM_VERSION }}
+        run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
+      - name: Type check
+        run: npm run check
       - name: Playwright version
         id: playwright
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
         id: browsers
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium-webkit
@@ -43,14 +50,14 @@ jobs:
       - run: npm test
         env:
           CI: true
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: playwright-report
           path: playwright-report
           retention-days: 14
       - name: Hand the results to the build
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-results
           path: tests/results/run.json
@@ -60,13 +67,15 @@ jobs:
     name: Build site
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.changed.outputs.urls }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # (the whole history: each page's date in the sitemap is its last commit)
           fetch-depth: 0
       - name: Results of the test job, read by the Quality page
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: playwright-results
           path: tests/results
@@ -74,20 +83,40 @@ jobs:
         run: |
           test -s tests/results/run.json || { echo "::error::tests/results/run.json is missing: the Home scoreboard and the Quality page need the test job's run"; exit 1; }
           node -e "const r=require('./tests/results/run.json'); if(!r.stats||!r.suites?.length){console.error('::error::run.json has no run in it'); process.exit(1)}"
-      - uses: withastro/action@v6
+      - uses: withastro/action@a8b97df764791eb61fbf3338ef713b0e61ae05c5 # v6.1.4
         with:
           node-version: 24
-          package-manager: npm@latest
+          package-manager: npm@${{ env.NPM_VERSION }}
       # (Bug Sweep's test handle exists only in test builds: a failure here stops the deploy)
       - name: The production build carries no test handle
         run: |
           if grep -rq "sweepTest" dist; then echo "::error::Bug Sweep's test handle is in the production build"; exit 1; fi
+      # (for IndexNow: the pages whose date in the sitemap differs from the live one, or are new; the
+      # live sitemap is still the previous deploy's at this point)
+      - name: Pages that changed
+        id: changed
+        run: |
+          curl -fsS https://playrunqa.com/sitemap-0.xml -o live-sitemap.xml || : > live-sitemap.xml
+          node -e '
+            const fs = require("fs");
+            const read = (f) => Object.fromEntries([...fs.readFileSync(f, "utf8").matchAll(/<loc>([^<]*)<\/loc>(?:<lastmod>([^<]*)<\/lastmod>)?/g)].map((m) => [m[1], m[2] || ""]));
+            const live = read("live-sitemap.xml");
+            const next = read("dist/sitemap-0.xml");
+            const urls = Object.keys(next).filter((u) => live[u] !== next[u]);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "urls=" + JSON.stringify(urls) + "\n");
+            console.log(urls.length ? "Changed: " + urls.join(", ") : "No page changed");
+          '
 
   deploy:
     name: Deploy to GitHub Pages
     needs: build
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    # (the only job that may write: to Pages, with a token it asks for)
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     # (one deploy at a time; the tests and the build of pull requests run side by side and never wait here)
     concurrency:
       group: pages
@@ -97,19 +126,20 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
   indexnow:
     name: Tell IndexNow what changed
-    needs: deploy
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build, deploy]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.build.outputs.changed != '[]'
     runs-on: ubuntu-latest
     # (a report only: a search engine being down never fails the deploy)
     continue-on-error: true
     steps:
-      - name: Post the sitemap's addresses to IndexNow
+      - name: Post the pages that changed to IndexNow
+        env:
+          URLS: ${{ needs.build.outputs.changed }}
         run: |
-          urls=$(curl -fsS https://playrunqa.com/sitemap-0.xml | grep -o '<loc>[^<]*</loc>' | sed 's/<[^>]*>//g' | jq -R . | jq -s -c .) || { echo "Could not read the sitemap"; exit 0; }
-          body=$(jq -n --argjson urls "$urls" '{host: "playrunqa.com", key: "ba54fe2b9837ad645217daed2d1f84dd", keyLocation: "https://playrunqa.com/ba54fe2b9837ad645217daed2d1f84dd.txt", urlList: $urls}')
+          body=$(jq -n --argjson urls "$URLS" '{host: "playrunqa.com", key: "ba54fe2b9837ad645217daed2d1f84dd", keyLocation: "https://playrunqa.com/ba54fe2b9837ad645217daed2d1f84dd.txt", urlList: $urls}')
           status=$(curl -sS -o /dev/null -w '%{http_code}' -X POST https://api.indexnow.org/indexnow -H 'Content-Type: application/json; charset=utf-8' -d "$body") || status=error
-          echo "IndexNow answered $status for $(echo "$urls" | jq length) addresses"
+          echo "IndexNow answered $status for $(echo "$URLS" | jq length) changed addresses"
