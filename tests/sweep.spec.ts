@@ -44,7 +44,7 @@ for (const [width, height] of SIZES) {
     // nothing of the game before Play
     await page.waitForTimeout(500);
     expect(fetched.filter((u) => /sweep\.[\w-]+\.js/.test(u)), 'no game code before Play').toEqual([]);
-    expect(await page.locator('canvas').evaluate((c: HTMLCanvasElement) => c.width), 'an empty canvas').toBe(300);
+    expect(await page.locator('canvas').evaluate((c: HTMLCanvasElement) => c.width), 'an empty canvas, at its own size').toBe(160);
     await play(page);
     expect(fetched.filter((u) => /sweep\.[\w-]+\.js/.test(u)).length, 'the code arrives with Play').toBe(1);
     // the field: a whole number of device pixels per game pixel

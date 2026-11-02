@@ -179,6 +179,22 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
       text-align: center;
     }
   }
+  /* The narrowest phones (under about 340px): a slightly smaller logo and a tighter switch, so the
+     header never runs past the screen's edge. */
+  @media (max-width: 21.5rem) {
+    .header__lockup {
+      height: 1.625rem;
+    }
+    .header__start {
+      gap: var(--s-1);
+    }
+    .motion {
+      gap: 0.35em;
+      padding: 0 0.5rem;
+      font-size: 0.8125rem;
+      letter-spacing: 0.04em;
+    }
+  }
 </style>
 
 <script>
