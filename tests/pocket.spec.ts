@@ -1,40 +1,19 @@
 import { test, expect, devices } from '@playwright/test';
 
 /**
- * Pocket DevTools: on a phone the Quality page swaps the computer instructions for phone steps and
- * a panel that shows what F12 would: the console errors the page caught, the requests it made
- * and its load timings, from its own records.
+ * Pocket DevTools: with a phone picked (an Android phone here, picked for itself) the Quality page
+ * shows the phone's steps and a panel that shows what F12 would: the console errors the page
+ * caught, the requests it made and its load timings, from its own records.
  */
 test.use({ ...devices['Pixel 7'], viewport: { width: 390, height: 844 } });
 
-test('the phone steps replace the computer ones, and the panel shows the console, the requests and the timings', async ({ page }) => {
+test('a phone picks itself: its steps show, and the panel shows the console, the requests and the timings', async ({ page }) => {
   await page.goto('/quality/');
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
-  await expect(page.locator('.step__desktop .step__howtitle').first()).toBeHidden();
-  await expect(page.locator('.step__desktop').first()).toBeHidden();
-  await expect(page.locator('.step__phone').first()).toBeVisible();
-  for (const text of ['Rotate the phone', 'Pinch to zoom', 'VoiceOver', 'TalkBack', 'Reduce motion']) await expect(page.getByText(text).first()).toBeVisible();
-  // (no note explaining the fold: the button says it)
-  await expect(page.locator('.step__note')).toHaveCount(0);
-  // the computer steps are folded under a button, closed by default, and open on a tap
-  const fold = page.locator('#step-responsive .step__fold');
-  await expect(fold).toBeVisible();
-  await expect(fold).toHaveText(/Checking on a computer\?/);
-  await expect(fold).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.locator('#how-responsive')).toBeHidden();
-  await fold.tap();
-  await expect(fold).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.locator('#how-responsive')).toBeVisible();
-  await expect(page.locator('#how-responsive')).toContainText("The page switches to its phone layout. That's expected, it's what you're testing.");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), 'no sideways scroll with a fold open').toBeLessThanOrEqual(0);
-  await fold.tap();
-  await expect(page.locator('#how-responsive')).toBeHidden();
-  // the keyboard works it too
-  await fold.focus();
-  await page.keyboard.press('Enter');
-  await expect(fold).toHaveAttribute('aria-expanded', 'true');
-  await page.keyboard.press('Enter');
-  await expect(fold).toHaveAttribute('aria-expanded', 'false');
+  // (an Android phone: the picker chose it, so its steps show and no computer's)
+  await expect(page.locator('[data-picker] [aria-pressed="true"]')).toHaveText('Android');
+  for (const text of ['Rotate the phone', 'Pinch to zoom', 'TalkBack', 'Remove animations']) await expect(page.locator('.step__for:not([hidden])').getByText(text).first()).toBeVisible();
+  await expect(page.getByText('Press F12').first()).toBeHidden();
   const dev = page.locator('.devtools');
   await dev.scrollIntoViewIfNeeded();
   await expect(dev).toBeVisible();

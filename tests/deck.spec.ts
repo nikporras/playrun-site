@@ -65,7 +65,7 @@ test.describe('The Quality deck', () => {
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     // the top card's text is readable and selectable
-    const line = cards.last().locator('.step__desktop .step__list li').first();
+    const line = cards.last().locator('.step__for:not([hidden]) .step__list li').first();
     await expect(line).toBeVisible();
     const r = (await line.boundingBox())!;
     await page.mouse.move(r.x + 2, r.y + 10);
@@ -91,6 +91,8 @@ test.describe('The Quality deck', () => {
     const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const p1 = await phone.newPage();
     await p1.goto('/quality/');
+    // (a phone: Pocket DevTools comes with it)
+    await p1.getByRole('button', { name: 'iPhone' }).tap();
     await expect(p1.locator('[data-deck]')).not.toHaveClass(/is-deck/);
     const cards = p1.locator('.deck__card');
     expect(await cards.first().evaluate((el) => getComputedStyle(el).position)).toBe('static');
@@ -109,8 +111,7 @@ test.describe('The Quality deck', () => {
     const p4 = await tablet.newPage();
     await p4.goto('/quality/');
     await expect(p4.locator('[data-deck]')).not.toHaveClass(/is-deck/);
-    await expect(p4.locator('.step__fold').first()).toBeHidden();
-    await expect(p4.locator('.step__desktop').first()).toBeVisible();
+    await expect(p4.locator('.step__for[data-for="chrome"]').first()).toBeVisible();
     await expect(p4.locator('.devtools')).toBeHidden();
     expect(await p4.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     await tablet.close();
@@ -120,7 +121,7 @@ test.describe('The Quality deck', () => {
     await p2.goto('/quality/');
     await expect(p2.locator('[data-deck]')).not.toHaveClass(/is-deck/);
     expect(await p2.locator('.deck__card').last().evaluate((el) => getComputedStyle(el).transform)).toBe('none');
-    await expect(p2.locator('.deck__card').last().locator('.step__desktop .step__list')).toBeVisible();
+    await expect(p2.locator('.deck__card').last().locator('.step__for:not([hidden]) .step__list')).toBeVisible();
     await expect(p2.locator('.deck__card').last()).toHaveCSS('opacity', '1');
     await quiet.close();
 
