@@ -8,6 +8,7 @@ import { contact } from '../config';
   kicker="Accessibility"
   description="PlayRun's accessibility statement: the site aims at WCAG 2.1 AA, is tested with axe and Playwright on every push, and how to report a problem."
   lead="I want everyone to be able to read this site and get in touch, whatever they use to browse it."
+  updated="2026-11-02"
 >
   <section class="row">
     <h2>What I aim for</h2>
@@ -22,9 +23,11 @@ import { contact } from '../config';
     <h2>How I test it</h2>
     <p>
       A Playwright suite runs against every push before the site can deploy. It includes an axe-core scan of every page
-      at WCAG 2.1 A and AA, a check that each page has one main heading in the right order, that images carry
-      alternative text, that keyboard focus is visible, and that nothing scrolls sideways on a phone. A failing check
-      stops the deploy. The Quality page lists every test by name.
+      at WCAG 2.1 A and AA, on a desktop and on a phone, and of the parts that open on demand (the scoreboard, the
+      pop-ups, the game on the About page and the Quality page's steps for a phone). It also checks that each page has
+      one main heading in the right order, that images carry alternative text, that keyboard focus is visible, and that
+      nothing scrolls sideways from 300 pixels wide. A failing check stops the deploy. The Quality page shows the
+      numbers from the run that built it.
     </p>
   </section>
 

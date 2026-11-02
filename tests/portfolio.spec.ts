@@ -457,7 +457,7 @@ for (const [width, height] of [
       const head = heads.nth(i);
       await expect(head.locator('.group__key')).toHaveText(['Allegiance', 'Titles', 'Cleared']);
       const cards = await page.locator('.group').nth(i).locator('.card').count();
-      await expect(head.locator('.group__cleared')).toHaveText(`${cards} ${cards === 1 ? 'game' : 'games'}`);
+      await expect(head.locator('.group__cleared')).toHaveText(cards === 0 ? 'No public titles' : `${cards} ${cards === 1 ? 'game' : 'games'}`);
       await expect(head.locator('.group__pip')).toHaveCount(cards);
       await expect(head.locator('.group__pips')).toHaveAttribute('aria-hidden', 'true');
       for (const el of await head.locator('.group__level, .group__key, .group__cleared, .group__role').all()) await expect(el).toBeVisible();

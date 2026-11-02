@@ -6,38 +6,35 @@ The website of **PlayRun**, the personal game QA portfolio of Nicolás Porras in
 
 ## What is on it
 
-- **Home**: who I am (and a headline that breaks into pixels as you scroll, with a bug ticket to match), a slow ticker of the games I have tested (their official logos, in one colour, with a pause button), the numbers, a scoreboard of the site's own checks that visitors can run in their browser, and what I play after hours.
-- **Skills**: what I test and how, as experience from shipped games: functional testing, platforms and stores, performance, playtesting and bug reporting, plus the tools and the way I work.
-- **Portfolio**: every title I can name in public, grouped by post with the role and dates, each card with what I did, the kinds of testing and one button to its store page.
-- **Quality**: "Let's test this page together", a five-step test run that happens live in your browser, with how to check each step yourself (on a phone, a Pocket DevTools panel stands in for F12), a report, and a bug report template.
+- **Home**: who I am, a slow row of the official logos of the games I have tested (in one colour, with a pause button), my career in numbers on a turning drum, a board of the site's own checks that visitors can run in their browser, and what I play after hours. The name glitches as the hero scrolls away, and a small card asks whether to track it.
+- **About**: the key facts about me and short answers to common questions, and Bug Sweep, a small arcade game I made while building the site (it loads only when you press Play).
+- **Skills**: what I test and how, as experience from shipped games: functional testing, platforms and stores, performance, playtesting and bug reports, plus the tools and the way I work.
+- **Games**: every title I can name in public, grouped by post with the role and dates, each card with what I did, the kinds of testing and one button to its store page.
+- **Quality**: "Let's test this page together", a five-step test run that happens live in your browser, with how to check each step yourself in Chrome or Edge, Firefox, Safari, on an iPhone or on Android (and Pocket DevTools on a phone), a report, and a bug report template.
 - **Contact**: a form for networking, opportunities and saying hello.
 
 It is a portfolio, like a CV. Everything on it is written as experience.
 
+The games layer on every page (a ship on a level track, bugs to catch, achievements on a scoreboard) is optional and can be switched off. The site follows the device's reduced-motion setting until you choose with the Motion switch in the header.
+
 ## Tested like a game
 
-This site is held to the same standard as the games I test. Every push runs a Playwright suite before anything deploys:
+Every push runs a Playwright suite before anything deploys. Among other things it checks that:
 
-- every page answers 200 with one h1, no console errors and no failed requests
-- every internal link resolves
-- no sideways overflow at phone, tablet and desktop widths
-- accessibility scans with axe (WCAG 2.1 A and AA) on every page
-- the contact form validates and handles every answer the script can give
-- the mini games (runner, bug hunt, achievements) work by mouse, touch and keyboard, and switch off under reduced motion
-- the bugs to catch never sit over text, a tile, a logo or the photo, at any width, anywhere along their walk
-- every level header is one stacked block with a label that reads on its field, and the content sits in a centred column at 390, 1280, 1440 and 1920
-- the job titles and dates match LinkedIn, and the built HTML links to no code repository
-- the headline break plays with the scroll and never under reduced motion; the track stands on the left on desktop and lies along the bottom on a phone, with the scoreboard card in the bottom right corner; every Portfolio card lands once from the ship's laser, one at a time; the five Quality steps run and report, and Pocket DevTools fills on a phone
-- links that leave the site open a new tab and say so; internal links stay in the same tab
-- text can be selected with the mouse everywhere, and the highlight reads on every field
-- the built HTML carries no stale facts and no sales language
+- every page answers with one h1, no console errors and no failed requests, and every internal link resolves
+- nothing scrolls sideways from 300px wide, with motion on and off, and the layouts hold at phone, tablet and desktop widths
+- axe (WCAG 2.1 A and AA) finds nothing on any page, on a desktop and on a phone, and in the parts that open on demand
+- the contact form validates and handles every answer its script can give, including a timeout
+- the games layer, Bug Sweep, the glitch and the Motion switch work by mouse, touch and keyboard, and stay still when motion is off
+- the pixel joins between levels show no hairline on screens scaled by a fraction
+- the job titles and dates match LinkedIn, and the built HTML has no sales language and links to no code repository
 
-If a check fails, the site does not ship. The Quality page and the Home scoreboard read their numbers from the suite itself: the list of checks from Playwright at build time, and the results from the run that deployed the page.
+Most checks run in Chromium; a few also run in WebKit and Firefox. If a check fails, the site does not ship. The Quality page and the Home scoreboard read their numbers from the suite itself: the list of checks from Playwright at build time, and the results from the run that deployed the page.
 
 ## Stack
 
 - [Astro](https://astro.build), static output
-- Plain CSS with design tokens, small vanilla JavaScript
+- Plain CSS with design tokens, small vanilla TypeScript, a canvas for Bug Sweep
 - [Playwright](https://playwright.dev) and axe-core for testing
 - GitHub Actions and GitHub Pages for deploys
 - A Google Apps Script web app behind the contact form
@@ -48,7 +45,8 @@ If a check fails, the site does not ship. The Quality page and the Home scoreboa
 npm install
 npm run dev        # local preview at http://localhost:4321
 npm run build      # production build into dist/
-npm test           # full Playwright suite against a fresh production build
+npm run check      # type check
+npm test           # full Playwright suite against a fresh test build
 ```
 
 To run the suite against a server that is already up, such as the dev server, point it there:
@@ -59,7 +57,7 @@ PLAYWRIGHT_BASE_URL=http://127.0.0.1:4321 npx playwright test tests/bugs.spec.ts
 
 ## Credits
 
-Pixel Operator typeface by Jayvee Enaguas (CC0). Montserrat by Julieta Ulanovsky and contributors (SIL Open Font License). The game logos are the trademarks of their owners, taken from each game's official press kit or page (the `logoSource` in each project file) and shown in one colour to identify the games I have worked on; no endorsement is implied. The site says the same under [Credits and trademarks](https://playrunqa.com/terms#credits) on the Terms page. `scripts/logos.mjs` makes the one-colour files from the originals, which are not part of this repository.
+Pixel Operator typeface by Jayvee Enaguas (CC0). Montserrat by Julieta Ulanovsky and contributors (SIL Open Font License). The game logos are the trademarks of their owners, taken from each game's official press kit or page (the `logoSource` in each project file) and shown in one colour to identify the games I have worked on; no endorsement is implied. The site says the same under [Credits and trademarks](https://playrunqa.com/terms/#credits) on the Terms page. `scripts/logos.mjs` makes the one-colour files from the originals, which are not part of this repository.
 
 ## Rights
 

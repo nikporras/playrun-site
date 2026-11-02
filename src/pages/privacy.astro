@@ -9,6 +9,7 @@ import { contact, legal } from '../config';
   kicker="Privacy"
   description="How PlayRun handles the details you send through the contact form, what the site stores in your browser, and your rights under UK GDPR."
   lead="This site collects very little. Here is exactly what, why, where it goes, and how long I keep it."
+  updated="2026-11-02"
 >
   <section class="row">
     <h2>Who is responsible</h2>
@@ -22,7 +23,8 @@ import { contact, legal } from '../config';
     <h2>The contact form</h2>
     <p>
       When you send a message I receive your name, your email address, the message itself, the address of the page
-      you sent it from and the time you sent it. I use these only to reply to you.
+      you sent it from, the time you opened that page and the time the message arrived. I use these only to reply to
+      you, and the two times only to keep out automated spam.
     </p>
     <p>The lawful basis is my legitimate interest in answering people who write to me.</p>
     <p>
@@ -43,9 +45,23 @@ import { contact, legal } from '../config';
   <section class="row">
     <h2>What the site stores in your browser</h2>
     <p>
-      The games on the site keep their progress in your browser's local storage: the bugs you have caught, the
-      achievements you have unlocked and whether the games are on or off. This never leaves your browser and is never
-      sent to me. The Reset button in the HUD clears it.
+      None of this is a cookie, and none of it ever leaves your browser or is sent to me. It is there only so the site
+      remembers your choices. In your browser's local storage, kept between visits:
+    </p>
+    <ul>
+      <li>the games: the bugs you have caught, the achievements you have unlocked, and whether the games are on or off;</li>
+      <li>your Motion choice, on or off, once you have used the switch in the header;</li>
+      <li>whether you have tracked the glitch on the Home page, so it stops appearing;</li>
+      <li>the browser or phone you picked on the Quality page, so its steps show next time.</li>
+    </ul>
+    <p>
+      In session storage, which your browser clears when you close the tab: whether the TAP hint for the games has been
+      shown on this visit.
+    </p>
+    <p>
+      Reset on the scoreboard clears the bugs you have caught, your achievements and the glitch. It keeps whether the
+      games are on or off, your Motion choice and your Quality device choice: change those with their own switches, or
+      clear this site's data in your browser's settings to remove everything.
     </p>
   </section>
 

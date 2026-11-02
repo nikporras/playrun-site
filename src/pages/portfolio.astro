@@ -93,7 +93,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
                   <span class="group__pips" aria-hidden="true">
                     {g.projects.map(() => <i class="group__pip" />)}
                   </span>
-                  {g.projects.length} {g.projects.length === 1 ? 'game' : 'games'}
+                  {g.projects.length === 0 ? 'No public titles' : `${g.projects.length} ${g.projects.length === 1 ? 'game' : 'games'}`}
                 </p>
               </div>
               <p class="group__lead">{g.lead}</p>
