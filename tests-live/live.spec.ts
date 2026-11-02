@@ -159,3 +159,19 @@ test("the header policy and the page's own both allow everything the site does: 
   await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 30_000 });
   expect(violations).toEqual([]);
 });
+
+test("no page carries Cloudflare's analytics beacon (cloudflareinsights): it is switched off, and Umami is the site's one statistics service", async ({ page, request }) => {
+  await quiet(page);
+  const beacon = /cloudflareinsights\.com|data-cf-beacon/;
+  const found: string[] = [];
+  page.on('request', (r) => beacon.test(r.url()) && found.push(`requested ${r.url()}`));
+  for (const url of pages) {
+    const at = new URL(url).pathname;
+    // the HTML as served (Cloudflare injects the beacon into it) and the page as a browser runs it
+    const served = await (await request.get(url, { headers: { accept: 'text/html,application/xhtml+xml' } })).text();
+    if (beacon.test(served)) found.push(`${at}: in the HTML as served`);
+    await page.goto(url, { waitUntil: 'load' });
+    if (beacon.test(await page.content())) found.push(`${at}: in the page`);
+  }
+  expect(found).toEqual([]);
+});
