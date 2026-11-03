@@ -12,6 +12,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  // (GitHub's runner has four cores: two workers leave room for the browsers; locally, half the cores)
+  workers: process.env.CI ? 2 : undefined,
   // In CI the JSON report is handed to the build, which reads its numbers into the Quality page.
   // The GitHub reporter turns each failure into an annotation on the run.
   reporter: process.env.CI ? [['list'], ['github'], ['html', { open: 'never' }], ['json', { outputFile: 'tests/results/run.json' }]] : [['list']],
