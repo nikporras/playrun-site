@@ -59,7 +59,19 @@ document.documentElement.classList.add('js');
   }
 })();
 window.__playrunErrors = [];
-addEventListener('error', (e) => window.__playrunErrors.push(String(e.message || e)));
-addEventListener('unhandledrejection', (e) => window.__playrunErrors.push(String(e.reason || e)));
-// anything the Content Security Policy blocks counts as an error too
-addEventListener('securitypolicyviolation', (e) => window.__playrunErrors.push('Content Security Policy blocked ' + (e.blockedURI || 'inline') + ' (' + e.violatedDirective + ')'));
+// Only the site's own errors count: a browser extension's script runs in the page too, and what it
+// breaks (or what the policy blocks of it, such as Firefox's "sandbox eval") is not the site's. A
+// source on this site counts; an extension's, or none at all, does not.
+(() => {
+  const ext = /^(moz|chrome|safari(-web)?|ms-browser)-extension:|sandbox eval/;
+  const ours = (src) => !!src && !ext.test(src) && src.indexOf(location.origin) === 0;
+  addEventListener('error', (e) => ours(e.filename) && window.__playrunErrors.push(String(e.message || e)));
+  addEventListener('unhandledrejection', (e) => {
+    const stack = String((e.reason && e.reason.stack) || '');
+    if (!ext.test(stack)) window.__playrunErrors.push(String(e.reason || e));
+  });
+  // anything the Content Security Policy blocks of the site's own counts as an error too
+  addEventListener('securitypolicyviolation', (e) => {
+    if (ours(e.sourceFile) && !ext.test(e.blockedURI || '') && !ext.test(e.sample || '')) window.__playrunErrors.push('Content Security Policy blocked ' + (e.blockedURI || 'inline') + ' (' + e.violatedDirective + ')');
+  });
+})();

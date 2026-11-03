@@ -61,17 +61,15 @@ test('every page carries the policy first in its head, allows each inline script
 
 test('a violation is caught: the console reports it and the page counts it among its own errors', { tag: ['@console'] }, async ({ page }) => {
   const errors = await watch(page);
+  // the site's own page with what the policy must block, an inline script and an outside image, in
+  // its HTML: a violation from the site itself (one from an extension does not count, see below)
+  await page.route(/\/$/, async (route) => {
+    const response = await route.fetch();
+    const html = (await response.text()).replace('</body>', '<script>window.__injected = true</script><img src="https://example.com/pixel.png" alt=""></body>');
+    await route.fulfill({ response, body: html });
+  });
   await page.goto('/');
   await page.waitForLoadState('networkidle');
-  expect(errors, errors.join('\n')).toEqual([]);
-  await page.evaluate(() => {
-    const s = document.createElement('script');
-    s.textContent = 'window.__injected = true';
-    document.body.append(s);
-    const img = new Image();
-    img.src = 'https://example.com/pixel.png';
-    document.body.append(img);
-  });
   await expect.poll(() => errors.filter((e) => /Content Security Policy|CSP violation/.test(e)).length).toBeGreaterThanOrEqual(2);
   expect(await page.evaluate(() => (window as unknown as { __injected?: boolean }).__injected)).toBeUndefined();
   const own = await page.evaluate(() => (window as unknown as { __playrunErrors: string[] }).__playrunErrors);
@@ -163,4 +161,31 @@ test('every workflow pins its actions to a commit and starts read only; the week
   const config = readFileSync(path.join(process.cwd(), 'playwright.live.config.ts'), 'utf8');
   expect(config).toContain("baseURL: 'https://playrunqa.com'");
   expect(config).toMatch(/MAP \$\{h\} ~NOTFOUND/);
+});
+
+// A browser extension runs its own scripts in the page, and the policy may block them (Firefox's
+// "sandbox eval"): those errors are the extension's, not the site's, so the live checks still pass.
+// Simulated here with the events an extension leaves: violations from an extension's file, from
+// "sandbox eval" and from no file at all, and a script error in an extension's file.
+const extensionNoise = () => {
+  const base = { violatedDirective: 'script-src', effectiveDirective: 'script-src', originalPolicy: "default-src 'self'", disposition: 'enforce' as SecurityPolicyViolationEventDisposition, statusCode: 200, blockedURI: 'eval' };
+  for (const extra of [{ sourceFile: 'moz-extension://3f2a/content.js' }, { sourceFile: '', sample: 'sandbox eval' }, { sourceFile: 'chrome-extension://abcd/inject.js' }, { sourceFile: '' }]) {
+    document.dispatchEvent(new SecurityPolicyViolationEvent('securitypolicyviolation', { ...base, ...extra, bubbles: true, composed: true }));
+  }
+  dispatchEvent(new ErrorEvent('error', { message: 'Uncaught TypeError: x is undefined', filename: 'safari-web-extension://e1/script.js' }));
+};
+test("an extension's violations and errors do not count: Quality's Smoke test and Home's console check still pass", { tag: ['@console'] }, async ({ page }) => {
+  await page.goto('/quality/');
+  await page.evaluate(extensionNoise);
+  expect(await page.evaluate(() => (window as unknown as { __playrunErrors: string[] }).__playrunErrors)).toEqual([]);
+  const smoke = page.locator('.step').first();
+  await smoke.scrollIntoViewIfNeeded();
+  await expect(smoke).toHaveClass(/is-pass/, { timeout: 10_000 });
+  await page.goto('/');
+  await page.evaluate(extensionNoise);
+  await page.getByRole('button', { name: 'Test this page' }).click();
+  await expect(page.locator('[data-check="console"]')).toHaveClass(/is-pass/, { timeout: 15_000 });
+  // while one from the site's own file still counts
+  await page.evaluate(() => dispatchEvent(new ErrorEvent('error', { message: 'Boom', filename: `${location.origin}/_astro/app.js` })));
+  expect(await page.evaluate(() => (window as unknown as { __playrunErrors: string[] }).__playrunErrors)).toEqual(['Boom']);
 });
