@@ -9,6 +9,7 @@ import Base from '../layouts/Base.astro';
 import ExternalLink from '../components/ExternalLink.astro';
 import Join from '../components/Join.astro';
 import Sprite from '../components/Sprite.astro';
+import Bug from '../components/Bug.astro';
 import { contact } from '../config';
 import { about } from '../data/about';
 
@@ -120,6 +121,7 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
         </tr>
       </tbody>
     </table>
+    <Bug id="about-1" style="right: 12%; top: 3rem" walk="x -2rem" />
   </section>
 
   <section class="level level--green has-join-bottom" data-level="4" aria-labelledby="qa-title">

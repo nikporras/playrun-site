@@ -77,9 +77,13 @@ test.describe("Home on a phone", () => {
           a.currentTime = 0;
         });
         const r = el.getBoundingClientRect();
-        const level = el.closest("[data-level]")!.getBoundingClientRect();
+        const lv = el.closest("[data-level]")!;
+        const level = lv.getBoundingClientRect();
+        // (the level's own field ends where the join at its foot begins: a bug stands above it)
+        const join = lv.querySelector(":scope > .join--bottom");
+        const foot = join ? join.getBoundingClientRect().top : level.bottom;
         const x = Math.min(r.left - level.left, level.right - r.right);
-        const y = Math.min(r.top - level.top, level.bottom - r.bottom);
+        const y = Math.min(r.top - level.top, foot - r.bottom);
         return x < 24 && y < 24;
       });
       expect(corner).toBe(true);

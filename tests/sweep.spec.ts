@@ -221,10 +221,10 @@ test.describe(() => {
   });
 });
 
-test('clearing all ten bugs: Level cleared, the achievement Bug Sweep cleared with the toast, the counter at 1/6; Play again starts afresh; Reset clears the achievement', async ({ page }) => {
+test('clearing all ten bugs: Level cleared, the achievement Bug Sweep cleared with the toast, the counter at 1/7; Play again starts afresh; Reset clears the achievement', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openAbout(page);
-  await expect(page.locator('[data-hud-ach]')).toHaveText('0/6');
+  await expect(page.locator('[data-hud-ach]')).toHaveText('0/7');
   await play(page);
   await hook(page, 'calm', true);
   // (the handle sweeps nine; the last falls to a real shot)
@@ -238,7 +238,7 @@ test('clearing all ten bugs: Level cleared, the achievement Bug Sweep cleared wi
   const toast = page.locator('[data-toast]');
   await expect(toast).toHaveClass(/is-in/, { timeout: 3000 });
   await expect(toast).toContainText('Bug Sweep cleared');
-  await expect(page.locator('[data-hud-ach]')).toHaveText('1/6');
+  await expect(page.locator('[data-hud-ach]')).toHaveText('1/7');
   await expect(page.locator('[data-sweep-live]')).toHaveText(/Level cleared/);
   await expect(page.getByRole('button', { name: 'Play again' })).toBeFocused();
   // Play again
@@ -249,7 +249,7 @@ test('clearing all ten bugs: Level cleared, the achievement Bug Sweep cleared wi
   await page.getByRole('button', { name: /^Scoreboard/ }).click();
   await expect(page.locator('.score__ach li.is-done')).toHaveText(['Bug Sweep cleared']);
   await page.getByRole('button', { name: 'Reset' }).click();
-  await expect(page.locator('[data-hud-ach]')).toHaveText('0/6');
+  await expect(page.locator('[data-hud-ach]')).toHaveText('0/7');
   await expect(page.locator('.score__ach li.is-done')).toHaveCount(0);
 });
 

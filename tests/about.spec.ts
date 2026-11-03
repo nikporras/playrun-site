@@ -83,8 +83,10 @@ test('the About page: one h1, the summary, a real table of key facts and the que
   await expect(answer('What is PlayRun?')).toHaveText("PlayRun, at playrunqa.com, is my personal QA portfolio: the games I've tested, how I test, and a site that runs its own test suite. It does not offer services.");
   // no third person left in the answers
   for (const a of await page.locator('.qa__item p').allTextContents()) expect(a).not.toMatch(/\b(he|his|him)\b/i);
-  // nothing that waits to show, and no bugs to catch: the scoreboard is here for Bug Sweep
-  await expect(page.locator('[data-bug], [data-enter], [data-load]')).toHaveCount(0);
+  // nothing that waits to show; one bug to catch, on the Facts (one of the site's twenty)
+  await expect(page.locator('[data-enter], [data-load]')).toHaveCount(0);
+  await expect(page.locator('[data-bug]')).toHaveCount(1);
+  await expect(page.locator('[data-level="3"] [data-bug="about-1"]')).toHaveCount(1);
   await expect(page.locator('#hud')).toHaveCount(1);
   await expect(page.locator('#dock')).toHaveCount(1);
 });

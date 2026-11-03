@@ -17,7 +17,7 @@ test.describe('Games', () => {
     await expect(page.locator('.hud__runner')).toBeVisible();
     // the controls live on the scoreboard card, which the pill opens
     const pill = page.getByRole('button', { name: /^Scoreboard/ });
-    await expect(pill).toHaveAccessibleName(/level\s*Lv\s*1\s*\/\s*5\s*00 bugs caught\s*0\/6 achievements/);
+    await expect(pill).toHaveAccessibleName(/level\s*Lv\s*1\s*\/\s*5\s*00 bugs caught\s*0\/7 achievements/);
     await pill.click();
     await page.getByRole('button', { name: /Games on/ }).click();
     await expect(page.locator('html')).not.toHaveClass(/(^|\s)games(\s|$)/);
@@ -46,7 +46,7 @@ test.describe('Games', () => {
     await expect(page.locator('[data-hud-bugs]')).toHaveText('01');
     await expect(page.locator('[data-toast]')).toContainText('Caught your first bug');
     await expect(page.locator('[data-toast]')).toHaveClass(/is-in/);
-    await expect(page.locator('[data-hud-ach]')).toHaveText('1/6');
+    await expect(page.locator('[data-hud-ach]')).toHaveText('1/7');
     await expect(page.locator(`[data-bug="${id}"]`)).toBeHidden();
     // the toast sits above the scoreboard, bottom right
     const toast = (await page.locator('[data-toast]').boundingBox())!;
@@ -177,7 +177,9 @@ test.describe('Games', () => {
       await pill.click();
       await expect(panel).toBeVisible();
       await expect(panel.getByText('Bugs caught')).toBeVisible();
-      await expect(panel.locator('.score__ach li')).toHaveCount(6);
+      await expect(panel.locator('.score__ach li')).toHaveText(['Caught your first bug', 'Caught 10 bugs', 'Caught every bug', 'Read every skill', 'Tested the page', 'Glitch spotted', 'Bug Sweep cleared']);
+      // the bugs caught out of the twenty on the whole site
+      await expect(panel.locator('.score__row').filter({ hasText: 'Bugs caught' }).locator('dd')).toHaveText(/^0 of 20$/);
       const pb = (await panel.boundingBox())!;
       expect(pb.y + pb.height, `${path}: the card opens above the pill`).toBeLessThanOrEqual(p.y + 1);
       // the pill closes it again, with the pointer still on it
@@ -532,7 +534,7 @@ test.describe('Kept in the browser', () => {
       const errors: string[] = [];
       page.on('pageerror', (e) => errors.push(e.message));
       await page.goto('/');
-      await expect(page.locator('[data-hud-ach]'), bad).toHaveText('0/6');
+      await expect(page.locator('[data-hud-ach]'), bad).toHaveText('0/7');
       expect(errors, bad).toEqual([]);
       await context.close();
     }
@@ -546,7 +548,7 @@ test.describe('Kept in the browser', () => {
       sessionStorage.setItem('playrun.glitch', 'done');
     });
     await page.goto('/skills/');
-    await expect(page.locator('[data-hud-ach]')).toHaveText('2/6');
+    await expect(page.locator('[data-hud-ach]')).toHaveText('2/7');
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
     await expect(page.locator('.score__ach li.is-done')).toHaveText(['Caught your first bug', 'Read every skill']);
     // the bug caught under its old id stays caught under its new one
@@ -655,3 +657,71 @@ for (const width of [1280, 1440, 1920]) {
     expect(under).toEqual([]);
   });
 }
+
+// Twenty bugs on the site, counted across it: the built pages carry exactly the ids in the list,
+// "Caught 10 bugs" unlocks at ten, "Caught every bug" at twenty, a kept catch of a bug that is gone
+// no longer counts, earlier progress earns its due quietly, and Reset starts afresh.
+test.describe('Twenty bugs', () => {
+  const PAGES = ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html'];
+  const kept = (bugs: string[], achievements: string[] = []) => JSON.stringify({ on: true, bugs, achievements });
+
+  test('the site has exactly twenty bugs, at least one on every main page', async ({ request }) => {
+    const { BUGS } = await import('../src/data/bugs');
+    const found: Record<string, string[]> = {};
+    for (const path of PAGES) found[path] = [...(await (await request.get(path)).text()).matchAll(/data-bug="([^"]+)"/g)].map((m) => m[1]);
+    const all = Object.values(found).flat();
+    expect(all.length).toBe(20);
+    expect(new Set(all)).toEqual(new Set(BUGS));
+    for (const path of ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/']) expect(found[path].length, path).toBeGreaterThanOrEqual(1);
+  });
+
+  test('the tenth catch on the site unlocks Caught 10 bugs, the twentieth Caught every bug; Reset clears both', async ({ page }) => {
+    const { BUGS } = await import('../src/data/bugs');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    // nine caught elsewhere, then one here
+    await page.addInitScript((v) => sessionStorage.getItem('seeded') || (localStorage.setItem('playrun.games', v), sessionStorage.setItem('seeded', '1')), kept(BUGS.filter((b) => !b.startsWith('contact')).slice(0, 9), ['first-bug']));
+    await page.goto('/contact/');
+    await expect(page.locator('[data-hud-bugs]')).toHaveText('09');
+    const first = page.locator('[data-bug="contact-1"]');
+    await still(first);
+    await first.evaluate((b) => b.scrollIntoView({ block: 'center' }));
+    await first.click();
+    await expect(page.locator('[data-toast]')).toContainText('Caught 10 bugs');
+    await expect(page.locator('[data-hud-bugs]')).toHaveText('10');
+    await expect(page.locator('[data-hud-ach]')).toHaveText('2/7');
+    // nineteen, then the last
+    await page.evaluate((v) => localStorage.setItem('playrun.games', v), kept(BUGS.filter((b) => b !== 'contact-2'), ['first-bug', 'ten-bugs']));
+    await page.reload();
+    const last = page.locator('[data-bug="contact-2"]');
+    await still(last);
+    await last.evaluate((b) => b.scrollIntoView({ block: 'center' }));
+    await last.click();
+    await expect(page.locator('[data-toast]')).toContainText('Caught every bug', { timeout: 8000 });
+    await expect(page.locator('[data-hud-bugs]')).toHaveText('20');
+    await page.getByRole('button', { name: /^Scoreboard/ }).click();
+    await expect(page.locator('.score__row').filter({ hasText: 'Bugs caught' }).locator('dd')).toHaveText('20 of 20');
+    await page.getByRole('button', { name: 'Reset' }).click();
+    await expect(page.locator('[data-hud-bugs]')).toHaveText('00');
+    await expect(page.locator('.score__row').filter({ hasText: 'Bugs caught' }).locator('dd')).toHaveText('0 of 20');
+    await expect(page.locator('[data-hud-ach]')).toHaveText('0/7');
+  });
+
+  test("a returning visitor's progress carries over: catches of bugs that are gone stop counting, ten or more earns Caught 10 bugs quietly, earned achievements stay", async ({ page }) => {
+    const { BUGS } = await import('../src/data/bugs');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    // eleven kept: the three removed bugs and eight on the site, with the old per-page Caught every bug
+    await page.addInitScript((v) => sessionStorage.getItem('seeded') || (localStorage.setItem('playrun.games', v), sessionStorage.setItem('seeded', '1')), kept(['skills-6', 'contact-3', '404', ...BUGS.slice(0, 8)], ['first-bug', 'all-bugs']));
+    await page.goto('/about/');
+    await expect(page.locator('[data-hud-bugs]')).toHaveText('08');
+    await expect(page.locator('[data-hud-ach]')).toHaveText('2/7');
+    // ten on the site: Caught 10 bugs, with no toast for it
+    await page.evaluate((v) => localStorage.setItem('playrun.games', v), kept(BUGS.slice(0, 10), ['first-bug']));
+    await page.reload();
+    await expect(page.locator('[data-hud-bugs]')).toHaveText('10');
+    await expect(page.locator('[data-hud-ach]')).toHaveText('2/7');
+    await page.waitForTimeout(500);
+    await expect(page.locator('[data-toast]')).not.toHaveClass(/is-in/);
+    await page.getByRole('button', { name: /^Scoreboard/ }).click();
+    await expect(page.locator('.score__ach li.is-done')).toHaveText(['Caught your first bug', 'Caught 10 bugs']);
+  });
+});

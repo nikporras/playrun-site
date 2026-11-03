@@ -579,7 +579,7 @@ test.describe('Home', () => {
   test('track the glitch: the card says Bug tracked, then the achievement Glitch spotted unlocks with the toast and the counter goes up; the toast never sits on the card; then it never glitches again, not on the next pass and not after a reload', async ({ page }) => {
     test.setTimeout(30_000);
     await openHome(page, 1440, 900);
-    await expect(page.locator('[data-hud-ach]')).toHaveText('0/6');
+    await expect(page.locator('[data-hud-ach]')).toHaveText('0/7');
     await toGlitch(page);
     const card = page.locator('[data-glitch-card]');
     const copy = page.locator('[data-glitch]');
@@ -597,7 +597,7 @@ test.describe('Home', () => {
     await expect(toast).toContainText('Achievement unlocked');
     await expect(toast).toContainText('Glitch spotted');
     await expect(card).not.toHaveClass(/is-in/);
-    await expect(page.locator('[data-hud-ach]')).toHaveText('1/6');
+    await expect(page.locator('[data-hud-ach]')).toHaveText('1/7');
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
     await expect(page.locator('.score__ach li.is-done')).toHaveText(['Glitch spotted']);
     await page.keyboard.press('Escape');
@@ -628,12 +628,12 @@ test.describe('Home', () => {
     await openHome(page, 1440, 900);
     await toGlitch(page);
     await page.getByRole('button', { name: 'Track the bug' }).click();
-    await expect(page.locator('[data-hud-ach]')).toHaveText('1/6', { timeout: 3000 });
+    await expect(page.locator('[data-hud-ach]')).toHaveText('1/7', { timeout: 3000 });
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(400);
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
     await page.getByRole('button', { name: 'Reset' }).click();
-    await expect(page.locator('[data-hud-ach]')).toHaveText('0/6');
+    await expect(page.locator('[data-hud-ach]')).toHaveText('0/7');
     await page.keyboard.press('Escape');
     await rest(page);
     await toGlitch(page);

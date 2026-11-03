@@ -276,7 +276,7 @@ const checks = [
         <p class="visually-hidden" aria-live="polite" data-drum-live></p>
       </div>
     </div>
-    <Bug id="stats-1" style="left: 42%; bottom: 1.5rem" tablet="right: 8%; bottom: 0.75rem" phone="right: 1rem; bottom: 0.25rem" walk="x 2rem" />
+    <Bug id="stats-1" style="left: 12%; bottom: calc(var(--join-h) + 3rem)" tablet="right: var(--gutter); bottom: calc(var(--join-h) + 0.25rem)" phone="right: var(--gutter); bottom: calc(var(--join-h) + 0.25rem)" walk="x -2rem" />
   </section>
 
   <!-- Level 4: proof as a scoreboard on a green field -->
@@ -353,7 +353,7 @@ const checks = [
         <a class="final__mail" href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="home-email">{contact.email}</a>
       </div>
     </div>
-    <Bug id="final-1" style="right: 10%; top: 2rem" tablet="right: 8%; bottom: 1rem" phone="right: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <Bug id="final-1" style="right: 10%; top: 2rem" tablet="right: 8%; top: 1.5rem" walk="x -2rem" />
   </section>
 </Base>
 
@@ -1105,6 +1105,13 @@ const checks = [
   /* The terrain at the foot of the ticker is the breathing room above the stats: less padding here. */
   .stats {
     padding-top: var(--s-5);
+  }
+  /* (below 64rem the drum fills the level's width: a strip at its foot, above the clouds, is where
+     its bug walks, so it is never over the drum or behind the clouds) */
+  @media (max-width: 63.99rem) {
+    .stats.has-join-bottom {
+      padding-bottom: calc(var(--s-5) + var(--join-h) + 4rem);
+    }
   }
   .stats__grid {
     display: grid;

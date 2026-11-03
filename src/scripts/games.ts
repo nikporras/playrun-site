@@ -7,12 +7,14 @@
 import { reducedMotion, offByDevice, whenMotion } from './motion';
 // (as count: track here is the HUD's level track)
 import { track as count } from './track';
+import { BUGS } from '../data/bugs';
 
 type State = { on: boolean; bugs: string[]; achievements: string[] };
 
 const KEY = 'playrun.games';
 const ACHIEVEMENTS: Record<string, string> = {
   'first-bug': 'Caught your first bug',
+  'ten-bugs': 'Caught 10 bugs',
   'all-bugs': 'Caught every bug',
   skills: 'Read every skill',
   selftest: 'Tested the page',
@@ -38,7 +40,9 @@ const read = (): State => {
       if (valid(kept)) {
         // (the Skills page's ids were once services: a visitor's catches and achievement carry over)
         const was = (id: string) => id.replace(/^services(?=$|-)/, 'skills');
-        return { ...defaults(), ...kept, bugs: (kept.bugs ?? []).map(was), achievements: (kept.achievements ?? []).map(was) };
+        // (a catch counts only while its bug is on the site: the twenty in BUGS)
+        const known = new Set<string>(BUGS);
+        return { ...defaults(), ...kept, bugs: [...new Set((kept.bugs ?? []).map(was))].filter((id) => known.has(id)), achievements: (kept.achievements ?? []).map(was) };
       }
     }
   } catch {
@@ -93,6 +97,17 @@ export function startGames() {
 
   const html = document.documentElement;
   const state = read();
+  // A visitor who had already caught enough before the counts changed gets what that is worth,
+  // quietly (no toast for something done on an earlier visit).
+  const owed = [
+    ['ten-bugs', 10],
+    ['all-bugs', BUGS.length],
+  ] as const;
+  const quiet = owed.filter(([id, n]) => state.bugs.length >= n && !state.achievements.includes(id));
+  if (quiet.length) {
+    quiet.forEach(([id]) => state.achievements.push(id));
+    write(state);
+  }
   const pick = <T extends HTMLElement>(root: HTMLElement, sel: string) => root.querySelector<T>(sel)!;
   const live = pick(hud, '[data-hud-live]');
   const runner = pick(hud, '.hud__runner');
@@ -219,7 +234,9 @@ export function startGames() {
       render();
       live.textContent = `Bug caught. ${state.bugs.length} found.`;
       achieve('first-bug');
-      if (bugs().every((b) => state.bugs.includes(b.dataset.bug!))) achieve('all-bugs');
+      // (counted across the whole site: ten of the twenty, then all of them)
+      if (state.bugs.length >= 10) achieve('ten-bugs');
+      if (state.bugs.length >= BUGS.length) achieve('all-bugs');
     }, CATCH_MS);
   });
 
