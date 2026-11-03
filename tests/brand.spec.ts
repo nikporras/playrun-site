@@ -62,3 +62,22 @@ test('the social card is a 1200 by 630 picture of Nicolás Porras, Game QA Teste
   expect(await page.locator('meta[property="profile:first_name"]').getAttribute('content')).toBe('Nicolás');
   expect(await page.locator('meta[property="profile:last_name"]').getAttribute('content')).toBe('Porras');
 });
+
+// The fonts load once per page, each when the first layout asks for it: no preload (a preload left
+// unused, or used under other attributes, makes Firefox warn and can fetch a font twice), and no
+// font file is ever requested twice on a page.
+test('every page asks for each font once, and no font is preloaded', { tag: ['@brand'] }, async ({ page }) => {
+  const twice: string[] = [];
+  for (const path of ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/']) {
+    const fonts: string[] = [];
+    const listen = (r: import('@playwright/test').Request) => /\.woff2?$/.test(r.url()) && fonts.push(r.url());
+    page.on('request', listen);
+    await page.goto(path, { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts.ready);
+    page.off('request', listen);
+    expect(await page.locator('link[rel="preload"][as="font"]').count(), `${path}: no font preload`).toBe(0);
+    expect(fonts.length, `${path}: the fonts load`).toBeGreaterThanOrEqual(2);
+    for (const f of new Set(fonts)) if (fonts.filter((x) => x === f).length > 1) twice.push(`${path}: ${f}`);
+  }
+  expect(twice).toEqual([]);
+});
