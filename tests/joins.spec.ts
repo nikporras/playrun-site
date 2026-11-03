@@ -288,3 +288,53 @@ for (const [width, height, scale] of SCALED) {
     await context.close();
   });
 }
+
+// Wherever a cloud join shows the sky between its bumps, it is that level's own sky, faint grid
+// included and in line with it: no plain navy holes. On Home the band belongs to Level 2 and the
+// sky behind it is the hero's own field, reaching under the band. Read from a screenshot of each
+// band at rest: in the sky's pixels, the column on a grid line (every 32px from the left edge, as
+// the levels draw it) is a shade lighter than the column halfway between two lines.
+for (const [width, height] of [
+  [1915, 910],
+  [375, 812],
+] as const) {
+  test(`at ${width}px every cloud join shows its level's own sky, grid included, between the clouds`, { tag: ['@brand'] }, async ({ browser }) => {
+    test.setTimeout(90_000);
+    const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    const plain: string[] = [];
+    for (const path of PAGES) {
+      await page.goto(path);
+      await page.addStyleTag({ content: '.bug, .bug__anchor, #hud, #dock, .tabbar { visibility: hidden !important; } html { scroll-behavior: auto !important; }' });
+      const n = await page.locator('.join--clouds').count();
+      for (let j = 0; j < n; j++) {
+        const join = page.locator('.join--clouds').nth(j);
+        await join.evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + scrollY - innerHeight / 2));
+        await page.waitForTimeout(150);
+        const b = (await join.boundingBox())!;
+        const png = await page.screenshot({ clip: { x: 0, y: Math.round(b.y), width, height: Math.round(b.height) } });
+        const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+        const px = (x: number, y: number) => {
+          const i = (y * info.width + x) * info.channels;
+          return [data[i], data[i + 1], data[i + 2]];
+        };
+        // (the navy sky, plain or under a grid line; never the cloud tones)
+        const sky = (c: number[]) => c[0] < 40 && c[1] < 50 && c[2] < 70;
+        let pairs = 0;
+        let lighter = 0;
+        for (let y = 2; y < info.height - 2; y += 2) {
+          for (let x = 32; x + 16 < info.width; x += 32) {
+            const on = px(x, y);
+            const off = px(x + 16, y);
+            if (!sky(on) || !sky(off)) continue;
+            pairs++;
+            if (on[0] + on[1] + on[2] - (off[0] + off[1] + off[2]) >= 6) lighter++;
+          }
+        }
+        if (pairs >= 20 && lighter / pairs < 0.8) plain.push(`${path} cloud join ${j}: the grid shows in ${lighter} of ${pairs} sky points`);
+      }
+    }
+    expect(plain).toEqual([]);
+    await context.close();
+  });
+}

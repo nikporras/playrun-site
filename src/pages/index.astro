@@ -395,6 +395,30 @@ const checks = [
       --hud-space: var(--hud-h);
     }
   }
+  /* The sky goes on behind Level 2's clouds: the hero's own field, its grid and its stars, reach a
+     band's height below its foot, so wherever the sky shows between the cloud bumps it is this
+     sky, grid lines in line with the hero's (the same box draws them), pinned with the hero while
+     Level 2 slides up over it. The hero clips sideways and above as every level does; only its
+     foot lets the sky through. */
+  .hero {
+    overflow-x: clip;
+    overflow-y: visible;
+    clip-path: inset(0 0 calc(-1 * var(--join-h)) 0);
+    background-image: none;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 calc(-1 * var(--join-h)) 0;
+    z-index: -1;
+    background-color: var(--level-bg);
+    background-image: var(--grid-img);
+    background-size: var(--grid-size) var(--grid-size);
+    pointer-events: none;
+  }
+  .hero::after {
+    bottom: calc(-1 * var(--join-h));
+  }
   .hero {
     position: sticky;
     top: var(--hero-top, 0px);
