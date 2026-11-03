@@ -177,6 +177,10 @@ const layers = spec.map((s) => {
   const h = kind === 'terrain' ? terrain(cols, s.lo, s.hi, s.flat, s.rise) : clouds(cols, s.lo, s.hi, s.count, s.flat, s.rise);
   return { ...s, path: silhouette(h), light: kind === 'clouds' ? highlights(h, s.every) : '' };
 });
+// The front layer's outline as a mask: where the level below has a grid, the grid shows on the
+// front layer too, cut to its shape (see .join__grid)
+const front = layers.find((l) => l.name === 'front')!;
+const frontMask = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${front.tile}' height='${TH}' shape-rendering='crispEdges'><path d='${front.path}'/></svg>`)}")`;
 ---
 
 <div class={`join join--${kind} join--${at}`} aria-hidden="true" style={`--from: ${from}; --to: ${to}; ${tones}`}>
@@ -212,6 +216,7 @@ const layers = spec.map((s) => {
         </svg>
       ))
   }
+  {at === 'bottom' && <div class="join__grid" style={`--front-mask: ${frontMask}; --front-tile: ${front.tile}px`} />}
 </div>
 
 <style is:global>
@@ -259,6 +264,31 @@ const layers = spec.map((s) => {
     scale: var(--join-s);
     transform-origin: 0 100%;
     overflow: visible;
+  }
+  /* The grid of a navy level below, carried up onto the front layer that is its colour: the same
+     faint grid, cut to the front layer's outline (its own shape as a mask, tiled and scaled as the
+     layer is), in line with the level's own grid, which starts half a cell down and 2px into the
+     band (.level + .level in global.css). Only where the next level is a gridded one; the footer
+     is plain navy. */
+  .join__grid {
+    display: none;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: var(--grid-img);
+    background-size: var(--grid-size) var(--grid-size);
+    background-position: left 0 bottom calc(var(--grid-size) / -2 + 2px);
+    -webkit-mask-image: var(--front-mask);
+    mask-image: var(--front-mask);
+    -webkit-mask-size: calc(var(--front-tile) * var(--join-s)) calc(144px * var(--join-s));
+    mask-size: calc(var(--front-tile) * var(--join-s)) calc(144px * var(--join-s));
+    -webkit-mask-repeat: repeat-x;
+    mask-repeat: repeat-x;
+    -webkit-mask-position: left bottom;
+    mask-position: left bottom;
+  }
+  .level:has(+ :is(.level--navy, .level--field)) > .join--bottom .join__grid {
+    display: block;
   }
   .join__layer--back .join__fill {
     fill: var(--join-back);

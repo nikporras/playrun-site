@@ -289,26 +289,39 @@ for (const [width, height, scale] of SCALED) {
   });
 }
 
-// Wherever a cloud join shows the sky between its bumps, it is that level's own sky, faint grid
-// included and in line with it: no plain navy holes. On Home the band belongs to Level 2 and the
-// sky behind it is the hero's own field, reaching under the band. Read from a screenshot of each
-// band at rest: in the sky's pixels, the column on a grid line (every 32px from the left edge, as
-// the levels draw it) is a shade lighter than the column halfway between two lines.
+// Wherever a join shows a gridded navy level, it shows that level's grid, in line with it: the sky
+// between the bumps of a cloud join (on Home the band belongs to Level 2 and the sky behind it is
+// the hero's own field, reaching under the band), and the navy front layer of a join into a gridded
+// navy level (Home's numbers, Skills' closing level), up to the outline of its hills. Joins into
+// the plain navy footer stay plain. Read from a screenshot of each band at rest: in its navy
+// pixels, the column on a grid line (every 32px from the left edge, as the levels draw it) is a
+// shade lighter than the column halfway between two lines, and on a front layer the rows where the
+// level below draws its lines (half a cell down from its top, 2px into the band) are lighter too.
 for (const [width, height] of [
   [1915, 910],
   [375, 812],
 ] as const) {
-  test(`at ${width}px every cloud join shows its level's own sky, grid included, between the clouds`, { tag: ['@brand'] }, async ({ browser }) => {
-    test.setTimeout(90_000);
+  test(`at ${width}px every join shows the grid of a gridded navy level beside it, on its sky and on its navy front layer, in line with the level`, { tag: ['@brand'] }, async ({ browser }) => {
+    test.setTimeout(120_000);
     const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' });
     const page = await context.newPage();
     const plain: string[] = [];
     for (const path of PAGES) {
       await page.goto(path);
       await page.addStyleTag({ content: '.bug, .bug__anchor, #hud, #dock, .tabbar { visibility: hidden !important; } html { scroll-behavior: auto !important; }' });
-      const n = await page.locator('.join--clouds').count();
+      const n = await page.locator('.join').count();
       for (let j = 0; j < n; j++) {
-        const join = page.locator('.join--clouds').nth(j);
+        const join = page.locator('.join').nth(j);
+        // which side is a gridded navy level: the sky above, or the level below (its front layer)
+        const sides = await join.evaluate((el) => {
+          const gridded = (e: Element | null) => !!e && /linear-gradient/.test(getComputedStyle(e).backgroundImage + getComputedStyle(e, '::before').backgroundImage) && !e.matches('.footer');
+          const level = el.closest('.level')!;
+          const top = el.classList.contains('join--top');
+          const above = top ? level.previousElementSibling : level;
+          const below = top ? level : level.nextElementSibling;
+          return { above: el.classList.contains('join--clouds') && gridded(above), below: !top && gridded(below) && !!below?.matches('.level--navy, .level--field') };
+        });
+        if (!sides.above && !sides.below) continue;
         await join.evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + scrollY - innerHeight / 2));
         await page.waitForTimeout(150);
         const b = (await join.boundingBox())!;
@@ -318,20 +331,37 @@ for (const [width, height] of [
           const i = (y * info.width + x) * info.channels;
           return [data[i], data[i + 1], data[i + 2]];
         };
-        // (the navy sky, plain or under a grid line; never the cloud tones)
-        const sky = (c: number[]) => c[0] < 40 && c[1] < 50 && c[2] < 70;
+        // (navy, plain or under a grid line; never the cloud or ground tones)
+        const navy = (c: number[]) => c[0] < 40 && c[1] < 50 && c[2] < 70;
+        const sum = (c: number[]) => c[0] + c[1] + c[2];
         let pairs = 0;
         let lighter = 0;
         for (let y = 2; y < info.height - 2; y += 2) {
           for (let x = 32; x + 16 < info.width; x += 32) {
             const on = px(x, y);
             const off = px(x + 16, y);
-            if (!sky(on) || !sky(off)) continue;
+            if (!navy(on) || !navy(off)) continue;
             pairs++;
-            if (on[0] + on[1] + on[2] - (off[0] + off[1] + off[2]) >= 6) lighter++;
+            if (sum(on) - sum(off) >= 6) lighter++;
           }
         }
-        if (pairs >= 20 && lighter / pairs < 0.8) plain.push(`${path} cloud join ${j}: the grid shows in ${lighter} of ${pairs} sky points`);
+        const which = sides.below ? 'front layer' : 'sky';
+        if (pairs < 20 || lighter / pairs < 0.8) plain.push(`${path} join ${j} (${which}): the grid's columns show in ${lighter} of ${pairs} navy points`);
+        if (sides.below) {
+          // the rows: the level below draws a line every 32px from 14px under the band's foot
+          let rows = 0;
+          let rowsLit = 0;
+          for (let y = info.height - 18; y > 1; y -= 32) {
+            for (let x = 8; x < info.width; x += 32) {
+              const on = px(x, y);
+              const off = px(x, y - 16 > 0 ? y - 16 : y + 16);
+              if (!navy(on) || !navy(off)) continue;
+              rows++;
+              if (sum(on) - sum(off) >= 6) rowsLit++;
+            }
+          }
+          if (rows < 3 || rowsLit / rows < 0.8) plain.push(`${path} join ${j} (front layer): the grid's rows line up in ${rowsLit} of ${rows} navy points`);
+        }
       }
     }
     expect(plain).toEqual([]);
