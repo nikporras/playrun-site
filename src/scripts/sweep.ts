@@ -225,7 +225,10 @@ export function startSweep(root: HTMLElement) {
   // ---- The loop
   let frame = 0;
   let last = 0;
+  // (test builds only: the suite can stop the clock and advance the game by hand, see below)
+  let manual = false;
   const loop = (now: number) => {
+    if (manual) return;
     const dt = Math.min(1 / 30, (now - last) / 1000 || 0);
     last = now;
     step(dt);
@@ -234,6 +237,7 @@ export function startSweep(root: HTMLElement) {
   };
   const run = () => {
     cancelAnimationFrame(frame);
+    if (manual) return;
     last = performance.now();
     frame = requestAnimationFrame(loop);
   };
@@ -469,6 +473,17 @@ export function startSweep(root: HTMLElement) {
       hit: () => {
         hurt = 0;
         hitShip();
+      },
+      // the game's own clock stopped, and moved on by hand in sixtieths of a second: a bot playing
+      // in the suite gets exactly the game time it asks for, however busy the machine
+      manual: (on: boolean) => {
+        manual = on;
+        if (on) cancelAnimationFrame(frame);
+        else if (mode === 'play') run();
+      },
+      advance: (ms: number) => {
+        for (let t = 0; t < ms && mode === 'play'; t += 1000 / 60) step(1 / 60);
+        draw();
       },
     };
   }

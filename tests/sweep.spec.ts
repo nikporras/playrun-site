@@ -180,45 +180,50 @@ test('Bug Sweep by touch at 375x812: held Left and Right move the ship, Fire fir
   await context.close();
 });
 
-// (the bot plays in real time: with the whole suite running beside it on one machine it can look and
-// press too slowly and lose a game it wins alone, so this one test has two more tries, reported as
-// flaky when it needs them)
-test.describe(() => {
-  test.describe.configure({ retries: 2 });
-  test('Bug Sweep is winnable with the touch buttons at 375x812, playing at a thumb’s pace (a decision every quarter second)', async ({ browser }) => {
-    test.setTimeout(150_000);
-    const context = await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 });
-    const page = await context.newPage();
-    await openAbout(page);
-    await page.getByRole('button', { name: 'Play Bug Sweep' }).tap();
-    await expect.poll(async () => (await state(page)).mode).toBe('play');
-    // (a fixed seed for the dives, so the suite replays the same game every time; random games won 10 of 10)
-    await hook(page, 'seed', 11);
-    const left = page.getByRole('button', { name: 'Left', exact: true });
-    const right = page.getByRole('button', { name: 'Right', exact: true });
-    const fire = page.getByRole('button', { name: 'Fire', exact: true });
-    const t0 = Date.now();
-    let s = await state(page);
-    // A player with thumbs: every 250 ms, look, then press one thing for that long. Get out from
-    // under a bug diving close; otherwise line up under the nearest bug in formation and fire.
-    while (s.mode === 'play' && Date.now() - t0 < 120_000) {
-      const ship = s.shipX + s.shipW / 2;
-      const danger = s.bugs.filter((b) => b.alive && b.diving && b.y > 40 && b.y < 118 && Math.abs(b.x + 5 - ship) < 30).sort((a, b) => b.y - a.y)[0];
-      let move: Locator | null = null;
-      if (danger) {
-        const away = danger.x + 5 > ship ? left : right;
-        // (against a wall, the only way out is past it)
-        move = (away === left && s.shipX < 4) || (away === right && s.shipX > 156 - s.shipW) ? (away === left ? right : left) : away;
-      } else {
-        const target = s.bugs.filter((b) => b.alive && !b.diving).sort((a, b) => Math.abs(a.x + 5 - ship) - Math.abs(b.x + 5 - ship))[0];
-        if (target && Math.abs(target.x + 5 - ship) > 4) move = target.x + 5 > ship ? right : left;
-      }
-      await press(move ?? fire, 250);
-      s = await state(page);
+// The bot plays on the game's own clock: the clock is stopped and moved on by a quarter of a second
+// for each decision, so the game is the same however busy the machine is (no real-time race with
+// the rest of the suite), and with the seed fixed it is the same game every time.
+test('Bug Sweep is winnable with the touch buttons at 375x812, playing at a thumb’s pace (a decision every quarter second of game time)', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 });
+  const page = await context.newPage();
+  await openAbout(page);
+  await page.getByRole('button', { name: 'Play Bug Sweep' }).tap();
+  await expect.poll(async () => (await state(page)).mode).toBe('play');
+  // (a fixed seed for the dives, so the suite replays the same game every time; random games won 10 of 10)
+  await hook(page, 'seed', 11);
+  await hook(page, 'manual', true);
+  const left = page.getByRole('button', { name: 'Left', exact: true });
+  const right = page.getByRole('button', { name: 'Right', exact: true });
+  const fire = page.getByRole('button', { name: 'Fire', exact: true });
+  // a press held for a quarter of a second of game time: down, the clock moved on, up
+  const hold = async (b: Locator) => {
+    await b.dispatchEvent('pointerdown', { pointerId: 7, pointerType: 'touch', isPrimary: true, button: 0, buttons: 1 });
+    await hook(page, 'advance', 250);
+    await b.dispatchEvent('pointerup', { pointerId: 7, pointerType: 'touch', isPrimary: true, button: 0, buttons: 0 });
+  };
+  let s = await state(page);
+  let turns = 0;
+  // A player with thumbs: every 250 ms, look, then press one thing for that long. Get out from
+  // under a bug diving close; otherwise line up under the nearest bug in formation and fire.
+  // (two minutes of game time at most)
+  while (s.mode === 'play' && turns < 480) {
+    const ship = s.shipX + s.shipW / 2;
+    const danger = s.bugs.filter((b) => b.alive && b.diving && b.y > 40 && b.y < 118 && Math.abs(b.x + 5 - ship) < 30).sort((a, b) => b.y - a.y)[0];
+    let move: Locator | null = null;
+    if (danger) {
+      const away = danger.x + 5 > ship ? left : right;
+      // (against a wall, the only way out is past it)
+      move = (away === left && s.shipX < 4) || (away === right && s.shipX > 156 - s.shipW) ? (away === left ? right : left) : away;
+    } else {
+      const target = s.bugs.filter((b) => b.alive && !b.diving).sort((a, b) => Math.abs(a.x + 5 - ship) - Math.abs(b.x + 5 - ship))[0];
+      if (target && Math.abs(target.x + 5 - ship) > 4) move = target.x + 5 > ship ? right : left;
     }
-    expect(s.mode, `cleared in ${Math.round((Date.now() - t0) / 1000)} s with ${s.lives} lives left`).toBe('won');
-    await context.close();
-  });
+    await hold(move ?? fire);
+    turns++;
+    s = await state(page);
+  }
+  expect(s.mode, `cleared in ${turns / 4} s of game time with ${s.lives} lives left`).toBe('won');
+  await context.close();
 });
 
 test('clearing all ten bugs: Level cleared, the achievement Bug Sweep cleared with the toast, the counter at 1/7; Play again starts afresh; Reset clears the achievement', async ({ page }) => {
