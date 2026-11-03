@@ -766,7 +766,9 @@ for (const [width, height] of [
     const gaps: string[] = [];
     for (const path of ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html']) {
       await page.goto(path);
-      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+      // (Home's Level 2 lets clicks through its see-through top to the hero's text: for this look at
+      // what is painted at the edge, it answers for its own area again)
+      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; } .wall { pointer-events: auto !important; }' });
       const total = await page.evaluate(() => document.documentElement.scrollHeight);
       for (let y = 0; y < total; y += height - 100) {
         await page.evaluate((y) => window.scrollTo(0, y), y);

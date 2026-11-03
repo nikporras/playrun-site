@@ -738,6 +738,27 @@ const checks = [
     .hero__figure {
       width: var(--photo-w);
     }
+    /* The text and the photo end on one line, the hero's foot, and Level 2 rises 1.25rem into the
+       hero, so the first cloud pixels (24px into the band) begin about 16px below "More about me"
+       (its underline), never over it, with no empty navy between. The photo's faded foot rests just above them. */
+    .hero {
+      justify-content: flex-end;
+    }
+    .hero__figure {
+      top: auto;
+      bottom: var(--hero-pb);
+      translate: none;
+    }
+    .wall {
+      margin-top: -1.25rem;
+      /* (its box reaches over the hero's last line, see-through there: clicks pass to the hero's
+         text and link, and only Level 2's own contents take them) */
+      pointer-events: none;
+    }
+    /* (global: the bug and the join are other components' elements) */
+    .wall > :global(:not(.join)) {
+      pointer-events: auto;
+    }
   }
   @media (min-width: 64rem) and (max-height: 50rem) {
     .hero__head {

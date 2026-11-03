@@ -1,5 +1,6 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { cloudsUnderText } from './clouds-under-text';
 
 // Waits until an element has stopped moving (its box the same twice running), instead of a fixed
 // sleep: as long as a slow machine needs, no longer than a fast one does.
@@ -1294,11 +1295,12 @@ for (const [width, height] of [
     expect(geo.shown, 'logos on show').toBeGreaterThanOrEqual(2);
     if (width >= 768) expect(geo.logoBottom, 'the whole row on the first screen').toBeLessThanOrEqual(geo.floor);
     if (width >= 1024) {
-      // a small gap, the same at every size, from the lowest of the hero's text and the photo's foot
-      // to the cloud band (the clouds' tops stand 16 to 24px into it)
-      const low = await page.evaluate(() => Math.max(document.querySelector('.hero__figure img')!.getBoundingClientRect().bottom, ...[...document.querySelectorAll('.hero :is(h1, .hero__post, .hero__value)')].map((e) => e.getBoundingClientRect().bottom)));
-      expect(geo.band[0] - low, 'the gap under the hero').toBeGreaterThanOrEqual(0);
-      expect(geo.band[0] - low, 'the gap under the hero').toBeLessThanOrEqual(12);
+      // Level 2 rises into the hero: its clouds begin about 16px under "More about me", with no
+      // empty navy between, and never over the hero's text
+      const clouds = await cloudsUnderText(page);
+      expect(clouds.covered, 'nothing over the hero text').toEqual([]);
+      expect(clouds.first, 'the clouds begin under "More about me"').toBeGreaterThanOrEqual(8);
+      expect(clouds.first, 'about 16px under it, no empty navy between').toBeLessThanOrEqual(28);
       // the rail from the first screen: the ship whole on screen, and its line running down from it
       const ship = (await page.locator('.hud__runner').boundingBox())!;
       expect(ship.y, 'the ship on screen').toBeGreaterThanOrEqual(0);
@@ -1316,7 +1318,9 @@ for (const [width, height] of [
       expect(peek.photo, 'the photo about its old size').toBeGreaterThanOrEqual(180);
     }
     expect(geo.logoTop, 'resting on the clouds').toBeGreaterThan(geo.band[0]);
-    expect(geo.heroBottom, 'the hero text above the clouds').toBeLessThanOrEqual(geo.band[0]);
+    // (on a desktop Level 2 rises into the hero: its band's box starts a little above the text's foot,
+    // its first cloud pixels 24px into the band, below the text, as measured above)
+    expect(geo.heroBottom, 'the hero text above the clouds').toBeLessThanOrEqual(geo.band[0] + (width >= 1024 ? 20 : 0));
     // the block, measured in place (Pause and the link rise in as they enter)
     await page.evaluate(() => document.querySelectorAll('.wall [data-enter]').forEach((e) => e.classList.add('is-in')));
     await page.waitForTimeout(900);

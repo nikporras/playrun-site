@@ -40,6 +40,12 @@ for (const path of PAGES) {
             // a band at the foot of a level goes into what follows it; one at the top (the curtain) into its own level
             const next = top ? level : (level.nextElementSibling ?? document.querySelector('footer'))!;
             const layers = Array.from(el.querySelectorAll('svg'));
+            // the art's highest pixel in the band (its top is see-through above it): what could cover
+            // text is the clouds or the ground, not the empty top of the box (Home's curtain band
+            // reaches over the hero's last line there)
+            const artTop = Math.min(...Array.from(el.querySelectorAll('.join__fill'), (f) => Math.min(...Array.from((f.getAttribute('d') ?? '').matchAll(/V(\d+)/g), (m) => Number(m[1])).filter((v) => v < 144))));
+            const scaleOf = Number(getComputedStyle(el.querySelector('.join__layer--front')!).scale) || 1;
+            const drawnTop = r.top + artTop * scaleOf;
             const covered = Array.from(document.querySelectorAll(text))
               .filter((t) => {
                 const b = t.getBoundingClientRect();
@@ -50,7 +56,7 @@ for (const path of PAGES) {
                 // clipped by the row's window, hidden, not covered)
                 const view = t.closest('.ticker__view')?.getBoundingClientRect();
                 if (view && (b.top >= view.bottom - 0.5 || b.bottom <= view.top + 0.5)) return false;
-                return b.width > 0 && b.height > 0 && getComputedStyle(t).visibility !== 'hidden' && b.left < r.right && b.right > r.left && b.top < r.bottom - 0.5 && b.bottom > r.top + 0.5;
+                return b.width > 0 && b.height > 0 && getComputedStyle(t).visibility !== 'hidden' && b.left < r.right && b.right > r.left && b.top < r.bottom - 0.5 && b.bottom > drawnTop + 0.5;
               })
               .map((t) => `${t.tagName}: ${(t.textContent ?? '').trim().slice(0, 30)}`);
             // the front layer's top edge, column by column, from its own path (M0 144 V.. H.. V.. H.. Z)

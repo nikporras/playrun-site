@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { cloudsUnderText } from './clouds-under-text';
 
 /**
  * In Firefox: every page loads with no console errors and no failed requests, the Quality picker
@@ -48,3 +49,29 @@ test('in Firefox the Quality picker is preselected as Firefox and the five steps
   expect(detail).not.toMatch(/n\/a|\b0ms/);
   await expect(page.locator('.step.is-fail')).toHaveCount(0);
 });
+
+// Home's first screen in Firefox: Level 2's clouds begin about 16px under "More about me", never
+// over the hero's text, and the row of logos is on the screen
+for (const [width, height] of [
+  [1915, 910],
+  [1920, 940],
+  [1536, 730],
+  [1366, 657],
+] as const) {
+  test(`in Firefox at ${width}x${height} the clouds begin just under the hero's text, the logos on the first screen`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline && a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => null))));
+    const clouds = await cloudsUnderText(page);
+    expect(clouds.covered).toEqual([]);
+    expect(clouds.first).toBeGreaterThanOrEqual(8);
+    expect(clouds.first).toBeLessThanOrEqual(28);
+    // (the logos in the row as it shows: those the row's own box clips away do not count)
+    const logos = await page.evaluate(() => {
+      const view = document.querySelector('.ticker__view')!.getBoundingClientRect();
+      return Math.max(...[...document.querySelectorAll('.ticker__view .wall__mark > *')].map((e) => e.getBoundingClientRect()).filter((b) => b.right > 0 && b.left < innerWidth && b.top < view.bottom).map((b) => b.bottom));
+    });
+    expect(logos).toBeLessThanOrEqual(height);
+  });
+}
