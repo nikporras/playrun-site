@@ -99,6 +99,7 @@ test.describe('Games', () => {
   });
 
   test('the track is a rail no wider than the ship on the left, its numbers fully visible; the scoreboard is a compact card bottom right that opens on Enter, a click or a tap and closes on the pill, Escape or a click outside', async ({ page }) => {
+    test.setTimeout(60_000); // (four pages, three scroll positions each, and the card's every way in and out)
     for (const path of ['/', '/skills/', '/portfolio/', '/quality/']) {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(path);

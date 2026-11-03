@@ -723,13 +723,28 @@ const checks = [
     position: relative;
   }
   /* A short desktop screen (1280 by 720): the hero's gaps close up a little. */
+  /* On a desktop the hero is as tall as its taller part, the text or the photo, plus its padding:
+     the gap from the lowest of them to the clouds is the bottom padding, the same at every size.
+     The photo, and the name below, are no taller than the room the first screen leaves once the
+     header and the peek of the next level (the clouds and the row of logos) are taken off, so the
+     logos are always on the first screen. */
+  @media (min-width: 64rem) {
+    .hero {
+      --avail: calc(100svh - 4.5rem - var(--peek));
+      --hero-pb: var(--s-1); /* (the clouds' tops are 16 to 24px into their band: they start 24 to 32px below) */
+      --photo-w: min(36vw, 34rem, calc((var(--avail) - var(--hero-pt) - var(--hero-pb)) / 1.0335));
+      min-height: calc(var(--photo-w) * 1.0335 + var(--hero-pt) + var(--hero-pb));
+    }
+    .hero__figure {
+      width: var(--photo-w);
+    }
+  }
   @media (min-width: 64rem) and (max-height: 50rem) {
     .hero__head {
       gap: var(--s-2);
     }
     .hero {
       --hero-pt: var(--s-3);
-      --hero-pb: var(--s-2);
     }
     .hero,
     .wall {
@@ -741,6 +756,27 @@ const checks = [
     }
     .hero__title {
       font-size: round(min(var(--step-hero), calc((100svh - 4.5rem - var(--peek)) * 0.2)), 16px);
+    }
+  }
+  /* A very short desktop page (1366 by 657, 1280 by 650: a laptop with the browser's tabs and
+     bookmarks): everything a step smaller, so the row of logos still fits on the first screen. */
+  @media (min-width: 64rem) and (max-height: 43rem) {
+    .hero__head {
+      gap: var(--s-1);
+    }
+    .hero__post {
+      font-size: 1.25rem;
+    }
+    .hero,
+    .wall {
+      --edge: var(--s-1);
+      --cell-h: 5rem;
+    }
+    .wall .ticker {
+      --k: 0.7; /* (the tallest logo at 5rem) */
+    }
+    .hero__title {
+      font-size: round(min(var(--step-hero), calc((100svh - 4.5rem - var(--peek)) * 0.16)), 16px);
     }
   }
 

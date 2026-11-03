@@ -1256,9 +1256,18 @@ test.describe('Home', () => {
   }
 });
 
+// (desktop pages as a browser leaves them, under its tabs and bookmarks bar, from a small laptop to
+// a full HD screen)
 for (const [width, height] of [
   [1280, 720],
   [1440, 900],
+  [1280, 650],
+  [1366, 657],
+  [1440, 760],
+  [1536, 730],
+  [1680, 900],
+  [1920, 940],
+  [1920, 1080],
   [375, 812],
 ] as const) {
   test(`the games are on the first screen (${width}x${height}): the row of logos whole on screen (on a phone the clouds and the label peeking in), rolling, unlinked, its first logos there with the page; Level 2 one block on the blue (the label on the left, the logos, Pause and the link centred), even gaps, the same gap to the clouds above and below, nothing over the joins`, { tag: ['@viewports'] }, async ({ page }) => {
@@ -1284,6 +1293,22 @@ for (const [width, height] of [
     });
     expect(geo.shown, 'logos on show').toBeGreaterThanOrEqual(2);
     if (width >= 768) expect(geo.logoBottom, 'the whole row on the first screen').toBeLessThanOrEqual(geo.floor);
+    if (width >= 1024) {
+      // a small gap, the same at every size, from the lowest of the hero's text and the photo's foot
+      // to the cloud band (the clouds' tops stand 16 to 24px into it)
+      const low = await page.evaluate(() => Math.max(document.querySelector('.hero__figure img')!.getBoundingClientRect().bottom, ...[...document.querySelectorAll('.hero :is(h1, .hero__post, .hero__value)')].map((e) => e.getBoundingClientRect().bottom)));
+      expect(geo.band[0] - low, 'the gap under the hero').toBeGreaterThanOrEqual(0);
+      expect(geo.band[0] - low, 'the gap under the hero').toBeLessThanOrEqual(12);
+      // the rail from the first screen: the ship whole on screen, and its line running down from it
+      const ship = (await page.locator('.hud__runner').boundingBox())!;
+      expect(ship.y, 'the ship on screen').toBeGreaterThanOrEqual(0);
+      expect(ship.y + ship.height).toBeLessThanOrEqual(height);
+      const strip = await page.screenshot({ clip: { x: Math.round(ship.x + ship.width / 2) - 1, y: Math.round(ship.y + ship.height + 4), width: 2, height: 200 } });
+      const { data } = await sharp(strip).raw().toBuffer({ resolveWithObject: true });
+      let line = 0;
+      for (let i = 0; i < data.length; i += 3) if (Math.abs(data[i] - 131) + Math.abs(data[i + 1] - 136) + Math.abs(data[i + 2] - 148) < 12) line++;
+      expect(line, 'the rail line shows under the ship').toBeGreaterThan(300);
+    }
     else {
       // a phone: the clouds and the label peek in, and the photo keeps its size
       const peek = await page.evaluate(() => ({ flag: document.querySelector('.wall .flag')!.getBoundingClientRect().bottom, photo: document.querySelector('.hero__figure img')!.getBoundingClientRect().height }));
