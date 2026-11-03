@@ -749,3 +749,58 @@ test.describe('Twenty bugs', () => {
     await expect(page.locator('.score__ach li.is-done')).toHaveText(['Caught your first bug', 'Caught 10 bugs']);
   });
 });
+
+// Under the desktop rail the page's colours run to the very left edge: every level, cloud join and
+// the footer start at x = 0, so only the rail's thin line, the ship and the markers sit over them
+// and no column of the page behind shows at the edge. Each page is walked a screen at a time: the
+// element at the left edge is always a level, a join or the footer (the header at the top), and the
+// first ten pixels match the colour just beside them, outside the cloud bands and the ship.
+for (const [width, height] of [
+  [1280, 650],
+  [1440, 900],
+  [1920, 1080],
+] as const) {
+  test(`at ${width}x${height} the levels, joins and footer run to the very left edge under the rail, on every page`, { tag: ['@viewports'] }, async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.setViewportSize({ width, height });
+    const gaps: string[] = [];
+    for (const path of ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html']) {
+      await page.goto(path);
+      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+      const total = await page.evaluate(() => document.documentElement.scrollHeight);
+      for (let y = 0; y < total; y += height - 100) {
+        await page.evaluate((y) => window.scrollTo(0, y), y);
+        await shipSettled(page);
+        const at = await page.evaluate(() => {
+          const out: string[] = [];
+          const ship = document.querySelector('.hud__runner')!.getBoundingClientRect();
+          const bands = [...document.querySelectorAll('.join')].map((j) => j.getBoundingClientRect());
+          // (below the footer is the page's own room for the scoreboard, the footer's navy, full width)
+          const end = document.querySelector('.footer')!.getBoundingClientRect().bottom;
+          for (let r = 4; r < Math.min(innerHeight - 4, end - 1); r += 24) {
+            const el = document.elementFromPoint(1, r);
+            if (!el?.closest('.level, .join, .footer, header')) out.push(`${r}: ${el?.tagName}.${String(el?.getAttribute('class') ?? '').split(' ')[0]}`);
+          }
+          // rows to read for colour: away from the ship, the cloud bands and the header
+          const rows: number[] = [];
+          for (let r = 80; r < Math.min(innerHeight - 4, end - 1); r += 6) if ((r < ship.top - 4 || r > ship.bottom + 4) && !bands.some((b) => r > b.top - 4 && r < b.bottom + 4)) rows.push(r);
+          return { out, rows };
+        });
+        for (const o of at.out) gaps.push(`${path} at ${y + Number(o.split(':')[0])}: the edge is ${o.split(': ')[1]}`);
+        const png = await page.screenshot({ clip: { x: 0, y: 0, width: 11, height } });
+        const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+        let off = 0;
+        for (const r of at.rows) {
+          const ref = (r * info.width + 10) * info.channels;
+          for (let x = 0; x < 10; x++) {
+            const i = (r * info.width + x) * info.channels;
+            if (Math.abs(data[i] - data[ref]) + Math.abs(data[i + 1] - data[ref + 1]) + Math.abs(data[i + 2] - data[ref + 2]) > 24) off++;
+          }
+        }
+        // (a star or a grid line now and then is fine; a column of another colour is not)
+        if (off > at.rows.length) gaps.push(`${path} at scroll ${y}: ${off} pixels at the left edge differ from the colour beside them`);
+      }
+    }
+    expect(gaps).toEqual([]);
+  });
+}
