@@ -106,6 +106,11 @@ test.describe('The Quality deck', () => {
     const delays = await cards.evaluateAll((els) => els.map((el) => parseFloat(getComputedStyle(el).transitionDelay)));
     for (let i = 1; i < delays.length; i++) expect(delays[i], 'one at a time').toBeGreaterThan(delays[i - 1]);
     await expect(cards.first()).toHaveAttribute('data-enter', '');
+    // (measured where they come to rest: every entrance in and finished, so no card is caught mid-rise)
+    await p1.evaluate(() => {
+      document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in'));
+      return Promise.all(document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline && a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => null)));
+    });
     // the cards stand one above the other, then Pocket DevTools, nothing overlapping
     const boxes = await cards.evaluateAll((els) => els.map((el) => ({ top: el.getBoundingClientRect().top + scrollY, bottom: el.getBoundingClientRect().bottom + scrollY })));
     for (let i = 1; i < boxes.length; i++) expect(boxes[i].top).toBeGreaterThanOrEqual(boxes[i - 1].bottom);
