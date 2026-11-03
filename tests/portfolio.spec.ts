@@ -154,6 +154,19 @@ test.describe('The Games page journey', () => {
 
   test('a settled card with a clear line of fire gets one shot: a pixel bolt from the nose to its logo, a muzzle flash, a burst at the hit, then the card flashes, a scan band sweeps it and a PASS stamp stays; one at a time, cards only, each once', async ({ page }) => {
     test.setTimeout(120_000);
+    // Every animation the shot starts is written down as it is made (its element, keyframes and
+    // timing), so the checks below read what was played, however busy the machine: the recoil and
+    // the muzzle flash last a fifth of a second and are gone before a slow check could look.
+    await page.addInitScript(() => {
+      const w = window as unknown as { __anims: { cls: string; keyframes: Keyframe[]; options: KeyframeAnimationOptions }[] };
+      w.__anims = [];
+      const animate = Element.prototype.animate;
+      Element.prototype.animate = function (this: Element, keyframes: Keyframe[] | PropertyIndexedKeyframes | null, options?: number | KeyframeAnimationOptions) {
+        const cls = this.getAttribute('class') ?? '';
+        if (/bolt__px|muzzle__px|burst__px|sprite/.test(cls)) w.__anims.push({ cls, keyframes: (Array.isArray(keyframes) ? keyframes : []) as Keyframe[], options: (typeof options === 'number' ? { duration: options } : (options ?? {})) as KeyframeAnimationOptions });
+        return animate.call(this, keyframes, options);
+      };
+    });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/portfolio/');
     await noSmooth(page);
@@ -172,43 +185,43 @@ test.describe('The Games page journey', () => {
     const y = await first.evaluate((el: HTMLElement) => el.getBoundingClientRect().top + el.offsetHeight / 2 + scrollY);
     await page.evaluate((y) => window.scrollTo(0, y - innerHeight / 2), y);
     await page.waitForFunction(() => document.querySelector('[data-shot]')?.getAttribute('data-to'), null, { timeout: 4000, polling: 16 });
+    // what the shot played: the bolt's flight (twelve squares), the muzzle flash (five), the burst
+    // (twelve) and the recoil, as written down when each began
+    type Played = { cls: string; keyframes: { transform?: string; opacity?: number }[]; options: { duration?: number; delay?: number; composite?: string } };
+    const played = async () => (await page.evaluate(() => (window as unknown as { __anims: unknown[] }).__anims)) as Played[];
+    await expect.poll(async () => (await played()).filter((a) => a.cls.includes('burst__px')).length, { message: 'the burst at the hit' }).toBeGreaterThanOrEqual(12);
+    const log = await played();
     // the bolt: twelve pixel squares, a bright glowing head and a thinning trail, each flying the path in a third of a second
-    const bolt = await page.evaluate(() => {
-      const px = [...document.querySelectorAll<HTMLElement>('.bolt__px')];
-      return px.map((el) => {
-        const a = el.getAnimations()[0];
-        const cs = getComputedStyle(el);
-        return { w: parseFloat(cs.width), h: parseFloat(cs.height), bg: cs.backgroundColor, duration: Number(a?.effect?.getComputedTiming().duration ?? 0), delay: Number(a?.effect?.getComputedTiming().delay ?? 0) };
-      });
-    });
+    const flights = log.filter((a) => a.cls.includes('bolt__px') && a.keyframes.some((k) => k.transform));
+    expect(flights.length).toBe(12);
+    for (const f of flights) expect(f.options.duration, 'a third of a second along the path').toBe(350);
+    for (let i = 1; i < flights.length; i++) expect(flights[i].options.delay ?? 0, 'each square a beat behind the last').toBeGreaterThan(flights[i - 1].options.delay ?? 0);
+    const bolt = await page.locator('.bolt__px').evaluateAll((els) => els.map((el) => {
+      const cs = getComputedStyle(el);
+      return { w: parseFloat(cs.width), h: parseFloat(cs.height), bg: cs.backgroundColor, glow: cs.boxShadow };
+    }));
     expect(bolt.length).toBe(12);
     for (const p of bolt) {
       expect(p.w, 'a 10px square').toBe(10);
       expect(p.h).toBe(10);
-      expect(p.duration, 'a third of a second along the path').toBe(350);
     }
     expect(bolt.slice(0, 2).map((p) => p.bg)).toEqual(['rgb(229, 231, 234)', 'rgb(229, 231, 234)']);
     expect(bolt.slice(2, 4).map((p) => p.bg)).toEqual(['rgb(103, 193, 140)', 'rgb(103, 193, 140)']);
     for (const p of bolt.slice(4)) expect(p.bg).toBe('rgb(86, 189, 218)');
-    for (let i = 1; i < bolt.length; i++) expect(bolt[i].delay, 'each square a beat behind the last').toBeGreaterThan(bolt[i - 1].delay);
-    const glow = await page.locator('.bolt__px').evaluateAll((els) => els.map((el) => getComputedStyle(el).boxShadow));
-    for (const g of glow.slice(0, 4)) expect(g, 'a glow around the head').toContain('rgb(103, 193, 140)');
-    for (const g of glow.slice(4)) expect(g, 'none on the trail').toBe('none');
-    expect(await page.locator('.muzzle__px').evaluateAll((els) => els.filter((el) => el.getAnimations().length).length), 'a muzzle flash').toBe(5);
-    expect(await page.locator('.burst__px').evaluateAll((els) => els.filter((el) => el.getAnimations().length).length), 'a burst at the hit').toBe(12);
-    expect(
-      await page.locator('.burst__px').evaluateAll((els) => {
-        const a = els[0].getAnimations()[0] as Animation;
-        const k = (a.effect as KeyframeEffect).getKeyframes();
-        const from = new DOMMatrix(String(k[0].transform));
-        const to = new DOMMatrix(String(k[k.length - 1].transform));
-        return Math.hypot(to.m41 - from.m41, to.m42 - from.m42);
-      }),
-      'the burst spreads',
-    ).toBeGreaterThanOrEqual(24);
+    for (const p of bolt.slice(0, 4)) expect(p.glow, 'a glow around the head').toContain('rgb(103, 193, 140)');
+    for (const p of bolt.slice(4)) expect(p.glow, 'none on the trail').toBe('none');
+    expect(log.filter((a) => a.cls.includes('muzzle__px')).length, 'a muzzle flash').toBe(5);
+    const bursts = log.filter((a) => a.cls.includes('burst__px'));
+    expect(bursts.length, 'a burst at the hit').toBe(12);
+    const spread = await page.evaluate((k) => {
+      const from = new DOMMatrix(String(k[0].transform));
+      const to = new DOMMatrix(String(k[k.length - 1].transform));
+      return Math.hypot(to.m41 - from.m41, to.m42 - from.m42);
+    }, bursts[0].keyframes);
+    expect(spread, 'the burst spreads').toBeGreaterThanOrEqual(24);
     // the recoil: the ship sprite kicks back 3px and returns, on top of its own pose
     expect(
-      await page.locator('.hud__runner .sprite').evaluate((el) => el.getAnimations().some((a) => ((a.effect as KeyframeEffect).getKeyframes() as { transform?: string }[]).some((f) => /translateX\(-3px\)/.test(String(f.transform))) && (a.effect as KeyframeEffect).composite === 'add')),
+      log.some((a) => a.cls.includes('sprite') && a.keyframes.some((f) => /translateX\(-3px\)/.test(String(f.transform))) && a.options.composite === 'add'),
       'a 3px recoil composited onto the pose',
     ).toBe(true);
     await expect(first).toHaveClass(/is-scanned/, { timeout: 2500 });
