@@ -192,10 +192,7 @@ const fill = (h: number[], floor: number, next: () => number) => {
   }
   return h;
 };
-// of 18 pixels: under a cloud join the sky keeps to the top two rows, a bumpy edge of the back
-// layer's tops (it steps between 16 and 18), and the rest of the band is cloud; over terrain the
-// field above keeps to the top six
-const FLOOR = kind === 'clouds' ? 16 : 12;
+const FLOOR = 12; // of 18 pixels: the sky keeps to the top six
 
 // three layers, back to front, each with its own tile width so the composite hardly ever repeats.
 // The front layer is the edge between the two colours, so it is bumps all along: its silhouette

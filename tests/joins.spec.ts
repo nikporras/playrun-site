@@ -289,14 +289,13 @@ for (const [width, height, scale] of SCALED) {
   });
 }
 
-// The sky (the upper level's own field) keeps to the top two art rows of every cloud join and the
-// top third of every terrain join: below it, the back
+// The sky (the upper level's own field) keeps to the top third of every join: below it, the back
 // and middle layers always cover the valleys between the front layer's bumps, so no notch of the
 // dark sky cuts down to the front. Every join on every page, read from a screenshot of the band at
 // rest (the drift is at its middle when the band is centred, and off under reduced motion), column
 // by column: the lowest pixel of the sky's colour must sit in the top third (one device pixel over).
 for (const width of [375, 1280, 1920]) {
-  test(`the sky keeps to the top two art rows of every cloud join and the top third of every terrain join at ${width}px: the back layers fill the band`, { tag: ['@brand'] }, async ({ browser }) => {
+  test(`the sky keeps to the top third of every join at ${width}px: the back layers fill the valleys of the front`, { tag: ['@brand'] }, async ({ browser }) => {
     test.setTimeout(120_000);
     const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
     const page = await context.newPage();
@@ -318,7 +317,7 @@ for (const width of [375, 1280, 1920]) {
           const r = el.getBoundingClientRect();
           const name = (el as HTMLElement).style.getPropertyValue('--from').match(/var\((--[\w-]+)\)/)![1];
           const hex = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-          return { top: r.top, height: r.height, clouds: el.classList.contains('join--clouds'), sky: [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) };
+          return { top: r.top, height: r.height, sky: [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) };
         });
         const png = await page.screenshot({ clip: { x: 0, y: Math.round(band.top), width, height: Math.round(band.height) } });
         const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
@@ -333,10 +332,7 @@ for (const width of [375, 1280, 1920]) {
             }
           }
         }
-        // (under clouds the sky keeps to the top two of the band's eighteen art rows, a bumpy edge; over
-        // terrain the field above keeps to the top third)
-        const limit = band.clouds ? Math.ceil((info.height * 2) / 18) : Math.ceil(info.height / 3);
-        if (lowest > limit + 1) deep.push(`${path} join ${j}: the sky reaches ${lowest} of ${info.height}px at x=${at} (${band.clouds ? 'clouds' : 'terrain'})`);
+        if (lowest > Math.ceil(info.height / 3) + 1) deep.push(`${path} join ${j}: the sky reaches ${lowest} of ${info.height}px at x=${at}`);
       }
     }
     expect(deep).toEqual([]);
