@@ -2,6 +2,26 @@ import { test, expect, type Locator, type Page } from '@playwright/test';
 import sharp from 'sharp';
 
 // A bug paces while the games are on; a click waits for a still target, so the walk is paused first.
+// The ship glides to its place after a scroll (a short transition): wait until its box holds still
+// for three frames running, however long the machine takes, instead of sleeping a fixed time.
+const shipSettled = (page: Page) =>
+  page.waitForFunction(
+    () =>
+      new Promise<boolean>((resolve) => {
+        const el = document.querySelector('.hud__runner')!;
+        let last = '';
+        let same = 0;
+        const tick = () => {
+          const r = el.getBoundingClientRect();
+          const now = `${r.x},${r.y}`;
+          same = now === last ? same + 1 : 0;
+          last = now;
+          if (same >= 3) resolve(true);
+          else requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }),
+  );
 const still = (bug: Locator) => bug.evaluate((el) => el.getAnimations().forEach((a) => a.pause()));
 
 /**
@@ -98,9 +118,8 @@ test.describe('Games', () => {
     await expect(page.locator('[data-hud-level]')).not.toHaveText('1');
   });
 
-  test('the track is a rail no wider than the ship on the left, its numbers fully visible; the scoreboard is a compact card bottom right that opens on Enter, a click or a tap and closes on the pill, Escape or a click outside', async ({ page }) => {
-    test.setTimeout(60_000); // (four pages, three scroll positions each, and the card's every way in and out)
-    for (const path of ['/', '/skills/', '/portfolio/', '/quality/']) {
+  for (const path of ['/', '/skills/', '/portfolio/', '/quality/']) test(`${path}: the track is a rail no wider than the ship on the left, its numbers fully visible; the scoreboard is a compact card bottom right that opens on Enter, a click or a tap and closes on the pill, Escape or a click outside`, async ({ page }) => {
+    {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(path);
       await page.mouse.move(700, 450);
@@ -125,7 +144,7 @@ test.describe('Games', () => {
       // the ship hides the rail entirely: at its centre and across its width the top element is the ship
       for (const at of [0, 0.5, 1]) {
         await page.evaluate((at) => window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * at), at);
-        await page.waitForTimeout(250);
+        await shipSettled(page);
         const hits = await page.evaluate(() => {
           const ship = document.querySelector('.hud__runner')!.getBoundingClientRect();
           const cx = ship.left + ship.width / 2;
@@ -148,7 +167,7 @@ test.describe('Games', () => {
       // (no plate behind the ship: the rail has a gap where it is)
       await expect(page.locator('.hud__ship')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.waitForTimeout(200);
+      await shipSettled(page);
       // one marker per level after the first, or one per year where the page carries years,
       // each beside the rail and wholly on screen
       const levels = await page.locator('[data-level]').count();
@@ -205,6 +224,10 @@ test.describe('Games', () => {
       await expect(panel).toBeHidden();
       await expect(pill).toHaveAttribute('aria-expanded', 'false');
     }
+  });
+
+  test('the scoreboard never sits on the footer; on a phone or a tablet the track is a thin line on the bottom bar with the ship riding on it', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     // the end of the page: the scoreboard never sits on the footer's last line
     await page.goto('/skills/');
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
