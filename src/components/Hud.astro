@@ -623,8 +623,9 @@ import PassMark from './PassMark.astro';
     }
   }
 
-  /* Desktop: the track stands on the left edge, in the gutter, no wider than the ship: a rail
-     down its middle, the ship running on it, the markers beside it. The dock floats bottom right. */
+  /* Desktop: the track stands on the left edge, in the gutter, no wider than the ship, with no
+     strip behind it: a thin rail floating over the page, the ship running on it, the markers beside
+     it. The dock floats bottom right. */
   @media (min-width: 64rem) {
     .hud {
       left: 0;
@@ -634,21 +635,38 @@ import PassMark from './PassMark.astro';
       width: var(--track-w);
       height: auto;
       border-top: 0;
+      background: transparent;
+      pointer-events: none; /* (the page under the rail stays clickable; the markers take their own clicks) */
     }
-    /* The rail: a light line with a navy edge either side, so it reads on the navy strip and
-       wherever the strip meets a light field. */
+    .hud__levels :global(.hud__jump) {
+      pointer-events: auto;
+    }
+    /* The rail rides with the ship: a line from the ship up to the top of the screen and one down to
+       the foot, so there is a gap exactly where the ship is (its hollow middle never shows the line)
+       and nothing to update as it moves. A light line with a navy edge either side, so it reads on
+       every field, dark or light. */
     .hud__floor {
+      display: none;
+    }
+    .hud__runner::before,
+    .hud__runner::after {
+      content: '';
+      position: absolute;
       left: calc(50% - 1px);
-      right: auto;
-      top: 0;
-      bottom: 0;
       width: 2px;
-      height: auto;
+      height: 100vh;
       background: #838894; /* (where color-mix is missing) */
       background: color-mix(in srgb, var(--pr-light) 55%, var(--pr-navy));
       box-shadow:
         -1px 0 0 var(--pr-navy),
         1px 0 0 var(--pr-navy);
+      pointer-events: none;
+    }
+    .hud__runner::before {
+      bottom: 100%;
+    }
+    .hud__runner::after {
+      top: 100%;
     }
     .hud__levels {
       left: 100%;
@@ -695,18 +713,6 @@ import PassMark from './PassMark.astro';
       bottom: auto;
       width: var(--track-w);
       height: var(--track-w);
-    }
-    /* A gap in the rail where the ship is, so the rail does not show through its hollow middle: a
-       strip only as wide as the rail and its navy edges, in the track's own navy, riding with the
-       ship (no box, and nothing to update as it moves). */
-    .hud__runner::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: calc(50% - 2px);
-      width: 4px;
-      background: var(--bg);
     }
     .hud__ship :global(.sprite) {
       transform: rotate(180deg);

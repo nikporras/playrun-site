@@ -14,14 +14,14 @@ test.describe('Games', () => {
     const hud = page.locator('#hud');
     await expect(hud).toBeVisible();
     await expect(page.locator('html')).toHaveClass(/games/);
-    await expect(page.locator('.hud__floor')).toBeVisible();
+    await expect(page.locator('.hud__runner')).toBeVisible();
     // the controls live on the scoreboard card, which the pill opens
     const pill = page.getByRole('button', { name: /^Scoreboard/ });
     await expect(pill).toHaveAccessibleName(/level\s*Lv\s*1\s*\/\s*5\s*00 bugs caught\s*0\/6 achievements/);
     await pill.click();
     await page.getByRole('button', { name: /Games on/ }).click();
     await expect(page.locator('html')).not.toHaveClass(/(^|\s)games(\s|$)/);
-    await expect(page.locator('.hud__floor')).toBeHidden();
+    await expect(page.locator('.hud__runner')).toBeHidden();
     await expect(page.locator('[data-bug]:visible')).toHaveCount(0);
     await expect(pill, 'the pill stays, to turn the games back on').toBeVisible();
     await expect(pill).toHaveAccessibleName(/games off/);
@@ -111,12 +111,14 @@ test.describe('Games', () => {
       expect(box.width, `${path}: no wider than the ship`).toBeLessThanOrEqual(ship.width + 1);
       expect(box.width, `${path}: slim`).toBeLessThanOrEqual(32);
       expect(box.height, `${path}: full height`).toBeGreaterThanOrEqual(880);
-      await expect(page.locator('.hud__floor'), `${path}: a rail, not a strip of squares`).toHaveCSS('background-image', 'none');
-      // the ship paints over the rail, and the rail is light with a navy edge so it reads on every field
-      const z = await page.evaluate(() => [parseInt(getComputedStyle(document.querySelector('.hud__runner')!).zIndex) || 0, parseInt(getComputedStyle(document.querySelector('.hud__floor')!).zIndex) || 0]);
-      expect(z[0], `${path}: the ship on top of the line`).toBeGreaterThan(z[1]);
-      const rail = await page.locator('.hud__floor').evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, shadow: getComputedStyle(el).boxShadow }));
-      expect(rail.bg).not.toBe('rgb(28, 42, 72)');
+      // no strip behind the rail: a line floating over the page, light with a navy edge either side
+      await expect(hud, `${path}: no strip behind the rail`).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      await expect(hud).toHaveCSS('background-image', 'none');
+      const rail = await page.locator('.hud__runner').evaluate((el) => ({ bg: getComputedStyle(el, '::before').backgroundColor, shadow: getComputedStyle(el, '::before').boxShadow, below: getComputedStyle(el, '::after').backgroundColor }));
+      // (#838894, light mixed with navy; reported as rgb() or color(srgb ...))
+      const rgb = (c: string) => (c.startsWith('color(') ? (c.match(/[\d.]+/g) ?? []).slice(0, 3).map((v) => Math.round(Number(v) * 255)) : (c.match(/\d+/g) ?? []).slice(0, 3).map(Number));
+      expect(rgb(rail.bg)).toEqual([131, 136, 148]);
+      expect(rail.below).toBe(rail.bg);
       expect(rail.shadow).toContain('rgb(12, 21, 42)');
       expect(await page.locator('.hud__levels li span').first().evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid');
       // the ship hides the rail entirely: at its centre and across its width the top element is the ship
@@ -127,10 +129,15 @@ test.describe('Games', () => {
           const ship = document.querySelector('.hud__runner')!.getBoundingClientRect();
           const cx = ship.left + ship.width / 2;
           const cy = ship.top + ship.height / 2;
-          return [-11, -6, -2, 0, 2, 6, 11].map((dx) => {
+          // (the rail lets clicks through to the page; for this look only, it takes them)
+          const hud = document.querySelector<HTMLElement>('#hud')!;
+          hud.style.pointerEvents = 'auto';
+          const out = [-11, -6, -2, 0, 2, 6, 11].map((dx) => {
             const el = document.elementFromPoint(cx + dx, cy);
             return { dx, onShip: !!el?.closest('.hud__runner'), rail: !!el?.closest('.hud__floor'), what: `${el?.tagName}.${el?.getAttribute('class') ?? ''}` };
           });
+          hud.style.pointerEvents = '';
+          return out;
         });
         for (const h of hits) {
           expect(h.rail, `${path} at ${at}: the rail shows at ${h.dx}px from the ship's centre (${h.what})`).toBe(false);
@@ -592,5 +599,59 @@ for (const width of [375, 768, 1280, 1440, 1920]) {
       const px = (await sharp(above).raw().toBuffer())!;
       expect(Math.abs(px[0] - 131) + Math.abs(px[1] - 136) + Math.abs(px[2] - 148), 'the rail runs on past the ship').toBeLessThan(12);
     }
+  });
+}
+
+// The desktop rail floats over the page: no strip behind it, the line and the markers clear on every
+// level colour (the line light on its navy edges, each marker a navy box), and nothing of the page
+// under the rail or its markers.
+const lum = (rgb: number[]) => {
+  const [r, g, b] = rgb.map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrast = (a: number[], b: number[]) => {
+  const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m);
+  return (x + 0.05) / (y + 0.05);
+};
+for (const width of [1280, 1440, 1920]) {
+  test(`at ${width}px the rail has no strip behind it, reads on every level colour, and nothing sits under it or its markers`, { tag: ['@viewports'] }, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const NAVY = [12, 21, 42];
+    const LINE = [131, 136, 148];
+    // the line against its own navy edges, and the edges against every field the rail crosses
+    expect(contrast(LINE, NAVY), 'the line on its edges').toBeGreaterThanOrEqual(3);
+    for (const [name, field] of [['blue', [81, 108, 179]], ['cyan', [86, 189, 218]], ['green', [103, 193, 140]], ['light', [229, 231, 234]]] as const) {
+      expect(contrast(NAVY, [...field]), `the navy edge on the ${name} field`).toBeGreaterThanOrEqual(3);
+    }
+    expect(contrast(LINE, NAVY), 'the line on the navy field').toBeGreaterThanOrEqual(3);
+    const under: string[] = [];
+    for (const path of ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/']) {
+      await page.goto(path);
+      await expect(page.locator('#hud')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      // every marker a navy box with its number
+      // (the script lays the markers out once the page is in: read them when they have settled)
+      await expect
+        .poll(() => page.locator('.hud__levels li span').evaluateAll((els) => els.length > 0 && els.every((e) => getComputedStyle(e).backgroundColor === 'rgb(12, 21, 42)')), { message: `${path}: a navy box on each marker` })
+        .toBe(true);
+      // the rail's own strip and every marker's box: no text or tile under any of them, at any scroll
+      const hits = await page.evaluate(() => {
+        const zones = [...document.querySelectorAll('#hud, .hud__levels li span')].map((e) => e.getBoundingClientRect());
+        const sel = 'main :is(p, li, dt, dd, h1, h2, h3, h4, label, input, textarea, button, a, img, figure, picture, svg:not([aria-hidden="true"]), .flag, .card, .row, .panel, .stat, .drum, .step, .tile, form)';
+        return [...document.querySelectorAll<HTMLElement>(sel)]
+          .filter((e) => !e.closest('#hud, .bug, .ticker') && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden')
+          .filter((e) => {
+            const r = e.getBoundingClientRect();
+            // (the rail is fixed: an element counts wherever it scrolls, so only its left and right matter
+            // against the rail's strip, and against a marker only where it is on screen with it)
+            return r.width > 0 && zones.some((z, i) => r.left < z.right && r.right > z.left && (i === 0 || (r.top < z.bottom && r.bottom > z.top)));
+          })
+          .map((e) => `${e.tagName}.${String(e.className).split(' ')[0]} at ${Math.round(e.getBoundingClientRect().left)},${Math.round(e.getBoundingClientRect().top)}`);
+      });
+      for (const h of hits) under.push(`${path}: ${h}`);
+    }
+    expect(under).toEqual([]);
   });
 }
