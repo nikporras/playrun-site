@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
+import sharp from 'sharp';
 
 // A bug paces while the games are on; a click waits for a still target, so the walk is paused first.
 const still = (bug: Locator) => bug.evaluate((el) => el.getAnimations().forEach((a) => a.pause()));
@@ -136,7 +137,8 @@ test.describe('Games', () => {
           expect(h.onShip, `${path} at ${at}: the ship at ${h.dx}px from its centre (${h.what})`).toBe(true);
         }
       }
-      await expect(page.locator('.hud__ship')).toHaveCSS('background-color', 'rgb(12, 21, 42)');
+      // (no plate behind the ship: the rail has a gap where it is)
+      await expect(page.locator('.hud__ship')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.waitForTimeout(200);
       // one marker per level after the first, or one per year where the page carries years,
@@ -554,10 +556,11 @@ test.describe('Kept in the browser', () => {
   });
 });
 
-// On the bottom bar (phones and tablets) the ship rides over the level itself: no box behind it,
-// a thin navy outline round its own shape instead, at the size it always had.
-for (const width of [375, 768]) {
-  test(`at ${width}px the ship on the bar has no solid background: transparent, outlined by its own shape, the same size`, async ({ page }) => {
+// The ship has no box behind it, on the bottom bar (phones and tablets) or on the desktop rail: a
+// thin navy outline round its own shape instead, at the size it always had. On the rail, the rail
+// has a gap where the ship is, so it never shows through the ship's hollow middle.
+for (const width of [375, 768, 1280, 1440, 1920]) {
+  test(`at ${width}px the ship has no solid background: transparent, outlined by its own shape, the same size${width >= 1024 ? ', the rail hidden behind it' : ''}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto('/skills/');
     const ship = page.locator('.hud__ship');
@@ -573,7 +576,21 @@ for (const width of [375, 768]) {
     });
     expect(look.solid, 'no box behind the ship').toBe(false);
     expect(look.filter.match(/drop-shadow/g)?.length, 'an outline round its shape').toBe(4);
-    expect(look.w).toBe(24);
-    expect(look.h).toBe(24);
+    const size = width >= 1024 ? 28 : 24;
+    expect(look.w).toBe(size);
+    expect(look.h).toBe(size);
+    if (width >= 1024) {
+      // down the rail's line through the ship: no pixel of the rail's colour (#838894) shows
+      const r = (await page.locator('.hud__runner').boundingBox())!;
+      const png = await page.screenshot({ clip: { x: r.x + r.width / 2 - 1, y: r.y + 1, width: 2, height: r.height - 2 } });
+      const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+      let rail = 0;
+      for (let i = 0; i < data.length; i += info.channels) if (Math.abs(data[i] - 131) + Math.abs(data[i + 1] - 136) + Math.abs(data[i + 2] - 148) < 12) rail++;
+      expect(rail, 'the rail does not show through the ship').toBe(0);
+      // and it is there above and below the ship
+      const above = await page.screenshot({ clip: { x: r.x + r.width / 2 - 1, y: r.y + r.height + 4, width: 2, height: 2 } });
+      const px = (await sharp(above).raw().toBuffer())!;
+      expect(Math.abs(px[0] - 131) + Math.abs(px[1] - 136) + Math.abs(px[2] - 148), 'the rail runs on past the ship').toBeLessThan(12);
+    }
   });
 }
