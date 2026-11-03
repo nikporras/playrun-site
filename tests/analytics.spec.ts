@@ -58,6 +58,17 @@ test('with Umami blocked, as an ad blocker would, every page still works: no scr
   await expect(page.locator('[data-picker] [aria-pressed="true"]')).toHaveText('Firefox');
   await page.getByRole('button', { name: /^Motion/ }).click();
   await expect(page.locator('html')).toHaveClass(/motion-off/);
+  // nothing counts it as the site's error: the page's own list stays empty, and the live checks
+  // (Quality's Smoke test, Home's console check) still pass
+  expect(await page.evaluate(() => (window as unknown as { __playrunErrors: string[] }).__playrunErrors)).toEqual([]);
+  await page.getByRole('button', { name: /^Motion/ }).click();
+  await page.goto('/quality/');
+  const smoke = page.locator('.step').first();
+  await smoke.scrollIntoViewIfNeeded();
+  await expect(smoke).toHaveClass(/is-pass/, { timeout: 10_000 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Test this page' }).click();
+  await expect(page.locator('[data-check="console"]')).toHaveClass(/is-pass/, { timeout: 15_000 });
   expect(errors).toEqual([]);
 });
 
