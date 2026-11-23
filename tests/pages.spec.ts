@@ -542,3 +542,26 @@ test('no line explains the page to itself: the helper lines that read like a tem
     for (const line of gone) expect(html, `${page}: ${line}`).not.toContain(line);
   }
 });
+
+test('the footer sits flush with the foot of the screen at the end of every page, short or long, with no gap below it', { tag: ['@viewports'] }, async ({ page }) => {
+  test.setTimeout(120_000);
+  const paths = ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+  // (1440x4000: a window taller than the short pages, so the footer has to grow to the bottom)
+  for (const [width, height] of [[1920, 1080], [1440, 900], [1440, 4000], [1024, 768], [768, 1024], [375, 812], [300, 640]] as const) {
+    await page.setViewportSize({ width, height });
+    for (const path of paths) {
+      await page.goto(path);
+      await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+      await page.waitForTimeout(100);
+      const at = await page.evaluate(() => {
+        const foot = document.querySelector('footer')!.getBoundingClientRect().bottom;
+        const bar = document.querySelector('.tabbar');
+        const barTop = bar && bar.getClientRects().length ? bar.getBoundingClientRect().top : innerHeight;
+        return { foot: Math.round(foot), edge: Math.round(barTop) };
+      });
+      // the footer's foot is the screen's foot (or the bottom bar's top edge, the page's own room
+      // under the fixed bar being all that follows it)
+      expect(Math.abs(at.foot - at.edge), `${path} at ${width}x${height}: footer ${at.foot}, screen foot ${at.edge}`).toBeLessThanOrEqual(1);
+    }
+  }
+});

@@ -21,7 +21,11 @@ body {
   font-kerning: normal;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  /* A column at least the screen's height whose footer grows to fill it: on a short page the
+     footer runs to the bottom of the screen, with nothing below it. */
   min-height: 100svh;
+  display: flex;
+  flex-direction: column;
 }
 img,
 svg,
@@ -676,11 +680,13 @@ p + p {
   padding-bottom: 3rem; /* the scoreboard pill in the corner */
 }
 @media (min-width: 64rem) {
-  /* The track stands in the left gutter; the scoreboard floats bottom right, so the page ends
-     with a strip of ground under the footer that it can sit on without covering anything. */
+  /* The track stands in the left gutter; the scoreboard floats bottom right, so the footer ends
+     with a strip of its own that the pill can sit on without covering anything (the footer's
+     padding, so there is no gap under it). */
   .games body,
   .games-off body {
-    padding-bottom: 4rem;
+    padding-bottom: 0;
+    --foot-room: 4rem;
   }
 }
 @media (max-width: 63.99rem) {

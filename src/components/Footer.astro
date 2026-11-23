@@ -50,7 +50,10 @@ const year = new Date().getFullYear();
 <style>
   .footer {
     background: var(--bg);
-    padding-block: var(--s-4) var(--s-3);
+    /* (the room for the desktop scoreboard pill is the footer's own, so nothing shows below it) */
+    padding-block: var(--s-4) calc(var(--s-3) + var(--foot-room, 0px));
+    /* it grows to the foot of a short page (the body is a column at least the screen's height) */
+    flex-grow: 1;
     --sel-bg: var(--accent);
     --sel-ink: var(--accent-ink);
   }
