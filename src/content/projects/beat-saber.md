@@ -9,7 +9,7 @@ tags: ["CQA", "Functional"]
 url: "https://store.steampowered.com/app/620980/Beat_Saber/"
 employer: "universally-speaking-2021"
 icon: "sabres"
-logoSource: "https://fonts.google.com/specimen/Comfortaa"
+logoSource: "https://beatsaber.com/"
 public: true
 ---
 
