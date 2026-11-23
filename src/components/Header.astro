@@ -8,7 +8,7 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
 
 <header class="header wrap">
   <div class="header__start">
-    <a class="header__brand" href="/" aria-label={`${site.name}, home`}>
+    <a class="header__brand" href="/" aria-label={`${site.name} home`}>
       <Lockup class="header__lockup" aria-hidden="true" role="presentation" />
     </a>
     <!-- Motion on or off for this site (with script): it follows the device's setting until the
@@ -47,15 +47,38 @@ const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/
     position: relative;
     z-index: 5;
   }
+  /* The logo is the way home on every page: the pointer, cyan on hover with a pixel bar under it,
+     and a light ring on keyboard focus. */
   .header__brand {
+    position: relative;
     display: block;
     color: var(--ink);
     text-decoration: none;
     flex: none;
+    cursor: pointer;
+  }
+  .header__brand::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.5rem;
+    height: 3px;
+    background: var(--accent-2);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    transition: transform var(--dur-fast) ease;
   }
   .header__brand:hover,
   .header__brand:focus-visible {
     color: var(--accent-2);
+  }
+  .header__brand:hover::after {
+    transform: scaleX(1);
+  }
+  .header__brand:focus-visible {
+    outline: 3px solid var(--pr-light);
+    outline-offset: 6px;
   }
   .header__lockup {
     height: 2rem;

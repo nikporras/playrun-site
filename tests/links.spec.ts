@@ -36,14 +36,35 @@ for (const path of PAGES) {
   });
 }
 
-test('on phones and tablets the logo in the header is the way home on every page: a visible link named PlayRun, home', { tag: ['@links'] }, async ({ page }) => {
-  for (const width of [375, 768]) {
+test('on every page and width the logo in the header is the way home: a visible link named PlayRun home', { tag: ['@links'] }, async ({ page }) => {
+  for (const width of [375, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const path of ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/']) {
       await page.goto(path);
-      const home = page.locator('header').getByRole('link', { name: 'PlayRun, home', exact: true });
+      const home = page.locator('header').getByRole('link', { name: 'PlayRun home', exact: true });
       await expect(home, `${path} at ${width}`).toBeVisible();
       await expect(home).toHaveAttribute('href', '/');
     }
   }
+});
+
+test('the logo shows it is a link: the pointer, cyan with a bar under it on hover, a ring on keyboard focus', { tag: ['@links'] }, async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/skills/');
+  const home = page.locator('header').getByRole('link', { name: 'PlayRun home', exact: true });
+  const look = () => home.evaluate((a) => ({ cursor: getComputedStyle(a).cursor, color: getComputedStyle(a).color, bar: getComputedStyle(a, '::after').transform, outline: getComputedStyle(a).outlineStyle }));
+  const rest = await look();
+  expect(rest.cursor).toBe('pointer');
+  await home.hover();
+  await expect.poll(async () => (await look()).bar).toBe('matrix(1, 0, 0, 1, 0, 0)');
+  expect((await look()).color, 'cyan on hover').toBe('rgb(86, 189, 218)');
+  expect(rest.color).not.toBe('rgb(86, 189, 218)');
+  await page.mouse.move(700, 600);
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  await home.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(home).toBeFocused();
+  expect((await look()).outline, 'a ring on keyboard focus').toBe('solid');
 });
