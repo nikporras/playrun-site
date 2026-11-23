@@ -13,7 +13,7 @@ import { Image } from 'astro:assets';
 import GameIcon from './GameIcon.astro';
 import ExternalLink from './ExternalLink.astro';
 import PassMark from './PassMark.astro';
-import { logos } from '../data/logos';
+import { logos, logoScale } from '../data/logos';
 
 interface Props {
   project: CollectionEntry<'projects'>;
@@ -30,6 +30,7 @@ interface Props {
 const { project: p, via, delay = 0, scan = false, open = false, trackerId } = Astro.props;
 const panel = `card-${p.id}`;
 const logo = logos[p.id];
+const logoK = logoScale[p.id] ?? 1;
 const when = p.data.status === 'in-development' ? 'In development' : `${p.data.year} · Released`;
 const store = p.data.store ?? 'Steam';
 ---
@@ -52,9 +53,9 @@ const store = p.data.store ?? 'Steam';
   <div class="card__body" id={panel}>
     <div class="card__inner">
       <div class="card__top">
-        <span class="card__logo">
+        <span class="card__logo" style={logoK !== 1 ? `--logo-k: ${logoK}` : undefined}>
           {logo ? (
-            <Image src={logo} alt="" height={56} densities={[1, 2]} loading="lazy" decoding="async" />
+            <Image src={logo} alt="" height={Math.round(56 * logoK)} densities={[1, 2]} loading="lazy" decoding="async" />
           ) : p.data.wordmark ? (
             <span class="card__wordmark" aria-hidden="true">{p.data.title}</span>
           ) : (
@@ -146,7 +147,7 @@ const store = p.data.store ?? 'Steam';
   }
   .card__logo {
     display: block;
-    height: 3.5rem;
+    height: calc(3.5rem * var(--logo-k, 1));
     max-width: 11rem;
   }
   .card__logo :global(img) {

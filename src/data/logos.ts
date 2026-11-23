@@ -10,3 +10,7 @@ const files = import.meta.glob<ImageMetadata>('../assets/logos/*.png', { eager: 
 export const logos: Record<string, ImageMetadata> = Object.fromEntries(
   Object.entries(files).map(([path, img]) => [path.split('/').pop()!.replace(/\.png$/, ''), img]),
 );
+
+/** A logo shown larger than the rest on the cards: a tall, square badge reads small at the cards'
+ *  logo height (by eye). */
+export const logoScale: Record<string, number> = { 'jurassic-world-aftermath': 1.4 };
