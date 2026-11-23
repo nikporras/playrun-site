@@ -11,13 +11,13 @@ const skills = [
     id: 'functional',
     title: 'Functional testing',
     text: 'I play every path a player can take and log what breaks, where, and how to reproduce it. I write a test plan for each new feature before the build lands, and I run a regression pass against it on every later build.',
-    get: ['Test plans the team can read', 'Regression passes on every build', 'Build acceptance before a milestone'],
+    get: ['Clear test plans, agreed before testing', 'Regression passes on every build', 'Build acceptance before a milestone'],
   },
   {
     id: 'platforms',
     title: 'Platforms and stores',
-    text: 'I test the same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the requirements of Steam, Epic Games Store and GOG. Each platform and store has its own rules, so I check them before submission, not after a rejection.',
-    get: ['Platform requirement checks', 'Store rule checks', 'One report per platform build'],
+    text: "I test the same build on Nintendo Switch, Switch 2, Xbox, PS5, PC and handhelds like Steam Deck, against each platform's and store's own requirements (Steam, Epic Games Store, GOG). Each one has its own requirements, so I check them before submission, not after a rejection.",
+    get: ['Platform requirement checks', 'Platform certification checks (TRC, XR, Lotcheck)', 'One report per platform build'],
   },
   {
     id: 'performance',
@@ -42,7 +42,7 @@ const skills = [
 // What I bring: the kit and the method, the languages and the education.
 const panels = [
   { title: 'Tools', items: tools },
-  { title: 'How I work', items: ['A test plan the team can read before I start', 'Every pass on real hardware', 'Steps, severity, media and a build number on every bug', 'A quality report at each milestone'] },
+  { title: 'How I work', items: ['A test plan agreed with the team before testing starts', 'Every pass on real hardware', 'Steps, severity, media and a build number on every bug', 'A quality report at each milestone'] },
   { title: 'Languages', items: languagesByLevel() },
   { title: 'Education', items: education.map((e) => [e.school, e.place, e.course, e.when].filter(Boolean).join(', ')) },
 ];
@@ -51,7 +51,7 @@ const run = [
   ['Build received', 'The build lands. I set up the hardware and read the plan back to the team.'],
   ['Test plan', 'What gets tested, on what, in what order. Agreed with the team before the pass starts.'],
   ['Functional pass', 'Every path, every feature, every build.'],
-  ['Platform pass', 'Each platform build against its platform and store rules.'],
+  ['Platform pass', 'Each platform build against its certification and store requirements.'],
   ['Performance pass', 'Frame rate, memory, load times, long sessions.'],
   ['Report sent', 'Bugs in the tracker as they are found. A quality report at the milestone.'],
   ['Shipped', 'The team submits with the report in hand.'],

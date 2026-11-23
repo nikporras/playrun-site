@@ -60,11 +60,11 @@ export const employers: Employer[] = [
   {
     id: 'aonic',
     name: 'Aonic',
-    focus: 'indie titles published by Megabit, from milestone builds to compliance, certification and release',
+    focus: 'titles published by Megabit, from milestone builds to compliance, certification and release',
     accent: 'green',
     roles: [{ title: 'Senior Quality Assurance Tester', when: 'Jul 2026 to present' }],
     lead:
-      "Embedded QA on several Megabit indie titles at once, from milestone builds to compliance (CQA), certification and release on Switch, Switch 2, Xbox, PS5 and the PC stores. Test cases, milestone build reports with severity and risk ratings, and bugs logged straight into the studios' own trackers.",
+      "Embedded QA on several Megabit titles at once, from milestone builds to compliance (CQA), certification and release on Switch, Switch 2, Xbox, PS5 and the PC stores. Test cases, milestone build reports with severity and risk ratings, and bugs logged straight into the studios' own trackers.",
   },
   {
     id: 'hcltech',
@@ -151,8 +151,9 @@ export const platforms: [name: string, text: string][] = [
   ['Nintendo Switch', 'Docked and handheld, Joy-Con and Pro Controller, sleep and resume.'],
   ['Nintendo Switch 2', 'The same, plus the new hardware paths.'],
   ['Xbox', 'Series X and S, Quick Resume, achievements, the Xbox app on PC.'],
-  ['PS5', 'Trophies, activities, the DualSense, suspend and resume.'],
+  ['PS5', 'Trophies, activities, DualSense features, and rest mode (the game must recover after the console sleeps mid-play).'],
   ['Steam', 'Steam Deck, cloud saves, achievements, Steam Input.'],
+  ['Handhelds', 'Steam Deck and Windows handhelds: Deck Verified checks, controller-only play, text size on a small screen, sleep and resume.'],
   ['Epic Games Store', 'Store requirements, achievements, launcher paths.'],
   ['GOG', 'DRM-free build, Galaxy features, offline play.'],
 ];

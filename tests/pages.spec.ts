@@ -15,7 +15,12 @@ const PAGES = [
       'Tools, methods, languages and education',
       'TestRail',
       'Swinburne University of Technology',
-      'I test the same build on Nintendo Switch, Switch 2, Xbox and PS5, and on PC against the requirements of Steam, Epic Games Store and GOG. Each platform and store has its own rules, so I check them before submission, not after a rejection.',
+      "I test the same build on Nintendo Switch, Switch 2, Xbox, PS5, PC and handhelds like Steam Deck, against each platform's and store's own requirements (Steam, Epic Games Store, GOG). Each one has its own requirements, so I check them before submission, not after a rejection.",
+      'Platform certification checks (TRC, XR, Lotcheck)',
+      'Each platform build against its certification and store requirements.',
+      'Clear test plans, agreed before testing',
+      'A test plan agreed with the team before testing starts',
+      'Trophies, activities, DualSense features, and rest mode (the game must recover after the console sleeps mid-play).',
       'Then I report exactly what broke down, and where.',
     ],
   },
@@ -509,7 +514,7 @@ test('Skills lists the VR headsets the games were tested on beside the consoles 
   await page.goto('/skills/');
   await expect(page.locator('#plat-title')).toHaveText('Platforms I test on');
   await expect(page.locator('#plat-title ~ .level__lead')).toHaveText("Flat screen and VR. Every build has to pass its platform's own checks, from console certification to the VR store requirements.");
-  await expect(page.locator('.plat__title')).toHaveText(['Nintendo Switch', 'Nintendo Switch 2', 'Xbox', 'PS5', 'Steam', 'Epic Games Store', 'GOG', 'Meta Quest 2, 3 and Pro', 'PC VR', 'PS VR', 'PS VR2']);
+  await expect(page.locator('.plat__title')).toHaveText(['Nintendo Switch', 'Nintendo Switch 2', 'Xbox', 'PS5', 'Steam', 'Handhelds', 'Epic Games Store', 'GOG', 'Meta Quest 2, 3 and Pro', 'PC VR', 'PS VR', 'PS VR2']);
   await page.goto('/');
   const more = page.locator('.wall').getByRole('link', { name: "See every game I've tested" });
   await expect(more).toHaveAttribute('href', '/portfolio/');

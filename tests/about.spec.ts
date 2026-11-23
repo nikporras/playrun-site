@@ -61,7 +61,7 @@ test('the About page: one h1, the summary, a real table of key facts and the que
   ]);
   const answer = (q: string) => page.locator('.qa__item').filter({ has: page.getByRole('heading', { name: q }) }).locator('p');
   await expect(answer('Who are you?')).toHaveText("I'm Nicolás Porras, a game QA tester based in London. I've tested console, PC and VR games since 2021 and have led QA teams at nDreams and Historic VR.");
-  await expect(answer("What's your current role?")).toHaveText("I'm a Senior Quality Assurance Tester at Aonic, since July 2026, on indie titles published by Megabit, from milestone builds to compliance, certification and release.");
+  await expect(answer("What's your current role?")).toHaveText("I'm a Senior Quality Assurance Tester at Aonic, since July 2026, on titles published by Megabit, from milestone builds to compliance, certification and release.");
   await expect(answer('Which games have you tested?')).toContainText(`${all.length} games: at Universally Speaking, `);
   await expect(answer('Which games have you tested?')).toContainText('The Games page shows my part in each.');
   for (const t of all) await expect(answer('Which games have you tested?')).toContainText(t.title);

@@ -18,7 +18,8 @@ export async function about() {
   const isVR = (p: (typeof projects)[number]) => p.data.vr || p.data.platforms.some((n) => /VR|Quest/i.test(n));
   const vrCount = projects.filter(isVR).length;
   const vrNames = vrPlatforms.filter((v) => projects.some((p) => p.data.platforms.some((n) => v.match.test(n)))).map((v) => v.name);
-  const flatNames = platforms.map(([name]) => name);
+  // (the handhelds entry reads as a phrase inside the sentence)
+  const flatNames = platforms.map(([name]) => (name === 'Handhelds' ? 'handhelds like Steam Deck' : name));
   // the current post: the newest role still running
   const now = employers.find((e) => e.roles.some((r) => /present/.test(r.when)))!;
   const nowRole = now.roles.find((r) => /present/.test(r.when))!;
