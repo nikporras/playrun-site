@@ -41,7 +41,7 @@ const LOGOS = {
   'nba-2k21': 'NBA 2K21 Logo.png',
   // (its fine texture made a heavy file: hard edges keep the shape at a fraction of the weight)
   'pathfinder-abomination-vaults': ['pav-logo.png', { tight: 0.5 }],
-  'space-pirate-trainer': ['Logo_80s-Dark_HIRES.png', { luma: [0.3, 0.8], thicken: 7 }],
+  'space-pirate-trainer': ['SPT_logo_FatReadableWhite.png', { luma: [0.3, 0.8], trim: false }], // the press kit's flat white logo (i-illusions.com/game-assets); its frame runs to the file's edge
   synapse: 'synapse-logo-white.png',
   'the-climb-2': 'the-climb-2-logo-from-site.svg',
   'thick-as-thieves': 'TaT_Logo_Secondary_White.png',
@@ -81,7 +81,8 @@ for (const [slug, entry] of Object.entries(LOGOS)) {
     const bottom = b.bands[opts.keepBands - 1][1];
     src = await sharp(src).extract({ left: 0, top: 0, width: b.width, height: bottom }).png().toBuffer();
   }
-  const trimmed = await sharp(src).trim({ threshold: 8 }).resize(900, 360, { fit: 'inside', withoutEnlargement: false }).png().toBuffer();
+  // (`trim: false` for a file whose corner pixel is part of the logo: the first trim keys on it)
+  const trimmed = await (opts.trim === false ? sharp(src) : sharp(src).trim({ threshold: 8 })).resize(900, 360, { fit: 'inside', withoutEnlargement: false }).png().toBuffer();
   const { width, height } = await sharp(trimmed).metadata();
   const rgba = await sharp(trimmed).raw().toBuffer();
   const out = Buffer.alloc(width * height * 4);
