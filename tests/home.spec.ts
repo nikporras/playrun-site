@@ -140,16 +140,19 @@ test.describe('Home', () => {
   });
 
   for (const [width, height] of [
+    [300, 640],
+    [320, 640],
     [375, 780],
     [360, 780],
     [768, 1024],
   ] as const) {
-    test(`on a phone or a tablet (${width}px) the pages are in a bottom bar: About, Skills, Games, Quality, Contact as real links with pixel icons and labels of 16px, the current page in green, at least 44px tall with a visible focus; the header keeps the logo, the way home, and has no Menu`, async ({ page }) => {
+    test(`on a phone or a tablet (${width}px) the pages are in a bottom bar: Home, About, Games, Quality, Contact as real links with pixel icons and labels of 16px, none cut off, the current page in green, at least 44px tall with a visible focus; the header keeps the logo, the way home, and has no Menu`, async ({ page }) => {
       await page.setViewportSize({ width, height });
       await page.goto('/');
-      // Home is the logo: on Home no item in the bar is current
-      await expect(page.locator('.tabbar [aria-current]')).toHaveCount(0);
-      await expect(page.getByRole('link', { name: 'PlayRun, home' })).toHaveAttribute('href', '/');
+      // on Home, Home is the current item, in green
+      await expect(page.locator('.tabbar [aria-current]')).toHaveCount(1);
+      await expect(page.locator('.tabbar').getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
+      await expect(page.getByRole('link', { name: 'PlayRun home', exact: true })).toHaveAttribute('href', '/');
       await page.goto('/portfolio/');
       await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
       await expect(page.locator('.header__nav')).toBeHidden();
@@ -157,8 +160,8 @@ test.describe('Home', () => {
       const bar = page.getByRole('navigation', { name: 'Site' });
       await expect(bar).toHaveCount(1);
       const links = bar.getByRole('link');
-      await expect(links).toHaveText(['About', 'Skills', 'Games', 'Quality', 'Contact']);
-      expect(await links.evaluateAll((els) => els.map((a) => a.getAttribute('href')))).toEqual(['/about/', '/skills/', '/portfolio/', '/quality/', '/contact/']);
+      await expect(links).toHaveText(['Home', 'About', 'Games', 'Quality', 'Contact']);
+      expect(await links.evaluateAll((els) => els.map((a) => a.getAttribute('href')))).toEqual(['/', '/about/', '/portfolio/', '/quality/', '/contact/']);
       await expect(bar.getByRole('link', { name: 'Games' })).toHaveAttribute('aria-current', 'page');
       await expect(bar.locator('[aria-current]')).toHaveCount(1);
       const box = (await bar.boundingBox())!;
@@ -169,17 +172,20 @@ test.describe('Home', () => {
         els.map((a) => {
           const r = a.getBoundingClientRect();
           const label = a.querySelector('.tabbar__label') as HTMLElement;
-          return { h: r.height, w: r.width, labelW: label.getBoundingClientRect().width, size: parseFloat(getComputedStyle(label).fontSize), color: getComputedStyle(a).color, icon: a.querySelectorAll('svg path').length, current: a.hasAttribute('aria-current') };
+          const l = label.getBoundingClientRect();
+          return { h: r.height, w: r.width, labelW: l.width, inside: l.left >= r.left - 0.5 && l.right <= r.right + 0.5, clipped: label.scrollWidth > label.clientWidth + 1, size: parseFloat(getComputedStyle(label).fontSize), color: getComputedStyle(a).color, icon: a.querySelectorAll('svg path').length, current: a.hasAttribute('aria-current') };
         }),
       );
       for (const c of cells) {
         expect(c.h, 'a 44px target').toBeGreaterThanOrEqual(44);
         expect(c.size, 'a label of 16px').toBe(16);
         expect(c.labelW, 'the whole label fits its cell').toBeLessThanOrEqual(c.w);
+        expect(c.inside, 'the label inside its cell').toBe(true);
+        expect(c.clipped, 'the label not cut off').toBe(false);
         expect(c.icon, 'a pixel icon').toBe(1);
         expect(c.color).toBe(c.current ? 'rgb(103, 193, 140)' : 'rgb(170, 179, 197)');
       }
-      // the counter takes the right end, after the five
+      // the counter takes the right end, after the five, overlapping none
       const pill = (await page.locator('.score__pill').boundingBox())!;
       expect(pill.x + pill.width).toBe(width);
       expect(pill.y).toBeGreaterThanOrEqual(box.y);
@@ -224,7 +230,7 @@ test.describe('Home', () => {
       const context = await browser.newContext({ ...options, viewport: { width: 375, height: 780 } });
       const p = await context.newPage();
       await p.goto('/skills/');
-      await expect(p.getByRole('navigation', { name: 'Site' }).getByRole('link')).toHaveText(['About', 'Skills', 'Games', 'Quality', 'Contact']);
+      await expect(p.getByRole('navigation', { name: 'Site' }).getByRole('link')).toHaveText(['Home', 'About', 'Games', 'Quality', 'Contact']);
       // (no ship on the bar, with or without script)
       await expect(p.locator('.hud__runner')).toBeHidden();
       const links = await p.locator('.tabbar__link').evaluateAll((els) => els.map((a) => a.getBoundingClientRect().right));

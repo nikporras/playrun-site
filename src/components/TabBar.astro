@@ -1,22 +1,23 @@
 ---
 /**
- * The bar along the foot of a phone or a tablet (below 64rem), a game's HUD: About, Skills, Games,
+ * The bar along the foot of a phone or a tablet (below 64rem), a game's HUD: Home, About, Games,
  * Quality and Contact, each a small pixel icon over a short label, the page you are on in green.
- * Home is the logo in the header, so on Home no item is current. Plain links, so it works without
- * script, under reduced motion and with the games off. Its right end is left for the scoreboard's
- * counter (Hud.astro places it there while the games run), and the ship's progress line rides on
- * its top edge. It clears the iPhone's home indicator. Desktops keep the header nav.
+ * Skills is left out so five fit a 300px screen beside the counter (it stays in the desktop nav,
+ * the footer and Home). Plain links, so it works without script, under reduced motion and with the
+ * games off. Its right end is left for the scoreboard's counter (Hud.astro places it there while
+ * the games run). It clears the iPhone's home indicator. Desktops keep the header nav.
  */
 import { nav, primaryAction } from '../config';
 
 // The build writes file routes (/skills.html, /index.html); the bar compares the clean address.
 const current = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '/').replace(/([^/])$/, '$1/');
-// the nav's order without Home (the header's logo), then Contact
-const items = [...nav.filter((n) => n.href !== '/'), { label: 'Contact', href: primaryAction.href }];
+// the nav's order without Skills, then Contact
+const items = [...nav.filter((n) => n.href !== '/skills/'), { label: 'Contact', href: primaryAction.href }];
 // 8 by 8 pixel icons, one path each
 const icons: Record<string, string> = {
+  // a house: the roof in three steps, the walls with a door
+  '/': 'M3 0h2v1H3zM2 1h4v1H2zM1 2h6v1H1zM0 3h8v1H0zM1 4h2v4H1zM5 4h2v4H5z',
   '/about/': 'M3 0h2v1H3zM2 1h4v2H2zM3 3h2v1H3zM1 5h6v1H1zM0 6h8v2H0z',
-  '/skills/': 'M3 0h2v2H3zM0 2h8v1H0zM1 3h6v1H1zM2 4h4v1H2zM1 5h6v1H1zM1 6h2v1H1zM5 6h2v1H5zM1 7h1v1H1zM6 7h1v1H6z',
   '/portfolio/': 'M0 0h6v1H0zM0 1h7v1H0zM0 2h2v2H0zM6 2h2v2H6zM0 4h8v3H0zM0 7h1v1H0zM2 7h1v1H2zM4 7h1v1H4zM6 7h1v1H6z',
   '/quality/': 'M6 1h2v1H6zM5 2h2v1H5zM0 3h1v1H0zM4 3h2v1H4zM0 4h2v1H0zM3 4h2v1H3zM1 5h3v1H1zM2 6h1v1H2z',
   '/contact/': 'M0 1h8v1H0zM0 2h2v1H0zM6 2h2v1H6zM0 3h1v3H0zM7 3h1v3H7zM2 3h1v1H2zM5 3h1v1H5zM3 4h2v1H3zM0 6h8v1H0z',
