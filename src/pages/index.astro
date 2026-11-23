@@ -128,7 +128,7 @@ const checks = [
       </div>
       <p class="hero__post" data-load style="--d: 400ms">{playrun.role}, {site.name}</p>
       <p class="hero__value" data-load style="--d: 500ms">
-        I'm a game QA tester in London. I've tested console, PC and VR games since {since}, and led QA teams at {listed([...new Set(leadRoles.map((r) => r.at))])}.{' '}
+        I'm a game QA tester in London, testing console, PC and VR games since {since}, with lead roles at {listed([...new Set(leadRoles.map((r) => r.at))])}. PlayRun is the name I work under, and this site is my portfolio, built and tested by me.{' '}
         <a class="textlink" href="/about/">More about me</a>
       </p>
     </div>
@@ -861,13 +861,13 @@ const checks = [
       font-size: 1rem;
     }
     /* The photo comes under the text, centred, on the bottom edge, as tall as the room the text
-       leaves above the peek of the next level, and never under 220px: where the text leaves less,
+       leaves above the peek of the next level, and never under 176px: where the text leaves less,
        the hero grows and the next level only peeks in (its clouds and its label). A grid, so the
        photo's row has a definite height for the photo to fill. */
     .hero,
     :global(.games) .hero {
       display: grid;
-      grid-template-rows: auto minmax(220px, 1fr);
+      grid-template-rows: auto minmax(176px, 1fr);
       min-height: max(calc(100svh - var(--hud-h) - 4.5rem - var(--peek)), 30rem);
     }
     .hero__figure {
@@ -875,7 +875,7 @@ const checks = [
       right: auto;
       top: auto;
       translate: none;
-      min-height: 220px;
+      min-height: 176px;
       width: auto;
       display: flex;
       justify-content: center;

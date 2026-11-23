@@ -87,7 +87,7 @@ test.describe('Home', () => {
     const tops = await page.locator('h1, .hero__post, .hero__value').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
     expect(tops).toEqual([...tops].sort((a, b) => a - b));
     await expect(page.locator('.hero__value')).toHaveText(
-      "I'm a game QA tester in London. I've tested console, PC and VR games since 2021, and led QA teams at nDreams and Historic VR. More about me",
+      "I'm a game QA tester in London, testing console, PC and VR games since 2021, with lead roles at nDreams and Historic VR. PlayRun is the name I work under, and this site is my portfolio, built and tested by me. More about me",
     );
     await page.waitForLoadState('networkidle');
     expect(errors, errors.join('\n')).toEqual([]);
@@ -1313,7 +1313,7 @@ for (const [width, height] of [
       // a phone: the clouds and the label peek in, and the photo keeps its size
       const peek = await page.evaluate(() => ({ flag: document.querySelector('.wall .flag')!.getBoundingClientRect().bottom, photo: document.querySelector('.hero__figure img')!.getBoundingClientRect().height }));
       expect(peek.flag, 'the label on the first screen').toBeLessThanOrEqual(geo.floor);
-      expect(peek.photo, 'the photo about its old size').toBeGreaterThanOrEqual(180);
+      expect(peek.photo, 'the photo never under its phone minimum').toBeGreaterThanOrEqual(175.5);
     }
     expect(geo.logoTop, 'resting on the clouds').toBeGreaterThan(geo.band[0]);
     // (on a desktop Level 2 rises into the hero: its band's box starts a little above the text's foot,
@@ -1409,7 +1409,7 @@ test("no hairline where a level's clouds meet its blue: the field starts under t
 });
 
 // The photo at every width from 320 to 1280 (20px steps) and three heights: under the text it is
-// centred, the halo exactly behind it, and never under 220px tall; beside the text (from 640px)
+// centred, the halo exactly behind it, and never under 176px tall; beside the text (from 640px)
 // it is never a thumbnail either, and it covers none of the text. "More about me" stays on one line. Nothing scrolls sideways.
 test('the hero photo is never a thumbnail and its halo is centred behind it, at every width from 320 to 1280 and three heights', { tag: ['@viewports'] }, async ({ page }) => {
   test.setTimeout(120_000);
@@ -1441,7 +1441,7 @@ test('the hero photo is never a thumbnail and its halo is centred behind it, at 
         };
       });
       const at = `${width}x${height}`;
-      if (m.h < 219.5) problems.push(`${at}: the photo is ${m.h.toFixed(0)}px tall (${m.stacked ? 'under' : 'beside'} the text)`);
+      if (m.h < 175.5) problems.push(`${at}: the photo is ${m.h.toFixed(0)}px tall (${m.stacked ? 'under' : 'beside'} the text)`);
       if (Math.abs(m.haloMid - m.photoMid) > 4 || Math.abs(m.clipMid - m.photoMid) > 4) problems.push(`${at}: halo ${m.haloMid.toFixed(0)}, clip ${m.clipMid.toFixed(0)}, photo ${m.photoMid.toFixed(0)}`);
       if (m.stacked && Math.abs(m.photoMid - m.screenMid) > 4) problems.push(`${at}: under the text the photo is not centred (${m.photoMid.toFixed(0)} of ${m.screenMid * 2})`);
       if (m.stacked !== width < 640) problems.push(`${at}: ${m.stacked ? 'under' : 'beside'} the text`);
