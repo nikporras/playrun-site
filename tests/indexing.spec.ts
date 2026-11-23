@@ -51,7 +51,7 @@ test('/llms.txt says who the site is about in the shared summary, lists the page
   await page.goto('/about/');
   const ld = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent())!) as { '@graph': { '@type': string; description?: string }[] };
   const summary = ld['@graph'].find((n) => n['@type'] === 'Person')!.description!;
-  expect(summary).toBe("Nicolás Porras is a game QA tester based in London. He has tested console, PC and VR games since 2021, at Universally Speaking, nDreams, Historic VR, Nexus Studios and Aonic, and has led QA as Lead Quality Assurance Tester at nDreams and QA Manager at Historic VR. His credits include Cyberpunk 2077, NBA 2K21, Ghostbusters: Rise of the Ghost Lord, Synapse and Lou's Lagoon. PlayRun, at playrunqa.com, is his personal QA portfolio.");
+  expect(summary).toBe("Nicolás Porras is a game QA tester based in London. He has tested console, PC and VR games since 2021, at Universally Speaking, nDreams, Historic VR, Nexus Studios and Aonic, and has led QA as Lead Quality Assurance Tester at nDreams and QA Manager at Historic VR. His credits include Cyberpunk 2077, NBA 2K21, Ghostbusters: Rise of the Ghost Lord, Synapse and Lou's Lagoon. PlayRun is the name he works under, and playrunqa.com is his portfolio, a site he built and tests himself.");
   expect(text).toContain(`> ${summary}`);
   expect(text).toContain('This site is a portfolio and CV. All facts here match his LinkedIn profile.');
   const pages = [...text.slice(text.indexOf('## Pages'), text.indexOf('## Profiles')).matchAll(/^- \[([^\]]+)\]\((https:\/\/playrunqa\.com[^)]*)\): .{20,}$/gm)];

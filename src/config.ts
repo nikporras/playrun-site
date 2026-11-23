@@ -205,5 +205,9 @@ export const credits = ['Cyberpunk 2077', 'NBA 2K21', 'Ghostbusters: Rise of the
 // The summary, built from the data above, twice: in the third person for machines (the Person in
 // the structured data, llms.txt), and in the first person for the About page, like the rest of
 // the site.
-export const summary = `${contact.name} is a game QA tester based in London. He has tested console, PC and VR games since ${since}, at ${listed(studios)}, and has led QA as ${listed(leadRoles.map((r) => `${r.title} at ${r.at}`))}. His credits include ${listed(credits)}. ${site.name}, at playrunqa.com, is his personal QA portfolio.`;
-export const summaryFirstPerson = `I'm a game QA tester based in London. I've tested console, PC and VR games since ${since}, at ${listed(studios)}, and I've led QA as ${listed(leadRoles.map((r) => `${r.title} at ${r.at}`))}. My credits include ${listed(credits)}. ${site.name}, at playrunqa.com, is my personal QA portfolio.`;
+export const summary = `${contact.name} is a game QA tester based in London. He has tested console, PC and VR games since ${since}, at ${listed(studios)}, and has led QA as ${listed(leadRoles.map((r) => `${r.title} at ${r.at}`))}. His credits include ${listed(credits)}. ${site.name} is the name he works under, and playrunqa.com is his portfolio, a site he built and tests himself.`;
+// (two paragraphs on the About page)
+export const summaryFirstPerson = [
+  `I'm a game QA tester in London. I've tested console, PC and VR games since ${since} at ${listed(studios)}, and I've led QA as ${listed(leadRoles.map((r) => `${r.title} at ${r.at}`))}. My credits include ${listed(credits)}.`,
+  `${site.name} is the name I work under, and playrunqa.com is my portfolio. I built this site myself, and I test it like one of my games: every change runs through an automated test suite before it goes live.`,
+];

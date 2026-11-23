@@ -71,14 +71,16 @@ export async function about() {
       q: 'Where are you based, and which languages do you speak?',
       a: `I'm based in ${contact.location}. I speak ${listed(languages.filter((l) => l.level === 'fluent').map((l) => l.name))} fluently, and ${listed(languages.filter((l) => l.level === 'intermediate').map((l) => l.name))} at an intermediate level.`,
     },
-    { q: `What is ${site.name}?`, a: `${site.name}, at playrunqa.com, is my personal QA portfolio: the games I've tested, how I test, and a site that runs its own test suite. It does not offer services.` },
+    { q: `What is ${site.name}?`, a: `${site.name} is the name I work under. playrunqa.com is my QA portfolio: the games I've tested, how I test, and a site that runs its own test suite. It does not offer services.` },
   ];
 
-  // a bit more about me, in my own words (approved wording)
+  // my story, in my own words (approved wording; the number of languages from the data)
+  const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
   const personal = [
-    "I'm from Colombia, and I've been on the move since school. I spent two years of high school in New Jersey, then four years in China, where I learned Mandarin and worked as a translator and shipping agent: finding products for clients, checking their quality, and making sure every shipment to Colombia and South America went through properly. That's where I first did QA, long before games.",
-    "Then came three years in Australia, studying IT in Melbourne and working in hospitality, as head bartender at Rod Laver Arena and Marvel Stadium during events like the Australian Open, Formula 1 and the Melbourne Cup. Back in the UK I became an assistant food and beverage manager, and hospitality has stayed with me on and off ever since, leading teams at large events. Now I'm in London.",
-    "Living in all those places is why I speak five languages and why I'm comfortable working with teams from anywhere. Outside work I play a lot of games, I'm always learning something new, and I love music, especially Latin music. Put some on and I'll be dancing.",
+    'My first QA job had nothing to do with games. My family makes clothes in Colombia, and my summer job for some extra cash (not forced haha) was checking every garment before it was packed and shipped. Being part of that process, and seeing up close what my parents had built, is where it all started.',
+    "I've been on the move since school: two years of high school in New Jersey, then four years in China, where I learned Mandarin and worked as a translator and shipping agent, finding products for clients, checking their quality and making sure every shipment to Colombia and South America went through properly.",
+    'Then came three years in Australia, studying IT in Melbourne and working as head bartender at Rod Laver Arena and Marvel Stadium for the Australian Open, Formula 1, the Melbourne Cup and big concerts, which meant working the green rooms for artists like Elton John, Pink and Harry Styles. Back in the UK I became an assistant food and beverage manager. Hospitality taught me to keep calm when everything moves fast, and to lead a team through it.',
+    `Since arriving in London I've worked in games, which have always been my hobby and my passion. Living in all those places is why I speak ${WORDS[languages.length] ?? languages.length} languages and why I'm comfortable working with teams from anywhere. Outside work I play a lot of games, I'm always learning something new, and I love music, especially Latin music. Put some on and I'll be dancing.`,
   ];
 
   return { summary, summaryFirstPerson, personal, facts, qa, linkedin, games: projects.length, vrCount, vrNames, flatNames };

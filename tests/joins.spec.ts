@@ -56,6 +56,8 @@ for (const path of PAGES) {
                 // clipped by the row's window, hidden, not covered)
                 const view = t.closest('.ticker__view')?.getBoundingClientRect();
                 if (view && (b.top >= view.bottom - 0.5 || b.bottom <= view.top + 0.5)) return false;
+                // (the content of a closed dropdown is hidden, not covered)
+                if (t.closest('details:not([open]) > :not(summary)')) return false;
                 return b.width > 0 && b.height > 0 && getComputedStyle(t).visibility !== 'hidden' && b.left < r.right && b.right > r.left && b.top < r.bottom - 0.5 && b.bottom > drawnTop + 0.5;
               })
               .map((t) => `${t.tagName}: ${(t.textContent ?? '').trim().slice(0, 30)}`);

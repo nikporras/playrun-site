@@ -29,7 +29,7 @@ for (const path of PAGES) {
     expect(person.jobTitle).toBe('Game QA Tester');
     expect(person.nationality).toEqual({ '@type': 'Country', name: 'Colombia' });
     // (for machines, the third person)
-    expect(person.description).toBe("Nicolás Porras is a game QA tester based in London. He has tested console, PC and VR games since 2021, at Universally Speaking, nDreams, Historic VR, Nexus Studios and Aonic, and has led QA as Lead Quality Assurance Tester at nDreams and QA Manager at Historic VR. His credits include Cyberpunk 2077, NBA 2K21, Ghostbusters: Rise of the Ghost Lord, Synapse and Lou's Lagoon. PlayRun, at playrunqa.com, is his personal QA portfolio.");
+    expect(person.description).toBe("Nicolás Porras is a game QA tester based in London. He has tested console, PC and VR games since 2021, at Universally Speaking, nDreams, Historic VR, Nexus Studios and Aonic, and has led QA as Lead Quality Assurance Tester at nDreams and QA Manager at Historic VR. His credits include Cyberpunk 2077, NBA 2K21, Ghostbusters: Rise of the Ghost Lord, Synapse and Lou's Lagoon. PlayRun is the name he works under, and playrunqa.com is his portfolio, a site he built and tests himself.");
     expect(person.sameAs as string[]).toContain(social.find((s) => s.label === 'LinkedIn')!.href);
     expect(person.knowsLanguage).toEqual(['es', 'en', 'zh', 'pt', 'it']);
     expect(person.knowsAbout as string[]).toEqual(expect.arrayContaining(['Virtual reality testing', 'Meta Quest', 'PlayStation VR2', 'Apple Vision Pro']));
@@ -86,7 +86,8 @@ test('About carries a FAQPage of its own questions and answers, and the 404 carr
   const { graph } = await graphOf(page);
   const [faq] = graph.filter((n) => n['@type'] === 'FAQPage');
   const questions = (faq.mainEntity as Node[]).map((q) => q.name);
-  expect(questions).toEqual(await page.getByRole('heading', { level: 3 }).allTextContents());
+  // (the same questions as the page's, read from the HTML while the dropdown is still closed)
+  expect(questions).toEqual(await page.locator('.qa__item h4').allTextContents());
   const answers = (faq.mainEntity as Node[]).map((q) => (q.acceptedAnswer as Node).text);
   expect(answers).toEqual((await page.locator('.qa__item p').allTextContents()).map((t) => t.trim()));
   await page.goto('/this-page-is-not-in-the-build/');

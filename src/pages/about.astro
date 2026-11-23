@@ -1,9 +1,9 @@
 ---
 /**
- * About: the facts about Nicolás Porras for people and for AI, in the first person, built from the
- * site's own data (src/data/about.ts). Plain text from the first paint, no entrance that hides
- * anything. The games layer runs here (the scoreboard and its toasts) with no bugs to catch: the
- * page's game is Bug Sweep, which loads only when Play is pressed.
+ * About, in the first person: the intro and My story (Level 1), Bug Sweep (Level 2, loads only
+ * when Play is pressed), and the key facts with the questions and answers in one closed dropdown
+ * (Level 3), all built from the site's own data (src/data/about.ts). Plain text from the first
+ * paint, no entrance that hides anything. One bug to catch, on Level 1.
  */
 import Base from '../layouts/Base.astro';
 import ExternalLink from '../components/ExternalLink.astro';
@@ -27,12 +27,13 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
     <div class="level__head">
       <p class="flag" data-nosnippet><span>About</span></p>
       <h1 id="about-title" class="page__title about__title">About {contact.name}</h1>
-      <p class="about__summary statement">{summaryFirstPerson}</p>
+      {summaryFirstPerson.map((p) => <p class="about__summary statement">{p}</p>)}
     </div>
     <section class="about__more level__body" aria-labelledby="more-title">
-      <h2 id="more-title" class="about__moretitle">A bit more about me</h2>
+      <h2 id="more-title" class="about__moretitle">My story</h2>
       {personal.map((p) => <p>{p}</p>)}
     </section>
+    <Bug id="about-1" style="right: 10%; top: 45%" tablet="right: 6%; top: 1.25rem" walk="y -2rem" />
     <Join kind="clouds" from="var(--pr-navy)" to="var(--field-cyan)" seed="about-play" />
   </section>
 
@@ -98,48 +99,53 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
     </div>
   </section>
 
-  <section class="level level--blue has-join-bottom" data-level="3" aria-labelledby="facts-title">
-    <Join kind="terrain" from="var(--field-blue)" to="var(--field-green)" seed="about-answers" />
+  <!-- Level 3: the key facts and the questions and answers, in one closed dropdown (a native
+       details element): all of it is in the HTML for search and AI, and the FAQ structured data
+       comes from the same answers. -->
+  <section class="level level--blue has-join-bottom" data-level="3" aria-labelledby="faq-title">
+    <Join kind="terrain" from="var(--field-blue)" to="var(--pr-navy)" seed="about-foot" />
     <div class="level__head">
-      <p class="flag" data-nosnippet><span>Level 3 &middot; Facts</span></p>
-      <h2 id="facts-title" class="level__title">Key facts</h2>
+      <p class="flag" data-nosnippet><span>Level 3 &middot; Facts and FAQ</span></p>
     </div>
-    <table class="facts level__body">
-      <caption class="visually-hidden">Key facts about {contact.name}</caption>
-      <tbody>
-        {
-          facts.map(([k, v]) => (
+    <details class="faq level__body">
+      <summary class="faq__summary">
+        <h2 id="faq-title" class="faq__title">Quick facts and FAQ</h2>
+        <svg class="faq__chevron" viewBox="0 0 7 5" shape-rendering="crispEdges" aria-hidden="true">
+          <path d="M0 0h2v1H0zM5 0h2v1H5zM1 1h2v1H1zM4 1h2v1H4zM2 2h3v1H2zM3 3h1v1H3z" fill="currentColor"></path>
+        </svg>
+      </summary>
+      <div class="faq__body">
+        <h3 id="facts-title" class="faq__part">Key facts</h3>
+        <table class="facts">
+          <caption class="visually-hidden">Key facts about {contact.name}</caption>
+          <tbody>
+            {
+              facts.map(([k, v]) => (
+                <tr>
+                  <th scope="row">{k}</th>
+                  <td>{v}</td>
+                </tr>
+              ))
+            }
             <tr>
-              <th scope="row">{k}</th>
-              <td>{v}</td>
+              <th scope="row">Profiles</th>
+              <td>{linkedin && <ExternalLink href={linkedin.href} rel="me">LinkedIn</ExternalLink>}</td>
             </tr>
-          ))
-        }
-        <tr>
-          <th scope="row">Profiles</th>
-          <td>{linkedin && <ExternalLink href={linkedin.href} rel="me">LinkedIn</ExternalLink>}</td>
-        </tr>
-      </tbody>
-    </table>
-    <Bug id="about-1" style="right: 12%; top: 3rem" walk="x -2rem" />
-  </section>
-
-  <section class="level level--green has-join-bottom" data-level="4" aria-labelledby="qa-title">
-    <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="about-foot" />
-    <div class="level__head">
-      <p class="flag" data-nosnippet><span>Level 4 &middot; Questions</span></p>
-      <h2 id="qa-title" class="level__title">Questions and answers</h2>
-    </div>
-    <div class="qa level__body">
-      {
-        qa.map(({ q, a }) => (
-          <section class="qa__item">
-            <h3>{q}</h3>
-            <p>{a}</p>
-          </section>
-        ))
-      }
-    </div>
+          </tbody>
+        </table>
+        <h3 id="qa-title" class="faq__part">Questions and answers</h3>
+        <div class="qa">
+          {
+            qa.map(({ q, a }) => (
+              <section class="qa__item">
+                <h4>{q}</h4>
+                <p>{a}</p>
+              </section>
+            ))
+          }
+        </div>
+      </div>
+    </details>
   </section>
 </Base>
 
@@ -154,7 +160,10 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
   .about__summary {
     max-width: 62ch;
   }
-  /* A bit more about me: plain paragraphs under the summary, on the sky. */
+  .about__summary + .about__summary {
+    margin-top: var(--s-2);
+  }
+  /* My story: plain paragraphs under the summary, on the sky. */
   .about__more {
     display: grid;
     gap: var(--s-2);
@@ -169,6 +178,59 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
     .about__moretitle {
       font-size: 1.375rem;
     }
+  }
+  /* Quick facts and FAQ: one closed dropdown on the blue field. The summary is a navy bar with the
+     title and a pixel chevron that turns when open; inside, the key facts (navy rows) and the
+     questions and answers (white on the blue). */
+  .faq {
+    max-width: 64rem;
+  }
+  .faq__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-2);
+    min-height: 3rem;
+    padding: var(--s-2) var(--s-3);
+    background: var(--pr-navy);
+    color: var(--ink);
+    cursor: pointer;
+    list-style: none;
+  }
+  .faq__summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq__summary:hover .faq__chevron {
+    color: var(--accent-2);
+  }
+  .faq__summary:focus-visible {
+    outline: 3px solid var(--pr-light);
+    outline-offset: 3px;
+  }
+  .faq__title {
+    font-size: round(clamp(1.75rem, 1rem + 2vw, 2.5rem), 8px);
+    line-height: 1.1;
+  }
+  .faq__chevron {
+    flex: none;
+    width: 1.3125rem;
+    height: 0.9375rem;
+    color: var(--accent);
+  }
+  .faq[open] .faq__chevron {
+    transform: rotate(180deg);
+  }
+  .faq__body {
+    display: grid;
+    gap: var(--s-3);
+    padding-top: var(--s-4);
+  }
+  .faq__part {
+    font-size: 1.75rem;
+    line-height: 1.1;
+  }
+  .faq__part:not(:first-child) {
+    margin-top: var(--s-3);
   }
   /* The key facts: a plain table, each row a navy band on the blue field. */
   .facts {
@@ -201,14 +263,14 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
   .facts td :global(a) {
     color: var(--accent-2);
   }
-  /* The questions and answers: short third-person answers on the green field. */
+  /* The questions and answers: short answers, white on the blue field. */
   .qa {
     display: grid;
     gap: var(--s-4);
     max-width: 64rem;
   }
-  .qa__item h3 {
-    font-size: 1.75rem;
+  .qa__item h4 {
+    font-size: 1.375rem;
     line-height: 1.1;
     margin-bottom: var(--s-1);
   }
@@ -233,8 +295,11 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
     .facts td {
       padding-top: 0;
     }
-    .qa__item h3 {
-      font-size: 1.375rem;
+    .qa__item h4 {
+      font-size: 1.25rem;
+    }
+    .faq__summary {
+      padding-inline: var(--s-2);
     }
   }
   /* Level 2: Bug Sweep. The game sits in a navy screen on the cyan field: a status bar on top, the

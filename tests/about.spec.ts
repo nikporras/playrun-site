@@ -3,8 +3,9 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 /**
- * The About page: the facts about Nicolás Porras in the third person, for people and for AI, from
- * the site's own data. Nothing hidden at first; no bugs to catch (its game is Bug Sweep, sweep.spec.ts).
+ * The About page: the facts about Nicolás Porras in the first person, for people and for AI, from
+ * the site's own data. The facts and answers sit in one closed dropdown, all of it in the HTML; one
+ * bug to catch, on Level 1 (its game is Bug Sweep, sweep.spec.ts).
  */
 const projects = () => {
   const dir = path.join(process.cwd(), 'src', 'content', 'projects');
@@ -15,27 +16,38 @@ const projects = () => {
     .map((t) => ({ title: t.split('\n').find((l) => l.startsWith('title:'))!.slice(6).trim().replace(/^"|"$/g, ''), vr: /^vr: true/m.test(t) || /^platforms:.*(VR|Quest)/m.test(t) }));
 };
 
-test('the About page: one h1, the summary, a real table of key facts and the questions as h3s, all from the data', { tag: ['@pages'] }, async ({ page }) => {
+test('the About page: one h1, the two-paragraph intro, My story, then Bug Sweep and the closed Quick facts and FAQ dropdown holding a real table of key facts and the questions as h4s, all from the data', { tag: ['@pages'] }, async ({ page }) => {
   await page.goto('/about/');
   await expect(page).toHaveTitle('About Nicolás Porras, game QA tester in London');
   await expect(page.locator('h1')).toHaveText('About Nicolás Porras');
   const all = projects();
   const vr = all.filter((p) => p.vr).length;
   // in the first person, like the rest of the site (machines get the third person, see schema and llms.txt)
-  await expect(page.locator('.about__summary')).toHaveText(
-    "I'm a game QA tester based in London. I've tested console, PC and VR games since 2021, at Universally Speaking, nDreams, Historic VR, Nexus Studios and Aonic, and I've led QA as Lead Quality Assurance Tester at nDreams and QA Manager at Historic VR. My credits include Cyberpunk 2077, NBA 2K21, Ghostbusters: Rise of the Ghost Lord, Synapse and Lou's Lagoon. PlayRun, at playrunqa.com, is my personal QA portfolio.",
-  );
+  await expect(page.locator('.about__summary')).toHaveText([
+    "I'm a game QA tester in London. I've tested console, PC and VR games since 2021 at Universally Speaking, nDreams, Historic VR, Nexus Studios and Aonic, and I've led QA as Lead Quality Assurance Tester at nDreams and QA Manager at Historic VR. My credits include Cyberpunk 2077, NBA 2K21, Ghostbusters: Rise of the Ghost Lord, Synapse and Lou's Lagoon.",
+    'PlayRun is the name I work under, and playrunqa.com is my portfolio. I built this site myself, and I test it like one of my games: every change runs through an automated test suite before it goes live.',
+  ]);
   // every credit named in the summary is a public title
   for (const credit of ['Cyberpunk 2077', 'NBA 2K21', 'Ghostbusters: Rise of the Ghost Lord', 'Synapse', "Lou's Lagoon"]) expect(all.map((p) => p.title)).toContain(credit);
-  await expect(page.getByRole('heading', { level: 2 })).toHaveText(['A bit more about me', 'I love playing and making games', 'Key facts', 'Questions and answers']);
-  // the personal section sits between the summary and the key facts, in my own words
+  await expect(page.getByRole('heading', { level: 2 })).toHaveText(['My story', 'I love playing and making games', 'Quick facts and FAQ']);
+  // My story sits under the intro, in my own words
   await expect(page.locator('.about__more p')).toHaveText([
-    "I'm from Colombia, and I've been on the move since school. I spent two years of high school in New Jersey, then four years in China, where I learned Mandarin and worked as a translator and shipping agent: finding products for clients, checking their quality, and making sure every shipment to Colombia and South America went through properly. That's where I first did QA, long before games.",
-    "Then came three years in Australia, studying IT in Melbourne and working in hospitality, as head bartender at Rod Laver Arena and Marvel Stadium during events like the Australian Open, Formula 1 and the Melbourne Cup. Back in the UK I became an assistant food and beverage manager, and hospitality has stayed with me on and off ever since, leading teams at large events. Now I'm in London.",
-    "Living in all those places is why I speak five languages and why I'm comfortable working with teams from anywhere. Outside work I play a lot of games, I'm always learning something new, and I love music, especially Latin music. Put some on and I'll be dancing.",
+    'My first QA job had nothing to do with games. My family makes clothes in Colombia, and my summer job for some extra cash (not forced haha) was checking every garment before it was packed and shipped. Being part of that process, and seeing up close what my parents had built, is where it all started.',
+    "I've been on the move since school: two years of high school in New Jersey, then four years in China, where I learned Mandarin and worked as a translator and shipping agent, finding products for clients, checking their quality and making sure every shipment to Colombia and South America went through properly.",
+    'Then came three years in Australia, studying IT in Melbourne and working as head bartender at Rod Laver Arena and Marvel Stadium for the Australian Open, Formula 1, the Melbourne Cup and big concerts, which meant working the green rooms for artists like Elton John, Pink and Harry Styles. Back in the UK I became an assistant food and beverage manager. Hospitality taught me to keep calm when everything moves fast, and to lead a team through it.',
+    "Since arriving in London I've worked in games, which have always been my hobby and my passion. Living in all those places is why I speak five languages and why I'm comfortable working with teams from anywhere. Outside work I play a lot of games, I'm always learning something new, and I love music, especially Latin music. Put some on and I'll be dancing.",
   ]);
-  const tops = await page.locator('.about__summary, .about__more, #facts-title').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+  // the order: intro, My story, Bug Sweep, the dropdown
+  const tops = await page.locator('.about__summary, .about__more, [data-sweep], details.faq').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
+  // the dropdown starts closed, its whole content in the HTML (search and AI read it), then opens
+  const faq = page.locator('details.faq');
+  await expect(faq).not.toHaveAttribute('open');
+  await expect(page.locator('details.faq table.facts tr')).toHaveCount(13);
+  await expect(page.locator('details.faq .qa__item')).toHaveCount(9);
+  await expect(page.locator('#facts-title')).toBeHidden();
+  await page.getByText('Quick facts and FAQ').click();
+  await expect(faq).toHaveAttribute('open', '');
   // a real table: a row header per fact
   const table = page.getByRole('table', { name: 'Key facts about Nicolás Porras' });
   await expect(table.getByRole('rowheader')).toHaveText(['Name', 'Work', 'Based in', 'From', 'Lived in', 'Studios', 'Lead roles', 'Platforms', 'Games tested', 'Tools', 'Languages', 'Education', 'Profiles']);
@@ -48,7 +60,8 @@ test('the About page: one h1, the summary, a real table of key facts and the que
   await expect(cell('Education')).toContainText('Diploma of Information Technology, Swinburne University of Technology, 2017 to 2019');
   await expect(cell('Profiles').getByRole('link', { name: /LinkedIn/ })).toHaveAttribute('href', /linkedin\.com/);
   // the questions
-  await expect(page.getByRole('heading', { level: 3 })).toHaveText([
+  await expect(page.getByRole('heading', { level: 3 })).toHaveText(['Key facts', 'Questions and answers']);
+  await expect(page.getByRole('heading', { level: 4 })).toHaveText([
     'Who are you?',
     "What's your current role?",
     'Which games have you tested?',
@@ -77,16 +90,18 @@ test('the About page: one h1, the summary, a real table of key facts and the que
   }
   expect(at.every((i) => i >= 0)).toBe(true);
   await page.goto('/about/');
+  await page.getByText('Quick facts and FAQ').click();
   await expect(answer('Do you have VR QA experience?')).toContainText(`Yes. ${vr} of the ${all.length} games I've tested are VR titles`);
   await expect(answer('Have you led QA teams?')).toHaveText('Yes. At nDreams I grew from QA Tester to Lead Quality Assurance Tester (Apr 2023 to Oct 2024), leading a QA team and managing an external QA vendor. At Historic VR, as QA Manager (Feb 2025 to Feb 2026), I ran test strategy and VR platform compliance, with an outsourced test team that grew to about 10 testers.');
   await expect(answer('Where are you based, and which languages do you speak?')).toHaveText("I'm based in London, UK. I speak Spanish and English fluently, and Chinese, Portuguese and Italian at an intermediate level.");
-  await expect(answer('What is PlayRun?')).toHaveText("PlayRun, at playrunqa.com, is my personal QA portfolio: the games I've tested, how I test, and a site that runs its own test suite. It does not offer services.");
+  await expect(answer('What is PlayRun?')).toHaveText("PlayRun is the name I work under. playrunqa.com is my QA portfolio: the games I've tested, how I test, and a site that runs its own test suite. It does not offer services.");
   // no third person left in the answers
   for (const a of await page.locator('.qa__item p').allTextContents()) expect(a).not.toMatch(/\b(he|his|him)\b/i);
-  // nothing that waits to show; one bug to catch, on the Facts (one of the site's twenty)
+  // nothing that waits to show; one bug to catch, on Level 1 beside My story, never inside the dropdown (one of the site's twenty)
   await expect(page.locator('[data-enter], [data-load]')).toHaveCount(0);
   await expect(page.locator('[data-bug]')).toHaveCount(1);
-  await expect(page.locator('[data-level="3"] [data-bug="about-1"]')).toHaveCount(1);
+  await expect(page.locator('[data-level="1"] [data-bug="about-1"]')).toHaveCount(1);
+  await expect(page.locator('[data-level]')).toHaveCount(3);
   await expect(page.locator('#hud')).toHaveCount(1);
   await expect(page.locator('#dock')).toHaveCount(1);
 });

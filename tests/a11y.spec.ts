@@ -92,3 +92,30 @@ for (const [width, height] of [
     await context.close();
   });
 }
+
+// About's Quick facts and FAQ: a native dropdown, closed at first, opened and closed from the
+// keyboard with a visible focus ring, clean under axe both ways, at a desktop and a phone width.
+for (const [width, height] of [[1440, 900], [375, 812]] as const) {
+  test(`About's Quick facts and FAQ dropdown (${width}px): keyboard, visible focus, axe clean closed and open`, { tag: ['@a11y'] }, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/about/');
+    const faq = page.locator('details.faq');
+    const summary = faq.locator('summary');
+    await expect(faq).not.toHaveAttribute('open');
+    await scan(page, `About ${width}, dropdown closed`);
+    await summary.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    await expect(summary).toBeFocused();
+    expect(await summary.evaluate((el) => getComputedStyle(el).outlineStyle), 'a visible focus ring').not.toBe('none');
+    await page.keyboard.press('Enter');
+    await expect(faq).toHaveAttribute('open', '');
+    await expect(page.getByRole('table', { name: 'Key facts about Nicolás Porras' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 4, name: 'What is PlayRun?' })).toBeVisible();
+    await scan(page, `About ${width}, dropdown open`);
+    await page.keyboard.press('Space');
+    await expect(faq).not.toHaveAttribute('open');
+    // the page's bug stays catchable with the dropdown closed
+    await expect(page.locator('[data-bug="about-1"]')).toBeVisible();
+  });
+}
