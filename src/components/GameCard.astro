@@ -42,10 +42,8 @@ const store = p.data.store ?? 'Steam';
     <span class="card__mini" aria-hidden="true">
       {logo ? <Image src={logo} alt="" height={56} densities={[1, 2]} loading="lazy" decoding="async" /> : !p.data.wordmark && <GameIcon name={p.data.icon} />}
     </span>
-    <span class="card__name">
-      {trackerId && <span class="card__id" aria-hidden="true" data-nosnippet>{trackerId}</span>}
-      {p.data.title}
-    </span>
+    <span class="card__name">{p.data.title}</span>
+    {trackerId && <span class="card__id" aria-hidden="true" data-nosnippet>{trackerId}</span>}
     <span class="card__state">{when}</span>
     <svg class="card__chevron" viewBox="0 0 7 5" shape-rendering="crispEdges" aria-hidden="true">
       <path d="M0 0h2v1H0zM5 0h2v1H5zM1 1h2v1H1zM4 1h2v1H4zM2 2h3v1H2zM3 3h1v1H3z" fill="currentColor"></path>
@@ -195,11 +193,12 @@ const store = p.data.store ?? 'Steam';
     max-width: none;
     margin-bottom: -0.25rem;
   }
-  /* (on the folded row it sits before the title, on the same line) */
-  .card__name .card__id {
-    display: inline;
-    margin: 0 0.4em 0 0;
+  /* (on the folded row it has a line of its own under the title) */
+  .card__toggle .card__id {
+    grid-area: id;
+    margin: 0;
     font-size: 0.75rem;
+    white-space: nowrap;
   }
   .card__title {
     font-family: var(--font-display);
@@ -402,9 +401,13 @@ const store = p.data.store ?? 'Steam';
     }
     :global(.js) .card__toggle {
       display: grid;
-      grid-template-columns: 2.5rem minmax(0, 1fr) auto 0.875rem;
+      /* the title has the whole first line; under it the tracker ID, the year and status at the right */
+      grid-template-columns: 2.5rem auto minmax(0, 1fr) 0.875rem;
+      grid-template-areas:
+        'mini name name chevron'
+        'mini id state chevron';
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.375rem 0.75rem;
       width: calc(100% + 2 * var(--s-2));
       min-height: 3rem;
       margin: 0 calc(-1 * var(--s-2));
@@ -434,10 +437,18 @@ const store = p.data.store ?? 'Steam';
     .card__mini :global(.gameicon rect:not(.px-navy)) {
       fill: var(--g-accent, var(--accent-2));
     }
+    .card__mini {
+      grid-area: mini;
+    }
+    .card__chevron {
+      grid-area: chevron;
+    }
     .card__name {
+      grid-area: name;
       font-family: var(--font-display);
       font-size: 1.25rem;
       line-height: 1.1;
+      text-wrap: balance;
     }
     .card__state {
       font-family: var(--font-display);
@@ -446,6 +457,8 @@ const store = p.data.store ?? 'Steam';
       text-transform: uppercase;
       text-align: right;
       color: var(--g-ink, var(--accent-2));
+      grid-area: state;
+      text-wrap: balance; /* (on the narrowest phones it takes two lines beside the ID) */
     }
     .card__chevron {
       width: 0.875rem;

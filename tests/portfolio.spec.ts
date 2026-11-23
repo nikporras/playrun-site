@@ -32,7 +32,7 @@ test.describe('The Games page journey', () => {
     await expect(page.locator('.hud__levels li').first()).toHaveText('2026');
   });
 
-  test("on a phone each company's games are a folded list: one-line rows (logo, title, year and status, chevron) that are real buttons opening the whole card in place, one open at a time, the first open to begin with; the scan plays on an opened card; the desktop keeps the grid of whole cards", async ({ page }) => {
+  test("on a phone each company's games are a folded list: short rows (logo, title, then tracker ID and year and status, chevron) that are real buttons opening the whole card in place, one open at a time, the first open to begin with; the scan plays on an opened card; the desktop keeps the grid of whole cards", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/portfolio/');
     await noSmooth(page);
@@ -60,8 +60,8 @@ test.describe('The Games page journey', () => {
     // the open card shows the whole card in the desktop's order
     const open = cards.nth(0);
     for (const k of ['.card__logo', '.card__when', '.card__title', '.card__summary', '.card__makers', '.card__did', '.card__tags', '.card__platforms', '.card__store']) await expect(open.locator(k).first()).toBeVisible();
-    // a closed row is one line: about a row tall
-    expect((await cards.nth(1).boundingBox())!.height).toBeLessThan(80);
+    // a closed row is short: the title, then the tracker ID and the year under it
+    expect((await cards.nth(1).boundingBox())!.height).toBeLessThan(96);
     // a tap on the third row opens it and folds the first; the row stays under the finger
     const before = (await rows.nth(2).boundingBox())!.y;
     await rows.nth(2).click();
@@ -568,6 +568,41 @@ for (const [width, height] of [[1440, 900], [375, 812]] as const) {
       expect(ratio(px(3), px(0)), `${name}: the card's edge against the level`).toBeGreaterThanOrEqual(3);
       expect(ratio(stripe, px(3)), `${name}: the stripe against what is above it`).toBeGreaterThanOrEqual(3);
       expect(ratio(stripe, px(9)), `${name}: the stripe against the card`).toBeGreaterThanOrEqual(3);
+    }
+  });
+}
+
+// On a phone each folded row reads the title first, then the tracker ID on a line of its own under
+// it, nothing crowding it: not at 300px either.
+for (const width of [300, 320, 375]) {
+  test(`at ${width}px a folded card's row has the title on its own line, then the tracker ID on a line below it, the year and status beside the ID`, { tag: ['@viewports'] }, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/portfolio/');
+    await page.evaluate(() => document.fonts.ready);
+    const rows = await page.locator('[data-card-toggle]').evaluateAll((els) =>
+      els.map((t) => {
+        const name = t.querySelector('.card__name')!;
+        const id = t.querySelector('.card__id')!.getBoundingClientRect();
+        const text = name.firstChild!;
+        const range = document.createRange();
+        range.selectNodeContents(name);
+        const lines = [...range.getClientRects()].filter((r) => r.width > 0);
+        const title = range.getBoundingClientRect();
+        const state = t.querySelector('.card__state')!.getBoundingClientRect();
+        const chevron = t.querySelector('.card__chevron')!.getBoundingClientRect();
+        const toggle = t.getBoundingClientRect();
+        return { title: text.textContent!.trim(), titleBottom: title.bottom, titleLeft: title.left, titleRight: title.right, idTop: id.top, idLeft: id.left, idRight: id.right, idBottom: id.bottom, stateLeft: state.left, stateTop: state.top, chevronLeft: chevron.left, toggleBottom: toggle.bottom, lines: lines.length };
+      }),
+    );
+    expect(rows.length).toBeGreaterThan(10);
+    for (const r of rows) {
+      expect(r.idTop, `${r.title}: the ID under the title`).toBeGreaterThanOrEqual(r.titleBottom - 1);
+      expect(Math.abs(r.idLeft - r.titleLeft), `${r.title}: the ID lines up with the title`).toBeLessThanOrEqual(1);
+      expect(r.titleRight, `${r.title}: the title clear of the chevron`).toBeLessThanOrEqual(r.chevronLeft);
+      expect(r.idRight, `${r.title}: the ID clear of the year`).toBeLessThanOrEqual(r.stateLeft);
+      expect(r.stateTop, `${r.title}: the year under the title too`).toBeGreaterThanOrEqual(r.titleBottom - 1);
+      expect(r.lines, `${r.title}: at most two lines of title`).toBeLessThanOrEqual(2);
+      expect(r.idBottom, `${r.title}: inside the row`).toBeLessThanOrEqual(r.toggleBottom);
     }
   });
 }
