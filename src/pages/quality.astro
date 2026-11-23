@@ -158,8 +158,7 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     <div class="level__head">
       <p class="flag" data-nosnippet data-load style="--d: 0ms"><span>Quality</span></p>
       <h1 id="quality-title" class="page__title">
-        <span class="mask"><span class="mask__line" style="--i: 0">Let's test this</span></span>{' '}
-        <span class="mask"><span class="mask__line" style="--i: 1">page together</span></span>
+        <span class="mask"><span class="mask__line quality__phrase" style="--i: 0">Let's test this page together</span></span>
       </h1>
       <p class="qa__lead statement" data-load style="--d: 360ms">
         Five steps, the way I would test a build. Each one runs live on this page, then you can check it yourself.
@@ -348,6 +347,28 @@ Attachments: [screenshot or video]</pre>
 </Base>
 
 <style>
+  .quality__phrase {
+    text-wrap: balance;
+    /* (just over its longest balanced line, "Let's test this", so the heading's box hugs its two
+       lines as the two halves did and leaves the space beside it clear) */
+    max-width: 6em;
+  }
+  /* The title is one long phrase in balanced lines, so it runs a step smaller than the other
+     pages' titles: three lines at most on a phone ("Let's test" fits one line at 300px), two from
+     tablets up. Sizes stay on the 8px (phone) and 16px grids so the pixel font keeps crisp. */
+  #quality-title {
+    font-size: min(round(var(--step-hero), 16px), round(14.5vw, 16px));
+  }
+  @media (max-width: 63.99rem) {
+    #quality-title {
+      font-size: round(14.5vw, 16px);
+    }
+  }
+  @media (max-width: 47.99rem) {
+    #quality-title {
+      font-size: round(15vw, 8px);
+    }
+  }
   .qa {
     padding-top: var(--s-3);
   }

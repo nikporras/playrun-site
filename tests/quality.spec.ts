@@ -286,3 +286,25 @@ test.describe('Performance under reduced motion', () => {
     await context.close();
   });
 });
+
+test('the title reads as one phrase in balanced lines: at most three at 300px, at most two from 768px', { tag: ['@viewports'] }, async ({ page }) => {
+  for (const [width, most] of [[300, 3], [320, 3], [375, 3], [768, 2], [1024, 2], [1440, 2], [1920, 2]] as const) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/quality/');
+    await page.evaluate(() => document.fonts.ready);
+    const lines = await page.locator('#quality-title').evaluate((h) => {
+      // the text's own line boxes (not the mask spans around it)
+      const r = document.createRange();
+      const text = document.createTreeWalker(h, NodeFilter.SHOW_TEXT);
+      const tops = new Set<number>();
+      for (let n = text.nextNode(); n; n = text.nextNode()) {
+        if (!n.textContent!.trim()) continue;
+        r.selectNodeContents(n);
+        for (const b of r.getClientRects()) if (b.width > 0) tops.add(Math.round(b.top));
+      }
+      return tops.size;
+    });
+    expect(lines, `${width}px`).toBeLessThanOrEqual(most);
+    expect(lines, `${width}px`).toBeGreaterThan(0);
+  }
+});
