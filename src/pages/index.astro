@@ -38,8 +38,9 @@ const dims = (id: string) => {
   const ratio = img.width / img.height;
   let h = Math.min(7, Math.max(2, 7.9 / Math.sqrt(ratio)));
   let w = h * ratio;
-  if (w > 18) {
-    w = 18;
+  // (the widest wordmarks stop at 16rem, so two still fit side by side in a phone's still row)
+  if (w > 16) {
+    w = 16;
     h = w / ratio;
   }
   return { w, h };

@@ -32,7 +32,7 @@ const LOGOS = {
   'ghostbusters-rise-of-the-ghost-lord': ['gb_meta_store_assets_frozen_empire_logo_fe-1.png', { keepBands: 2, tone: { x: [0.165, 0.29], y: [0, 0.7], over: 0.6, color: GHOST } }],
   'guildford-castle-vr': 'HVR_secondary_white-gold.png',
   'hello-sunshine': 'HelloSunshine_logo.png',
-  'jurassic-world-aftermath': ['JurassicWorldAftermath_Collection.png', { keepBands: 1, luma: [0.25, 0.7] }],
+  'jurassic-world-aftermath': ['JurassicWorldAftermath_Collection.png', { keepBands: 2, luma: [0.25, 0.7] }], // the badge and AFTERMATH (the Collection line dropped)
   'londinium-ad-215': 'HVR_secondary_white-gold.png', // the studio logo, as on Guildford Castle VR
   'lous-lagoon': 'LOU-Logo-4K.png',
   'nba-2k21': 'NBA 2K21 Logo.png',
@@ -126,8 +126,25 @@ for (const [slug, entry] of Object.entries(LOGOS)) {
       }
     }
   }
-  await sharp(out, { raw: { width, height, channels: 4 } })
+  // Every file is cut to the shape it draws (a glow cut back or a faint edge dropped leaves empty
+  // margin behind) and given the same clear margin all round, so no logo touches its box and none
+  // floats small inside it: the page sizes each one from its file's aspect ratio.
+  let [x0, y0, x1, y1] = [width, height, -1, -1];
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++)
+      if (out[(y * width + x) * 4 + 3] > 24) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+  const w = x1 - x0 + 1;
+  const h = y1 - y0 + 1;
+  const pad = Math.max(4, Math.round(Math.min(w, h) * 0.04));
+  const info = await sharp(out, { raw: { width, height, channels: 4 } })
+    .extract({ left: x0, top: y0, width: w, height: h })
+    .extend({ top: pad, bottom: pad, left: pad, right: pad, background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .png({ compressionLevel: 9, palette: false })
     .toFile(join(OUT, `${slug}.png`));
-  console.log(`${slug}: ${width}x${height}`);
+  console.log(`${slug}: ${info.width}x${info.height} (margin ${pad})`);
 }
