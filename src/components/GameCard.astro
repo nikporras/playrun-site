@@ -112,7 +112,12 @@ const store = p.data.store ?? 'Steam';
     overflow: hidden;
     background: var(--bg);
     color: var(--ink);
-    border-top: 0.25rem solid var(--g-accent, var(--accent-2));
+    /* The accent stripe (4px) with a navy edge (2px) above it, both in the top border: the cards
+       stand on the cyan level, where a cyan accent vanished and the others were under 3:1; between
+       navy edges every accent is 3.5:1 or more. (In the border, not a shadow: the entrance clips
+       the card to its box.) */
+    border-top: 6px solid var(--g-accent, var(--accent-2));
+    border-image: linear-gradient(var(--pr-navy) 2px, var(--g-accent, var(--accent-2)) 2px) 6 0 0 0 / 6px 0 0 0;
     --sel-bg: var(--accent);
     --sel-ink: var(--accent-ink);
   }

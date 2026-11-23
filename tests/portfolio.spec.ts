@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import sharp from 'sharp';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -529,3 +530,44 @@ test('every game carries a tracker ID like the bug ticket’s (PR-001...), the s
   await expect(page.locator('.card').nth(1).locator('[data-card-toggle]')).not.toHaveAccessibleName(/PR-/);
   await expect(page.locator('.card').nth(1).locator('[data-card-toggle] .card__id')).toBeVisible();
 });
+
+// On the cyan level every card's accent stripe stands between navy edges (the card below it, a
+// navy line above it), so no accent, the cyan least of all, blends into the field: 3:1 or more on
+// both sides, read from the screen pixels at a desktop and a phone width.
+for (const [width, height] of [[1440, 900], [375, 812]] as const) {
+  test(`at ${width}px every card's accent stripe reads 3:1 or more against what is on either side of it`, { tag: ['@a11y'] }, async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.setViewportSize({ width, height });
+    await page.goto('/portfolio/');
+    // (no entrance or scan: the cards still, so the rows are where they are drawn)
+    await page.addStyleTag({ content: '.card { animation: none !important; transition: none !important; transform: none !important; opacity: 1 !important; } .card::before, .card::after { display: none !important; } [data-bug], #hud, #dock, .tabbar { visibility: hidden !important; }' });
+    const lum = ([r, g, b]: number[]) => [r, g, b].map((v) => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4)).reduce((s, c, i) => s + c * [0.2126, 0.7152, 0.0722][i], 0);
+    const ratio = (a: number[], b: number[]) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+    const cards = page.locator('.card');
+    const n = await cards.count();
+    expect(n).toBeGreaterThan(10);
+    for (let i = 0; i < n; i++) {
+      const card = cards.nth(i);
+      // (on a phone, opened first: one card a company is open at a time)
+      const toggle = card.locator('.card__toggle');
+      if ((await toggle.isVisible()) && (await toggle.getAttribute('aria-expanded')) === 'false') {
+        await toggle.click();
+        await page.waitForTimeout(700);
+      }
+      // (its top well inside the screen)
+      await card.evaluate((el) => window.scrollBy({ top: el.getBoundingClientRect().top - 200, behavior: 'instant' }));
+      await page.waitForTimeout(80);
+      const b = (await card.boundingBox())!;
+      // a column of pixels through the top: 2px of the level above the card, the card's 2px navy
+      // edge, its 4px stripe, 2px of the card; the stripe against both sides of it
+      const png = await page.screenshot({ clip: { x: b.x + b.width / 2, y: Math.floor(b.y) - 2, width: 1, height: 10 } });
+      const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+      const px = (row: number) => [...data.subarray(row * info.channels, row * info.channels + 3)];
+      const stripe = px(5);
+      const name = await card.locator('.card__title, h3').first().textContent();
+      expect(ratio(px(3), px(0)), `${name}: the card's edge against the level`).toBeGreaterThanOrEqual(3);
+      expect(ratio(stripe, px(3)), `${name}: the stripe against what is above it`).toBeGreaterThanOrEqual(3);
+      expect(ratio(stripe, px(9)), `${name}: the stripe against the card`).toBeGreaterThanOrEqual(3);
+    }
+  });
+}
