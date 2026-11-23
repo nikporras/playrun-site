@@ -47,7 +47,7 @@ const looks: Record<string, { accent: string; icon: string[] }> = {
   // a chain link
   links: { accent: 'var(--accent-steel)', icon: ['....###.', '...#...#', '...#..#.', '.###.#..', '#..#.##.', '.#..#...', '#...#...', '.###....'] },
   // a lightning bolt
-  performance: { accent: 'var(--accent-pink)', icon: ['....###.', '...###..', '..###...', '.######.', '...###..', '..###...', '.##.....', '#.......'] },
+  performance: { accent: 'var(--accent-indigo)', icon: ['....###.', '...###..', '..###...', '.######.', '...###..', '..###...', '.##.....', '#.......'] },
 };
 const iconPath = (rows: string[]) => rows.flatMap((row, y) => [...row].map((c, x) => (c === '#' ? `M${x} ${y}h1v1H${x}z` : ''))).join('');
 const steps: { id: string; title: string; ask: string; checks: string[]; computer: (b: Browser) => How[]; iphone: string[]; android: string[] }[] = [

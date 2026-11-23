@@ -178,8 +178,16 @@ for (const [width, height] of [
         };
       }),
     );
-    const accents = ['rgb(158, 210, 226)', 'rgb(86, 189, 218)', 'rgb(159, 178, 228)', 'rgb(84, 148, 198)', 'rgb(255, 95, 162)'];
-    expect(looks.map((l) => l.border), 'sky, cyan, periwinkle, steel, pink').toEqual(accents);
+    const accents = ['rgb(158, 210, 226)', 'rgb(86, 189, 218)', 'rgb(159, 178, 228)', 'rgb(84, 148, 198)', 'rgb(127, 143, 224)'];
+    expect(looks.map((l) => l.border), 'sky, cyan, periwinkle, steel, indigo').toEqual(accents);
+    // one family: every accent's hue sits between cyan and blue, so none reads like an error
+    for (const a of accents) {
+      const [r, g, b] = a.match(/\d+/g)!.map((n) => Number(n) / 255);
+      const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+      const hue = (max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60;
+      expect(hue < 0 ? hue + 360 : hue, `${a} in the blue family`).toBeGreaterThanOrEqual(185);
+      expect(hue < 0 ? hue + 360 : hue, `${a} in the blue family`).toBeLessThanOrEqual(235);
+    }
     for (const [i, l] of looks.entries()) {
       expect(l.num).toBe(accents[i]);
       expect(l.title).toBe(accents[i]);
