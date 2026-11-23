@@ -459,14 +459,15 @@ for (const [width, height] of [
   [1440, 900],
   [375, 780],
 ] as const) {
-  test(`each company reads as a level card at ${width}px: Level N counted from the first post, Allegiance, the titles in order, and the games cleared with a pip each`, async ({ page }) => {
+  test(`each company reads as a card at ${width}px, with no level label (levels are for page sections): Allegiance, the titles in order, and the games cleared with a pip each`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/portfolio/');
     const heads = page.locator('.group__head');
     const n = await heads.count();
     expect(n).toBe(7);
-    await expect(page.locator('.group__level')).toHaveText(Array.from({ length: n }, (_, i) => `Level ${n - i}`));
+    await expect(page.locator('.group__level')).toHaveCount(0);
+    await expect(page.locator('.group__head', { hasText: /Level/i })).toHaveCount(0);
     for (let i = 0; i < n; i++) {
       const head = heads.nth(i);
       await expect(head.locator('.group__key')).toHaveText(['Allegiance', 'Titles', 'Cleared']);
@@ -474,13 +475,11 @@ for (const [width, height] of [
       await expect(head.locator('.group__cleared')).toHaveText(cards === 0 ? 'No public titles' : `${cards} ${cards === 1 ? 'game' : 'games'}`);
       await expect(head.locator('.group__pip')).toHaveCount(cards);
       await expect(head.locator('.group__pips')).toHaveAttribute('aria-hidden', 'true');
-      for (const el of await head.locator('.group__level, .group__key, .group__cleared, .group__role').all()) await expect(el).toBeVisible();
+      for (const el of await head.locator('.group__key, .group__cleared, .group__role').all()) await expect(el).toBeVisible();
     }
     // the titles in order, as on LinkedIn
     const ndreams = page.locator('.group').filter({ has: page.locator('.group__name', { hasText: 'nDreams' }) });
     await expect(ndreams.locator('.group__role')).toHaveText(['QA Tester · Apr 2022 to Sep 2022', 'Senior Quality Assurance Tester · Sep 2022 to Apr 2023', 'Lead Quality Assurance Tester · Apr 2023 to Oct 2024']);
-    // the first job is Level 1
-    await expect(page.locator('.group').last().locator('.group__level')).toHaveText('Level 1');
   });
 }
 

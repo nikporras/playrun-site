@@ -68,7 +68,6 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
           <div class:list={['group', `accent--${g.accent}`]} role="group" aria-labelledby={`group-${gi}`} data-year={yearOf(g)}>
             <div class="group__head" data-enter>
               <div class="group__id">
-                <p class="group__level">Level {groups.length - gi}</p>
                 <p class="group__key">Allegiance</p>
                 <h3 id={`group-${gi}`} class="group__name">{g.name}</h3>
                 <p class="group__when">{span(g)}</p>
@@ -183,21 +182,6 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
   }
   /* The level card: the level (counted from the first post), the company it served, the titles in
      order and the games cleared there, as the labels of a game's level card. */
-  .group__level {
-    display: inline-block;
-    font-family: var(--font-display);
-    font-size: 1rem;
-    line-height: 1;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 0.35em 0.6em;
-    background: var(--pr-navy);
-    color: var(--pr-light);
-    margin-bottom: var(--s-2);
-    max-width: none;
-    --sel-bg: var(--accent);
-    --sel-ink: var(--accent-ink);
-  }
   .group__key {
     font-family: var(--font-display);
     font-size: 0.875rem;
