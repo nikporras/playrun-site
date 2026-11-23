@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import { education, languagesByLevel, platforms as basePlatforms, tools, vrPlatforms } from '../config';
+import { allPlatforms, education, languagesByLevel, tools } from '../config';
 import Bug from '../components/Bug.astro';
 import Join from '../components/Join.astro';
 import PassMark from '../components/PassMark.astro';
@@ -59,7 +59,7 @@ const run = [
 
 // The platforms and stores, then the VR headsets the public titles were tested on.
 const titles = (await getCollection('projects')).filter((p) => p.data.public);
-const platforms = [...basePlatforms, ...vrPlatforms.filter((v) => titles.some((t) => t.data.platforms.some((n) => v.match.test(n)))).map((v) => [v.name, v.text])];
+const platforms = allPlatforms(titles);
 ---
 
 <Base

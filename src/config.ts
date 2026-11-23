@@ -164,6 +164,12 @@ export const vrPlatforms: { name: string; match: RegExp; text: string }[] = [
   { name: 'PS VR2', match: /PS VR2/, text: "PS VR2 on PS5, the Sense controllers and the console's own checks." },
 ];
 
+/** The headsets a public title names (Skills lists them, Home counts them). */
+export const shownVR = (titles: { data: { platforms: string[] } }[]) => vrPlatforms.filter((v) => titles.some((t) => t.data.platforms.some((n) => v.match.test(n))));
+
+/** Every platform and store, then the headsets the given titles name: Skills' list and Home's count. */
+export const allPlatforms = (titles: { data: { platforms: string[] } }[]): [name: string, text: string][] => [...platforms, ...shownVR(titles).map((v): [string, string] => [v.name, v.text])];
+
 // What I bring: the tools, the languages and the education (Skills, the About page, the
 // structured data).
 export const tools = ['Jira and Confluence', 'TestRail', 'Unreal Engine: debugging, profiling, Blueprint', 'Agile and Scrum'];

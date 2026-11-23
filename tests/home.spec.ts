@@ -866,7 +866,7 @@ test.describe('Home', () => {
     expect(vr).toContain('londinium-ad-215.md');
     const leads = (readFileSync(join(process.cwd(), 'src/config.ts'), 'utf8').match(/lead: true/g) ?? []).length;
     expect(leads).toBe(2);
-    await expect(real).toHaveText([/5\+\s*years in QA/, /6\s*companies/, /20\s*games/, new RegExp(`${vr.length}\\s*VR games`), /10\+\s*platforms/, new RegExp(`${leads}\\s*QA lead roles`)]);
+    await expect(real).toHaveText([/5\+\s*years in QA/, /6\s*companies/, /20\s*games/, new RegExp(`${vr.length}\\s*VR games`), /12\s*platforms/, new RegExp(`${leads}\\s*QA lead roles`)]);
     // the copies that make the loop are out of the accessibility tree
     await expect(page.locator('.drum__clone')).toHaveCount(12);
     expect(await page.locator('.drum__clone:not([aria-hidden="true"])').count()).toBe(0);

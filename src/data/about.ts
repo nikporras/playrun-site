@@ -5,7 +5,7 @@
  * twice; the counts, studios, titles and dates all come from the data.
  */
 import { getCollection } from 'astro:content';
-import { contact, education, employers, languages, languagesByLevel, leadRoles, listed, platforms, postsOldestFirst, since, site, social, studios, summary, summaryFirstPerson, tools, vrPlatforms } from '../config';
+import { contact, education, employers, languages, languagesByLevel, leadRoles, listed, platforms, postsOldestFirst, since, site, social, studios, summary, summaryFirstPerson, shownVR, tools } from '../config';
 
 const MONTHS: Record<string, string> = { Jan: 'January', Feb: 'February', Mar: 'March', Apr: 'April', May: 'May', Jun: 'June', Jul: 'July', Aug: 'August', Sep: 'September', Oct: 'October', Nov: 'November', Dec: 'December' };
 const longMonth = (when: string) => when.replace(/\b([A-Z][a-z]{2})\b/g, (m) => MONTHS[m] ?? m);
@@ -17,7 +17,7 @@ export async function about() {
     .sort((a, b) => (a.data.status === 'in-development' ? 1 : 0) - (b.data.status === 'in-development' ? 1 : 0) || (b.data.year ?? 0) - (a.data.year ?? 0));
   const isVR = (p: (typeof projects)[number]) => p.data.vr || p.data.platforms.some((n) => /VR|Quest/i.test(n));
   const vrCount = projects.filter(isVR).length;
-  const vrNames = vrPlatforms.filter((v) => projects.some((p) => p.data.platforms.some((n) => v.match.test(n)))).map((v) => v.name);
+  const vrNames = shownVR(projects).map((v) => v.name);
   // (the handhelds entry reads as a phrase inside the sentence)
   const flatNames = platforms.map(([name]) => (name === 'Handhelds' ? 'handhelds like Steam Deck' : name));
   // the current post: the newest role still running
