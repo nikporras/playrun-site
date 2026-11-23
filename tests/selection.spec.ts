@@ -32,6 +32,8 @@ const pick = () => {
     if (text.length < 40 || e.querySelector('p, li') || !e.getClientRects().length) return false;
     // (a row on the turning stats drum moves between the pick and the drag; the still list is a plain list)
     if (e.closest('.drum.is-live')) return false;
+    // (the content of a closed dropdown is hidden, nothing to drag across)
+    if (e.closest('details:not([open]) > :not(summary)')) return false;
     const link = e.querySelector('a');
     return !(link && (link.textContent ?? '').trim().length >= text.length - 2);
   });
