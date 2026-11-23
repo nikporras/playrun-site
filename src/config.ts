@@ -119,13 +119,15 @@ export const employers: Employer[] = [
 /** The year the testing started: the hero and the stats count from it. */
 export const since = 2021;
 
+// The same order in the desktop nav and the bottom bar (which leaves Home to the logo and ends
+// with Contact).
 export const nav = [
   { label: 'Home', href: '/' },
+  { label: 'About', href: '/about/' },
   { label: 'Skills', href: '/skills/' },
   // (the page keeps its address, /portfolio/; everywhere it is called Games)
   { label: 'Games', href: '/portfolio/' },
   { label: 'Quality', href: '/quality/' },
-  { label: 'About', href: '/about/' },
 ];
 
 // The one action. It appears in the nav, in the hero and at the end of Home, nowhere else.

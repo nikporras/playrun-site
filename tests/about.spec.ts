@@ -95,6 +95,8 @@ test('About is in the desktop nav, the footer and first in the bottom bar of pho
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await expect(page.locator('.header__nav').getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about/');
+  // the desktop nav and the bottom bar share one order: Home first on desktop only, Contact last on both
+  await expect(page.locator('.header__nav').getByRole('link')).toHaveText(['Home', 'About', 'Skills', 'Games', 'Quality', 'Get in touch']);
   await expect(page.locator('footer').getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about/');
   await expect(page.locator('.hero__value').getByRole('link', { name: 'More about me' })).toHaveAttribute('href', '/about/');
   await page.setViewportSize({ width: 375, height: 780 });
