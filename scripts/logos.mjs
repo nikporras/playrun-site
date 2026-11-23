@@ -28,7 +28,9 @@ const GHOST = [122, 134, 166]; // a navy-tinted grey, 4.6:1 on navy
 // back[1] luminance) in the second tone, cutting everything else.
 const LOGOS = {
   'a-township-tale': 'logo_01.png',
-  'beat-saber': ['BSLogo.png', { core: 0.8, thicken: 2 }], // the neon tubes' white cores, without the glow
+  // no flat official logo (the neon one blurs in one colour): the name in Comfortaa, close to its
+  // lettering, from scripts/wordmarks.mjs
+  'beat-saber': 'BeatSaber_wordmark_Comfortaa.png',
   clawpunk: ['ClawPunkLogo_4K.png', { luma: [0.2, 0.5], tight: 0.3 }],
   'cyberpunk-2077': 'logo-cp77-yellow-en@2x.png',
   'gang-of-frogs': 'GoF_04-3.png',
@@ -46,9 +48,9 @@ const LOGOS = {
   'the-climb-2': 'the-climb-2-logo-from-site.svg',
   'thick-as-thieves': 'TaT_Logo_Secondary_White.png',
   vaewolf: 'VaewolfLogo-orig.png',
-  // the yellow letters light, the grey golf ball behind them whole in the second tone, the dark
-  // outlines and orange sides between them cut so the two read apart
-  'walkabout-mini-golf': ['WalkaboutMiniGolf_Logo_2560.png', { split: { face: [0.45, 0.5], back: [0.25, 0.3] } }],
+  // the yellow letters alone, light: the grey golf ball behind them, its dark outlines and the
+  // orange sides are left out (they do not read in one colour)
+  'walkabout-mini-golf': ['WalkaboutMiniGolf_Logo_2560.png', { split: { face: [0.45, 0.5], back: [0, 1] } }],
 };
 
 /** The rows of the image that hold anything, grouped into bands separated by empty rows. */
