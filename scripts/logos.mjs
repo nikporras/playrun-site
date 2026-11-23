@@ -22,17 +22,20 @@ const GHOST = [122, 134, 166]; // a navy-tinted grey, 4.6:1 on navy
 // `thicken` widens an outline-only mark by that many pixels each side (a round dilation). `keepBands` keeps only the first n bands of rows
 // with content (a subtitle on its own line below is dropped). `tone` paints the bright pixels
 // inside a region (fractions of the kept image) in a second colour, so a white shape inside a
-// mark still reads once everything is one colour.
+// mark still reads once everything is one colour. `core` keeps only the near-white middle of a neon
+// stroke (brightest channel over it, little colour). `split` keeps saturated bright pixels (over
+// face [saturation, luminance]) in the light and unsaturated ones (under back[0] saturation, over
+// back[1] luminance) in the second tone, cutting everything else.
 const LOGOS = {
   'a-township-tale': 'logo_01.png',
-  'beat-saber': ['BSLogo.png', { tight: 0.66 }], // the glow cut back to the letters, with their full stroke
+  'beat-saber': ['BSLogo.png', { core: 0.8, thicken: 2 }], // the neon tubes' white cores, without the glow
   clawpunk: ['ClawPunkLogo_4K.png', { luma: [0.2, 0.5], tight: 0.3 }],
   'cyberpunk-2077': 'logo-cp77-yellow-en@2x.png',
   'gang-of-frogs': 'GoF_04-3.png',
   'ghostbusters-rise-of-the-ghost-lord': ['gb_meta_store_assets_frozen_empire_logo_fe-1.png', { keepBands: 2, tone: { x: [0.165, 0.29], y: [0, 0.7], over: 0.6, color: GHOST } }],
   'guildford-castle-vr': 'HVR_secondary_white-gold.png',
   'hello-sunshine': 'HelloSunshine_logo.png',
-  'jurassic-world-aftermath': ['JurassicWorldAftermath_Collection.png', { keepBands: 2, luma: [0.25, 0.7] }], // the badge and AFTERMATH (the Collection line dropped)
+  'jurassic-world-aftermath': ['JurassicWorldAftermath_Collection.png', { keepBands: 2, luma: [0.45, 0.7] }], // the badge and AFTERMATH (the Collection line dropped)
   'londinium-ad-215': 'HVR_secondary_white-gold.png', // the studio logo, as on Guildford Castle VR
   'lous-lagoon': 'LOU-Logo-4K.png',
   'nba-2k21': 'NBA 2K21 Logo.png',
@@ -43,7 +46,9 @@ const LOGOS = {
   'the-climb-2': 'the-climb-2-logo-from-site.svg',
   'thick-as-thieves': 'TaT_Logo_Secondary_White.png',
   vaewolf: 'VaewolfLogo-orig.png',
-  'walkabout-mini-golf': ['WalkaboutMiniGolf_Logo_2560.png', { luma: [0.45, 0.85] }],
+  // the yellow letters light, the grey golf ball behind them whole in the second tone, the dark
+  // outlines and orange sides between them cut so the two read apart
+  'walkabout-mini-golf': ['WalkaboutMiniGolf_Logo_2560.png', { split: { face: [0.45, 0.5], back: [0.25, 0.3] } }],
 };
 
 /** The rows of the image that hold anything, grouped into bands separated by empty rows. */
@@ -91,7 +96,17 @@ for (const [slug, entry] of Object.entries(LOGOS)) {
     // (below a floor the faint glow of a badge goes; above it the lettering goes solid)
     if (opts.luma) a = a < 0.2 ? 0 : Math.pow((a - 0.2) / 0.8, 0.5);
     if (opts.tight) a = a < (typeof opts.tight === 'number' ? opts.tight : 0.75) ? 0 : 1;
+    const mx = Math.max(rgba[i * 4], rgba[i * 4 + 1], rgba[i * 4 + 2]);
+    const sat = mx ? (mx - Math.min(rgba[i * 4], rgba[i * 4 + 1], rgba[i * 4 + 2])) / mx : 0;
+    if (opts.core) a = a > 0.5 && mx / 255 > opts.core && sat < 0.55 ? 1 : 0;
     let color = LIGHT;
+    if (opts.split) {
+      const { face, back } = opts.split;
+      if (a < 0.5) a = 0;
+      else if (sat > face[0] && l > face[1]) a = 1;
+      else if (sat < back[0] && l > back[1]) [a, color] = [1, GHOST];
+      else a = 0;
+    }
     if (opts.tone) {
       const x = (i % width) / width;
       const y = Math.floor(i / width) / height;
