@@ -689,7 +689,13 @@ export function startGames() {
       const line = y + innerHeight * 0.45;
       let now = 1;
       sectionTops.forEach((t, i) => t <= line && (now = i + 1));
-      Array.from(levelsList.children).forEach((li, i) => li.classList.toggle('is-past', markTops[i] <= line));
+      // (on the rail, a marker the ship is passing loses the part of its tick under the ship, so the
+      // ship stays on top as it always did)
+      const mid = p * track + ship / 2;
+      Array.from(levelsList.children).forEach((li, i) => {
+        li.classList.toggle('is-past', markTops[i] <= line);
+        li.classList.toggle('is-under', vertical.matches && Math.abs(Math.min(1, markTops[i] / range) * track + ship / 2 - mid) < ship / 2 + 2);
+      });
       let year = yearEls[0]?.dataset.year ?? '';
       yearTops.forEach((t, i) => t <= line && (year = yearEls[i].dataset.year!));
       if (now !== level || (yearEls.length && year !== yearOut.textContent)) {

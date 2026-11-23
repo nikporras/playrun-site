@@ -802,3 +802,36 @@ for (const [width, height] of [
     expect(gaps).toEqual([]);
   });
 }
+
+// Each rail marker reads as one piece with the rail: the tick leaves the rail's line and meets the
+// numbered box with no gap on either side, at every desktop width and at 100%, 125% and 150%
+// display scaling. The page behind is painted magenta, so any gap shows as magenta.
+for (const scale of [1, 1.25, 1.5]) {
+  test(`at ${scale * 100}% scaling the rail's line, each marker's tick and its box meet with no gap`, async ({ browser }) => {
+    for (const [width, height] of [[1024, 768], [1280, 800], [1440, 900], [1920, 1080]] as const) {
+      const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: scale });
+      const page = await context.newPage();
+      await page.goto('/skills/');
+      await page.addStyleTag({ content: 'html, body { background: #ff00ff !important; } body > :not(#hud), .bug, .hud__runner > .hud__ship { visibility: hidden !important; }' });
+      const jumps = page.locator('.hud__levels .hud__jump');
+      await expect(jumps.first()).toBeVisible();
+      // the ship at the very top, away from the markers below it
+      const runner = (await page.locator('.hud__runner').boundingBox())!;
+      const line = runner.x + runner.width / 2;
+      let checked = 0;
+      for (const box of await page.locator('.hud__levels li span').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON()))) {
+        if (box.y < runner.y + runner.height + 4 || box.y + box.height > height - 2) continue;
+        const y = box.y + box.height / 2 - 0.5;
+        // from the middle of the line to inside the box, along the tick's middle row
+        const png = await page.screenshot({ clip: { x: Math.floor(line), y, width: Math.ceil(box.x + 2 - Math.floor(line)), height: 1 } });
+        const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+        const gaps: number[] = [];
+        for (let i = 0; i < data.length; i += info.channels) if (data[i] > 200 && data[i + 1] < 80 && data[i + 2] > 200) gaps.push(i / info.channels);
+        expect(gaps, `${width}x${height} at ${scale}: magenta between the line and the box at ${box.y.toFixed(0)}`).toEqual([]);
+        checked++;
+      }
+      expect(checked, `${width}x${height}: markers checked`).toBeGreaterThanOrEqual(3);
+      await context.close();
+    }
+  });
+}

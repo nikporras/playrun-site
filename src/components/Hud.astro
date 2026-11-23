@@ -671,11 +671,16 @@ import { BUGS } from '../data/bugs';
     .hud__runner::after {
       top: 100%;
     }
+    /* Each marker is one piece with the rail: its tick starts in the middle of the rail's line and
+       runs 1px under the numbered box, so line, tick and box meet with no gap at any scale (the
+       overlaps absorb a device pixel's rounding either side). The box stands where it always did:
+       the tick is half the track, then 0.375rem, then 3px, plus the 1px under the box. */
     .hud__levels {
-      left: 100%;
+      left: calc(var(--track-w) / 2);
       right: auto;
       top: 0;
       bottom: auto;
+      z-index: 3; /* (over the rail's navy edge, so the tick meets the light line itself) */
     }
     .hud__levels :global(li) {
       left: 0;
@@ -683,14 +688,26 @@ import { BUGS } from '../data/bugs';
       bottom: auto;
       top: calc(var(--at, 0) * var(--track, 100vh) + var(--track-w) / 2);
       flex-direction: row;
-      gap: 3px;
+      gap: 0;
       font-size: 0.75rem;
       transform: translateY(-50%);
+      pointer-events: none; /* (only the box's button takes a click; the tick never covers the ship) */
+    }
+    .hud__levels :global(li.is-under)::after {
+      clip-path: inset(0 0 0 calc(var(--track-w) / 2));
     }
     .hud__levels :global(li)::after {
       order: -1;
-      width: 0.375rem;
-      height: 2px;
+      flex: none;
+      width: calc(var(--track-w) / 2 + 0.375rem + 4px);
+      height: 4px;
+      margin-right: -1px;
+      /* the tick in its colour, 2px, with a navy edge above and below it that starts past the
+         rail's line, so the line shows unbroken where the tick leaves it */
+      background:
+        linear-gradient(var(--pr-navy), var(--pr-navy)) right top / calc(100% - 2px) 1px no-repeat,
+        linear-gradient(var(--pr-navy), var(--pr-navy)) right bottom / calc(100% - 2px) 1px no-repeat,
+        linear-gradient(currentColor, currentColor) 0 1px / 100% 2px no-repeat;
     }
     .hud__levels :global(li span) {
       padding: 2px 3px;
@@ -701,13 +718,9 @@ import { BUGS } from '../data/bugs';
     /* (44px tall; as wide as the gutter allows, never into the column) */
     .hud__levels :global(.hud__jump) {
       min-width: max(1.5rem, min(2.75rem, calc(var(--margin) - var(--track-w) - 0.75rem)));
+      position: relative; /* (the box paints over the end of the tick) */
       min-height: 2.75rem;
       justify-content: flex-start;
-    }
-    .hud__levels :global(li)::after {
-      box-shadow:
-        0 -1px 0 var(--pr-navy),
-        0 1px 0 var(--pr-navy);
     }
     .hud__runner {
       left: 0;
