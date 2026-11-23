@@ -684,10 +684,10 @@ p + p {
   }
 }
 @media (max-width: 63.99rem) {
-  /* A phone or a tablet always has the bottom bar (games or not, script or not): the page ends above it, with
-     room for the ship that rides on its top edge. The scoreboard's counter takes its right end. */
+  /* A phone or a tablet always has the bottom bar (games or not, script or not): the page ends above
+     it. The scoreboard's counter takes its right end. */
   :root body {
-    padding-bottom: calc(var(--hud-h) + var(--ship-w) + 0.5rem);
+    padding-bottom: var(--hud-h);
   }
   .has-dock {
     --counter-w: 3.75rem;

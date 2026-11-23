@@ -43,14 +43,12 @@ test.describe("Home on a phone", () => {
     }
   });
 
-  test("the track is a thin line on the bottom bar and a tap on the scoreboard's counter opens the card above the bar", async ({
+  test("there is no track on the bottom bar and a tap on the scoreboard's counter opens the card above the bar", async ({
     page,
   }) => {
     await page.goto("/");
-    const hud = page.locator("#hud");
-    await expect(hud).toBeVisible();
-    const h = await hud.evaluate((el) => el.getBoundingClientRect().height);
-    expect(h).toBeLessThanOrEqual(4);
+    await expect(page.locator("#dock")).toBeVisible();
+    await expect(page.locator("#hud")).toBeHidden();
     await expect(page.locator(".score__panel")).toBeHidden();
     const pill = page.getByRole("button", { name: /^Scoreboard/ });
     await pill.tap();

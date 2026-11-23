@@ -226,7 +226,7 @@ test.describe('Games', () => {
     }
   });
 
-  test('the scoreboard never sits on the footer; on a phone or a tablet the track is a thin line on the bottom bar with the ship riding on it', async ({ page }) => {
+  test('the scoreboard never sits on the footer; on a phone or a tablet there is no track (no ship, no line, no markers) and the counter holds the right end of the bar', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     // the end of the page: the scoreboard never sits on the footer's last line
     await page.goto('/skills/');
@@ -235,23 +235,21 @@ test.describe('Games', () => {
     const legal = (await page.locator('.footer__legal').boundingBox())!;
     const pillEnd = (await page.locator('.score__pill').boundingBox())!;
     expect(legal.y + legal.height).toBeLessThanOrEqual(pillEnd.y);
-    // a phone or a tablet: the track is a thin line on the top edge of the bottom bar, the ship
-    // riding on it, and the counter at the bar's right end
+    // a phone or a tablet: no ship riding on the bar (it looked as if it pointed at the tabs), no
+    // line, no markers; the counter at the bar's right end
     for (const [w, h] of [
+      [1023, 768],
       [820, 1000],
       [390, 844],
+      [300, 640],
     ] as const) {
       await page.setViewportSize({ width: w, height: h });
       await page.goto('/skills/');
-      const line = (await page.locator('#hud').boundingBox())!;
+      await expect(page.locator('#dock')).toBeVisible();
+      await expect(page.locator('#hud')).toBeHidden();
+      expect(await page.locator('.hud__runner, .hud__floor, .hud__jump').evaluateAll((els) => els.filter((e) => e.getClientRects().length > 0).length), 'nothing of the track shows').toBe(0);
+      await expect(page.locator('[data-bug]:visible').first()).toBeAttached();
       const tabbar = (await page.locator('.tabbar').boundingBox())!;
-      expect(line.width).toBe(w);
-      expect(line.height, 'a thin line').toBeLessThanOrEqual(4);
-      expect(Math.abs(line.y + line.height - tabbar.y), "on the bar's top edge").toBeLessThanOrEqual(1);
-      const ship = (await page.locator('.hud__runner').boundingBox())!;
-      expect(Math.abs(ship.y + ship.height - line.y), 'the ship rides on it').toBeLessThanOrEqual(1);
-      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
-      await expect.poll(async () => (await page.locator('.hud__runner').boundingBox())!.x, 'and runs along it with the scroll').toBeGreaterThan(100);
       const counter = (await page.locator('.score__pill').boundingBox())!;
       expect(counter.x + counter.width).toBe(w);
       expect(counter.y).toBeGreaterThanOrEqual(tabbar.y);
@@ -503,8 +501,6 @@ test.describe('The click hint and the speech bubble, with a mouse', () => {
 test.describe('Jump markers', () => {
   for (const [width, height, hit] of [
     [1440, 900, 44],
-    [768, 1000, 24],
-    [375, 780, 24],
   ] as const) {
     test(`at ${width}px the level markers on the track are buttons that jump to their level, named for it, at least ${hit}px to hit, with a visible focus`, async ({ page }) => {
       await page.setViewportSize({ width, height });
@@ -589,10 +585,10 @@ test.describe('Kept in the browser', () => {
   });
 });
 
-// The ship has no box behind it, on the bottom bar (phones and tablets) or on the desktop rail: a
-// thin navy outline round its own shape instead, at the size it always had. On the rail, the rail
-// has a gap where the ship is, so it never shows through the ship's hollow middle.
-for (const width of [375, 768, 1280, 1440, 1920]) {
+// The ship has no box behind it on the desktop rail: a thin navy outline round its own shape
+// instead, at the size it always had. The rail has a gap where the ship is, so it never shows
+// through the ship's hollow middle. (Below 64rem there is no ship.)
+for (const width of [1024, 1280, 1440, 1920]) {
   test(`at ${width}px the ship has no solid background: transparent, outlined by its own shape, the same size${width >= 1024 ? ', the rail hidden behind it' : ''}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto('/skills/');

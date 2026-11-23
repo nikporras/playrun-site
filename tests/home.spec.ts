@@ -198,26 +198,25 @@ test.describe('Home', () => {
     });
   }
 
-  test('on a phone the bottom bar covers nothing: the last button and the footer end above it and the ship, the achievement toast rises above it, and it is there without script and under reduced motion', async ({ page, browser }) => {
+  test('on a phone the bottom bar covers nothing: the last button and the footer end above it, no ship rides on it, the achievement toast rises above it, and it is there without script and under reduced motion', async ({ page, browser }) => {
     await page.setViewportSize({ width: 375, height: 780 });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
-    await settled(page.locator('.hud__runner'));
+    await page.waitForTimeout(200);
     const top = (await page.locator('.tabbar').boundingBox())!.y;
-    const ship = (await page.locator('.hud__runner').boundingBox())!;
-    expect(ship.y + ship.height, 'the ship rides on the bar').toBeLessThanOrEqual(top + 1);
+    await expect(page.locator('.hud__runner'), 'no ship on the bar').toBeHidden();
     const last = (await page.locator('.footer__legal').boundingBox())!;
-    expect(last.y + last.height, 'the footer ends above the ship').toBeLessThanOrEqual(ship.y);
+    expect(last.y + last.height, 'the footer ends above the bar').toBeLessThanOrEqual(top);
     const button = (await page.getByRole('link', { name: 'Get in touch' }).last().boundingBox())!;
-    expect(button.y + button.height).toBeLessThanOrEqual(ship.y);
-    // a toast: above the bar and the ship, never over them
+    expect(button.y + button.height).toBeLessThanOrEqual(top);
+    // a toast: above the bar, never over it
     await page.evaluate(() => document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'selftest' })));
     const toast = page.locator('[data-toast]');
     await expect(toast).toHaveClass(/is-in/);
     await settled(toast);
     const t = (await toast.boundingBox())!;
-    expect(t.y + t.height).toBeLessThanOrEqual(ship.y);
+    expect(t.y + t.height).toBeLessThanOrEqual(top);
     expect(t.x).toBeGreaterThanOrEqual(0);
     expect(t.x + t.width).toBeLessThanOrEqual(375);
     // without script and under reduced motion the pages are still in the bar (no counter, no line)
@@ -226,9 +225,8 @@ test.describe('Home', () => {
       const p = await context.newPage();
       await p.goto('/skills/');
       await expect(p.getByRole('navigation', { name: 'Site' }).getByRole('link')).toHaveText(['About', 'Skills', 'Games', 'Quality', 'Contact']);
-      // (under the device's reduced motion the games wait, hidden, until the Motion switch is on)
-      if (options.reducedMotion) await expect(p.locator('.hud__runner')).toBeHidden();
-      else await expect(p.locator('.hud__runner')).toHaveCount(1);
+      // (no ship on the bar, with or without script)
+      await expect(p.locator('.hud__runner')).toBeHidden();
       const links = await p.locator('.tabbar__link').evaluateAll((els) => els.map((a) => a.getBoundingClientRect().right));
       expect(links[4], 'the five take the whole bar').toBeGreaterThan(370);
       await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -500,7 +498,7 @@ test.describe('Home', () => {
       const c = await box(page, '[data-glitch-card]');
       expect(c.x).toBeGreaterThanOrEqual(0);
       expect(c.x + c.width).toBeLessThanOrEqual(width);
-      for (const sel of ['.score__pill', '.hud__runner', '#hud', ...(width < 1024 ? ['.tabbar'] : [])]) expect(overlap(c, await box(page, sel)), `clear of ${sel}`).toBe(false);
+      for (const sel of ['.score__pill', ...(width < 1024 ? ['.tabbar'] : ['.hud__runner', '#hud'])]) expect(overlap(c, await box(page, sel)), `clear of ${sel}`).toBe(false);
       // AA on its own field
       const ratio = await card.locator('[data-glitch-text]').evaluate((el) => {
         const lum = (s: string) => {

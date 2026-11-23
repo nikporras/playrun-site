@@ -602,11 +602,11 @@ const checks = [
     outline: 3px solid var(--pr-navy);
     outline-offset: 2px;
   }
-  /* Phones and tablets: above the bottom bar and the ship riding on it, inset from the edge. */
+  /* Phones and tablets: just above the bottom bar, inset from the edge. */
   @media (max-width: 63.99rem) {
     .glitchcard {
       right: var(--s-2);
-      margin-bottom: calc(3px + var(--ship-w) + var(--s-1));
+      margin-bottom: var(--s-1);
     }
   }
   /* The markers the hero's exit watches, from near the top of Level 2 to the end of the page

@@ -88,10 +88,10 @@ for (const [width, height] of SIZES) {
         expect(b.width).toBeGreaterThanOrEqual(44);
       }
       const bar = (await page.locator('.tabbar').boundingBox())!;
-      const ship = (await page.locator('.hud__runner').boundingBox())!;
       const p = (await pad.boundingBox())!;
       expect(p.y + p.height, 'the buttons clear of the bottom bar').toBeLessThanOrEqual(bar.y);
-      expect(p.y + p.height, 'and of the ship riding on it').toBeLessThanOrEqual(ship.y);
+      // (no ship rides on the bar below 64rem)
+      await expect(page.locator('.hud__runner')).toBeHidden();
     } else {
       await expect(pad).toBeHidden();
     }
