@@ -154,6 +154,8 @@ test('every workflow pins its actions to a commit and starts read only; the week
   const live = readFileSync(path.join(dir, 'live-check.yml'), 'utf8');
   expect(live).toContain("cron: '0 7 * * 1'");
   expect(live).toContain('workflow_dispatch:');
+  // only on its schedule and by hand: never on a push or a pull request
+  expect(live).not.toMatch(/^\s*(push|pull_request\w*):/m);
   expect(live).not.toMatch(/write/);
   const config = readFileSync(path.join(process.cwd(), 'playwright.live.config.ts'), 'utf8');
   expect(config).toContain("baseURL: 'https://playrunqa.com'");

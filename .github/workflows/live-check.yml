@@ -4,18 +4,12 @@ name: Weekly live check
 # small Playwright project (playwright.live.config.ts, tests-live/): every page loads clean under
 # its policy, every link answers (a rate limit is a warning), the contact form's script answers its
 # health check (never a message), and the files for crawlers are served. Read only, never counted
-# as a visit. A failure fails the run, so GitHub sends an email, and the report is kept.
+# as a visit. A failure fails the run, so GitHub sends an email, and the report is kept. Never on a
+# push: a push runs before its deploy, so it would check the site as it was.
 on:
   schedule:
     - cron: '0 7 * * 1'
   workflow_dispatch:
-  # (and whenever the check itself changes on main, so a new check is tried at once)
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/live-check.yml
-      - playwright.live.config.ts
-      - tests-live/**
 
 permissions:
   contents: read
