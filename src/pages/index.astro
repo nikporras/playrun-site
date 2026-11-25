@@ -853,9 +853,13 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
     .hero__post {
       font-size: 1.25rem;
     }
+    /* (the hero keeps line height 1.5 on phones, so the next level's label still peeks in at
+       375x812) */
+    .hero {
+      line-height: 1.5;
+    }
     .hero__value {
       font-size: 1rem;
-      line-height: 1.5; /* (so the next level's label still peeks in at 375x812) */
     }
     /* The photo comes under the text, centred, on the bottom edge, as tall as the room the text
        leaves above the peek of the next level, and never under 176px: where the text leaves less,
@@ -1392,10 +1396,11 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
   .proof__line {
     max-width: 34em;
   }
-  /* (the body's size on the narrowest phones, so it keeps to three lines at 300px) */
+  /* (the body's size on the narrowest phones, 17px, so it keeps to three lines at 300px with room
+     to spare: at 18px its first line filled 259 of its 260px) */
   @media (max-width: 21.49rem) {
     .proof__line {
-      font-size: 1.125rem;
+      font-size: var(--step-body);
     }
   }
   .proof__link {
