@@ -488,3 +488,36 @@ test('the footer sits flush with the foot of the screen at the end of every page
     }
   }
 });
+
+// One check count on the whole site: every page in the sitemap (and llms.txt) that shows a number
+// of checks shows the same one, from src/data/suite.ts (`suite.checks`). In a local or test build
+// there is no run, so it is every check in Playwright's own list.
+test('every check count on the site is the same number, from the suite data', { tag: ['@pages'] }, async ({ page, request }) => {
+  const { execFileSync } = await import('node:child_process');
+  const { createRequire } = await import('node:module');
+  const pathMod = await import('node:path');
+  const require = createRequire(import.meta.url);
+  const cli = pathMod.join(pathMod.dirname(require.resolve('@playwright/test/package.json')), 'cli.js');
+  const list = JSON.parse(execFileSync(process.execPath, [cli, 'test', '--list', '--reporter=json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: '', PLAYWRIGHT_JSON_OUTPUT_FILE: '' } }));
+  let total = 0;
+  const walk = (s: { specs?: { tests: unknown[] }[]; suites?: unknown[] }) => {
+    for (const sp of s.specs ?? []) total += sp.tests.length;
+    for (const c of (s.suites ?? []) as (typeof s)[]) walk(c);
+  };
+  for (const s of list.suites) walk(s);
+
+  const sitemap = await (await request.get('/sitemap-0.xml')).text();
+  const paths = [...sitemap.matchAll(/<loc>https?:\/\/[^/]+(\/[^<]*)<\/loc>/g)].map((m) => m[1]);
+  expect(paths.length).toBeGreaterThan(5);
+  const seen: string[] = [];
+  for (const p of paths) {
+    await page.goto(p);
+    const text = await page.locator('body').innerText();
+    for (const m of text.matchAll(/(\d[\d,]*)\s+checks\b/g)) seen.push(`${p}: ${m[1]}`);
+  }
+  for (const m of (await (await request.get('/llms.txt')).text()).matchAll(/(\d[\d,]*)\s+checks\b/g)) seen.push(`/llms.txt: ${m[1]}`);
+  // (Home and Testing both show it)
+  expect(seen.some((s) => s.startsWith('/: ')), 'Home shows the count').toBe(true);
+  expect(seen.some((s) => s.startsWith('/testing/: ')), 'Testing shows the count').toBe(true);
+  for (const s of seen) expect(s.split(': ')[1].replace(/,/g, ''), s).toBe(String(total));
+});

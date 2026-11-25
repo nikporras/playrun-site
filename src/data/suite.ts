@@ -36,6 +36,9 @@ export type Suite = {
   files: number;
   total: number;
   passed: number;
+  /** The one count the site shows: the checks that passed in the run that deployed the page (a
+   * local build with no run: every check in the list). Skips are normal and never counted. */
+  checks: number;
   failed: number;
   /** The run the numbers come from, or null when only the list is known. */
   run: { startedAt: Date; seconds: number } | null;
@@ -132,12 +135,19 @@ const groups: Group[] = [...counts.entries()]
     return { id: file.replace(/\.spec\.ts$/, ''), file, title, detail, ...n };
   });
 
+const total = groups.reduce((n, g) => n + g.total, 0);
+const passed = groups.reduce((n, g) => n + g.passed, 0);
+const failed = groups.reduce((n, g) => n + g.failed, 0);
+// (a run with a real failure never deploys; skips are normal, browser or device specific)
+if (fromRun && failed > 0) throw new Error(`The run handed to this build has ${failed} failed checks: the site is not built from a failing run.`);
+
 export const suite: Suite = {
   groups,
   files: groups.length,
-  total: groups.reduce((n, g) => n + g.total, 0),
-  passed: groups.reduce((n, g) => n + g.passed, 0),
-  failed: groups.reduce((n, g) => n + g.failed, 0),
+  total,
+  passed,
+  failed,
+  checks: fromRun ? passed : total,
   run:
     fromRun && report.stats?.startTime
       ? { startedAt: new Date(report.stats.startTime), seconds: Math.round((report.stats.duration ?? 0) / 1000) }

@@ -12,7 +12,7 @@ import { listed } from '../config';
 // hands the build that run's report (src/data/suite.ts). A local build has no run.
 // The report card's two lines on the suite, from its data: the checks that passed in the run that
 // deployed the page (a local build has only the list), and where they run.
-const suiteLine = suite.run ? `${suite.passed} checks passed before this page went live.` : `${suite.total} checks run before this page goes live.`;
+const suiteLine = suite.run ? `${suite.checks} checks passed before this page went live.` : `${suite.checks} checks run before this page goes live.`;
 const whereLine = `Run in ${listed(browsers)} on every push${liveDay ? `, and against the live site every ${liveDay}` : ''}.`;
 // The report card's icon: a sheet with lines, in the steps' 8x8 pixel style.
 const reportIcon = ['.######.', '.#....#.', '.#.##.#.', '.#....#.', '.#.##.#.', '.#....#.', '.#.##.#.', '.######.'];
