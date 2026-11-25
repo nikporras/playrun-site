@@ -17,7 +17,7 @@ body {
   color: var(--ink);
   font-family: var(--font-text);
   font-size: var(--step-body);
-  line-height: 1.5;
+  line-height: 1.6;
   font-kerning: normal;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -102,8 +102,9 @@ h2,
 h3 {
   font-size: 1.75rem; /* 28px: Pixel Operator at 1.75x reads cleanly as a row title */
 }
+/* (about 70 characters a line at most: Montserrat averages about 0.5em a character) */
 p {
-  max-width: 62ch;
+  max-width: 34em;
   text-wrap: pretty;
 }
 p + p {
@@ -531,10 +532,10 @@ p + p {
   margin-left: -0.03em;
 }
 .level__lead {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
-  line-height: 1.15;
-  max-width: 60ch;
+  font-family: var(--font-text);
+  font-size: clamp(1.1875rem, 1rem + 0.5vw, 1.4375rem); /* 19 to 23px */
+  line-height: 1.4;
+  max-width: 34em;
   text-wrap: pretty;
 }
 .level__lead--wide {
@@ -638,9 +639,6 @@ p + p {
 @media (max-width: 63.99rem) {
   .level__title {
     font-size: round(11vw, 8px);
-  }
-  .level__lead {
-    font-size: 1.5rem;
   }
   .page__title {
     font-size: round(19vw, 8px);

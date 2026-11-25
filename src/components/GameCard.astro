@@ -188,6 +188,7 @@ const store = p.data.store ?? 'Steam';
   /* The status, the one colour on a card: a small filled tag, green for Released, light blue for
      In development, both with navy text (about 8:1), and the words say it without the colour. */
   .status {
+    font-family: var(--font-display);
     display: inline-block;
     padding: 0.15em 0.45em 0.1em;
     line-height: 1.1;
@@ -238,8 +239,8 @@ const store = p.data.store ?? 'Steam';
     max-width: none;
   }
   .card__makers {
-    font-family: var(--font-display);
-    font-size: 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.45;
     color: var(--muted);
     max-width: none;
   }
@@ -261,7 +262,7 @@ const store = p.data.store ?? 'Steam';
   .card__did {
     font-size: 1.125rem;
     line-height: 1.4;
-    max-width: none;
+    max-width: 34em;
     color: var(--ink);
   }
   .card__didkey {
@@ -275,7 +276,7 @@ const store = p.data.store ?? 'Steam';
   }
   .card__summary {
     font-size: 1rem;
-    max-width: none;
+    max-width: 34em;
     color: var(--muted);
     margin-top: var(--s-1);
   }

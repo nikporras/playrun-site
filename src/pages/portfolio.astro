@@ -174,9 +174,9 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
   /* each role on a line of its own, "title · dates" */
   .group__roles,
   .others__role {
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    line-height: 1.25;
+    font-weight: 600;
+    font-size: 1.0625rem;
+    line-height: 1.45;
     max-width: none;
   }
   .group__dot {
@@ -188,7 +188,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
   }
   .group__lead {
     font-size: 1rem;
-    max-width: 70ch;
+    max-width: 34em;
   }
   .group__count {
     font-family: var(--font-display);
@@ -231,7 +231,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
   }
   .others__lead {
     font-size: 0.9375rem;
-    max-width: 60ch;
+    max-width: 34em;
   }
   /* The cards are a list at every width. On a desktop, three a row on a six-column grid, so the
      last row always fills: a lone last tile spans the row, a pair splits it. */

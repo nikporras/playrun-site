@@ -408,8 +408,9 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     flex: none;
   }
   .step__ask {
-    font-family: var(--font-display);
-    font-size: 1.25rem;
+    font-weight: 600;
+    font-size: 1.0625rem;
+    line-height: 1.45;
     margin-top: var(--s-1);
     max-width: none;
   }
@@ -815,7 +816,7 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
   .report__suite,
   .report__where {
     font-size: 1rem;
-    max-width: 60ch;
+    max-width: 34em;
   }
   .report__where {
     color: var(--muted);
@@ -829,7 +830,7 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
       padding: var(--s-3);
     }
     .step__result {
-      max-width: 60ch;
+      max-width: 34em;
     }
   }
   @media (max-width: 47.99rem) {

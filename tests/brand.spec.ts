@@ -81,3 +81,77 @@ test('every page asks for each font once, and no font is preloaded', { tag: ['@b
   }
   expect(twice).toEqual([]);
 });
+
+// Two faces, two jobs: Pixel Operator for display (titles, nav, flags, chips, buttons, stats, the
+// scoreboard, Pocket DevTools), Montserrat for everything people read.
+const READ: Record<string, string[]> = {
+  '/': ['.hero__value', '.proof__line', '.final__text'],
+  '/about/': ['.level__lead', '.area__line', '.area__list li', '.facts th', '.facts td', '.story__text p'],
+  '/portfolio/': ['.level__lead', '.group__lead', '.group__roles', '.card__summary', '.card__makers'],
+  '/testing/': ['.level__lead', '.step__ask', '.step__list li'],
+  '/contact/': ['.level__lead', '.msg__list', '.form__label'],
+  '/privacy/': ['.level__lead', '.row p'],
+};
+const SHOW: Record<string, string[]> = {
+  '/': ['h1', '.flag', '.hero__post', '.drum__num'],
+  '/about/': ['h2', '.flag', '.chip', '.button'],
+  '/portfolio/': ['h1', '.flag', '.status', '.card__id'],
+  '/testing/': ['h1', '.step__num', '.picker__btn', '.devtools__tab', '.report__score'],
+  '/contact/': ['h1', '.flag', '.contact__key'],
+  '/privacy/': ['h1', '.flag'],
+};
+for (const path of Object.keys(READ)) {
+  test(`${path}: what people read is Montserrat, the display is Pixel Operator`, { tag: ['@brand'] }, async ({ page }) => {
+    await page.goto(path);
+    const face = (sel: string) => page.locator(sel).evaluateAll((els) => els.map((el) => getComputedStyle(el).fontFamily.split(',')[0].replace(/["']/g, '').trim()));
+    for (const sel of READ[path]) {
+      const faces = await face(sel);
+      expect(faces.length, `${path} ${sel} exists`).toBeGreaterThan(0);
+      for (const f of faces) expect(f, `${path} ${sel}`).toBe('Montserrat');
+    }
+    for (const sel of SHOW[path]) {
+      const faces = await face(sel);
+      expect(faces.length, `${path} ${sel} exists`).toBeGreaterThan(0);
+      for (const f of faces) expect(f, `${path} ${sel}`).toBe('Pixel Operator');
+    }
+  });
+}
+
+// Comfortable lines on a large monitor: no line of a paragraph or a lead runs past about 75
+// characters at 1920.
+test('at 1920 no line of reading text runs past 75 characters', { tag: ['@brand'] }, async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  // (motion off: the cards are at rest, not scaled down by their entrance)
+  await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
+  for (const path of ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/']) {
+    await page.goto(path);
+    await page.evaluate(() => document.fonts.ready);
+    const longest = await page.evaluate(() => {
+      let worst = { n: 0, text: '' };
+      for (const p of document.querySelectorAll<HTMLElement>('main p, main li:not(:has(p, div, ul, ol, h3, h4))')) {
+        if (getComputedStyle(p).fontFamily.startsWith('"Pixel') || !p.getClientRects().length) continue;
+        if (p.closest('.devtools, .visually-hidden, [aria-hidden="true"]')) continue;
+        const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+        const lines = new Map<number, number>();
+        const range = document.createRange();
+        for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+          const s = t.textContent ?? '';
+          // (only the reading face's own text: a card's chips and IDs are display)
+          const host = t.parentElement!;
+          if (!getComputedStyle(host).fontFamily.startsWith('Montserrat') || host.closest('.visually-hidden, [aria-hidden="true"]')) continue;
+          for (let i = 0; i < s.length; i++) {
+            range.setStart(t, i);
+            range.setEnd(t, i + 1);
+            const r = range.getClientRects()[0];
+            if (!r) continue;
+            const y = Math.round(r.top / 4);
+            lines.set(y, (lines.get(y) ?? 0) + 1);
+          }
+        }
+        for (const n of lines.values()) if (n > worst.n) worst = { n, text: (p.textContent ?? '').slice(0, 60) };
+      }
+      return worst;
+    });
+    expect(longest.n, `${path}: "${longest.text}"`).toBeLessThanOrEqual(75);
+  }
+});

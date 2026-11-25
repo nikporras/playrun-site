@@ -1156,7 +1156,7 @@ test.describe('Home', () => {
         range.selectNodeContents(el);
         return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
       });
-    for (const [w, h, most] of [[1280, 800, 2], [1440, 900, 2], [1920, 1080, 2], [300, 640, 3]] as const) {
+    for (const [w, h, most] of [[1024, 768, 2], [1280, 800, 2], [1440, 900, 2], [1920, 1080, 2], [300, 640, 3]] as const) {
       await page.setViewportSize({ width: w, height: h });
       await page.evaluate(() => document.fonts.ready);
       await line.scrollIntoViewIfNeeded();
