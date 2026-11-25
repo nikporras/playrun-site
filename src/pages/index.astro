@@ -151,7 +151,7 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
     </svg>
     <div class="glitchcard__frame">
       <div class="glitchcard__body">
-        <p class="glitchcard__head" aria-hidden="true"><Sprite name="bug" class="glitchcard__bug" /><span class="glitchcard__chip">Bug found</span></p>
+        <p class="glitchcard__head" aria-hidden="true"><span class="glitchcard__icon"><Sprite name="bug" class="glitchcard__bug" /></span><span class="glitchcard__chip">Bug found</span></p>
         <p class="glitchcard__text" tabindex="-1" aria-live="polite" data-glitch-text><span class="visually-hidden">Bug found: </span>The name glitches as it scrolls away.</p>
         <div class="glitchcard__actions" data-glitch-actions>
           <button type="button" class="glitchcard__btn glitchcard__btn--yes" data-glitch-yes data-umami-event="glitch-tracked">Log it</button>
@@ -496,8 +496,7 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
     top: var(--glitch-top, max(var(--s-2), env(safe-area-inset-top, 0px)));
     left: var(--gutter);
     z-index: 42;
-    width: max-content;
-    max-width: min(26rem, calc(100vw - 2 * var(--margin)));
+    width: min(21rem, calc(100vw - 2 * var(--margin)));
     padding-top: 10px; /* (room for the notch) */
     color: var(--ink);
     --bug-body: var(--pr-green);
@@ -536,8 +535,8 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
   }
   .glitchcard__body {
     display: grid;
-    gap: 0.625rem;
-    padding: 0.875rem 1rem 1rem;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem 0.75rem;
     background: var(--pr-navy);
     clip-path: polygon(0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px));
   }
@@ -547,10 +546,23 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
     gap: 0.5rem;
     margin: 0;
   }
-  .glitchcard__bug {
-    width: 1.75rem;
-    height: auto;
+  /* The bug icon: a fixed 24px box, about the bugs' own size on the page. The sprite is another
+     component, so its size is set through :global (a scoped rule never reaches it, and the global
+     svg rule would let it fill the card). */
+  .glitchcard__icon {
     flex: none;
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    overflow: hidden;
+  }
+  .glitchcard__icon :global(.glitchcard__bug) {
+    display: block;
+    width: 1.5rem;
+    max-width: 1.5rem;
+    height: auto;
+    max-height: 1.5rem;
   }
   .glitchcard__chip {
     padding: 0.2rem 0.45rem 0.15rem;
@@ -564,8 +576,8 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
   }
   .glitchcard__text {
     margin: 0;
-    font-size: 1.0625rem;
-    line-height: 1.45;
+    font-size: 1rem;
+    line-height: 1.4;
     outline: 0;
   }
   .glitchcard__actions {
@@ -577,7 +589,7 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
     display: none;
   }
   .glitchcard__btn {
-    min-height: 2.75rem;
+    min-height: 2.5rem;
     min-width: 2.75rem;
     padding: 0 1rem;
     font-family: var(--font-display);
@@ -600,10 +612,15 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
     outline: 3px solid var(--accent-2);
     outline-offset: 2px;
   }
-  /* Phones and tablets: the margins either side. */
+  /* Phones and tablets: from the left margin; on phones the whole width between the margins. */
   @media (max-width: 63.99rem) {
     .glitchcard {
       left: var(--margin);
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .glitchcard {
+      width: calc(100vw - 2 * var(--margin));
     }
   }
   /* The markers the hero's exit watches, from near the top of Level 2 to the end of the page

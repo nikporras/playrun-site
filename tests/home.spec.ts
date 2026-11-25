@@ -1461,3 +1461,43 @@ test('the hero photo is never a thumbnail and its halo is centred behind it, at 
   }
   expect(problems).toEqual([]);
 });
+
+// The glitch ticket stays compact: a small bug icon (about the bugs' own size), the chip beside it,
+// the line, the two buttons; never a sprite that fills the card.
+for (const [width, height] of [[1440, 900], [1920, 1080], [375, 812]] as const) {
+  test(`the glitch ticket is compact at ${width}px: the bug icon at most 32px tall, the ticket at most 9rem`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    // (shown as the glitch shows it, without waiting for the scroll)
+    await page.evaluate(() => {
+      const c = document.querySelector<HTMLElement>('[data-glitch-card]')!;
+      c.hidden = false;
+      c.classList.add('is-in');
+    });
+    const card = page.locator('[data-glitch-card]');
+    await expect(card).toBeVisible();
+    const icon = (await card.locator('.glitchcard__bug').boundingBox())!;
+    const ticket = (await card.boundingBox())!;
+    const chip = (await card.locator('.glitchcard__chip').boundingBox())!;
+    expect(icon.height, 'the bug icon at most 32px tall').toBeLessThanOrEqual(32);
+    expect(icon.width, 'and at most 32px wide').toBeLessThanOrEqual(32);
+    expect(ticket.height, 'the ticket at most 9rem').toBeLessThanOrEqual(144 + 4);
+    // one header row: the icon then the chip, the line under it, the buttons under that
+    expect(Math.abs(icon.y + icon.height / 2 - (chip.y + chip.height / 2)), 'icon and chip on one row').toBeLessThanOrEqual(4);
+    expect(chip.x).toBeGreaterThan(icon.x + icon.width - 1);
+    const text = (await card.locator('[data-glitch-text]').boundingBox())!;
+    const btn = (await card.getByRole('button', { name: 'Log it' }).boundingBox())!;
+    expect(text.y).toBeGreaterThanOrEqual(chip.y + chip.height - 1);
+    expect(btn.y).toBeGreaterThanOrEqual(text.y + text.height - 1);
+    // about 20 to 22rem on a desktop, the width between the margins on a phone
+    if (width >= 1024) {
+      expect(ticket.width).toBeGreaterThanOrEqual(320);
+      expect(ticket.width).toBeLessThanOrEqual(352);
+    } else {
+      const margin = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('[data-glitch-card]')!).left));
+      expect(Math.abs(ticket.width - (width - 2 * margin)), 'full width between the margins').toBeLessThanOrEqual(1);
+    }
+  });
+}
+
