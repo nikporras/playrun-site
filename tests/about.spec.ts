@@ -218,9 +218,10 @@ for (const [width, height] of [[300, 640], [375, 812], [768, 1024]] as const) {
     }
     await expect(next).toHaveAttribute('aria-disabled', 'true');
     await expect(next).toBeFocused();
-    const last = await page.locator('.area').last().evaluate((e) => e.getBoundingClientRect().toJSON());
-    expect(last.left).toBeGreaterThanOrEqual(0);
-    expect(last.right).toBeLessThanOrEqual(width);
+    // (the count turns as the row passes half way; the smooth scroll then settles on the last card)
+    const lastBox = () => page.locator('.area').last().evaluate((e) => e.getBoundingClientRect().toJSON());
+    await expect.poll(async () => (await lastBox()).right).toBeLessThanOrEqual(width);
+    expect((await lastBox()).left).toBeGreaterThanOrEqual(0);
     await prev.click();
     await expect(pos).toHaveText('4 of 5');
     // the row takes the keyboard's focus with a visible ring (Shift+Tab from Previous), and the arrows move it
