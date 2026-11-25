@@ -34,8 +34,8 @@ const { project: p, via, delay = 0, scan = false, open = false, trackerId } = As
 const panel = `card-${p.id}`;
 const logo = logos[p.id];
 const logoK = logoScale[p.id] ?? 1;
-// (the logo says the name, so the title need not show)
-const named = !!logo && namedLogos.has(p.id);
+// (the logo says the name, or the wordmark that stands in for one does, so the title need not show)
+const named = logo ? namedLogos.has(p.id) : !!p.data.wordmark;
 const dev = p.data.status === 'in-development';
 const store = p.data.store ?? 'Steam';
 ---
