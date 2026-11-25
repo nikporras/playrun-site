@@ -28,6 +28,6 @@
     "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.64.1",
     "html-validate": "^11.17.0",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }
