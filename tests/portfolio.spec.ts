@@ -54,7 +54,7 @@ test.describe('The Games page journey', () => {
       expect(await cards.nth(i).locator('.card__body').evaluate((el) => el.id)).toBe(await row.getAttribute('aria-controls'));
       expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44);
       await expect(row.locator('.card__chevron')).toBeVisible();
-      await expect(row).toHaveAccessibleName(new RegExp(`^${(await cards.nth(i).locator('.card__title').textContent())!.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${i === 0 ? '' : ' (\\d{4} · Released|In development)'}$`));
+      await expect(row).toHaveAccessibleName(new RegExp(`^${(await cards.nth(i).locator('.card__title').textContent())!.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${i === 0 ? '' : ' (\\d{4} Released|In development)'}$`));
       if (i > 0) await expect(cards.nth(i).locator('.card__title')).toBeHidden();
     }
     // the open card shows the whole card in the desktop's order
@@ -548,44 +548,60 @@ test('every game carries a tracker ID like the bug ticket’s (PR-001...), the s
   await expect(page.locator('.card').nth(1).locator('[data-card-toggle] .card__id')).toBeVisible();
 });
 
-// On the cyan level every card's accent stripe stands between navy edges (the card below it, a
-// navy line above it), so no accent, the cyan least of all, blends into the field: 3:1 or more on
-// both sides, read from the screen pixels at a desktop and a phone width.
+// Colour means status. Every company and card shares one look (no company colour on an edge, a
+// label, a tag or an icon); the one colour on a card is its status tag, green for Released and
+// light blue for In development, each AA on its own field and saying it in words too. The same tag
+// is on the folded rows below 64rem.
 for (const [width, height] of [[1440, 900], [375, 812]] as const) {
-  test(`at ${width}px every card's accent stripe reads 3:1 or more against what is on either side of it`, { tag: ['@a11y'] }, async ({ page }) => {
-    test.setTimeout(90_000);
+  test(`at ${width}px colour means status: one look for every card, and a Released or In development tag on each, AA, in words`, { tag: ['@a11y'] }, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/portfolio/');
-    // (no entrance or scan: the cards still, so the rows are where they are drawn)
-    await page.addStyleTag({ content: '.card { animation: none !important; transition: none !important; transform: none !important; opacity: 1 !important; } .card::before, .card::after { display: none !important; } [data-bug], #hud, #dock, .tabbar { visibility: hidden !important; }' });
-    const lum = ([r, g, b]: number[]) => [r, g, b].map((v) => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4)).reduce((s, c, i) => s + c * [0.2126, 0.7152, 0.0722][i], 0);
-    const ratio = (a: number[], b: number[]) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
-    const cards = page.locator('.card');
-    const n = await cards.count();
-    expect(n).toBeGreaterThan(10);
-    for (let i = 0; i < n; i++) {
-      const card = cards.nth(i);
-      // (on a phone, opened first: one card a company is open at a time)
-      const toggle = card.locator('.card__toggle');
-      if ((await toggle.isVisible()) && (await toggle.getAttribute('aria-expanded')) === 'false') {
-        await toggle.click();
-        await page.waitForTimeout(700);
-      }
-      // (its top well inside the screen)
-      await card.evaluate((el) => window.scrollBy({ top: el.getBoundingClientRect().top - 200, behavior: 'instant' }));
-      await page.waitForTimeout(80);
-      const b = (await card.boundingBox())!;
-      // a column of pixels through the top: 2px of the level above the card, the card's 2px navy
-      // edge, its 4px stripe, 2px of the card; the stripe against both sides of it
-      const png = await page.screenshot({ clip: { x: b.x + b.width / 2, y: Math.floor(b.y) - 2, width: 1, height: 10 } });
-      const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
-      const px = (row: number) => [...data.subarray(row * info.channels, row * info.channels + 3)];
-      const stripe = px(5);
-      const name = await card.locator('.card__title, h3').first().textContent();
-      expect(ratio(px(3), px(0)), `${name}: the card's edge against the level`).toBeGreaterThanOrEqual(3);
-      expect(ratio(stripe, px(3)), `${name}: the stripe against what is above it`).toBeGreaterThanOrEqual(3);
-      expect(ratio(stripe, px(9)), `${name}: the stripe against the card`).toBeGreaterThanOrEqual(3);
+    await expect(page.locator('[class*="accent--"]')).toHaveCount(0);
+    const looks = await page.locator('.card').evaluateAll((els) =>
+      els.map((el) => {
+        const cs = (sel: string) => {
+          const e = el.querySelector(sel);
+          return e ? getComputedStyle(e) : null;
+        };
+        const card = getComputedStyle(el);
+        const tag = el.querySelector<HTMLElement>('.card__when .status')!;
+        const row = el.querySelector<HTMLElement>('.card__state .status')!;
+        return {
+          title: el.querySelector('.card__title')!.textContent!.trim(),
+          shared: { edge: `${card.borderTopWidth} ${card.borderTopColor}`, bg: card.backgroundColor, didkey: cs('.card__didkey')?.color, makers: cs('.card__makers')?.color, tag: cs('.card__tags li')?.color, tagEdge: cs('.card__tags li')?.borderTopColor, via: cs('.card__via')?.color } as Record<string, string | undefined>,
+          tag: tag.textContent!.trim(),
+          row: row.textContent!.trim(),
+          bg: getComputedStyle(tag).backgroundColor,
+          ink: getComputedStyle(tag).color,
+          rowBg: getComputedStyle(row).backgroundColor,
+          year: el.querySelector('.card__when .card__year')?.textContent?.trim() ?? '',
+        };
+      }),
+    );
+    expect(looks).toHaveLength(20);
+    // one look, whatever the company (a part a card does not have, such as "via", is skipped)
+    for (const k of Object.keys(looks[0].shared)) {
+      const seen = new Set(looks.map((l) => l.shared[k]).filter(Boolean));
+      expect(seen.size, `every card the same look: ${k}`).toBe(1);
     }
+    const lum = (c: string) => {
+      const [r, g, b] = c.match(/\d+(\.\d+)?/g)!.slice(0, 3).map(Number);
+      return [r, g, b].map((v) => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4)).reduce((s, c, i) => s + c * [0.2126, 0.7152, 0.0722][i], 0);
+    };
+    const ratio = (a: string, b: string) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+    for (const l of looks) {
+      expect(['Released', 'In development'], `${l.title}: the status in words`).toContain(l.tag);
+      expect(l.row, `${l.title}: the same tag on the row`).toBe(l.tag);
+      expect(l.rowBg).toBe(l.bg);
+      expect(l.bg, `${l.title}: ${l.tag}`).toBe(l.tag === 'Released' ? 'rgb(103, 193, 140)' : 'rgb(159, 178, 228)');
+      expect(ratio(l.ink, l.bg), `${l.title}: the tag's text AA`).toBeGreaterThanOrEqual(4.5);
+      // the card's navy behind the tag: the tag itself stands out from it too
+      expect(ratio(l.bg, 'rgb(12, 21, 42)'), `${l.title}: the tag against the card`).toBeGreaterThanOrEqual(3);
+      if (l.tag === 'Released') expect(l.year, `${l.title}: the year beside the tag`).toMatch(/^\d{4}$/);
+      else expect(l.year).toBe('');
+    }
+    expect(looks.filter((l) => l.tag === 'Released').length).toBeGreaterThan(0);
+    expect(looks.filter((l) => l.tag === 'In development').length).toBeGreaterThan(0);
   });
 }
 

@@ -47,7 +47,6 @@ export type Employer = {
   games?: boolean;
   /** what the current post is about, for the About page */
   focus?: string;
-  accent: 'green' | 'cyan' | 'blue' | 'light';
   roles: Role[];
   lead: string;
   note?: string;
@@ -55,13 +54,12 @@ export type Employer = {
 };
 
 // Where I have tested, in the order the Portfolio shows them. Titles and dates match LinkedIn
-// exactly; each company keeps one accent colour. Projects point at a group through `employer`.
+// exactly. Projects point at a group through `employer`.
 export const employers: Employer[] = [
   {
     id: 'aonic',
     name: 'Aonic',
     focus: 'titles published by Megabit, from milestone builds to compliance, certification and release',
-    accent: 'green',
     roles: [{ title: 'Senior Quality Assurance Tester', when: 'Jul 2026 to present' }],
     lead:
       "Embedded QA on several Megabit titles at once, from milestone builds to compliance (CQA), certification and release on Switch, Switch 2, Xbox, PS5 and the PC stores. Test cases, milestone build reports with severity and risk ratings, and bugs logged straight into the studios' own trackers.",
@@ -70,35 +68,30 @@ export const employers: Employer[] = [
     id: 'hcltech',
     name: 'HCLTech',
     games: false,
-    accent: 'cyan',
     roles: [{ title: 'VR Robotics Operator, client Google DeepMind', when: 'Apr 2026 to Jul 2026', contract: true }],
     lead: 'Operated robots through VR teleoperation for an AI research project, following strict processes to produce clean, consistent data, and flagging issues with the robots, tools and workflows.',
   },
   {
     id: 'nexus-studios',
     name: 'Nexus Studios',
-    accent: 'blue',
     roles: [{ title: 'Quality Assurance Tester', when: 'Oct 2025 to Dec 2025', contract: true }],
     lead: 'QA on an Apple Vision Pro experience with the NBA.',
   },
   {
     id: 'universally-speaking-2025',
     name: 'Universally Speaking',
-    accent: 'light',
     roles: [{ title: 'Build and Distribution Technician', when: 'Jun 2025 to Aug 2025', contract: true }],
     lead: 'Prepared, configured and distributed consoles and builds across the studio to support game testing, and gave technical support to the test teams.',
   },
   {
     id: 'historic-vr',
     name: 'Historic VR',
-    accent: 'cyan',
     roles: [{ title: 'QA Manager', when: 'Feb 2025 to Feb 2026', contract: true, lead: true }],
     lead: "Ran QA across the studio's VR projects: test strategy, compliance checks for each VR platform, schedules with development and production, the test hardware and low and recommended spec rigs, Unreal Engine profiling to hit performance targets, and an outsourced team scaled to 10 testers.",
   },
   {
     id: 'ndreams',
     name: 'nDreams',
-    accent: 'blue',
     roles: [
       { title: 'QA Tester', when: 'Apr 2022 to Sep 2022' },
       { title: 'Senior Quality Assurance Tester', when: 'Sep 2022 to Apr 2023' },
@@ -109,7 +102,6 @@ export const employers: Employer[] = [
   {
     id: 'universally-speaking-2021',
     name: 'Universally Speaking',
-    accent: 'light',
     roles: [{ title: 'Quality Assurance Tester', when: '2021 to 2022' }],
     lead: 'Functional and compliance (CQA) testing for major studios on VR and console titles: test cases in TestRail, bugs in Jira, fix verification and build release notes.',
     via: 'via Universally Speaking',

@@ -209,7 +209,7 @@ test('every card has a logo or its icon, the labels and one store button in a ne
         didSize: parseFloat(getComputedStyle(el.querySelector('.card__did') ?? el).fontSize),
         summarySize: parseFloat(getComputedStyle(el.querySelector('.card__summary')!).fontSize),
         platforms: el.querySelector('.card__platforms')?.textContent?.trim() ?? '',
-        when: el.querySelector('.card__when')?.textContent?.trim() ?? '',
+        when: el.querySelector('.card__when')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
         stage: /stage/i.test(el.textContent ?? ''),
       };
     }),
@@ -224,7 +224,7 @@ test('every card has a logo or its icon, the labels and one store button in a ne
     expect(c.rel.split(' ')).toEqual(expect.arrayContaining(['noopener', 'noreferrer']));
     expect(c.logo + c.icon + c.wordmark, `${c.title}: a logo, a wordmark or an icon`).toBe(1);
     expect(c.tags.length, `${c.title}: labels`).toBeGreaterThan(0);
-    expect(c.when).toMatch(/^(\d{4} · Released|In development)$/);
+    expect(c.when).toMatch(/^(\d{4} Released|In development)$/);
     expect(c.stage, `${c.title}: no stage numbers`).toBe(false);
     for (const t of c.tags) expect(c.did.toLowerCase(), `${c.title}: "${t}" is a label, not repeated in what I did`).not.toContain(t!.toLowerCase());
     // two blocks: the game (title, the line on it, the makers), a thin rule, then my part (what I

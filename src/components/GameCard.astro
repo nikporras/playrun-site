@@ -4,8 +4,9 @@
  * (or its pixel icon where no clean logo exists) with the year and status, the title, one line on
  * the game, and the studio and publisher. A thin rule. My part: what I did on it (the most
  * prominent text on the card), the kinds of testing as labels right under it, the platforms, and
- * one outline button to its store page in a new tab. The company's accent colours the labels
- * through --g-accent and --g-ink, set on the group around the card. Where the logo spells the
+ * one outline button to its store page in a new tab. Every card has the same look: colour on a
+ * card means its status, a small tag (Released, In development) that says it in words too. Where
+ * the logo spells the
  * game's name (namedLogos) the title is visually hidden, kept for screen readers and search. Below
  * 64rem, with script, the card folds to one row (a button: the title, the tracker ID, the year and
  * status, no logo) that opens the whole card in place.
@@ -35,7 +36,7 @@ const logo = logos[p.id];
 const logoK = logoScale[p.id] ?? 1;
 // (the logo says the name, so the title need not show)
 const named = !!logo && namedLogos.has(p.id);
-const when = p.data.status === 'in-development' ? 'In development' : `${p.data.year} · Released`;
+const dev = p.data.status === 'in-development';
 const store = p.data.store ?? 'Steam';
 ---
 
@@ -46,7 +47,9 @@ const store = p.data.store ?? 'Steam';
   <button type="button" class="card__toggle" aria-expanded={open ? 'true' : 'false'} aria-controls={panel} data-card-toggle>
     <span class="card__name">{p.data.title}</span>
     {trackerId && <span class="card__id" aria-hidden="true" data-nosnippet>{trackerId}</span>}
-    <span class="card__state">{when}</span>
+    <span class="card__state">
+      {!dev && <span class="card__year">{p.data.year}</span>} <span class:list={['status', dev ? 'status--dev' : 'status--out']}>{dev ? 'In development' : 'Released'}</span>
+    </span>
     <svg class="card__chevron" viewBox="0 0 7 5" shape-rendering="crispEdges" aria-hidden="true">
       <path d="M0 0h2v1H0zM5 0h2v1H5zM1 1h2v1H1zM4 1h2v1H4zM2 2h3v1H2zM3 3h1v1H3z" fill="currentColor"></path>
     </svg>
@@ -63,7 +66,9 @@ const store = p.data.store ?? 'Steam';
             <GameIcon name={p.data.icon} />
           )}
         </span>
-        <p class="card__when">{when}</p>
+        <p class="card__when">
+          {!dev && <span class="card__year">{p.data.year}</span>} <span class:list={['status', dev ? 'status--dev' : 'status--out']}>{dev ? 'In development' : 'Released'}</span>
+        </p>
       </div>
       {trackerId && <p class="card__id" aria-hidden="true" data-nosnippet>{trackerId}</p>}
       <h4 class:list={['card__title', named && 'visually-hidden']}>{p.data.title}</h4>
@@ -112,12 +117,6 @@ const store = p.data.store ?? 'Steam';
     overflow: hidden;
     background: var(--bg);
     color: var(--ink);
-    /* The accent stripe (4px) with a navy edge (2px) above it, both in the top border: the cards
-       stand on the cyan level, where a cyan accent vanished and the others were under 3:1; between
-       navy edges every accent is 3.5:1 or more. (In the border, not a shadow: the entrance clips
-       the card to its box.) */
-    border-top: 6px solid var(--g-accent, var(--accent-2));
-    border-image: linear-gradient(var(--pr-navy) 2px, var(--g-accent, var(--accent-2)) 2px) 6 0 0 0 / 6px 0 0 0;
     --sel-bg: var(--accent);
     --sel-ink: var(--accent-ink);
   }
@@ -169,9 +168,9 @@ const store = p.data.store ?? 'Steam';
     width: 3.5rem;
     height: 3.5rem;
   }
-  /* The pixel icon takes the company's accent; its navy pixels stay navy. */
+  /* The pixel icon in the light; its navy pixels stay navy. */
   .card__logo :global(.gameicon rect:not(.px-navy)) {
-    fill: var(--g-accent, var(--accent-2));
+    fill: var(--pr-light);
   }
   .card__when {
     flex: none;
@@ -179,9 +178,30 @@ const store = p.data.store ?? 'Steam';
     font-size: 0.875rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--g-ink, var(--accent-2));
+    color: var(--muted);
     max-width: none;
     padding-top: 0.25rem;
+  }
+  .card__year {
+    margin-right: 0.35em;
+  }
+  /* The status, the one colour on a card: a small filled tag, green for Released, light blue for
+     In development, both with navy text (about 8:1), and the words say it without the colour. */
+  .status {
+    display: inline-block;
+    padding: 0.15em 0.45em 0.1em;
+    line-height: 1.1;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    color: var(--pr-navy);
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
+  }
+  .status--out {
+    background: var(--pr-green);
+  }
+  .status--dev {
+    background: var(--pr-blue-ink);
   }
   /* The tracker ID, small and spaced like a key in a bug tracker. */
   .card__id {
@@ -214,13 +234,13 @@ const store = p.data.store ?? 'Steam';
     font-size: 0.875rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--g-ink, var(--accent-2));
+    color: var(--muted);
     max-width: none;
   }
   .card__makers {
     font-family: var(--font-display);
     font-size: 1rem;
-    color: var(--g-ink, var(--accent-2));
+    color: var(--muted);
     max-width: none;
   }
   .card__dot {
@@ -250,7 +270,7 @@ const store = p.data.store ?? 'Steam';
     font-size: 0.875rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--g-ink, var(--accent-2));
+    color: var(--muted);
     margin-bottom: 0.15em;
   }
   .card__summary {
@@ -275,10 +295,10 @@ const store = p.data.store ?? 'Steam';
     font-weight: 600;
     line-height: 1.4;
     padding: 0.1em 0.5em;
-    border: 1px solid var(--g-ink, var(--accent-2));
+    border: 1px solid var(--muted);
     border-radius: 0.3rem;
-    color: var(--g-ink, var(--accent-2));
-    background: color-mix(in srgb, var(--g-accent, var(--accent-2)) 12%, transparent);
+    color: var(--muted);
+    background: transparent;
   }
   .card__platforms {
     font-size: 0.875rem;
@@ -437,14 +457,14 @@ const store = p.data.store ?? 'Steam';
       letter-spacing: 0.06em;
       text-transform: uppercase;
       text-align: right;
-      color: var(--g-ink, var(--accent-2));
+      color: var(--muted);
       grid-area: state;
       text-wrap: balance; /* (on the narrowest phones it takes two lines beside the ID) */
     }
     .card__chevron {
       width: 0.875rem;
       height: 0.625rem;
-      color: var(--g-ink, var(--accent-2));
+      color: var(--ink);
     }
     :global(.js) .card.is-open .card__chevron {
       transform: rotate(180deg);

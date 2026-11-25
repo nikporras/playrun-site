@@ -68,7 +68,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     <div class="level__body">
       {
         groups.map((g, gi) => (
-          <div class:list={['group', `accent--${g.accent}`]} role="group" aria-labelledby={`group-${gi}`} data-year={yearOf(g)}>
+          <div class="group" role="group" aria-labelledby={`group-${gi}`} data-year={yearOf(g)}>
             <div class="group__head" data-enter>
               <h3 id={`group-${gi}`} class="group__name">{g.name}</h3>
               <div class="group__about">
