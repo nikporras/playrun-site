@@ -165,3 +165,32 @@ test.describe('The Testing deck', () => {
     expect(looks.slice(1).every((l) => l.transform.startsWith('matrix(') && !l.transform.startsWith('matrix(1, 0, 0, 1,')), 'tilted').toBe(true);
   });
 });
+
+// The first card starts close under the level head, at the gap every level head keeps to its
+// content: never centred in a screen-tall stage with a gap above it.
+for (const [width, height] of [[1440, 900], [1920, 1080]] as const) {
+  for (const path of ['/about/', '/testing/']) {
+    test(`${path} at ${width}x${height}: the first card of the deck sits under the level head (and Testing's picker) at the usual gap`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto(path);
+      const deck = page.locator('[data-deck]');
+      await expect(deck).toHaveClass(/is-deck/);
+      // (the level head on screen, the deck not yet pinned)
+      await deck.evaluate((el) => window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - 300, behavior: 'instant' }));
+      await page.waitForTimeout(100);
+      // (the stage's top: the cards stand at it, the first one tilted a little round its foot)
+      const gap = await deck.evaluate((el) => {
+        // (what stands above the deck: the head on About, the device picker on Testing)
+        const above = el.previousElementSibling!.getBoundingClientRect();
+        return el.querySelector('.deck__stage')!.getBoundingClientRect().top - above.bottom;
+      });
+      // the gap another level keeps between its head and its content
+      const usual = await page.evaluate(() => {
+        const body = [...document.querySelectorAll<HTMLElement>('.level .level__body')].find((b) => !b.closest('[data-deck]') && !b.matches('[data-deck]'))!;
+        return body.getBoundingClientRect().top - body.closest('.level')!.querySelector('.level__head')!.getBoundingClientRect().bottom;
+      });
+      expect(gap, 'the gap from the level head to the first card').toBeGreaterThanOrEqual(usual - 8);
+      expect(gap).toBeLessThanOrEqual(usual + 8);
+    });
+  }
+}

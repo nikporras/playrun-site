@@ -1026,7 +1026,7 @@ html:not(.games) .bug {
 
 /* The dealt deck (src/scripts/deck.ts): on a desktop with motion the deck is several screens
    tall and its stage pins for all but the first (the level head sits above the deck and scrolls
-   away, so a card has the whole screen); the cards sit on one stage. Card 0 lies in place; each
+   away, so a card has the whole screen); the cards sit on one stage, at its top. Card 0 lies in place; each
    next card rises from below the screen as --e goes 0 to 1 with the scroll, landing a little lower
    than the last and tilted its own few degrees. Transform only; the card's own entrance (opacity,
    a transition) is off. Without is-deck the cards stand in flow. */
@@ -1034,13 +1034,19 @@ html:not(.games) .bug {
   height: calc(100vh + (var(--n, 5) - 1) * 70vh);
   overflow: clip;
 }
+/* (the cards start at the stage's top, so the first one sits under the level head at the usual
+   gap, never centred in a screen-tall stage with a gap above it; the stage's own top padding,
+   their room while pinned, comes off the deck's margin) */
+.level .deck.is-deck {
+  margin-top: calc(var(--block-gap) - var(--s-3));
+}
 .deck.is-deck .deck__pin {
   position: sticky;
   top: 0;
   height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   padding-block: var(--s-3);
 }
 .deck.is-deck .deck__stage {
