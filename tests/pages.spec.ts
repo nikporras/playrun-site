@@ -174,33 +174,16 @@ test('the content sits in a centred column of at most 1280px with wide margins, 
 
 test('every card has a logo or its icon, the labels and one store button in a new tab; the old project addresses go to the portfolio', async ({ page, request }) => {
   await page.goto('/portfolio/');
-  // seven posts, newest first, in LinkedIn's words, each with its own accent
-  await expect(page.locator('.group__name')).toHaveText(['Aonic', 'HCLTech', 'Nexus Studios', 'Universally Speaking', 'Historic VR', 'nDreams', 'Universally Speaking']);
-
-  // the dates, large and in the accent, right under the name; a post with several roles keeps
-  // each role's own dates on its line
-  await expect(page.locator('.group__when')).toHaveText(['Jul 2026 to present', 'Apr 2026 to Jul 2026', 'Oct 2025 to Dec 2025', 'Jun 2025 to Aug 2025', 'Feb 2025 to Feb 2026', 'Apr 2022 to Oct 2024', '2021 to 2022']);
+  // the four posts with games, newest first, each role in LinkedIn's words with its dates
+  await expect(page.locator('.group__name')).toHaveText(['Aonic', 'Historic VR', 'nDreams', 'Universally Speaking']);
   await expect(page.locator('.group__role')).toHaveText([
-    'Senior Quality Assurance Tester',
-    'VR Robotics Operator, client Google DeepMind, contract',
-    'Quality Assurance Tester, contract',
-    'Build and Distribution Technician, contract',
-    'QA Manager, contract',
+    'Senior Quality Assurance Tester · Jul 2026 to present',
+    'QA Manager · Feb 2025 to Feb 2026',
     'QA Tester · Apr 2022 to Sep 2022',
     'Senior Quality Assurance Tester · Sep 2022 to Apr 2023',
     'Lead Quality Assurance Tester · Apr 2023 to Oct 2024',
-    'Quality Assurance Tester',
+    'Quality Assurance Tester · 2021 to 2022',
   ]);
-  const head = await page.locator('.group__head').first().evaluate((el) => {
-    const name = el.querySelector('.group__name')!.getBoundingClientRect();
-    const when = el.querySelector('.group__when')!;
-    const role = el.querySelector('.group__role')!;
-    return { nameBottom: name.bottom, whenTop: when.getBoundingClientRect().top, whenSize: parseFloat(getComputedStyle(when).fontSize), roleSize: parseFloat(getComputedStyle(role).fontSize), whenColor: getComputedStyle(when).color, accent: getComputedStyle(el).getPropertyValue('--g-ink').trim() || getComputedStyle(el).getPropertyValue('--g-accent').trim() };
-  });
-  expect(head.whenTop).toBeGreaterThanOrEqual(head.nameBottom - 2);
-  expect(head.whenSize).toBeGreaterThan(head.roleSize);
-  const accents = await page.locator('.group').evaluateAll((gs) => gs.map((g) => getComputedStyle(g).getPropertyValue('--g-accent').trim()));
-  expect(accents.every((a) => a.length > 0)).toBe(true);
   await expect(page.locator('.group').last().locator('.card__via')).toHaveCount(8);
   const cards = await page.locator('.card').evaluateAll((els) =>
     els.map((el) => {

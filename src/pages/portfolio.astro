@@ -16,14 +16,17 @@ const shown = (import.meta.env.DEV ? all : all.filter((p) => p.data.public)).sor
 });
 // Each game's tracker ID (PR-001...), stable from the data.
 const ids = trackerIds(shown);
-// One group per post, in the order of `employers`; a post with no public titles keeps its header.
-const groups = employers.map((e) => ({ ...e, projects: shown.filter((p) => p.data.employer === e.id) }));
+// One group per post with public games, in the order of `employers` (newest first). A post that
+// was not game QA (`games: false`) or has no public titles is listed under Other roles instead.
+const posts = employers.map((e) => ({ ...e, projects: shown.filter((p) => p.data.employer === e.id) }));
+const groups = posts.filter((e) => e.games !== false && e.projects.length > 0);
+const others = posts.filter((e) => !groups.includes(e));
 const count = shown.length;
-const companies = new Set(employers.map((e) => e.name)).size;
+// (the companies the games were tested at)
+const companies = new Set(groups.map((e) => e.name)).size;
 const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty', 'Twenty-one', 'Twenty-two', 'Twenty-three', 'Twenty-four'];
-const role = (r: { title: string; contract?: boolean }) => (r.contract ? `${r.title}, contract` : r.title);
-// The whole span of a post, from the start of its first role to the end of its last: the big date
-// under the company name. A post with several roles keeps each role's own dates on its line.
+// The whole span of a post, from the start of its first role to the end of its last (in the name
+// of its list of games).
 const span = (g: (typeof groups)[number]) => {
   const first = g.roles[0].when.split(' to ')[0];
   const last = g.roles[g.roles.length - 1].when.split(' to ').pop();
@@ -67,35 +70,18 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
         groups.map((g, gi) => (
           <div class:list={['group', `accent--${g.accent}`]} role="group" aria-labelledby={`group-${gi}`} data-year={yearOf(g)}>
             <div class="group__head" data-enter>
-              <div class="group__id">
-                <p class="group__key">Allegiance</p>
-                <h3 id={`group-${gi}`} class="group__name">{g.name}</h3>
-                <p class="group__when">{span(g)}</p>
-              </div>
-              <div class="group__stats">
-                <p class="group__key">Titles</p>
+              <h3 id={`group-${gi}`} class="group__name">{g.name}</h3>
+              <div class="group__about">
                 <ul role="list" class="group__roles">
                   {g.roles.map((r) => (
                     <li class="group__role">
-                      {role(r)}
-                      {g.roles.length > 1 && (
-                        <>
-                          {' '}
-                          <span class="group__dot" aria-hidden="true">&middot;</span> {r.when}
-                        </>
-                      )}
+                      {r.title} <span class="group__dot" aria-hidden="true">&middot;</span> {r.when}
                     </li>
                   ))}
                 </ul>
-                <p class="group__key">Cleared</p>
-                <p class="group__cleared">
-                  <span class="group__pips" aria-hidden="true">
-                    {g.projects.map(() => <i class="group__pip" />)}
-                  </span>
-                  {g.projects.length === 0 ? 'No public titles' : `${g.projects.length} ${g.projects.length === 1 ? 'game' : 'games'}`}
-                </p>
+                <p class="group__lead">{g.lead}</p>
+                <p class="group__count">{g.projects.length} {g.projects.length === 1 ? 'game' : 'games'}</p>
               </div>
-              <p class="group__lead">{g.lead}</p>
             </div>
             {g.projects.length > 0 && (
               <div class="group__row" role="region" aria-label={`${g.name} games, ${span(g)}`}>
@@ -110,6 +96,26 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
             )}
           </div>
         ))
+      }
+      {
+        others.length > 0 && (
+          <div class="others" data-enter>
+            <h3 class="others__title">Other roles</h3>
+            <ul role="list" class="others__list">
+              {others.map((e) => (
+                <li class="others__item">
+                  <h4 class="others__name">{e.name}</h4>
+                  {e.roles.map((r) => (
+                    <p class="others__role">
+                      {r.title} <span class="group__dot" aria-hidden="true">&middot;</span> {r.when}
+                    </p>
+                  ))}
+                  <p class="others__lead">{e.lead}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
       }
     </div>
     <Bug id="portfolio-2" style="right: 10%; bottom: 0.75rem" walk="x -2rem" />
@@ -139,16 +145,14 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     max-width: 40ch;
   }
 
-  /* Each post: a navy header band with the company's accent on its edge, then its titles. */
+  /* Each post: a plain header like a career entry (the company, each role with its dates, the line
+     on the post, the number of games), then its titles. */
   .group + .group {
     margin-top: var(--s-6);
   }
   .group__head {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    grid-template-areas:
-      'id stats'
-      'id lead';
     column-gap: var(--s-5);
     row-gap: var(--s-2);
     align-items: start;
@@ -156,84 +160,74 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     border-top: 1px solid var(--rule);
     position: relative;
   }
-  .group__id {
-    grid-area: id;
-  }
   .group__name {
     font-size: var(--step-head);
     font-size: round(var(--step-head), 16px);
     line-height: 0.95;
     margin-left: -0.03em;
   }
-  /* The dates: large, in the company's accent, right under the name. The accents do not read on
-     the cyan field, so the dates sit on a navy label, like the labels on the cards. */
-  .group__when {
-    display: inline-block;
-    font-family: var(--font-display);
-    font-size: 1.75rem;
-    line-height: 1;
-    padding: 0.3em 0.5em;
-    background: var(--bg);
-    color: var(--g-ink, var(--accent-2));
-    max-width: none;
-    margin-top: var(--s-2);
-    --sel-bg: var(--accent);
-    --sel-ink: var(--accent-ink);
+  .group__about {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
   }
-  /* The level card: the level (counted from the first post), the company it served, the titles in
-     order and the games cleared there, as the labels of a game's level card. */
-  .group__key {
-    font-family: var(--font-display);
-    font-size: 0.875rem;
-    line-height: 1;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--pr-navy);
-    margin: 0 0 0.35rem;
-    max-width: none;
-  }
-  .group__key ~ .group__key {
-    margin-top: var(--s-2);
-  }
-  .group__stats {
-    grid-area: stats;
-  }
-  .group__roles {
+  /* each role on a line of its own, "title · dates" */
+  .group__roles,
+  .others__role {
     font-family: var(--font-display);
     font-size: 1.25rem;
     line-height: 1.25;
-  }
-  /* the titles in order, one after another */
-  .group__role + .group__role::before {
-    content: '→ ';
-  }
-  .group__cleared {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    line-height: 1;
     max-width: none;
-  }
-  .group__pips {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: 3px;
-  }
-  .group__pip {
-    width: 0.625rem;
-    height: 0.625rem;
-    background: var(--pr-navy);
-    box-shadow: inset 0 0 0 2px var(--g-accent, var(--pr-navy));
   }
   .group__dot {
     margin-inline: 0.2em;
   }
   .group__lead {
-    grid-area: lead;
     font-size: 1rem;
     max-width: 70ch;
+  }
+  .group__count {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    max-width: none;
+  }
+  /* Other roles: the posts with no public games, newest first, plain and compact under the games. */
+  .others {
+    margin-top: var(--s-6);
+    padding-top: var(--s-4);
+    border-top: 1px solid var(--rule);
+  }
+  .others__title {
+    font-size: var(--step-head);
+    font-size: round(var(--step-head), 16px);
+    line-height: 0.95;
+  }
+  .others__list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--s-3) var(--gap);
+    margin-top: var(--s-3);
+  }
+  .others__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+  .others__name {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.5rem;
+    line-height: 1.1;
+  }
+  .others__role {
+    font-size: 1rem;
+  }
+  .others__lead {
+    font-size: 0.9375rem;
+    max-width: 60ch;
   }
   /* The cards are a list at every width. On a desktop, three a row on a six-column grid, so the
      last row always fills: a lone last tile spans the row, a pair splits it. */
@@ -267,15 +261,13 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     }
     .group__head {
       grid-template-columns: 1fr;
-      grid-template-areas:
-        'id'
-        'stats'
-        'lead';
       padding: var(--s-3) 0;
     }
-    .group__when {
-      font-size: 1.5rem;
-      margin-top: var(--s-1);
+    .others {
+      margin-top: var(--s-5);
+    }
+    .others__list {
+      grid-template-columns: 1fr;
     }
     .group__grid {
       grid-template-columns: 1fr;

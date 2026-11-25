@@ -123,7 +123,7 @@ test.describe('The Games page journey', () => {
     await page.goto('/portfolio/');
     await noSmooth(page);
     const entrances = page.locator('.group__head[data-enter], .card[data-enter]');
-    expect(await entrances.count()).toBe(27);
+    expect(await entrances.count()).toBe(24);
     await expect(page.locator('[data-land], [data-landing], .is-landed')).toHaveCount(0);
     // a card entering at the foot of the screen shows straight away, with no shot involved
     const third = page.locator('.card').nth(5);
@@ -150,7 +150,7 @@ test.describe('The Games page journey', () => {
       seen = await onScreen();
       expect(seen.every(Boolean), `at ${s}: every card on screen is shown`).toBe(true);
     }
-    await expect(entrances.locator(':scope.is-in')).toHaveCount(27, { timeout: 1500 });
+    await expect(entrances.locator(':scope.is-in')).toHaveCount(24, { timeout: 1500 });
   });
 
   test('a settled card with a clear line of fire gets one shot: a pixel bolt from the nose to its logo, a muzzle flash, a burst at the hit, then the card flashes, a scan band sweeps it and a PASS stamp stays; one at a time, cards only, each once', async ({ page }) => {
@@ -459,27 +459,45 @@ for (const [width, height] of [
   [1440, 900],
   [375, 780],
 ] as const) {
-  test(`each company reads as a card at ${width}px, with no level label (levels are for page sections): Allegiance, the titles in order, and the games cleared with a pip each`, async ({ page }) => {
+  test(`each company with games reads as a plain career entry at ${width}px: the name, each role "title · dates", the line on the post, then "N games"; no labels or pips; the posts without games under Other roles`, async ({ page }) => {
+    const { employers } = await import('../src/config');
     await page.setViewportSize({ width, height });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/portfolio/');
     const heads = page.locator('.group__head');
     const n = await heads.count();
-    expect(n).toBe(7);
-    await expect(page.locator('.group__level')).toHaveCount(0);
-    await expect(page.locator('.group__head', { hasText: /Level/i })).toHaveCount(0);
+    expect(n).toBe(4);
+    await expect(page.locator('.group__head *', { hasText: /^\s*(Level \d+|Allegiance|Titles|Cleared)\s*$/i })).toHaveCount(0);
+    await expect(page.locator('.group__key, .group__pip, .group__pips, .group__when, .group__cleared')).toHaveCount(0);
     for (let i = 0; i < n; i++) {
       const head = heads.nth(i);
-      await expect(head.locator('.group__key')).toHaveText(['Allegiance', 'Titles', 'Cleared']);
+      const name = (await head.locator('.group__name').textContent())!.trim();
+      // (two posts share a name: the one in this list is the one with games)
+      const post = employers.find((e) => e.name === name && e.games !== false && e.id !== 'universally-speaking-2025')!;
+      await expect(head.locator('.group__role')).toHaveText(post.roles.map((r) => `${r.title} · ${r.when}`));
+      await expect(head.locator('.group__lead')).toHaveText(post.lead);
       const cards = await page.locator('.group').nth(i).locator('.card').count();
-      await expect(head.locator('.group__cleared')).toHaveText(cards === 0 ? 'No public titles' : `${cards} ${cards === 1 ? 'game' : 'games'}`);
-      await expect(head.locator('.group__pip')).toHaveCount(cards);
-      await expect(head.locator('.group__pips')).toHaveAttribute('aria-hidden', 'true');
-      for (const el of await head.locator('.group__key, .group__cleared, .group__role').all()) await expect(el).toBeVisible();
+      expect(cards).toBeGreaterThan(0);
+      await expect(head.locator('.group__count')).toHaveText(`${cards} ${cards === 1 ? 'game' : 'games'}`);
+      for (const el of await head.locator('.group__role, .group__lead, .group__count').all()) await expect(el).toBeVisible();
+      const order = await head.evaluate((h) => [...h.querySelectorAll('.group__name, .group__role, .group__lead, .group__count')].map((e) => e.className.split(' ')[0]));
+      expect(order).toEqual(['group__name', ...post.roles.map(() => 'group__role'), 'group__lead', 'group__count']);
     }
-    // the titles in order, as on LinkedIn
-    const ndreams = page.locator('.group').filter({ has: page.locator('.group__name', { hasText: 'nDreams' }) });
-    await expect(ndreams.locator('.group__role')).toHaveText(['QA Tester · Apr 2022 to Sep 2022', 'Senior Quality Assurance Tester · Sep 2022 to Apr 2023', 'Lead Quality Assurance Tester · Apr 2023 to Oct 2024']);
+    // Other roles: the posts with no public games, newest first, each with its role, dates and
+    // line; no cards, no logos, no links
+    const others = page.locator('.others');
+    await expect(others.getByRole('heading', { name: 'Other roles', level: 3 })).toBeVisible();
+    const items = others.locator('.others__item');
+    await expect(items.locator('.others__name')).toHaveText(['HCLTech', 'Nexus Studios', 'Universally Speaking']);
+    await expect(items.locator('.others__role')).toHaveText(['VR Robotics Operator, client Google DeepMind · Apr 2026 to Jul 2026', 'Quality Assurance Tester · Oct 2025 to Dec 2025', 'Build and Distribution Technician · Jun 2025 to Aug 2025']);
+    for (const id of ['hcltech', 'nexus-studios', 'universally-speaking-2025']) await expect(items.locator('.others__lead', { hasText: employers.find((e) => e.id === id)!.lead })).toBeVisible();
+    await expect(others.locator('.card, img, svg, a')).toHaveCount(0);
+    // it comes after every company's games
+    const lastCard = await page.locator('.card').last().evaluate((el) => el.getBoundingClientRect().bottom + scrollY);
+    expect(await others.evaluate((el) => el.getBoundingClientRect().top + scrollY)).toBeGreaterThan(lastCard);
+    // the intro counts the companies the games were tested at
+    await expect(page.locator('.work__lead')).toHaveText(/^Twenty titles across four companies, /);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   });
 }
 

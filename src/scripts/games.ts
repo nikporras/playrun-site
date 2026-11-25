@@ -431,7 +431,7 @@ export function startGames() {
   const muzzlePx = Array.from(shot?.querySelectorAll<HTMLElement>('.muzzle__px') ?? []);
   const burstPx = Array.from(shot?.querySelectorAll<HTMLElement>('.burst__px') ?? []);
   const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-scan]'));
-  const blocks = Array.from(document.querySelectorAll<HTMLElement>('.group__head'));
+  const blocks = Array.from(document.querySelectorAll<HTMLElement>('.group__head, .others'));
   const scanned = new Set<HTMLElement>();
   let shooting = false;
   let speed = 0;
