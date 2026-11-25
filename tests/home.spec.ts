@@ -714,7 +714,7 @@ test.describe('Home', () => {
     expect(viewBox.height, 'the logos are the content of the section').toBeGreaterThanOrEqual(112);
     expect(viewBox.height).toBeLessThanOrEqual(200);
     // the title is the section-head size, smaller than the next level's title
-    const sizes = await page.evaluate(() => [parseFloat(getComputedStyle(document.querySelector('#wall-title')!).fontSize), parseFloat(getComputedStyle(document.querySelector('#proof-title')!).fontSize)]);
+    const sizes = await page.evaluate(() => [parseFloat(getComputedStyle(document.querySelector('#wall-title')!).fontSize), parseFloat(getComputedStyle(document.querySelector('#final-title')!).fontSize)]);
     expect(sizes[0]).toBeLessThan(sizes[1]);
     // logos sized by eye: a tall stacked mark is taller and narrower than a wide wordmark
     const dims = await seq.locator('.wall__logo').evaluateAll((imgs) => imgs.map((img) => ({ name: img.getAttribute('alt'), w: img.getBoundingClientRect().width, h: img.getBoundingClientRect().height })));
@@ -1123,54 +1123,46 @@ test.describe('Home', () => {
     await quiet.close();
   });
 
-  test('the self test runs, reports and scores the page, and the Quality link stays visible', async ({ page }) => {
-    await page.goto('/');
-    // Before anyone presses the button each panel shows the suite's own checks for its area: the
-    // tagged tests, counted here from Playwright's own list. A build from a run ticks them with that
-    // run's passes; a local build (no run) shows the count unticked.
+  test('Level 4 is one line with the whole suite counted and one link to Quality, on at most two lines on a desktop and three at 300px', async ({ page }) => {
+    // the count, from Playwright's own list, loops expanded (the number the build reads)
     const cli = path.join(path.dirname(require.resolve('@playwright/test/package.json')), 'cli.js');
     const list = JSON.parse(execFileSync(process.execPath, [cli, 'test', '--list', '--reporter=json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: '', PLAYWRIGHT_JSON_OUTPUT_FILE: '' } }));
-    const tagged: Record<string, number> = {};
-    const walk = (s: { specs?: { tags?: string[]; tests: unknown[] }[]; suites?: unknown[] }) => {
-      for (const sp of s.specs ?? []) for (const t of sp.tags ?? []) tagged[t.replace(/^@/, '')] = (tagged[t.replace(/^@/, '')] ?? 0) + sp.tests.length;
+    let total = 0;
+    const walk = (s: { specs?: { tests: unknown[] }[]; suites?: unknown[] }) => {
+      for (const sp of s.specs ?? []) total += sp.tests.length;
       for (const c of (s.suites ?? []) as (typeof s)[]) walk(c);
     };
     for (const s of list.suites) walk(s);
-    const panels = await page.locator('.panel').evaluateAll((els) =>
-      els.map((el) => ({ id: (el as HTMLElement).dataset.check!, from: (el as HTMLElement).dataset.from, cls: el.className, count: el.querySelector('[data-count]')!.textContent!.trim(), of: el.querySelector('.panel__of')!.textContent!.trim() })),
-    );
-    expect(panels.map((p) => p.id)).toEqual(['pages', 'console', 'links', 'viewports', 'a11y', 'brand', 'weight', 'html']);
-    for (const p of panels) {
-      expect(tagged[p.id], `${p.id} has tagged checks`).toBeGreaterThan(0);
-      if (p.from === 'run' && p.id === 'weight') {
-        // the weight from the run: Home's real figure against its budget
-        expect(p.cls).toMatch(/is-pass|is-failed/);
-        expect(p.count).toMatch(/^\d+ KB$/);
-        expect(p.of).toMatch(/^, budget \d+ KB$/);
-      } else if (p.from === 'run') {
-        expect(p.cls).toMatch(/is-pass|is-failed/);
-        expect(p.of).toBe(`of ${tagged[p.id]}`);
-        expect(Number(p.count)).toBeLessThanOrEqual(tagged[p.id]);
-      } else {
-        expect(p.cls).toContain('is-idle');
-        expect(p.count).toBe(String(tagged[p.id]));
-        expect(p.of).toBe('checks');
-      }
+    expect(total).toBeGreaterThan(0);
+
+    await page.goto('/');
+    const level = page.locator('[data-level="4"]');
+    await expect(level.locator('h2')).toHaveText('Tested like one of my games');
+    await expect(level.locator('h2')).toHaveClass(/visually-hidden/);
+    const line = level.locator('.proof__line');
+    await expect(line).toHaveText(`Tested like one of my games: ${total} checks run on every change before it goes live.`);
+    // one line and one link, nothing else: no button, no board, no status
+    await expect(level.locator('.level__head > *')).toHaveCount(4); // the flag, the hidden h2, the line, the link
+    await expect(level.getByRole('button', { name: /test this page|run again/i })).toHaveCount(0);
+    await expect(level.locator('.panel, #selftest, #selftest-status, #selftest-score')).toHaveCount(0);
+    const links = level.getByRole('link');
+    await expect(links).toHaveCount(1);
+    await expect(links).toHaveText('See how I test this site');
+    await expect(links).toHaveAttribute('href', '/quality/');
+
+    const lines = () =>
+      line.evaluate((el) => {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+      });
+    for (const [w, h, most] of [[1280, 800, 2], [1440, 900, 2], [1920, 1080, 2], [300, 640, 3]] as const) {
+      await page.setViewportSize({ width: w, height: h });
+      await page.evaluate(() => document.fonts.ready);
+      await line.scrollIntoViewIfNeeded();
+      expect(await lines(), `lines at ${w}px`).toBeLessThanOrEqual(most);
+      await expect(links).toBeVisible();
     }
-    await expect(page.locator('#selftest-status')).toHaveText(/\d+ (of \d+ checks passed in the last run|checks run before every deploy)/);
-    const quality = page.locator('.proof').getByRole('link', { name: 'How I test this site' });
-    await expect(quality).toHaveAttribute('href', '/quality/');
-    await page.getByRole('button', { name: 'Test this page' }).click();
-    await expect(page.locator('#selftest-status')).toContainText(/on your device/, { timeout: 15_000 });
-    await expect(page.getByRole('button', { name: 'Run again' })).toBeVisible();
-    await expect(page.locator('#selftest-score')).toBeVisible();
-    await expect(page.locator('#selftest-score [data-score]')).toHaveText(/^\d\/8$/);
-    // the live weight is this page's own figure against Home's budget
-    await expect(page.locator('[data-check="weight"] [data-count]')).toHaveText(/^\d+ KB$/);
-    await expect(page.locator('[data-check="html"] [data-detail]')).toHaveText('A doctype, a language, a title, and no id used twice');
-    await expect(page.locator('.panel.is-idle')).toHaveCount(0);
-    await expect(page.locator('.panel.is-pass, .panel.is-failed')).toHaveCount(8);
-    await expect(quality).toBeVisible();
   });
 
   test('Get in touch appears in the nav and the end of Home only; the hero has no buttons', async ({ page }) => {

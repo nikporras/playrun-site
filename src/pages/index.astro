@@ -82,22 +82,6 @@ const ALT = 'Nicolás Porras wearing a VR headset pushed up on his head';
 const leadCount = leadRoles.length;
 const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 
-// The run that built this page. GitHub Actions builds only after the suite has passed, so the
-// numbers on the board are that run's. Local builds carry no run.
-const runDate = suite.run ? suite.run.startedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
-// The eight live checks the button runs on this page, in the visitor's browser. Until they run,
-// each panel shows the suite's own checks for that area (tagged in the spec files), from the run
-// that built the page; the line above the board carries the whole suite's numbers.
-const checks = [
-  { id: 'pages', title: 'Pages load', detail: 'Every route answers 200 and renders one h1. No blank screens.' },
-  { id: 'console', title: 'Zero console errors', detail: 'Nothing red in the console, no request left failing.' },
-  { id: 'links', title: 'Internal links resolve', detail: 'Every internal link answers 200. No 404s hiding in the footer.' },
-  { id: 'viewports', title: 'Three widths', detail: 'No sideways scroll at 375, 768 and 1440 pixels. Phones count.' },
-  { id: 'a11y', title: 'Accessibility scan', detail: 'axe-core finds no violations. Keyboard and screen readers get the whole page.' },
-  { id: 'brand', title: 'Brand assets', detail: 'Both typefaces load, the logo renders, favicon and Open Graph image present.' },
-  { id: 'weight', title: 'Page weight', detail: 'Every page under its budget on a first visit: HTML, CSS, script, fonts and images.' },
-  { id: 'html', title: 'Valid HTML', detail: 'Every page passes an HTML validator: elements, attributes, ids and the document.' },
-];
 ---
 
 <Base
@@ -281,62 +265,20 @@ const checks = [
     <Bug id="stats-1" style="left: 12%; bottom: calc(var(--join-h) + 3rem)" tablet="right: var(--gutter); bottom: calc(var(--join-h) + 0.25rem)" phone="right: var(--gutter); bottom: calc(var(--join-h) + 0.25rem)" walk="x -2rem" />
   </section>
 
-  <!-- Level 4: proof as a scoreboard on a green field -->
+  <!-- Level 4: a short hook to the Quality page, where the site's tests run in full -->
   <section class="level level--green has-join-bottom proof" data-level="4" aria-labelledby="proof-title">
     <Join kind="terrain" from="var(--field-green)" to="var(--field-light)" seed="home-final" />
     <div class="level__head">
       <p class="flag" data-nosnippet data-enter><span>Level 4 &middot; Proof</span></p>
-      <h2 id="proof-title" class="level__title" data-enter="wipe">This site, tested like my games</h2>
-      <p class="level__lead" data-enter style="--enter-delay: 80ms">
-        I test this site like a game: a Playwright suite checks every change, and nothing goes live until it passes. Try the checks yourself.
+      <h2 id="proof-title" class="visually-hidden">Tested like one of my games</h2>
+      <p class="level__lead proof__line" data-enter style="--enter-delay: 80ms">
+        Tested like one of my games: {suite.total} checks run on every change before it goes live.
       </p>
       <div class="level__actions" data-enter style="--enter-delay: 160ms">
-        <button class="button button--navy" type="button" id="selftest" aria-describedby="selftest-status">Test this page</button>
-        <a class="textlink proof__link" href="/quality/">How I test this site</a>
+        <a class="textlink proof__link" href="/quality/">See how I test this site</a>
       </div>
-      <p id="selftest-status" class="proof__status" data-nosnippet aria-live="polite" data-enter style="--enter-delay: 200ms">
-        {suite.run ? `${suite.passed} of ${suite.total} checks passed in the last run${runDate ? `, on ${runDate}` : ''}` : `${suite.total} checks run before every deploy`}
-      </p>
-      <p class="proof__score" id="selftest-score" data-nosnippet hidden>
-        <span data-score-mark class="proof__scoremark"><PassMark /></span>
-        <span data-score>Not run yet</span>
-        <span data-score-word></span>
-      </p>
     </div>
-    <div class="proof__board level__body">
-      {
-        checks.map((g, i) => {
-          const a = suite.areas[g.id] ?? { total: 0, passed: 0, failed: 0 };
-          // From a run: ticked (or crossed) with its passes. A local build has only the list: the count, unticked.
-          const state = suite.run ? (a.failed ? 'is-failed' : 'is-pass') : 'is-idle';
-          return (
-          <div class:list={['panel', state]} style={`--enter-delay: ${i * 60}ms`} data-check={g.id} data-enter="scan" data-from={suite.run ? 'run' : 'list'}>
-            <div class="panel__mark" aria-hidden="true">
-              <svg class="proof__idle" viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M0 0h7v1H0zM0 6h7v1H0zM0 1h1v5H0zM6 1h1v5H6z" fill="currentColor" /></svg>
-              <PassMark class="proof__pass" />
-              <CrossMark class="proof__cross" />
-            </div>
-            <p class="panel__num num">
-              {g.id === 'weight' && suite.homeWeight ? (
-                <>
-                  {/* (one line: no space before the comma) */}
-                  <span data-count>{suite.homeWeight.kb} KB</span><span class="panel__of">, budget {suite.homeWeight.budget} KB</span>
-                </>
-              ) : (
-                <>
-                  <span data-count>{suite.run ? a.passed : a.total}</span>
-                  <span class="panel__of">{suite.run ? ` of ${a.total}` : ' checks'}</span>
-                </>
-              )}
-            </p>
-            <h3 class="panel__title">{g.title}</h3>
-            <p class="panel__detail" data-detail>{g.detail}</p>
-          </div>
-          );
-        })
-      }
-    </div>
-    <Bug id="proof-1" style="right: 12%; top: 1.5rem" tablet="right: 20%; top: 0.75rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <Bug id="proof-1" style="right: 12%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" phone="right: var(--gutter); top: 0.5rem" walk="x -2rem" />
   </section>
 
   <!-- Level 5: after hours, and the one last button -->
@@ -1391,152 +1333,18 @@ const checks = [
     }
   }
 
-  /* Level 4: the scoreboard */
-  .proof__link {
-    color: var(--pr-navy);
+  /* Level 4: one line and the link to Quality */
+  .proof__line {
+    max-width: 34em;
   }
-  .proof__status {
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    max-width: none;
-  }
-  .proof__score {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-2);
-    font-family: var(--font-display);
-    font-size: 3rem;
-    line-height: 1;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    max-width: none;
-  }
-  .proof__score[hidden] {
-    display: none;
-  }
-  .proof__scoremark {
-    font-size: 3rem;
-    line-height: 0;
-  }
-  .proof__score.is-fail .proof__scoremark {
-    display: none;
-  }
-  .proof__score.is-in {
-    animation: boot-pop 360ms var(--ease-out) both;
-  }
-  @keyframes boot-pop {
-    from {
-      opacity: 0;
-      transform: scale(0.6);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-  .proof__board {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: var(--s-4);
-  }
-  .panel {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-1);
-    padding: var(--s-3) 0 var(--s-4);
-    min-width: 0;
-    overflow: hidden;
-    border-top: 1px solid var(--rule);
-  }
-  .panel__mark {
-    font-size: 2.5rem;
-    line-height: 0;
-    transition: color var(--dur-base) ease;
-  }
-  .panel__mark :global(.proof__cross),
-  .panel__mark .proof__idle {
-    display: none;
-  }
-  .proof__idle {
-    width: 1em;
-    height: 1em;
-  }
-  /* A build with no run to read (a local one) ticks nothing: an empty box and the count of checks;
-     while the live checks run, the same box */
-  .panel.is-idle .panel__mark .proof__idle {
-    display: block;
-  }
-  .panel.is-idle .panel__mark :global(.proof__pass),
-  .panel.is-pending .panel__mark :global(.proof__pass) {
-    display: none;
-  }
-  .panel.is-pending .panel__mark .proof__idle {
-    display: block;
-  }
-  .panel.is-failed :global(.proof__pass) {
-    display: none;
-  }
-  .panel.is-failed :global(.proof__cross) {
-    display: block;
-  }
-  .panel.is-pass .panel__mark {
-    animation: mark-pop 320ms var(--ease-out);
-  }
-  @keyframes mark-pop {
-    from {
-      transform: scale(0.6);
-    }
-    to {
-      transform: none;
-    }
-  }
-  .panel__num {
-    margin-top: var(--s-2);
-    font-family: var(--font-display);
-    font-size: 4rem;
-    line-height: 0.9;
-    max-width: none;
-  }
-  .panel__of {
-    font-size: 1.25rem;
-  }
-  .panel__title {
-    font-size: 1.75rem;
-  }
-  .panel__detail {
-    font-size: 1rem;
-    max-width: none;
-  }
-  @media (max-width: 63.99rem) {
-    .proof__board {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      column-gap: var(--s-3);
-    }
-    .panel__num {
-      font-size: 3rem;
-    }
-    .panel__title {
-      font-size: 1.5rem;
-    }
-  }
-  @media (max-width: 47.99rem) {
-    .proof__board {
-      grid-template-columns: 1fr;
-    }
-    .panel {
-      padding: var(--s-2) 0 var(--s-3);
-      gap: 0.25rem;
-    }
-    .panel__num {
-      font-size: 2.25rem;
-    }
-    .panel__title {
+  /* (a step smaller on the narrowest phones, so it keeps to three lines at 300px) */
+  @media (max-width: 21.49rem) {
+    .proof__line {
       font-size: 1.25rem;
     }
-    .panel__detail {
-      font-size: 0.8125rem;
-    }
+  }
+  .proof__link {
+    color: var(--pr-navy);
   }
 
   /* Level 5: after hours, then the last button */
@@ -1565,9 +1373,7 @@ const checks = [
 
 <script>
   import { startHeroExit } from '../scripts/glitch';
-  import { checks as engine } from '../scripts/checks';
   import { reducedMotion, whenMotion } from '../scripts/motion';
-  const reduce = reducedMotion();
   startHeroExit();
   // (the curtain, the ticker's button and the drum start with motion: at once, or when the visitor
   // turns the Motion switch on)
@@ -1698,65 +1504,5 @@ const checks = [
     drum.classList.add('is-live');
     paint(false);
     tick();
-  });
-
-  // The live thing: real checks on this page, run in the visitor's browser, from the shared engine
-  // the Quality page uses too.
-  const button = document.getElementById('selftest') as HTMLButtonElement | null;
-  const status = document.getElementById('selftest-status');
-  const tiles = new Map<string, HTMLElement>();
-  document.querySelectorAll<HTMLElement>('[data-check]').forEach((t) => tiles.set(t.dataset.check!, t));
-  const checks = ['pages', 'console', 'links', 'viewports', 'a11y', 'brand', 'weight', 'html'].map((id) => engine[id]);
-
-  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-  const score = document.getElementById('selftest-score');
-
-  button?.addEventListener('click', async () => {
-    button.disabled = true;
-    if (status) status.textContent = `Running ${checks.length} checks`;
-    if (score) {
-      score.hidden = true;
-      score.classList.remove('is-in', 'is-fail');
-    }
-    for (const t of tiles.values()) {
-      t.classList.remove('is-idle', 'is-pass', 'is-failed');
-      t.classList.add('is-pending');
-      t.dataset.from = 'live';
-    }
-    let passedAll = 0;
-    let failedAll = 0;
-    let tilesPassed = 0;
-    for (const check of checks) {
-      const tile = tiles.get(check.id);
-      const { passed, failed, detail, value, of: ofText } = await check.run();
-      if (!reduce) await wait(260);
-      passedAll += passed;
-      failedAll += failed;
-      if (failed === 0) tilesPassed++;
-      if (tile) {
-        tile.classList.remove('is-pending', 'is-pass');
-        tile.classList.toggle('is-failed', failed > 0);
-        if (failed === 0) tile.classList.add('is-pass');
-        const count = tile.querySelector('[data-count]');
-        const of = tile.querySelector('.panel__of');
-        const det = tile.querySelector('[data-detail]');
-        if (count) count.textContent = value ?? String(passed);
-        if (of) of.textContent = ofText ?? ` of ${passed + failed}`;
-        if (det) det.textContent = detail;
-      }
-    }
-    if (status) status.textContent = failedAll ? `${passedAll} passed, ${failedAll} failed on your device` : `${passedAll} of ${passedAll} passed on your device`;
-    if (score) {
-      const value = score.querySelector('[data-score]');
-      const word = score.querySelector('[data-score-word]');
-      if (value) value.textContent = `${tilesPassed}/${checks.length}`;
-      if (word) word.textContent = failedAll ? 'Fail' : 'Pass';
-      score.classList.toggle('is-fail', failedAll > 0);
-      score.hidden = false;
-      score.classList.add('is-in');
-    }
-    button.disabled = false;
-    button.textContent = 'Run again';
-    document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'selftest' }));
   });
 </script>

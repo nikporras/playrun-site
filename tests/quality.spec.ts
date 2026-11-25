@@ -107,6 +107,17 @@ test.describe('Quality, the guided test run', () => {
     await expect(page.locator('[data-report-score]')).toHaveText('5 of 5 steps passed on your device.');
   });
 
+  test('a full run earns Tested the page, the achievement Home no longer awards', async ({ page }) => {
+    await page.goto('/quality/');
+    await page.mouse.move(640, 300);
+    await page.getByRole('button', { name: 'Run every step' }).click();
+    await expect(page.locator('#run-status')).toHaveText('Every step has run. The report is at the end.', { timeout: 15_000 });
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('playrun.games') ?? '{}').achievements ?? [])).toContain('selftest');
+    // and Home has nothing that awards it
+    await page.goto('/');
+    await expect(page.locator('#selftest')).toHaveCount(0);
+  });
+
   test('the bug report template copies, or selects itself where the clipboard is refused', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/quality/');

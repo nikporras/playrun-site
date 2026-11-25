@@ -78,7 +78,7 @@ test('a violation is caught: the console reports it and the page counts it among
 });
 
 test.describe('under the policy', () => {
-  test('Home: the self test, a bug caught and the scoreboard, with nothing blocked', { tag: ['@console'] }, async ({ page }) => {
+  test('Home: a bug caught and the scoreboard, with nothing blocked', { tag: ['@console'] }, async ({ page }) => {
     const errors = await watch(page);
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
@@ -90,9 +90,6 @@ test.describe('under the policy', () => {
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
     await expect(page.getByRole('button', { name: 'Reset' })).toBeVisible();
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Test this page' }).click();
-    await expect(page.locator('#selftest-status')).toContainText(/on your device/, { timeout: 15_000 });
-    await expect(page.locator('[data-check="console"]')).toHaveClass(/is-pass/);
     expect(errors, errors.join('\n')).toEqual([]);
   });
 
@@ -174,17 +171,13 @@ const extensionNoise = () => {
   }
   dispatchEvent(new ErrorEvent('error', { message: 'Uncaught TypeError: x is undefined', filename: 'safari-web-extension://e1/script.js' }));
 };
-test("an extension's violations and errors do not count: Quality's Smoke test and Home's console check still pass", { tag: ['@console'] }, async ({ page }) => {
+test("an extension's violations and errors do not count: Quality's Smoke test still passes", { tag: ['@console'] }, async ({ page }) => {
   await page.goto('/quality/');
   await page.evaluate(extensionNoise);
   expect(await page.evaluate(() => (window as unknown as { __playrunErrors: string[] }).__playrunErrors)).toEqual([]);
   const smoke = page.locator('.step').first();
   await smoke.scrollIntoViewIfNeeded();
   await expect(smoke).toHaveClass(/is-pass/, { timeout: 10_000 });
-  await page.goto('/');
-  await page.evaluate(extensionNoise);
-  await page.getByRole('button', { name: 'Test this page' }).click();
-  await expect(page.locator('[data-check="console"]')).toHaveClass(/is-pass/, { timeout: 15_000 });
   // while one from the site's own file still counts
   await page.evaluate(() => dispatchEvent(new ErrorEvent('error', { message: 'Boom', filename: `${location.origin}/_astro/app.js` })));
   expect(await page.evaluate(() => (window as unknown as { __playrunErrors: string[] }).__playrunErrors)).toEqual(['Boom']);

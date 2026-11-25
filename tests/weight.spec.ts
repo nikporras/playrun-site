@@ -3,8 +3,8 @@ import { test, expect } from '@playwright/test';
 /**
  * Page weight: what each page transfers on a first visit, with nothing cached (the HTML, the CSS,
  * the script, the fonts and the images it loads before anyone scrolls), counted from the browser's
- * own network events. Each page has a budget and the check fails over it. Home's figure is kept
- * with the run (an annotation), so the Proof board on Home shows the real number.
+ * own network events. Each page has a budget and the check fails over it. Each figure is kept
+ * with the run (an annotation), for the report.
  */
 // in KB, with room to grow (each page was well under when the budgets were set)
 const BUDGETS: Record<string, number> = {

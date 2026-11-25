@@ -12,9 +12,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
-type Annotation = { type: string; description?: string };
-type JsonTest = { status?: string; annotations?: Annotation[]; results?: { annotations?: Annotation[] }[] };
-type JsonSpec = { title: string; file: string; tags?: string[]; tests: JsonTest[] };
+type JsonTest = { status?: string };
+type JsonSpec = { title: string; file: string; tests: JsonTest[] };
 type JsonSuite = { title: string; file?: string; specs: JsonSpec[]; suites?: JsonSuite[] };
 type Report = { suites: JsonSuite[]; stats?: { startTime?: string; duration?: number } };
 
@@ -34,16 +33,12 @@ export type Tally = { total: number; passed: number; failed: number };
 
 export type Suite = {
   groups: Group[];
-  /** The checks tagged for each area of the Home scoreboard (`@pages`, `@a11y` and so on). */
-  areas: Record<string, Tally>;
   files: number;
   total: number;
   passed: number;
   failed: number;
   /** The run the numbers come from, or null when only the list is known. */
   run: { startedAt: Date; seconds: number } | null;
-  /** Home's weight on a first visit in that run, and its budget, in KB (null without a run). */
-  homeWeight: { kb: number; budget: number } | null;
 };
 
 // The words for each file. The numbers never live here.
@@ -108,45 +103,26 @@ ${(err.stdout ?? '').slice(0, 2000)}`);
   }
 }
 
-function collect(suite: JsonSuite, into: Map<string, Tally>, areas: Record<string, Tally>) {
+function collect(suite: JsonSuite, into: Map<string, Tally>) {
   for (const spec of suite.specs ?? []) {
     const file = path.basename(spec.file);
     const g = into.get(file) ?? { total: 0, passed: 0, failed: 0 };
-    const tagged = (spec.tags ?? []).map((t) => (areas[t.replace(/^@/, '')] ??= { total: 0, passed: 0, failed: 0 }));
     for (const t of spec.tests ?? []) {
       const passed = t.status === 'expected' || t.status === 'flaky';
       const failed = t.status === 'unexpected';
-      for (const tally of [g, ...tagged]) {
-        tally.total++;
-        if (passed) tally.passed++;
-        if (failed) tally.failed++;
-      }
+      g.total++;
+      if (passed) g.passed++;
+      if (failed) g.failed++;
     }
     into.set(file, g);
   }
-  for (const s of suite.suites ?? []) collect(s, into, areas);
+  for (const s of suite.suites ?? []) collect(s, into);
 }
 
 const { report, fromRun } = load();
 
-// Home's page weight, as the weight check measured it in the run (an annotation on its test).
-function findWeight(suite: JsonSuite): { kb: number; budget: number } | null {
-  for (const spec of suite.specs ?? [])
-    for (const t of spec.tests ?? [])
-      for (const a of [...(t.annotations ?? []), ...(t.results ?? []).flatMap((r) => r.annotations ?? [])]) {
-        if (a.type !== 'page-weight' || !a.description) continue;
-        const w = JSON.parse(a.description) as { path: string; kb: number; budget: number };
-        if (w.path === '/') return { kb: w.kb, budget: w.budget };
-      }
-  for (const s of suite.suites ?? []) {
-    const w = findWeight(s);
-    if (w) return w;
-  }
-  return null;
-}
 const counts = new Map<string, Tally>();
-const areas: Record<string, Tally> = {};
-for (const s of report.suites) collect(s, counts, areas);
+for (const s of report.suites) collect(s, counts);
 if (counts.size === 0) throw new Error('No tests found: the Quality page cannot be built without the suite.');
 
 const groups: Group[] = [...counts.entries()]
@@ -158,12 +134,10 @@ const groups: Group[] = [...counts.entries()]
 
 export const suite: Suite = {
   groups,
-  areas,
   files: groups.length,
   total: groups.reduce((n, g) => n + g.total, 0),
   passed: groups.reduce((n, g) => n + g.passed, 0),
   failed: groups.reduce((n, g) => n + g.failed, 0),
-  homeWeight: fromRun ? report.suites.map(findWeight).find(Boolean) ?? null : null,
   run:
     fromRun && report.stats?.startTime
       ? { startedAt: new Date(report.stats.startTime), seconds: Math.round((report.stats.duration ?? 0) / 1000) }
