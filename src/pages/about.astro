@@ -101,8 +101,9 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
     <Bug id="skills-1" style="right: 10%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 3: the Kit. The platform and headset chips are buttons: hover, keyboard focus or a tap
-       shows the detail under the group (aria-expanded; the detail is also its description). -->
+  <!-- Level 3: the Kit. The platform and headset chips are buttons: a press opens that chip in place
+       into a small card with its detail inside it (aria-expanded, aria-controls); the chips after it
+       reflow. Without script every one is open, its detail showing. -->
   <section class="level level--green has-join-bottom kit" data-level="3" aria-labelledby="kit-title">
     <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="about-story" />
     <div class="level__head">
@@ -118,14 +119,14 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
             <ul role="list" class="kit__chips">
               {g.chips.map((c, i) =>
                 c.detail ? (
-                  <li class="kit__item">
-                    <button type="button" class="chip chip--more" aria-expanded="false" aria-controls={`tip-${g.id}-${i}`} aria-describedby={`tip-${g.id}-${i}`} data-chip>
+                  <li class="kit__item kit__item--more">
+                    <button type="button" class="chip chip--more" aria-expanded="true" aria-controls={`tip-${g.id}-${i}`} data-chip>
                       <span>{c.name}</span>
                       <svg class="chip__mark" viewBox="0 0 5 5" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
                         <path class="chip__plus" d="M2 0h1v5H2zM0 2h2v1H0zM3 2h2v1H3z" fill="currentColor" />
                       </svg>
                     </button>
-                    <span class="chip__tip" id={`tip-${g.id}-${i}`} role="tooltip">{c.detail}</span>
+                    <span class="chip__tip" id={`tip-${g.id}-${i}`}>{c.detail}</span>
                   </li>
                 ) : (
                   <li class="kit__item">
@@ -384,15 +385,13 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
   }
 
   /* The Kit: labelled groups of chips on the green field, three groups a row on a desktop, two on
-     a tablet, one on a phone. A chip with a detail is a button; its detail opens as a light card
-     under the group's chips, over what follows (nothing moves), its notch under the chip. */
+     a tablet, one on a phone. A chip with a detail is a button that opens it in place (below). */
   .kit__board {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--s-4) var(--s-4);
   }
   .kit__group {
-    position: relative;
     min-width: 0;
   }
   .kit__title {
@@ -457,34 +456,46 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
     outline: 3px solid var(--pr-navy);
     outline-offset: 3px;
   }
+  /* A chip with a detail opens in place: the chip becomes a small light card, its name and mark on
+     top and the detail inside it under them; the chips after it reflow (nothing laid over anything).
+     One open at a time (the script). Below 30rem the open card takes the whole row. Without script
+     every one stands open, so every detail reads. */
   .chip__tip {
-    position: absolute;
-    z-index: 5;
-    left: 0;
-    right: 0;
-    top: calc(100% + 0.75rem);
     display: none;
-    padding: var(--s-2);
-    background: var(--pr-light);
-    color: var(--pr-navy);
-    border: 2px solid var(--pr-navy);
+    padding: 0 0.75rem 0.75rem;
+    font-family: var(--font-text);
     font-size: 1rem;
     line-height: 1.45;
   }
-  /* the notch, under the chip that opened it (placed by script; at the left edge without it) */
-  .chip__tip::before {
-    content: '';
-    position: absolute;
-    top: -0.625rem;
-    left: clamp(0.75rem, calc(var(--x, 1.5rem) - 0.5rem), calc(100% - 1.75rem));
-    width: 1rem;
-    height: 0.625rem;
-    background: var(--pr-navy);
-    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  .kit__item--more.is-open,
+  :global(html:not(.js)) .kit__item--more {
+    flex: 0 1 20rem;
+    display: flex;
+    flex-direction: column;
+    background: var(--pr-light);
+    color: var(--pr-navy);
+    border: 2px solid var(--pr-navy);
   }
-  :global(.js) .chip--more[aria-expanded='true'] + .chip__tip,
-  :global(html:not(.js)) .chip--more:is(:hover, :focus-visible) + .chip__tip {
+  .kit__item--more.is-open .chip,
+  :global(html:not(.js)) .kit__item--more .chip {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--pr-navy);
+  }
+  .kit__item--more.is-open .chip__mark,
+  :global(html:not(.js)) .kit__item--more .chip__mark {
+    color: var(--pr-navy);
+  }
+  .kit__item--more.is-open .chip__tip,
+  :global(html:not(.js)) .kit__item--more .chip__tip {
     display: block;
+  }
+  @media (max-width: 29.99rem) {
+    .kit__item--more.is-open,
+    :global(html:not(.js)) .kit__item--more {
+      flex-basis: 100%;
+    }
   }
   @media (max-width: 63.99rem) {
     .kit__board {
@@ -858,57 +869,40 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
   startDeck();
   startSwipes();
 
-  // The Kit: a chip with a detail shows it while a mouse is over it or the keyboard is on it, and
-  // a click or a tap keeps it open until the next one, a tap elsewhere or Escape. One at a time.
+  // The Kit: a press opens a chip in place, its detail inside it, and closes any other; a second
+  // press, Escape or a press elsewhere closes it. The focus stays where it is.
   const board = document.querySelector<HTMLElement>('[data-kit]');
   if (board) {
     const chips = Array.from(board.querySelectorAll<HTMLButtonElement>('[data-chip]'));
-    let kept: HTMLButtonElement | null = null;
-    const show = (chip: HTMLButtonElement, on: boolean) => {
-      if (on) {
-        chips.forEach((c) => c !== chip && c.setAttribute('aria-expanded', 'false'));
-        const group = chip.closest('.kit__group')!.getBoundingClientRect();
-        const box = chip.getBoundingClientRect();
-        (chip.nextElementSibling as HTMLElement).style.setProperty('--x', `${box.left + box.width / 2 - group.left}px`);
-      }
+    let open: HTMLButtonElement | null = null;
+    const set = (chip: HTMLButtonElement, on: boolean) => {
       chip.setAttribute('aria-expanded', String(on));
+      chip.parentElement!.classList.toggle('is-open', on);
     };
+    // (with script they start closed; the markup has them open for a page without it)
+    chips.forEach((c) => set(c, false));
     const shut = () => {
-      chips.forEach((c) => c.setAttribute('aria-expanded', 'false'));
-      kept = null;
+      if (open) set(open, false);
+      open = null;
     };
     for (const chip of chips) {
-      chip.addEventListener('pointerenter', (e) => {
-        if (e.pointerType === 'mouse' && !kept) show(chip, true);
-      });
-      chip.addEventListener('pointerleave', (e) => {
-        if (e.pointerType === 'mouse' && kept !== chip) show(chip, false);
-      });
-      chip.addEventListener('focus', () => {
-        if (chip.matches(':focus-visible') && kept !== chip) {
-          kept = null;
-          show(chip, true);
-        }
-      });
-      chip.addEventListener('blur', () => {
-        if (kept === chip) kept = null;
-        show(chip, false);
-      });
       chip.addEventListener('click', () => {
-        if (kept === chip) {
-          kept = null;
-          show(chip, false);
-        } else {
-          kept = chip;
-          show(chip, true);
+        const was = open === chip;
+        shut();
+        if (!was) {
+          set(chip, true);
+          open = chip;
         }
       });
     }
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') shut();
     });
-    document.addEventListener('pointerdown', (e) => {
-      if (kept && !kept.contains(e.target as Node)) shut();
+    // (on the click, never the press: closing on the press reflows the chips under the pointer, and
+    // the click would land on whatever moved there)
+    document.addEventListener('click', (e) => {
+      const t = e.target as Element;
+      if (open && !open.parentElement!.contains(t) && !t.closest?.('[data-chip]')) shut();
     });
   }
 
