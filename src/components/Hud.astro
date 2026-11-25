@@ -257,9 +257,8 @@ import { BUGS } from '../data/bugs';
     display: none;
   }
 
-  /* The dock: the scoreboard, and above it the toast, the scoreboard's card and, on Home, the card
-     the glitch raises (docked here; the other two rise above it while it is up, --prompt-lift).
-     Bottom right, in the bar on small screens. */
+  /* The dock: the scoreboard, and above it the toast and the scoreboard's card. Bottom right, in
+     the bar on small screens. */
   .dock {
     position: fixed;
     right: 0;
@@ -530,7 +529,7 @@ import { BUGS } from '../data/bugs';
     }
     .score__panel,
     .toast {
-      margin-bottom: calc(var(--floor-h) + var(--s-1) + var(--prompt-lift, 0px));
+      margin-bottom: calc(var(--floor-h) + var(--s-1));
     }
     /* With the bar gone the pill keeps its corner, flush with the bottom. */
     .dock.dock--off {
@@ -622,7 +621,7 @@ import { BUGS } from '../data/bugs';
     }
     .score__panel,
     .toast {
-      margin-bottom: calc(var(--s-1) + var(--prompt-lift, 0px));
+      margin-bottom: var(--s-1);
     }
   }
 
@@ -746,10 +745,10 @@ import { BUGS } from '../data/bugs';
       background: var(--bg);
     }
     .score__panel {
-      margin-bottom: calc(var(--s-1) + var(--prompt-lift, 0px));
+      margin-bottom: var(--s-1);
     }
     .toast {
-      margin-bottom: calc(var(--s-1) + var(--prompt-lift, 0px));
+      margin-bottom: var(--s-1);
     }
   }
 </style>

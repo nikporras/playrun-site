@@ -11,12 +11,13 @@
  * way up; the gap between them keeps it from flickering at the threshold. Nothing here reads or
  * follows the scroll position frame by frame, so the page scrolls natively.
  *
- * Right after the glitch a small card asks "Glitch on the name. Track it?", in the scoreboard's
- * corner with the toasts, and stays until it is answered (a glitch while it is up opens no second
- * one). Track it (✓): "Bug tracked", then the achievement "Glitch spotted", and no more glitches.
- * Ignore (✗): it closes for now, and the next pass glitches and asks again. Real buttons in the
- * tab order; it never takes the focus. While it is up, the toast and the scoreboard's card open
- * above it.
+ * Right after the glitch a small in-game bug ticket drops in at the top of the screen, just under
+ * the header and lined up with the name, its notch pointing up to where the name went: "Bug
+ * found", "The name glitches as it scrolls away." It stays until it is answered (a glitch while
+ * it is up opens no second one). Log it: "Bug logged", then the achievement "Glitch spotted", and
+ * no more glitches. Ignore: it closes for now, and the next pass glitches and asks again. Real
+ * buttons in the tab order; it never takes the focus. Never at the foot of the screen, so it is
+ * never mistaken for a consent banner.
  *
  * Off without script, under reduced motion, with the motion switch off and with the games off: the
  * hero simply goes behind, with no glitch and no card.
@@ -49,7 +50,8 @@ export function startHeroExit() {
   const yes = card?.querySelector<HTMLButtonElement>('[data-glitch-yes]');
   const no = card?.querySelector<HTMLButtonElement>('[data-glitch-no]');
   const dock = document.getElementById('dock');
-  if (!hero || !wall || !copy || !card || !text || !actions || !yes || !no || !dock) return;
+  const header = document.querySelector<HTMLElement>('.header');
+  if (!hero || !wall || !copy || !card || !text || !actions || !yes || !no) return;
   if (!('IntersectionObserver' in window)) return;
   const html = document.documentElement;
   // (the games off, or motion off from the switch: the hero simply goes behind)
@@ -66,18 +68,33 @@ export function startHeroExit() {
     fade = hero.animate([{ opacity: now }, { opacity: f ? 0 : 1 }], { duration: instant ? 0 : TIMING.fade, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'forwards' });
   };
 
-  // ---- The card: in the scoreboard's corner, the toast and the scoreboard's card above it
-  dock.prepend(card);
+  // ---- The ticket: at the top of the screen, just under the header while the header is still on
+  // screen, 16px down once it has gone. Placed when it opens and, while it is up, on scroll (one
+  // read a frame, only then).
   let timer = 0;
-  const lift = () => html.style.setProperty('--prompt-lift', card.classList.contains('is-in') ? `${card.offsetHeight + 8}px` : '0px');
+  let placing = false;
+  const place = () => {
+    placing = false;
+    const below = header ? Math.round(header.getBoundingClientRect().bottom) + 8 : 0;
+    card.style.setProperty('--glitch-top', `max(var(--s-2), env(safe-area-inset-top, 0px), ${Math.max(0, below)}px)`);
+  };
+  const onScroll = () => {
+    if (placing) return;
+    placing = true;
+    requestAnimationFrame(place);
+  };
   let stopped = false;
   const close = () => {
     window.clearTimeout(timer);
+    removeEventListener('scroll', onScroll);
     // (focus inside it goes to the scoreboard, never to nowhere)
-    if (card.contains(document.activeElement)) dock.querySelector<HTMLElement>('[data-hud-more]')?.focus();
+    if (card.contains(document.activeElement)) (dock?.querySelector<HTMLElement>('[data-hud-more]') ?? document.querySelector<HTMLElement>('main'))?.focus();
     card.classList.remove('is-in');
-    lift();
     timer = window.setTimeout(() => (card.hidden = true), 300);
+  };
+  const say = (words: string, hidden = '') => {
+    const sr = Object.assign(document.createElement('span'), { className: 'visually-hidden', textContent: hidden });
+    text.replaceChildren(...(hidden ? [sr] : []), words);
   };
   const open = () => card.classList.contains('is-in');
   const prompt = () => {
@@ -86,10 +103,11 @@ export function startHeroExit() {
     window.clearTimeout(timer);
     actions.hidden = false;
     card.hidden = false;
-    text.textContent = 'Glitch on the name. Track it?';
+    say('The name glitches as it scrolls away.', 'Bug found: ');
+    place();
+    addEventListener('scroll', onScroll, { passive: true });
     void card.offsetHeight;
     card.classList.add('is-in');
-    lift();
   };
   yes.addEventListener('click', () => {
     window.clearTimeout(timer);
@@ -98,8 +116,7 @@ export function startHeroExit() {
     // (the focus stays in the card, on its message, until it closes)
     text.focus();
     actions.hidden = true;
-    text.textContent = 'Bug tracked';
-    lift();
+    say('Bug logged');
     timer = window.setTimeout(() => {
       close();
       document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'glitch' }));

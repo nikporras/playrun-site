@@ -432,7 +432,7 @@ test.describe('Home', () => {
   const frames = (page: Page) => page.evaluate(() => (window as unknown as { __glitch: { t: number; on: boolean; dx: number }[] }).__glitch);
 
   for (const [width, height] of SIZES) {
-    test(`the glitch (${width}x${height}): as the hero scrolls away the name glitches in two quick bursts over about 0.7 s, slices of a hidden copy jumping well sideways with a strong cyan and pink split, never more than three flashes a second, while the heading never moves; the card asks to track it, clear of the pill, the bar and the HUD, without taking the focus, and stays`, async ({ page }) => {
+    test(`the glitch (${width}x${height}): as the hero scrolls away the name glitches in two quick bursts over about 0.7 s, slices of a hidden copy jumping well sideways with a strong cyan and pink split, never more than three flashes a second, while the heading never moves; a bug ticket drops in at the top of the screen under the header, lined up with the name, clear of the pill, the bar and the HUD, without taking the focus, and stays`, async ({ page }) => {
       test.setTimeout(45_000);
       await openHome(page, width, height);
       const h1 = page.locator('h1');
@@ -485,8 +485,8 @@ test.describe('Home', () => {
       await expect(copy).toBeHidden({ timeout: 1200 });
       await expect(card).toBeVisible();
       await expect(card).toHaveClass(/is-in/);
-      await expect(card.locator('[data-glitch-text]')).toHaveText('Glitch on the name. Track it?');
-      await expect(page.getByRole('button', { name: 'Track the bug' })).toBeVisible();
+      await expect(card.locator('[data-glitch-text]')).toHaveText('Bug found: The name glitches as it scrolls away.');
+      await expect(page.getByRole('button', { name: 'Log it' })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Ignore' })).toBeVisible();
       expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
       // two bursts, about 0.7 s from the first frame to the last, never more than three flashes in a second
@@ -500,10 +500,21 @@ test.describe('Home', () => {
       expect(span).toBeLessThan(900);
       for (const t of starts) expect(starts.filter((u) => u >= t && u < t + 1000).length, 'at most three flashes a second').toBeLessThanOrEqual(3);
       expect(Math.max(...shown.map((x) => x.dx)), 'the slices really jump').toBeGreaterThanOrEqual(lo * 0.7);
-      // in the scoreboard's corner, clear of the pill, the bar, the track and the ship, and on screen
+      // an in-game bug ticket: at the top of the screen (under the header while it shows), never in
+      // the bottom half, lined up with the name, its notch on its top edge pointing up; the chip
+      // and the two buttons in words; clear of the pill, the bar, the track and the ship
       const c = await box(page, '[data-glitch-card]');
       expect(c.x).toBeGreaterThanOrEqual(0);
       expect(c.x + c.width).toBeLessThanOrEqual(width);
+      expect(c.y, 'at the top of the screen').toBeGreaterThanOrEqual(0);
+      expect(c.y, 'at the top of the screen').toBeLessThanOrEqual(Math.max(16, (await page.locator('.header').evaluate((el) => el.getBoundingClientRect().bottom)) + 8) + 1);
+      expect(c.y + c.height, 'never in the bottom half').toBeLessThanOrEqual(height / 2);
+      expect(Math.abs(c.x - (await h1.boundingBox())!.x), 'lined up with the name').toBeLessThanOrEqual(4);
+      const notch = await box(page, '.glitchcard__notch');
+      expect(notch.y, 'the notch on the top edge').toBeLessThanOrEqual(c.y + 1);
+      await expect(card.locator('.glitchcard__chip')).toHaveText('Bug found');
+      await expect(card.locator('.glitchcard__bug')).toBeVisible();
+      await expect(card.getByRole('button')).toHaveText(['Log it', 'Ignore']);
       for (const sel of ['.score__pill', ...(width < 1024 ? ['.tabbar'] : ['.hud__runner', '#hud'])]) expect(overlap(c, await box(page, sel)), `clear of ${sel}`).toBe(false);
       // AA on its own field
       const ratio = await card.locator('[data-glitch-text]').evaluate((el) => {
@@ -520,8 +531,8 @@ test.describe('Home', () => {
       });
       expect(ratio).toBeGreaterThanOrEqual(4.5);
       // the buttons are in the tab order
-      await page.getByRole('button', { name: 'Track the bug' }).focus();
-      await expect(page.getByRole('button', { name: 'Track the bug' })).toBeFocused();
+      await page.getByRole('button', { name: 'Log it' }).focus();
+      await expect(page.getByRole('button', { name: 'Log it' })).toBeFocused();
     });
   }
 
@@ -535,7 +546,7 @@ test.describe('Home', () => {
     // no auto close: still there after ten seconds, with the focus never taken
     await page.waitForTimeout(10_000);
     await expect(card).toHaveClass(/is-in/);
-    await expect(card.locator('[data-glitch-text]')).toHaveText('Glitch on the name. Track it?');
+    await expect(card.locator('[data-glitch-text]')).toHaveText('Bug found: The name glitches as it scrolls away.');
     expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
     // back up to the name: it glitches again, and the card stays the one card, untouched
     await backUp(page);
@@ -543,7 +554,7 @@ test.describe('Home', () => {
     await expect(copy).toBeHidden({ timeout: 1200 });
     await expect(page.locator('[data-glitch-card]')).toHaveCount(1);
     await expect(card).toHaveClass(/is-in/);
-    await expect(card.locator('[data-glitch-text]')).toHaveText('Glitch on the name. Track it?');
+    await expect(card.locator('[data-glitch-text]')).toHaveText('Bug found: The name glitches as it scrolls away.');
     // and down again
     await rest(page);
     await toGlitch(page);
@@ -569,7 +580,7 @@ test.describe('Home', () => {
     await backUp(page);
     await expect(copy).toBeVisible();
     await expect(card).toHaveClass(/is-in/, { timeout: 1500 });
-    await expect(card.locator('[data-glitch-text]')).toHaveText('Glitch on the name. Track it?');
+    await expect(card.locator('[data-glitch-text]')).toHaveText('Bug found: The name glitches as it scrolls away.');
     // and on a later visit too
     await page.getByRole('button', { name: 'Ignore' }).click();
     await page.reload();
@@ -581,7 +592,7 @@ test.describe('Home', () => {
     await expect(card).toHaveClass(/is-in/, { timeout: 1500 });
   });
 
-  test('track the glitch: the card says Bug tracked, then the achievement Glitch spotted unlocks with the toast and the counter goes up; the toast never sits on the card; then it never glitches again, not on the next pass and not after a reload', async ({ page }) => {
+  test('log the glitch: the ticket says Bug logged, then the achievement Glitch spotted unlocks with the toast and the counter goes up; the toast never sits on the card; then it never glitches again, not on the next pass and not after a reload', async ({ page }) => {
     test.setTimeout(30_000);
     await openHome(page, 1440, 900);
     await expect(page.locator('[data-hud-ach]')).toHaveText('0/7');
@@ -589,14 +600,14 @@ test.describe('Home', () => {
     const card = page.locator('[data-glitch-card]');
     const copy = page.locator('[data-glitch]');
     await expect(card).toHaveClass(/is-in/);
-    // while it is up, the scoreboard's card opens above it
+    // while it is up, the scoreboard's card never covers it
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
     await settled(page.locator('.score__panel'));
     expect(overlap(await box(page, '.score__panel'), await box(page, '[data-glitch-card]')), 'the scoreboard card above it').toBe(false);
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Track the bug' }).click();
-    await expect(card.locator('[data-glitch-text]')).toHaveText('Bug tracked');
-    await expect(page.getByRole('button', { name: 'Track the bug' })).toBeHidden();
+    await page.getByRole('button', { name: 'Log it' }).click();
+    await expect(card.locator('[data-glitch-text]')).toHaveText('Bug logged');
+    await expect(page.getByRole('button', { name: 'Log it' })).toBeHidden();
     const toast = page.locator('[data-toast]');
     await expect(toast).toHaveClass(/is-in/, { timeout: 3000 });
     await expect(toast).toContainText('Achievement unlocked');
@@ -632,7 +643,7 @@ test.describe('Home', () => {
     test.setTimeout(30_000);
     await openHome(page, 1440, 900);
     await toGlitch(page);
-    await page.getByRole('button', { name: 'Track the bug' }).click();
+    await page.getByRole('button', { name: 'Log it' }).click();
     await expect(page.locator('[data-hud-ach]')).toHaveText('1/7', { timeout: 3000 });
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(400);

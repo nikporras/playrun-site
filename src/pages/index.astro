@@ -2,9 +2,8 @@
 import { getCollection } from 'astro:content';
 import { Image, Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import PassMark from '../components/PassMark.astro';
-import CrossMark from '../components/CrossMark.astro';
 import Bug from '../components/Bug.astro';
+import Sprite from '../components/Sprite.astro';
 import Join from '../components/Join.astro';
 import GameIcon from '../components/GameIcon.astro';
 import HeroHalo from '../components/HeroHalo.astro';
@@ -143,16 +142,22 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
     <Bug id="hero-1" style="left: 40%; top: 2rem" tablet="right: 4%; top: 0.5rem" walk="x 2rem" />
   </section>
 
-  <!-- The card the glitch raises (the script docks it with the scoreboard, where the toasts open) -->
+  <!-- The ticket the glitch raises: an in-game bug ticket at the top of the screen, under the
+       header, its notch pointing up to where the name went (placed by src/scripts/glitch.ts) -->
   <div class="glitchcard" data-glitch-card data-nosnippet hidden>
-    <p class="glitchcard__text" tabindex="-1" aria-live="polite" data-glitch-text>Glitch on the name. Track it?</p>
-    <div class="glitchcard__actions" data-glitch-actions>
-      <button type="button" class="glitchcard__btn glitchcard__btn--yes" data-glitch-yes data-umami-event="glitch-tracked">
-        <span aria-hidden="true"><PassMark /></span><span class="visually-hidden">Track the bug</span>
-      </button>
-      <button type="button" class="glitchcard__btn glitchcard__btn--no" data-glitch-no data-umami-event="glitch-ignored">
-        <span aria-hidden="true"><CrossMark /></span><span class="visually-hidden">Ignore</span>
-      </button>
+    <svg class="glitchcard__notch" viewBox="0 0 10 6" width="20" height="12" shape-rendering="crispEdges" aria-hidden="true">
+      <path class="glitchcard__notch-edge" d="M4 0h2v1h1v1h1v1h1v1h1v2H0V4h1V3h1V2h1V1h1z"></path>
+      <path class="glitchcard__notch-fill" d="M4 2h2v1h1v1h1v2H2V4h1V3h1z"></path>
+    </svg>
+    <div class="glitchcard__frame">
+      <div class="glitchcard__body">
+        <p class="glitchcard__head" aria-hidden="true"><Sprite name="bug" class="glitchcard__bug" /><span class="glitchcard__chip">Bug found</span></p>
+        <p class="glitchcard__text" tabindex="-1" aria-live="polite" data-glitch-text><span class="visually-hidden">Bug found: </span>The name glitches as it scrolls away.</p>
+        <div class="glitchcard__actions" data-glitch-actions>
+          <button type="button" class="glitchcard__btn glitchcard__btn--yes" data-glitch-yes data-umami-event="glitch-tracked">Log it</button>
+          <button type="button" class="glitchcard__btn glitchcard__btn--no" data-glitch-no data-umami-event="glitch-ignored">Ignore</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -481,26 +486,25 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
       transform: none;
     }
   }
-  /* The card the glitch raises: the toasts' family (the light field, navy ink, a navy outline,
-     Pixel Operator), in the scoreboard's corner where they open, sliding in the same way. */
+  /* The ticket the glitch raises: a small in-game bug ticket, never a banner. Fixed at the top of
+     the screen, under the header (--glitch-top, from the script), lined up with the name, its
+     pixel notch pointing up to where the name went; never at the foot of the screen. A navy card
+     in a 2px light pixel frame with notched corners, the bug and a "Bug found" chip, the line in
+     Montserrat, two buttons with words. It drops in from above. */
   .glitchcard {
-    position: absolute;
-    right: 0;
-    bottom: 100%;
-    margin-bottom: var(--s-1);
-    display: flex;
-    align-items: center;
-    gap: var(--s-2);
+    position: fixed;
+    top: var(--glitch-top, max(var(--s-2), env(safe-area-inset-top, 0px)));
+    left: var(--gutter);
+    z-index: 42;
     width: max-content;
-    max-width: calc(100vw - 2 * var(--margin));
-    padding: 0.5rem 0.5rem 0.5rem 0.75rem;
-    background: var(--field-light);
-    color: var(--field-light-ink);
-    outline: 2px solid var(--pr-navy);
-    font-family: var(--font-display);
-    line-height: 1.1;
+    max-width: min(26rem, calc(100vw - 2 * var(--margin)));
+    padding-top: 10px; /* (room for the notch) */
+    color: var(--ink);
+    --bug-body: var(--pr-green);
+    --bug-leg: var(--pr-cyan);
+    --bug-eye: var(--pr-navy);
     opacity: 0;
-    transform: translateX(calc(100% + var(--margin)));
+    transform: translateY(-0.75rem);
     transition:
       transform var(--dur-base) var(--ease-out),
       opacity var(--dur-base) var(--ease-out);
@@ -512,44 +516,94 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
     opacity: 1;
     transform: none;
   }
+  .glitchcard__notch {
+    position: absolute;
+    top: 0;
+    left: 1.25rem;
+    display: block;
+  }
+  .glitchcard__notch-edge {
+    fill: var(--pr-light);
+  }
+  .glitchcard__notch-fill {
+    fill: var(--pr-navy);
+  }
+  /* (the frame is the light field showing round the navy body; both cut by the same pixel steps) */
+  .glitchcard__frame {
+    padding: 2px;
+    background: var(--pr-light);
+    clip-path: polygon(0 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0, calc(100% - 6px) 0, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px));
+  }
+  .glitchcard__body {
+    display: grid;
+    gap: 0.625rem;
+    padding: 0.875rem 1rem 1rem;
+    background: var(--pr-navy);
+    clip-path: polygon(0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px));
+  }
+  .glitchcard__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+  }
+  .glitchcard__bug {
+    width: 1.75rem;
+    height: auto;
+    flex: none;
+  }
+  .glitchcard__chip {
+    padding: 0.2rem 0.45rem 0.15rem;
+    background: var(--accent-2);
+    color: var(--pr-navy);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
   .glitchcard__text {
     margin: 0;
-    max-width: 16rem;
-    font-size: 1.125rem;
+    font-size: 1.0625rem;
+    line-height: 1.45;
     outline: 0;
   }
   .glitchcard__actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
   }
   .glitchcard__actions[hidden] {
     display: none;
   }
   .glitchcard__btn {
-    flex: none;
-    width: 2.75rem;
-    height: 2.75rem;
-    display: grid;
-    place-items: center;
-    background: var(--pr-navy);
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+    padding: 0 1rem;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    line-height: 1;
     color: var(--ink);
-    font-size: 1.25rem;
+    box-shadow: inset 0 0 0 2px var(--ink);
   }
   .glitchcard__btn--yes {
-    color: var(--accent);
+    background: var(--accent);
+    color: var(--pr-navy);
+    box-shadow: none;
   }
   .glitchcard__btn:hover {
-    background: var(--pr-blue);
+    background: var(--accent-2);
+    color: var(--pr-navy);
+    box-shadow: none;
   }
   .glitchcard__btn:focus-visible {
-    outline: 3px solid var(--pr-navy);
+    outline: 3px solid var(--accent-2);
     outline-offset: 2px;
   }
-  /* Phones and tablets: just above the bottom bar, inset from the edge. */
+  /* Phones and tablets: the margins either side. */
   @media (max-width: 63.99rem) {
     .glitchcard {
-      right: var(--s-2);
-      margin-bottom: var(--s-1);
+      left: var(--margin);
     }
   }
   /* The markers the hero's exit watches, from near the top of Level 2 to the end of the page
