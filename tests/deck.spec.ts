@@ -77,10 +77,17 @@ test.describe('The Testing deck', () => {
         return still;
       })
       .toBe(true);
-    const r = (await line.boundingBox())!;
-    await page.mouse.move(r.x + 2, r.y + 10);
+    // (the card is tilted, so the drag keeps to the middle of the first line of text and runs a short
+    // way along it, from 1px inside its first glyph)
+    const r = await line.evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const first = [...range.getClientRects()].find((q) => q.width > 0)!;
+      return { x: first.left, y: first.top + first.height / 2, w: first.width };
+    });
+    await page.mouse.move(r.x + 1, r.y);
     await page.mouse.down();
-    await page.mouse.move(r.x + r.width - 10, r.y + 10, { steps: 6 });
+    await page.mouse.move(r.x + Math.min(160, r.w - 4), r.y, { steps: 6 });
     await page.mouse.up();
     expect((await page.evaluate(() => getSelection()?.toString() ?? '')).length).toBeGreaterThan(10);
     // each step ran as it was dealt
