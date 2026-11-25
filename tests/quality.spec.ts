@@ -319,3 +319,75 @@ test('the title reads as one phrase in balanced lines: at most three at 300px, a
     expect(lines, `${width}px`).toBeGreaterThan(0);
   }
 });
+
+// Phones and tablets: the five steps swipe (Swipe.astro), one on show with the next peeking in,
+// "n of 5", Previous and Next. A step runs when its card comes on show; the row is as tall as the
+// tallest card, so the buttons and what follows never move as the cards go by.
+for (const [width, height] of [[375, 812], [768, 1024]] as const) {
+  test(`at ${width}px the steps swipe: one card on show, each labelled Step n of 5, run as it comes on show, the buttons never moving`, { tag: ['@viewports', '@a11y'] }, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/quality/');
+    const region = page.getByRole('region', { name: 'The five steps' });
+    await expect(region).toHaveAttribute('aria-roledescription', 'carousel');
+    const cards = region.locator('.step');
+    await expect(cards).toHaveCount(5);
+    for (let i = 0; i < 5; i++) {
+      await expect(cards.nth(i)).toHaveAttribute('role', 'group');
+      await expect(cards.nth(i)).toHaveAttribute('aria-label', `Step ${i + 1} of 5`);
+    }
+    const track = region.locator('.swipe__track');
+    await track.scrollIntoViewIfNeeded();
+    const pos = region.locator('[data-swipe-pos]');
+    await expect(pos).toHaveText('1 of 5');
+    // one on show, the next peeking in from the edge
+    const b = await cards.evaluateAll((els) => els.slice(0, 2).map((e) => e.getBoundingClientRect().toJSON()));
+    expect(b[0].left).toBeGreaterThanOrEqual(0);
+    expect(b[0].right).toBeLessThan(width);
+    expect(width - b[1].left).toBeGreaterThan(0);
+    expect(width - b[1].left).toBeLessThan(80);
+    // the first runs once the row is on screen; the second waits for its turn
+    await expect(cards.nth(0)).toHaveClass(/is-(pass|fail|unmeasured)/, { timeout: 15_000 });
+    await page.waitForTimeout(800);
+    await expect(cards.nth(1)).toHaveClass(/is-idle/);
+    // each card keeps its own height; the row is as tall as the tallest, so swiping moves nothing
+    // under it (a result arriving can make a card taller: that is the only change allowed)
+    const heights = () => cards.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height)));
+    const h0 = await heights();
+    expect(new Set(h0).size, 'cards keep their own heights').toBeGreaterThan(1);
+    expect(await track.evaluate((el) => el.getBoundingClientRect().height)).toBeGreaterThanOrEqual(Math.max(...h0) - 1);
+    const next = region.getByRole('button', { name: 'Next card' });
+    // (measured from the row's top: the status line at the top of the page changes with the results)
+    const where = () => page.evaluate(() => {
+      const row = document.querySelector('.plan .swipe__track')!.getBoundingClientRect().top;
+      return [document.querySelector('.plan [data-swipe-next]')!.getBoundingClientRect().top - row, document.querySelector('.plan .swipe__controls')!.getBoundingClientRect().bottom - row];
+    });
+    for (let k = 2; k <= 5; k++) {
+      const tallest = Math.max(...(await heights()));
+      const before = await where();
+      await next.click();
+      await expect(pos).toHaveText(`${k} of 5`);
+      await expect(cards.nth(k - 1)).toHaveClass(/is-(pass|fail|unmeasured)/, { timeout: 15_000 });
+      if (Math.max(...(await heights())) === tallest) expect(await where(), `card ${k}: nothing under the row moved`).toEqual(before);
+    }
+    await expect(page.locator('#run-status')).toHaveText('Every step has run. The report is at the end.');
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('playrun.games') ?? '{}').achievements ?? [])).toContain('selftest');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  });
+}
+
+test('at 375px Run every step still runs all five, wherever the swipe is', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/quality/');
+  await page.getByRole('button', { name: 'Run every step' }).click();
+  await expect(page.locator('#run-status')).toHaveText('Every step has run. The report is at the end.', { timeout: 20_000 });
+  await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5);
+  await expect(page.locator('.plan [data-swipe-pos]')).toHaveText('1 of 5');
+});
+
+test('on a desktop the deck is as it was: no swipe buttons, no carousel', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/quality/');
+  await expect(page.locator('.plan [data-deck]')).toHaveClass(/is-deck/);
+  await expect(page.locator('.plan .swipe__controls')).toBeHidden();
+  await expect(page.locator('.plan [data-swipe]')).not.toHaveAttribute('aria-roledescription');
+});

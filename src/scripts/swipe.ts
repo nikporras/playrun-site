@@ -2,7 +2,9 @@
  * The swipe (src/components/Swipe.astro), on phones and tablets: the row scrolls and snaps by
  * itself; this keeps "n of N", the dots and the buttons in step with it, moves one card on
  * Previous, Next and the arrow keys (at once with motion off), and makes the row reachable by Tab
- * while it scrolls. Nothing on a desktop, where the list has the page's own layout.
+ * while it scrolls. The card on show carries is-current, and the root sends a swipe:change event
+ * (detail: its index) when another card comes on show. Nothing on a desktop, where the list has
+ * the page's own layout.
  */
 import { reducedMotion } from './motion';
 
@@ -29,11 +31,17 @@ function setup(root: HTMLElement) {
     const step = n > 1 ? left(1) : 1;
     return Math.max(0, Math.min(n - 1, Math.round(track.scrollLeft / step)));
   };
+  let told = -1;
   const paint = () => {
     const k = current();
     if (k !== i || pos.textContent !== `${k + 1} of ${n}`) {
       i = k;
       pos.textContent = `${i + 1} of ${n}`;
+    }
+    slides.forEach((s, j) => s.classList.toggle('is-current', narrow.matches && j === i));
+    if (narrow.matches && told !== i) {
+      told = i;
+      root.dispatchEvent(new CustomEvent('swipe:change', { detail: i }));
     }
     dots.forEach((d, j) => d.classList.toggle('is-on', j === i));
     // (aria-disabled, not disabled: a button that disables itself under the finger or the

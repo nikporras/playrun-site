@@ -94,7 +94,7 @@ test.describe('The Quality deck', () => {
     await expect.poll(async () => (await state())[4].e).toBeGreaterThanOrEqual(0.99);
   });
 
-  test('a phone slides the cards in one at a time beside Pocket DevTools; reduced motion and no script keep them still', async ({ browser }) => {
+  test('a phone swipes the cards, one on show, with Pocket DevTools under the row; reduced motion and no script keep them still', async ({ browser }) => {
     const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const p1 = await phone.newPage();
     await p1.goto('/quality/');
@@ -103,19 +103,18 @@ test.describe('The Quality deck', () => {
     await expect(p1.locator('[data-deck]')).not.toHaveClass(/is-deck/);
     const cards = p1.locator('.deck__card');
     expect(await cards.first().evaluate((el) => getComputedStyle(el).position)).toBe('static');
-    const delays = await cards.evaluateAll((els) => els.map((el) => parseFloat(getComputedStyle(el).transitionDelay)));
-    for (let i = 1; i < delays.length; i++) expect(delays[i], 'one at a time').toBeGreaterThan(delays[i - 1]);
-    await expect(cards.first()).toHaveAttribute('data-enter', '');
-    // (measured where they come to rest: every entrance in and finished, so no card is caught mid-rise)
-    await p1.evaluate(() => {
-      document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in'));
-      return Promise.all(document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline && a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => null)));
-    });
-    // the cards stand one above the other, then Pocket DevTools, nothing overlapping
-    const boxes = await cards.evaluateAll((els) => els.map((el) => ({ top: el.getBoundingClientRect().top + scrollY, bottom: el.getBoundingClientRect().bottom + scrollY })));
-    for (let i = 1; i < boxes.length; i++) expect(boxes[i].top).toBeGreaterThanOrEqual(boxes[i - 1].bottom);
+    // the cards side by side in one row (no entrance: they are all there, the row scrolls)
+    await expect(cards.first()).not.toHaveAttribute('data-enter');
+    const boxes = await cards.evaluateAll((els) => els.map((el) => ({ top: el.getBoundingClientRect().top + scrollY, left: el.getBoundingClientRect().left, bottom: el.getBoundingClientRect().bottom + scrollY })));
+    for (let i = 1; i < boxes.length; i++) {
+      expect(boxes[i].top).toBe(boxes[0].top);
+      expect(boxes[i].left).toBeGreaterThan(boxes[i - 1].left);
+    }
+    // then the buttons, then Pocket DevTools, nothing overlapping
+    const controls = await p1.locator('.plan .swipe__controls').evaluate((el) => el.getBoundingClientRect().top + scrollY);
+    expect(controls).toBeGreaterThanOrEqual(Math.max(...boxes.map((b) => b.bottom)));
     const dev = await p1.locator('.devtools').evaluate((el) => el.getBoundingClientRect().top + scrollY);
-    expect(dev).toBeGreaterThanOrEqual(boxes[4].bottom);
+    expect(dev).toBeGreaterThan(controls);
     expect(await p1.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     await phone.close();
 

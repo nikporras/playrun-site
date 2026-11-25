@@ -61,6 +61,11 @@ const { label, count, class: extra, ...rest } = Astro.props;
       scrollbar-width: none;
       list-style: none;
     }
+    /* (swipe--top: cards keep their own heights, the row stays as tall as the tallest, so nothing
+       under it moves as the cards go by) */
+    .swipe--top :global(.swipe__track) {
+      align-items: flex-start;
+    }
     .swipe :global(.swipe__track::-webkit-scrollbar) {
       display: none;
     }

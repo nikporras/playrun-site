@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
 import Join from '../components/Join.astro';
+import Swipe from '../components/Swipe.astro';
 import PassMark from '../components/PassMark.astro';
 import CrossMark from '../components/CrossMark.astro';
 import { spell, suite, versions } from '../data/suite';
@@ -174,8 +175,8 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
 
   <!-- Level 2: the test plan. The five steps are cards; on a desktop with motion the level pins
        and they are dealt in one by one with the scroll, like drawing the next test case
-       (src/scripts/deck.ts adds is-deck). On phones they slide in one at a time; under reduced
-       motion and without script they stand still. -->
+       (src/scripts/deck.ts adds is-deck). On phones and tablets they swipe (Swipe.astro), each step
+       running when its card is the one on show; with motion off on a desktop they stand in a column. -->
   <section class="level level--blue has-join-bottom plan" data-level="2" aria-labelledby="plan-title">
     <Join kind="terrain" from="var(--field-blue)" to="var(--field-green)" seed="quality-report" />
     <div class="level__head">
@@ -196,12 +197,12 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
       </div>
     </div>
     <!-- The head stays above: the deck pins the stage alone, so a card has the whole screen -->
-    <div class="deck level__body" data-deck>
+    <Swipe label="The five steps" count={steps.length} class="deck level__body swipe--top" data-deck>
       <div class="deck__pin">
-        <ol class="steps deck__stage">
+        <div class="steps deck__stage swipe__track">
       {
         steps.map((s, i) => (
-          <li class="step is-idle deck__card" id={`step-${s.id}`} data-step={s.id} data-checks={JSON.stringify(s.checks)} data-enter style={`--enter-delay: ${i * 60}ms; --i: ${i}; --tilt: ${[-2.5, 2, -1.5, 2.5, -2][i]}deg; --step-accent: ${looks[s.id].accent}`}>
+          <div class="step is-idle deck__card" id={`step-${s.id}`} role="group" aria-roledescription="slide" aria-label={`Step ${i + 1} of ${steps.length}`} data-step={s.id} data-checks={JSON.stringify(s.checks)} style={`--i: ${i}; --tilt: ${[-2.5, 2, -1.5, 2.5, -2][i]}deg; --step-accent: ${looks[s.id].accent}`}>
             <div class="step__head">
               <p class="step__num">Step {i + 1}</p>
               <h3 class="step__title">
@@ -244,12 +245,12 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
                 </div>
               ))}
             </div>
-          </li>
+          </div>
         ))
       }
-        </ol>
+        </div>
       </div>
-    </div>
+    </Swipe>
 
     <!-- Pocket DevTools: on a phone, what F12 would show, from the page's own records -->
     <section class="devtools" aria-labelledby="devtools-title" data-enter>
@@ -861,7 +862,9 @@ Attachments: [screenshot or video]</pre>
   import { reducedMotion } from '../scripts/motion';
   import { checks, errorsSinceLoad, kb, timings, pageLoaded, NOT_REPORTED, type Result } from '../scripts/checks';
   import { startDeck } from '../scripts/deck';
+  import { startSwipes } from '../scripts/swipe';
   startDeck();
+  startSwipes();
 
   // The device picker: preselected from this browser and device, the choice kept for later visits
   // (when storage is there); each step shows only that option's instructions, and a phone brings
@@ -979,10 +982,25 @@ Attachments: [screenshot or video]</pre>
       for (const s of steps) await runStep(s);
     })();
   } else {
+    // In a column or the deck a step runs as it comes into view. In the swipe (phones and tablets)
+    // it runs when its card is the one on show while the row is on screen.
+    const swiping = matchMedia('(max-width: 63.99rem)');
+    const swipe = document.querySelector<HTMLElement>('.plan [data-swipe]');
+    const track = swipe?.querySelector<HTMLElement>('.swipe__track');
+    let rowSeen = false;
+    const runShown = () => {
+      const shown = steps.find((s) => s.classList.contains('is-current'));
+      if (rowSeen && shown) runStep(shown);
+    };
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
-          if (!e.isIntersecting) continue;
+          if (e.target === track) {
+            rowSeen = e.isIntersecting;
+            if (swiping.matches) runShown();
+            continue;
+          }
+          if (!e.isIntersecting || swiping.matches) continue;
           io.unobserve(e.target);
           runStep(e.target as HTMLElement);
         }
@@ -990,6 +1008,10 @@ Attachments: [screenshot or video]</pre>
       { threshold: 0.3 },
     );
     steps.forEach((s) => io.observe(s));
+    if (track) io.observe(track);
+    swipe?.addEventListener('swipe:change', () => {
+      if (swiping.matches) runShown();
+    });
   }
 
   runAll?.addEventListener('click', async () => {
