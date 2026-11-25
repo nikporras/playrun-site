@@ -20,6 +20,7 @@ const SOURCES = {
   '/': ['src/pages/index.astro', ...DATA],
   '/portfolio/': ['src/pages/portfolio.astro', 'src/components/GameCard.astro', ...DATA],
   '/about/': ['src/pages/about.astro', 'src/data/about.ts', 'src/data/skills.ts', 'src/components/Swipe.astro', ...DATA],
+  '/testing/': ['src/pages/testing.astro', 'src/components/Swipe.astro', 'src/scripts/checks.ts', 'src/data/suite.ts', ...DATA],
 };
 /** @param {string} path */
 const sourcesOf = (path) => SOURCES[path] ?? [`src/pages${path.replace(/\/$/, '')}.astro`];
@@ -116,7 +117,8 @@ export default defineConfig({
   // (every page's CSS in its own HTML: nothing to fetch before the first paint)
   build: { format: 'directory', inlineStylesheets: 'always' },
   // The Services page became Skills, and Skills is now part of About (/skills/ is a page of its
-  // own that sends visitors there, src/pages/skills.astro).
+  // own that sends visitors there, src/pages/skills.astro). Quality is now Testing: /quality/ is a
+  // page of its own too (src/pages/quality.astro).
   // The Credits page was folded into the Terms page.
   redirects,
   integrations: [
@@ -134,7 +136,7 @@ export default defineConfig({
       // addresses in the map carry the trailing slash.
       filter: (page) => {
         const path = new URL(page).pathname.replace(/\/$/, '');
-        return !/^\/portfolio\/./.test(path) && !['/services', '/skills', '/credits', '/llms.txt'].includes(path);
+        return !/^\/portfolio\/./.test(path) && !['/services', '/skills', '/quality', '/credits', '/llms.txt'].includes(path);
       },
     }),
   ],

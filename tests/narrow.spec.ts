@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
  * motion on and off, never scrolls sideways (once a live check reported an overflow at 317px), and
  * nothing is cut off at the side inside a box that clips it (the Bug Sweep canvas once was).
  */
-const PAGES = ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+const PAGES = ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
 
 for (const width of [300, 320]) {
   for (const motion of ['on', 'off'] as const) {

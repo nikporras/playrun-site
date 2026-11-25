@@ -1,7 +1,7 @@
 /**
  * What I test: the five areas, shown on About (Level 2, id "skills") as a dealt deck on a desktop
  * and a swipe on phones and tablets, and named in the structured data (knowsAbout). Each area has
- * an 8x8 pixel icon in the style of the Quality steps ('#' a pixel, '.' empty).
+ * an 8x8 pixel icon in the style of the Testing steps ('#' a pixel, '.' empty).
  */
 export type Area = { id: string; title: string; line: string; bullets: string[]; icon: string[] };
 
@@ -52,7 +52,7 @@ export const areas: Area[] = [
 export const iconPath = (rows: string[]) => rows.flatMap((row, y) => [...row].map((c, x) => (c === '#' ? `M${x} ${y}h1v1H${x}z` : ''))).join('');
 
 /**
- * Parked for later (Quality or a work samples page), shown nowhere for now: a test run, from the
+ * Parked for later (Testing or a work samples page), shown nowhere for now: a test run, from the
  * build landing to the team submitting.
  */
 export const run: [state: string, text: string][] = [

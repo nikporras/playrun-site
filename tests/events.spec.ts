@@ -16,7 +16,7 @@ const record = (page: Page) =>
 const events = (page: Page) => page.evaluate(() => (window as unknown as { __events: unknown[] }).__events) as Promise<Event[]>;
 const named = async (page: Page, name: string) => (await events(page)).filter(([n]) => n === name);
 
-test('the clicks that count carry their event names: Get in touch everywhere, LinkedIn, See every game, store links with the game, the Quality run and device, the glitch', async ({ page, request }) => {
+test('the clicks that count carry their event names: Get in touch everywhere, LinkedIn, See every game, store links with the game, the Testing run and device, the glitch', async ({ page, request }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await expect(page.locator('.header__action')).toHaveAttribute('data-umami-event', 'get-in-touch');
@@ -25,7 +25,7 @@ test('the clicks that count carry their event names: Get in touch everywhere, Li
   await expect(page.locator('[data-glitch-yes]')).toHaveAttribute('data-umami-event', 'glitch-tracked');
   await expect(page.locator('[data-glitch-no]')).toHaveAttribute('data-umami-event', 'glitch-ignored');
   // every link to the contact page and every email link counts as Get in touch, on every page
-  for (const path of ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/']) {
+  for (const path of ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/']) {
     const html = await (await request.get(path)).text();
     const links = [...html.matchAll(/<a\b[^>]*href="(\/contact\/|mailto:studio@playrunqa\.com)"[^>]*>/g)]
       .map((m) => m[0])
@@ -49,7 +49,7 @@ test('the clicks that count carry their event names: Get in touch everywhere, Li
     expect(game, 'the game named').toBe(title?.trim());
   }
   // Quality: Run every step, and each device with its option
-  await page.goto('/quality/');
+  await page.goto('/testing/');
   await expect(page.getByRole('button', { name: 'Run every step' })).toHaveAttribute('data-umami-event', 'quality-run');
   for (const b of await page.locator('[data-picker] [data-device]').all()) {
     await expect(b).toHaveAttribute('data-umami-event', 'quality-device');

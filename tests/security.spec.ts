@@ -21,7 +21,7 @@ const POLICY = [
   'upgrade-insecure-requests',
   "style-src 'self' 'unsafe-inline'",
 ];
-const PAGES = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/404.html', '/services/', '/portfolio/clawpunk/'];
+const PAGES = ['/', '/skills/', '/quality/', '/portfolio/', '/testing/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/404.html', '/services/', '/portfolio/clawpunk/'];
 
 const directives = (csp: string) => new Map(csp.split(';').map((d) => d.trim()).filter(Boolean).map((d) => [d.split(/\s+/)[0], d.split(/\s+/).slice(1)] as const));
 
@@ -93,13 +93,13 @@ test.describe('under the policy', () => {
     expect(errors, errors.join('\n')).toEqual([]);
   });
 
-  test('the Portfolio scan and the Quality run, with nothing blocked', { tag: ['@console'] }, async ({ page }) => {
+  test('the Portfolio scan and the Testing run, with nothing blocked', { tag: ['@console'] }, async ({ page }) => {
     const errors = await watch(page);
     await page.goto('/portfolio/');
     await page.evaluate(() => document.fonts.ready);
     await page.locator('.card').first().scrollIntoViewIfNeeded();
     await expect(page.locator('.card__pass').first()).toBeVisible({ timeout: 10_000 });
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     await page.mouse.move(640, 300);
     await page.evaluate(() => document.fonts.ready);
     await page.getByRole('button', { name: 'Run every step' }).click();
@@ -134,7 +134,7 @@ test.describe('on a phone, under the policy', () => {
   test.use({ ...phone, viewport: { width: 390, height: 844 } });
   test('Pocket DevTools lists the requests and no errors, with nothing blocked', { tag: ['@console'] }, async ({ page }) => {
     const errors = await watch(page);
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     const dev = page.locator('.devtools');
     await dev.scrollIntoViewIfNeeded();
     await expect(page.locator('[data-dev-console] li').first()).toHaveText('No errors since this page loaded.');
@@ -171,8 +171,8 @@ const extensionNoise = () => {
   }
   dispatchEvent(new ErrorEvent('error', { message: 'Uncaught TypeError: x is undefined', filename: 'safari-web-extension://e1/script.js' }));
 };
-test("an extension's violations and errors do not count: Quality's Smoke test still passes", { tag: ['@console'] }, async ({ page }) => {
-  await page.goto('/quality/');
+test("an extension's violations and errors do not count: Testing's Smoke test still passes", { tag: ['@console'] }, async ({ page }) => {
+  await page.goto('/testing/');
   await page.evaluate(extensionNoise);
   expect(await page.evaluate(() => (window as unknown as { __playrunErrors: string[] }).__playrunErrors)).toEqual([]);
   const smoke = page.locator('.step').first();

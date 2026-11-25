@@ -4,13 +4,13 @@ import { test, expect, type Page } from '@playwright/test';
  * Text can be selected with the mouse on every page: nothing sits over it (link overlays, bugs,
  * the HUD, entrance layers), and the highlight is visible on every field.
  */
-const PAGES = ['/', '/portfolio/', '/contact/', '/quality/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
+const PAGES = ['/', '/portfolio/', '/contact/', '/testing/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
 
 async function settle(page: Page) {
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
   await page.evaluate(() => {
     document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in'));
-    // a deck (Quality, About) is scrubbed by the scroll; the plain column is what a drag can reach
+    // a deck (Testing, About) is scrubbed by the scroll; the plain column is what a drag can reach
     document.querySelectorAll('[data-deck]').forEach((e) => e.classList.remove('is-deck'));
     return Promise.all(
       document
@@ -24,7 +24,7 @@ async function settle(page: Page) {
 /**
  * Paragraphs and list items with real text, not ones that are a single link. Up to six, spread
  * over the page, picked once and tagged: a page whose text changes while the test runs (the
- * Quality steps write their results) must not hand back a different list on the next look.
+ * Testing steps write their results) must not hand back a different list on the next look.
  */
 const pick = () => {
   const all = [...document.querySelectorAll<HTMLElement>('main p, main li, main dd')].filter((e) => {
@@ -46,12 +46,12 @@ const pick = () => {
 };
 
 /**
- * The Quality page runs each step as it scrolls into view and rewrites that step's result line
+ * The Testing page runs each step as it scrolls into view and rewrites that step's result line
  * and the report, the very text a drag might be crossing. Run every step first and wait for the
  * last result, so the page is still before the first drag.
  */
 async function quiet(page: Page, path: string) {
-  if (path !== '/quality/') return;
+  if (path !== '/testing/') return;
   await page.mouse.move(640, 300);
   await page.getByRole('button', { name: 'Run every step' }).click();
   await expect(page.locator('#run-status')).toHaveText('Every step has run. The report is at the end.', { timeout: 20_000 });

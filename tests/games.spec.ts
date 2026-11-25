@@ -118,7 +118,7 @@ test.describe('Games', () => {
     await expect(page.locator('[data-hud-level]')).not.toHaveText('1');
   });
 
-  for (const path of ['/', '/portfolio/', '/quality/']) test(`${path}: the track is a rail no wider than the ship on the left, its numbers fully visible; the scoreboard is a compact card bottom right that opens on Enter, a click or a tap and closes on the pill, Escape or a click outside`, async ({ page }) => {
+  for (const path of ['/', '/portfolio/', '/testing/']) test(`${path}: the track is a rail no wider than the ship on the left, its numbers fully visible; the scoreboard is a compact card bottom right that opens on Enter, a click or a tap and closes on the pill, Escape or a click outside`, async ({ page }) => {
     {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(path);
@@ -650,7 +650,7 @@ for (const width of [1280, 1440, 1920]) {
     }
     expect(contrast(LINE, NAVY), 'the line on the navy field').toBeGreaterThanOrEqual(3);
     const under: string[] = [];
-    for (const path of ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/']) {
+    for (const path of ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/']) {
       await page.goto(path);
       await expect(page.locator('#hud')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
       // every marker a navy box with its number
@@ -682,7 +682,7 @@ for (const width of [1280, 1440, 1920]) {
 // "Caught 10 bugs" unlocks at ten, "Caught every bug" at twenty, a kept catch of a bug that is gone
 // no longer counts, earlier progress earns its due quietly, and Reset starts afresh.
 test.describe('Twenty bugs', () => {
-  const PAGES = ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html'];
+  const PAGES = ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html'];
   const kept = (bugs: string[], achievements: string[] = []) => JSON.stringify({ on: true, bugs, achievements });
 
   test('the site has exactly twenty bugs, at least one on every main page', async ({ request }) => {
@@ -692,7 +692,7 @@ test.describe('Twenty bugs', () => {
     const all = Object.values(found).flat();
     expect(all.length).toBe(20);
     expect(new Set(all)).toEqual(new Set(BUGS));
-    for (const path of ['/', '/about/', '/portfolio/', '/quality/', '/contact/']) expect(found[path].length, path).toBeGreaterThanOrEqual(1);
+    for (const path of ['/', '/about/', '/portfolio/', '/testing/', '/contact/']) expect(found[path].length, path).toBeGreaterThanOrEqual(1);
   });
 
   test('the tenth catch on the site unlocks Caught 10 bugs, the twentieth Caught every bug; Reset clears both', async ({ page }) => {
@@ -760,7 +760,7 @@ for (const [width, height] of [
     test.setTimeout(90_000);
     await page.setViewportSize({ width, height });
     const gaps: string[] = [];
-    for (const path of ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html']) {
+    for (const path of ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html']) {
       await page.goto(path);
       // (Home's Level 2 lets clicks through its see-through top to the hero's text: for this look at
       // what is painted at the edge, it answers for its own area again)

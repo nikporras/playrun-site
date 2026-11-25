@@ -43,7 +43,7 @@ export type Suite = {
 
 // The words for each file. The numbers never live here.
 const COPY: Record<string, [title: string, detail: string]> = {
-  'a11y.spec.ts': ['Accessibility everywhere', 'axe on every page at desktop and phone widths, and on what opens on demand: the scoreboard, a toast, the glitch card, Bug Sweep and the Quality steps for a phone.'],
+  'a11y.spec.ts': ['Accessibility everywhere', 'axe on every page at desktop and phone widths, and on what opens on demand: the scoreboard, a toast, the glitch card, Bug Sweep and the Testing steps for a phone.'],
   'about.spec.ts': ['The About page', 'The facts and the questions and answers, built from the data, in the nav and the footer, with nothing hidden at first.'],
   'brand.spec.ts': ['Brand assets', 'Both typefaces load, the logo renders, favicon and Open Graph image present.'],
   'analytics.spec.ts': ['Visit statistics', 'Umami on every page from the site itself, reporting only to its gateway on the live domain, never with Do Not Track, never from the suite.'],
@@ -52,7 +52,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'contact.spec.ts': ['Contact form', 'Validation, every answer the script can give, and the mailto fallback.'],
   'credits.spec.ts': ['Credits', 'Every typeface, tool and sprite is credited, and the page passes axe.'],
   'events.spec.ts': ['What the statistics count', 'Each counted click carries its event name, and what a click cannot see is counted by name, never with anything a visitor typed.'],
-  'firefox.spec.ts': ['In Firefox', 'Every page loads clean in Firefox, the Quality picker knows it, and the five steps finish without a fail.'],
+  'firefox.spec.ts': ['In Firefox', 'Every page loads clean in Firefox, the Testing picker knows it, and the five steps finish without a fail.'],
   'games.spec.ts': ['The games', 'The track, the runner, the bug hunt and the achievements by mouse, touch and keyboard, and off under reduced motion.'],
   'home.spec.ts': ['Home', 'Loads clean, the bottom bar on a phone, the curtain, the glitch and its card, the wall, the stats, three widths, axe, the self test.'],
   'indexing.spec.ts': ['Search and AI access', 'robots.txt welcomes the AI crawlers and disallows nothing, the IndexNow key and step, llms.txt and its pages, snippets kept to the content.'],
@@ -60,7 +60,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'links.spec.ts': ['Links', 'Links that leave the site open a new tab and say so. Internal links stay.'],
   'motion.spec.ts': ['The Motion switch', 'Follows your device setting until you choose. Your choice is remembered, and turning Motion on works even when your device asks for less motion.'],
   'validity.spec.ts': ['Valid HTML', 'Every page as the server sends it passes html-validate, offline: elements, content, attributes, ids and the document.'],
-  'webkit.spec.ts': ['In WebKit', "Safari's engine: the Quality steps run, and Performance passes on the paint timing it reports or says it is not measured, never a fail for a missing figure."],
+  'webkit.spec.ts': ['In WebKit', "Safari's engine: the Testing steps run, and Performance passes on the paint timing it reports or says it is not measured, never a fail for a missing figure."],
   'weight.spec.ts': ['Page weight', 'Each page under its budget on a first visit with nothing cached (Home 250 KB): HTML, CSS, script, fonts and images.'],
   'pages.spec.ts': ['Every page', 'Each route answers 200 with one h1, stacked level headers, labels that read, no stale facts, and passes axe.'],
   'polish.spec.ts': ['The finish', 'The 404 kept out of search, a commit date for every page in the sitemap, no broken or doubled attribute in any page.'],
@@ -69,7 +69,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'narrow.spec.ts': ['The narrowest screens', 'Every page at 300 and 320px wide, motion on and off, with no sideways scroll.'],
   'picker.spec.ts': ['The device picker', 'Testing on Chrome or Edge, Firefox, Safari, iPhone or Android: picked for your device, remembered, and only those steps shown.'],
   'pocket.spec.ts': ['Pocket DevTools', 'On a phone: the phone steps instead of the computer ones, and the console, the requests and the timings from the page itself.'],
-  'quality.spec.ts': ['The guided test run', 'Five live steps, the report, the template, the phone steps and Pocket DevTools, without script and under reduced motion.'],
+  'testing.spec.ts': ['The guided test run', 'Five live steps and the report card, the phone steps and Pocket DevTools, without script and under reduced motion.'],
   'schema.spec.ts': ['Structured data', 'One valid JSON-LD graph a page: the person with every role, the site, the page and its breadcrumb, a FAQ on About, none on the 404.'],
   'security.spec.ts': ['Content Security Policy', 'One policy at the top of every page, each inline script allowed by its hash, a blocked script caught as an error, and the games, the checks, Pocket DevTools and the form working under it.'],
   'selection.spec.ts': ['Selectable text', 'A drag selects a paragraph on every page and the highlight reads on every field.'],
@@ -123,7 +123,7 @@ const { report, fromRun } = load();
 
 const counts = new Map<string, Tally>();
 for (const s of report.suites) collect(s, counts);
-if (counts.size === 0) throw new Error('No tests found: the Quality page cannot be built without the suite.');
+if (counts.size === 0) throw new Error('No tests found: the Testing page cannot be built without the suite.');
 
 const groups: Group[] = [...counts.entries()]
   .sort(([a], [b]) => a.localeCompare(b))

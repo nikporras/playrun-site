@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { cloudsUnderText } from './clouds-under-text';
 
 /**
- * In Firefox: every page loads with no console errors and no failed requests, the Quality picker
+ * In Firefox: every page loads with no console errors and no failed requests, the Testing picker
  * knows it as Firefox, and the five steps finish, Performance on the paint timing Firefox reports.
  */
 // (the local preview is http: the policy's upgrade-insecure-requests is taken out of the page as
@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-const PAGES = ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/'];
+const PAGES = ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/'];
 
 test('in Firefox every page loads clean: no script errors, no console errors, no failed requests', async ({ page }) => {
   test.setTimeout(90_000);
@@ -37,8 +37,8 @@ test('in Firefox every page loads clean: no script errors, no console errors, no
 
 test.use({ reducedMotion: 'reduce' });
 
-test('in Firefox the Quality picker is preselected as Firefox and the five steps finish, Performance never failing on a missing figure', async ({ page }) => {
-  await page.goto('/quality/');
+test('in Firefox the Testing picker is preselected as Firefox and the five steps finish, Performance never failing on a missing figure', async ({ page }) => {
+  await page.goto('/testing/');
   await expect(page.locator('[data-picker] [aria-pressed="true"]')).toHaveText('Firefox');
   await expect(page.locator('.step__for:not([hidden])').first()).toHaveAttribute('data-for', 'firefox');
   await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 20_000 });

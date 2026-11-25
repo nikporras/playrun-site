@@ -7,7 +7,7 @@ import { employers, social } from '../src/config';
  * the WebSite, the page itself (a ProfilePage on Home, an AboutPage and a FAQPage on About) and a
  * breadcrumb on every page but Home. Nothing that offers work, and no organisation for PlayRun.
  */
-const PAGES = ['/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
+const PAGES = ['/', '/portfolio/', '/testing/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
 type Node = Record<string, unknown> & { '@type': string };
 const graphOf = async (page: Page) => {
   const blocks = await page.locator('script[type="application/ld+json"]').allTextContents();

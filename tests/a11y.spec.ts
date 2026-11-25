@@ -4,7 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 /**
  * Accessibility beyond the first paint: axe (WCAG 2.1 A and AA) on every page at a phone's width
  * too, on About and the 404, and on the parts that open on demand: the scoreboard, an achievement
- * toast, the glitch card, Bug Sweep playing, paused and over, and the Quality steps for a phone.
+ * toast, the glitch card, Bug Sweep playing, paused and over, and the Testing steps for a phone.
  */
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const scan = async (page: Page, what: string) => {
@@ -17,7 +17,7 @@ const scan = async (page: Page, what: string) => {
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   expect(results.violations, `${what}: ${JSON.stringify(results.violations, null, 2)}`).toEqual([]);
 };
-const PAGES = ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+const PAGES = ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
 
 for (const [width, height] of [
   [1440, 900],
@@ -35,7 +35,7 @@ for (const [width, height] of [
     await context.close();
   });
 
-  test(`what opens on demand passes axe at ${width}px: the scoreboard, a toast, the glitch card, Bug Sweep playing, paused and over, the Quality steps for a phone`, { tag: ['@a11y'] }, async ({ browser }) => {
+  test(`what opens on demand passes axe at ${width}px: the scoreboard, a toast, the glitch card, Bug Sweep playing, paused and over, the Testing steps for a phone`, { tag: ['@a11y'] }, async ({ browser }) => {
     test.setTimeout(120_000);
     const context = await browser.newContext({ viewport: { width, height } });
     const page = await context.newPage();
@@ -84,11 +84,11 @@ for (const [width, height] of [
     });
     await expect.poll(mode).toBe('over');
     await scan(page, 'Bug Sweep over');
-    // the Quality steps for a phone, with Pocket DevTools
-    await page.goto('/quality/');
+    // the Testing steps for a phone, with Pocket DevTools
+    await page.goto('/testing/');
     await page.getByRole('button', { name: 'iPhone' }).click();
     await expect(page.locator('.devtools')).toBeVisible();
-    await scan(page, 'the Quality steps for an iPhone');
+    await scan(page, 'the Testing steps for an iPhone');
     await context.close();
   });
 }

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
 /**
- * The device picker on the Quality page: "Testing on:" Chrome or Edge, Firefox, Safari, iPhone,
+ * The device picker on the Testing page: "Testing on:" Chrome or Edge, Firefox, Safari, iPhone,
  * Android; preselected from the browser and device, the choice remembered; each step then shows
  * only that option's instructions (iPhone VoiceOver only, Android TalkBack only), a phone brings
  * Pocket DevTools; without script every option shows.
@@ -37,7 +37,7 @@ for (const [width, height] of SIZES) {
     ] as const) {
       const context = await browser.newContext({ viewport: { width, height }, userAgent: ua, hasTouch: touch });
       const page = await context.newPage();
-      await page.goto('/quality/');
+      await page.goto('/testing/');
       await expect(page.getByRole('group', { name: 'Testing on:' })).toBeVisible();
       await expect(pressed(page), ua).toHaveText(label);
       await expect.poll(() => shown(page)).toEqual(Array(5).fill(expected));
@@ -47,7 +47,7 @@ for (const [width, height] of SIZES) {
     // the buttons: named, toggled, reachable by keyboard, at least 44px tall
     const context = await browser.newContext({ viewport: { width, height }, userAgent: UA.chrome, hasTouch: touch });
     const page = await context.newPage();
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     const group = page.getByRole('group', { name: 'Testing on:' });
     await expect(group.getByRole('button')).toHaveText(['Chrome or Edge', 'Firefox', 'Safari', 'iPhone', 'Android']);
     for (const b of await group.getByRole('button').all()) {
@@ -75,7 +75,7 @@ for (const [width, height] of SIZES) {
 
 test('each option says only what applies: Chrome or Edge has Lighthouse, Firefox and Safari their own keys and no Lighthouse, iPhone VoiceOver only, Android TalkBack only', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/quality/');
+  await page.goto('/testing/');
   const group = page.getByRole('group', { name: 'Testing on:' });
   const visible = async () => (await page.locator('.step__for:not([hidden])').allInnerTexts()).join('\n');
   await group.getByRole('button', { name: 'Chrome or Edge' }).click();
@@ -125,7 +125,7 @@ test('the picker works with storage blocked, and without script every option sho
       },
     });
   });
-  await p1.goto('/quality/');
+  await p1.goto('/testing/');
   await expect(pressed(p1)).toHaveText('iPhone');
   await p1.getByRole('button', { name: 'Safari' }).click();
   expect(await shown(p1)).toEqual(Array(5).fill('safari'));
@@ -133,7 +133,7 @@ test('the picker works with storage blocked, and without script every option sho
 
   const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
   const p2 = await plain.newPage();
-  await p2.goto('/quality/');
+  await p2.goto('/testing/');
   await expect(p2.getByRole('group', { name: 'Testing on:' })).toBeHidden();
   for (const step of await p2.locator('.step').all()) {
     await expect(step.locator('.step__howtitle')).toHaveText([

@@ -19,7 +19,7 @@ This site is a portfolio and CV. All facts here match his LinkedIn profile.
 
 - [About](${url('/about/')}): what ${contact.name} tests (functional testing, platforms and certification, performance, playtesting and bug reporting), the platforms, headsets, tools and languages he works with, his story, and key facts and short answers.
 - [Games](${url('/portfolio/')}): the ${games} games he has tested since ${since} (${vrCount} of them in VR), by studio, with his part in each.
-- [Quality](${url('/quality/')}): a live QA run on the page itself, and the test suite this site runs on every push.
+- [Testing](${url('/testing/')}): how I test a build, live on the page: five checks you can watch and check yourself, and the test suite this site runs on every push.
 - [Contact](${url('/contact/')}): how to get in touch.
 
 ## Profiles

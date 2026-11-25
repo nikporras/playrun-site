@@ -21,7 +21,7 @@ export const BUGS = [
   'portfolio-2',
   'portfolio-3',
   'portfolio-4',
-  // Quality
+  // Testing (the ids keep their old name, so catches made before still count)
   'quality-1',
   'quality-2',
   'quality-3',

@@ -1,6 +1,6 @@
 /**
  * The check engine: real checks on the page they run in, in the visitor's browser. Home's
- * "Test this page" runs a set of them on the scoreboard; the Quality page runs them one step
+ * "Test this page" runs a set of them on the scoreboard; the Testing page runs them one step
  * at a time in its guided test run; Pocket DevTools reads the same recorders. Every check
  * answers with what passed, what failed and one line that says what it saw.
  */

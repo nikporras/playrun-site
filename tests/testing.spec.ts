@@ -2,14 +2,14 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
- * The Quality page as a guided test run: five steps that run live on the page with the shared
+ * The Testing page as a guided test run: five steps that run live on the page with the shared
  * check engine, each with the way to see it yourself, a report at the end with a bug template,
  * and on a phone the Pocket DevTools panel in place of the computer instructions.
  */
-test.describe('Quality, the guided test run', () => {
+test.describe('Testing, the guided test run', () => {
   test('five steps run live as they come into view, and the report adds them up', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
     await page.mouse.move(640, 300);
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
@@ -45,7 +45,7 @@ test.describe('Quality, the guided test run', () => {
 
   test("the steps for a computer are one action each with that browser's keys, and say what to expect; Tab really lands on Skip to content", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     await page.mouse.move(640, 300);
     // (this browser is Chrome: its steps show)
     const hows = page.locator('.step__for:not([hidden]) .how');
@@ -93,7 +93,7 @@ test.describe('Quality, the guided test run', () => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
     await page.mouse.move(640, 300);
     await page.evaluate(() => document.fonts.ready);
@@ -108,7 +108,7 @@ test.describe('Quality, the guided test run', () => {
   });
 
   test('a full run earns Tested the page, the achievement Home no longer awards', async ({ page }) => {
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     await page.mouse.move(640, 300);
     await page.getByRole('button', { name: 'Run every step' }).click();
     await expect(page.locator('#run-status')).toHaveText('Every step has run. The report is at the end.', { timeout: 15_000 });
@@ -120,7 +120,7 @@ test.describe('Quality, the guided test run', () => {
 
   test('the bug report template copies, or selects itself where the clipboard is refused', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
     await page.mouse.move(640, 300);
     const pre = page.locator('[data-template]');
@@ -135,7 +135,7 @@ test.describe('Quality, the guided test run', () => {
   test('without script the plan still reads, with the steps to take yourself', async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
     await page.mouse.move(640, 300);
     await expect(page.locator('.step')).toHaveCount(5);
@@ -148,7 +148,7 @@ test.describe('Quality, the guided test run', () => {
   test('under reduced motion every step runs at once and nothing animates', async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce' });
     const page = await context.newPage();
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
     await page.mouse.move(640, 300);
     await expect(page.locator('.step.is-pass')).toHaveCount(5, { timeout: 15_000 });
@@ -166,7 +166,7 @@ for (const [width, height] of [
   test(`each step its own accent and pixel icon (${width}x${height}): five accents on the border, the number and the title, none like a pass or a fail, every text AA (axe)`, { tag: ['@a11y'] }, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' });
     const page = await context.newPage();
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     const looks = await page.locator('.step').evaluateAll((els) =>
       els.map((el) => {
         const cs = (sel: string) => getComputedStyle(el.querySelector(sel)!);
@@ -225,7 +225,7 @@ test.describe('Performance under reduced motion', () => {
     const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
     const page = await context.newPage();
     if (setup) await page.addInitScript(setup);
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 15_000 });
     const step = page.locator('#step-performance');
     return { context, page, step, detail: (await step.locator('[data-step-result]').textContent()) ?? '' };
@@ -301,9 +301,9 @@ test.describe('Performance under reduced motion', () => {
 test('the title reads as one phrase in balanced lines: at most three at 300px, at most two from 768px', { tag: ['@viewports'] }, async ({ page }) => {
   for (const [width, most] of [[300, 3], [320, 3], [375, 3], [768, 2], [1024, 2], [1440, 2], [1920, 2]] as const) {
     await page.setViewportSize({ width, height: 800 });
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     await page.evaluate(() => document.fonts.ready);
-    const lines = await page.locator('#quality-title').evaluate((h) => {
+    const lines = await page.locator('#testing-title').evaluate((h) => {
       // the text's own line boxes (not the mask spans around it)
       const r = document.createRange();
       const text = document.createTreeWalker(h, NodeFilter.SHOW_TEXT);
@@ -326,7 +326,7 @@ test('the title reads as one phrase in balanced lines: at most three at 300px, a
 for (const [width, height] of [[375, 812], [768, 1024]] as const) {
   test(`at ${width}px the steps swipe: one card on show, each labelled Step n of 5, run as it comes on show, the buttons never moving`, { tag: ['@viewports', '@a11y'] }, async ({ page }) => {
     await page.setViewportSize({ width, height });
-    await page.goto('/quality/');
+    await page.goto('/testing/');
     const region = page.getByRole('region', { name: 'The five steps' });
     await expect(region).toHaveAttribute('aria-roledescription', 'carousel');
     const cards = region.locator('.step');
@@ -377,7 +377,7 @@ for (const [width, height] of [[375, 812], [768, 1024]] as const) {
 
 test('at 375px Run every step still runs all five, wherever the swipe is', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto('/quality/');
+  await page.goto('/testing/');
   await page.getByRole('button', { name: 'Run every step' }).click();
   await expect(page.locator('#run-status')).toHaveText('Every step has run. The report is at the end.', { timeout: 20_000 });
   await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5);
@@ -386,8 +386,43 @@ test('at 375px Run every step still runs all five, wherever the swipe is', async
 
 test('on a desktop the deck is as it was: no swipe buttons, no carousel', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/quality/');
+  await page.goto('/testing/');
   await expect(page.locator('.plan [data-deck]')).toHaveClass(/is-deck/);
   await expect(page.locator('.plan .swipe__controls')).toBeHidden();
   await expect(page.locator('.plan [data-swipe]')).not.toHaveAttribute('aria-roledescription');
 });
+
+// Quality is called Testing now. The old address is a small page that sends visitors on, like /skills/.
+test('the old Quality address is a small page that sends visitors to Testing: script and meta refresh, a canonical to /testing/, never indexed, out of the sitemap; every link and the nav say Testing', { tag: ['@pages', '@links'] }, async ({ request, page }) => {
+  const res = await request.get('/quality/');
+  expect(res.status()).toBe(200);
+  const html = await res.text();
+  expect(html).toMatch(/<meta http-equiv="refresh" content="0;url=\/testing\/">/);
+  expect(html).toContain('<link rel="canonical" href="https://playrunqa.com/testing/">');
+  expect(html).toContain('<meta name="robots" content="noindex">');
+  expect(html).toContain('<meta name="referrer" content="strict-origin-when-cross-origin">');
+  expect(html).toMatch(/<script[^>]*>location\.replace\(`\/testing\/`\);?<\/script>/);
+  expect(html).toMatch(/<a href="\/testing\/"[^>]*>Go to Testing<\/a>/);
+  const sitemap = await (await request.get('/sitemap-0.xml')).text();
+  expect(sitemap).not.toContain('/quality/');
+  expect(sitemap).toContain('https://playrunqa.com/testing/');
+  const llms = await (await request.get('/llms.txt')).text();
+  expect(llms).toContain('[Testing](https://playrunqa.com/testing/)');
+  expect(llms).not.toMatch(/quality\//i);
+  // a visit lands on Testing
+  await page.goto('/quality/');
+  await expect(page).toHaveURL(/\/testing\/$/);
+  await expect(page.locator('h1')).toHaveText(/Let's test this\s*page together/);
+  // no page links to the old address, and no visible text calls the page Quality
+  for (const path of ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/']) {
+    await page.goto(path);
+    expect(await page.locator('a[href^="/quality"]').count(), path).toBe(0);
+    const text = (await page.locator('body').innerText()).replace(/Quality Assurance/g, '');
+    expect(text, `${path}: no "Quality" for the page`).not.toMatch(/\bQuality\b/);
+  }
+  await page.goto('/testing/');
+  await expect(page.locator('header nav').getByRole('link', { name: 'Testing', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('footer').getByRole('link', { name: 'Testing', exact: true })).toHaveAttribute('href', '/testing/');
+  await expect(page).toHaveTitle('Testing: how Nicolás Porras tests a build, live on this site');
+});
+

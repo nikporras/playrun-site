@@ -4,11 +4,11 @@ import { test, expect, type Page } from '@playwright/test';
  * The phone is the same site as the desktop: every page, every section, heading, paragraph, stat,
  * card, tag, image and link that shows at 1440 shows at 375, in the same order; only the layout
  * changes. The few things that are phone-specific by design are listed here and nowhere else: on
- * Quality, Pocket DevTools; the bottom bar; the rows of the Portfolio's folded list. Decorations
+ * Testing, Pocket DevTools; the bottom bar; the rows of the Portfolio's folded list. Decorations
  * (bugs, joins, the shot) are not content. The folded cards are all in the page, one tap away: the
  * phone's read opens every one of them first.
  */
-const PAGES = ['/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+const PAGES = ['/', '/portfolio/', '/testing/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
 const EXCEPT = '.devtools, .tabbar, .hud, .dock, [data-shot], .card__toggle, .bug, .join, .swipe__controls';
 
 const content = (page: Page) =>

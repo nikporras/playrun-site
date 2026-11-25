@@ -7,7 +7,7 @@ import { test, expect, type Page, type Route } from '@playwright/test';
  * hosts do not resolve in its browsers, and the pages here are never playrunqa.com, except below,
  * where the live domain is played by the preview and the gateway is answered here.
  */
-const PAGES = ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html'];
+const PAGES = ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html'];
 const UMAMI = /umami\.(is|dev)/;
 const ID = '1b852413-81ed-4ebf-bbfc-fd63237d3cc4';
 
@@ -53,16 +53,16 @@ test('with Umami blocked, as an ad blocker would, every page still works: no scr
     await page.goto(path, { waitUntil: 'load' });
     await expect(page.locator('h1'), path).toHaveCount(1);
   }
-  await page.goto('/quality/');
+  await page.goto('/testing/');
   await page.getByRole('button', { name: 'Firefox' }).click();
   await expect(page.locator('[data-picker] [aria-pressed="true"]')).toHaveText('Firefox');
   await page.getByRole('button', { name: /^Motion/ }).click();
   await expect(page.locator('html')).toHaveClass(/motion-off/);
-  // nothing counts it as the site's error: the page's own list stays empty, and Quality's Smoke
+  // nothing counts it as the site's error: the page's own list stays empty, and Testing's Smoke
   // test still passes
   expect(await page.evaluate(() => (window as unknown as { __playrunErrors: string[] }).__playrunErrors)).toEqual([]);
   await page.getByRole('button', { name: /^Motion/ }).click();
-  await page.goto('/quality/');
+  await page.goto('/testing/');
   const smoke = page.locator('.step').first();
   await smoke.scrollIntoViewIfNeeded();
   await expect(smoke).toHaveClass(/is-pass/, { timeout: 10_000 });
@@ -133,7 +133,7 @@ test('?notrack switches the statistics off for this browser and ?track back on: 
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   // off: the opt-out set, the note shown, the word gone from the address (the rest of it kept)
-  await page.goto('/quality/?notrack&x=1#step-links');
+  await page.goto('/testing/?notrack&x=1#step-links');
   expect(await page.evaluate(() => localStorage.getItem('umami.disabled'))).toBe('1');
   await expect(page.getByRole('status').filter({ hasText: 'Stats off on this browser' })).toBeVisible();
   expect(new URL(page.url()).search).toBe('?x=1');

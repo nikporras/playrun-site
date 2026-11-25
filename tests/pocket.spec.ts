@@ -1,14 +1,14 @@
 import { test, expect, devices } from '@playwright/test';
 
 /**
- * Pocket DevTools: with a phone picked (an Android phone here, picked for itself) the Quality page
+ * Pocket DevTools: with a phone picked (an Android phone here, picked for itself) the Testing page
  * shows the phone's steps and a panel that shows what F12 would: the console errors the page
  * caught, the requests it made and its load timings, from its own records.
  */
 test.use({ ...devices['Pixel 7'], viewport: { width: 390, height: 844 } });
 
 test('a phone picks itself: its steps show, and the panel shows the console, the requests and the timings', async ({ page }) => {
-  await page.goto('/quality/');
+  await page.goto('/testing/');
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
   // (an Android phone: the picker chose it, so its steps show and no computer's)
   await expect(page.locator('[data-picker] [aria-pressed="true"]')).toHaveText('Android');
