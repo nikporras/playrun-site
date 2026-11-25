@@ -30,7 +30,7 @@ test('a phone picks itself: its steps show, and the panel shows the console, the
   await page.locator('.plan .swipe__track').scrollIntoViewIfNeeded();
   for (let k = 2; k <= 5; k++) {
     await page.getByRole('button', { name: 'Next card' }).click();
-    await expect(page.locator('.plan [data-swipe-pos]')).toHaveText(`${k} of 5`);
+    await expect(page.locator('.plan [data-swipe-pos]')).toHaveText(`${k} of 6`);
   }
   await expect(page.locator('.step.is-pass')).toHaveCount(5, { timeout: 15_000 });
 });

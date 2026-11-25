@@ -6,10 +6,10 @@ The website of **PlayRun**, the personal game QA portfolio of Nicolás Porras in
 
 ## What is on it
 
-- **Home**: who I am, a slow row of the official logos of the games I have tested (in one colour, with a pause button), my career in numbers on a turning drum, one line on how the site is tested with a link to Quality, and what I play after hours. The name glitches as the hero scrolls away, and a small card asks whether to track it.
+- **Home**: who I am, a slow row of the official logos of the games I have tested (in one colour, with a pause button), my career in numbers on a turning drum, one line on how the site is tested with a link to Testing, and what I play after hours. The name glitches as the hero scrolls away, and a small card asks whether to track it.
 - **About**: what I test (five areas, dealt as a deck on a desktop and swiped on a phone), the platforms, headsets, tools, languages and education I work with, my story, Bug Sweep, a small arcade game I made while building the site (it loads only when you press Play), and the key facts and short answers to common questions. The old /skills/ address leads to What I test.
 - **Games**: every title I can name in public, grouped by company with each role and its dates, each card with its logo, a Released or In development tag, what I did, the kinds of testing and one button to its store page; on phones and tablets the cards fold to rows that open on a tap. My other roles are listed at the foot.
-- **Quality**: "Let's test this page together", a five-step test run that happens live in your browser, with how to check each step yourself in Chrome or Edge, Firefox, Safari, on an iPhone or on Android (and Pocket DevTools on a phone), a report, and a bug report template.
+- **Testing** (`/testing/`; `/quality/` sends you there): "Let's test this page together", the five checks I run on a game build, live in your browser, with how to check each one yourself in Chrome or Edge, Firefox, Safari, on an iPhone or on Android (and Pocket DevTools on a phone), and a report card at the end of the run.
 - **Contact**: a form for networking, opportunities and saying hello.
 
 It is a portfolio, like a CV. Everything on it is written as experience.
@@ -30,7 +30,7 @@ Every push runs a Playwright suite before anything deploys. Among other things i
 
 Most checks run in Chromium; a few also run in WebKit and Firefox. If a check fails, the site does not ship.
 
-Every Monday at 07:00 UTC a separate check runs against the live site itself (`.github/workflows/live-check.yml`, `tests-live/`): every page in the sitemap loads with no console errors and with its security policy and Cloudflare's six security headers, with nothing blocked by either policy, every internal and external link answers (a rate limit is only a warning), the contact form's script answers its health check (nothing is ever sent), and robots.txt, the sitemap and llms.txt are served. It never counts as a visit in the statistics. The Quality page and the Home scoreboard read their numbers from the suite itself: the list of checks from Playwright at build time, and the results from the run that deployed the page.
+Every Monday at 07:00 UTC a separate check runs against the live site itself (`.github/workflows/live-check.yml`, `tests-live/`): every page in the sitemap loads with no console errors and with its security policy and Cloudflare's six security headers, with nothing blocked by either policy, every internal and external link answers (a rate limit is only a warning), the contact form's script answers its health check (nothing is ever sent), and robots.txt, the sitemap and llms.txt are served. It never counts as a visit in the statistics. The Testing page and Home read their numbers from the suite itself: the list of checks from Playwright at build time, and the results from the run that deployed the page.
 
 ## Stack
 

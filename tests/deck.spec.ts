@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
  * nothing overlaps the track or the scoreboard. About's What I test uses the same deck (about.spec.ts).
  */
 test.describe('The Testing deck', () => {
-  test('pins and deals the five steps with the scroll, transform only, clear of the track and the scoreboard', async ({ page }) => {
+  test('pins and deals the five steps and the report with the scroll, transform only, clear of the track and the scoreboard', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/testing/');
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
@@ -16,11 +16,11 @@ test.describe('The Testing deck', () => {
     const deck = page.locator('[data-deck]');
     await expect(deck).toHaveClass(/is-deck/);
     const cards = page.locator('.deck__card');
-    await expect(cards).toHaveCount(5);
-    await expect(cards.locator('.step__title')).toHaveText(['Smoke test', 'Responsive', 'Accessibility', 'Links', 'Performance']);
+    await expect(cards).toHaveCount(6);
+    await expect(cards.locator('.step__title')).toHaveText(['Smoke test', 'Responsive', 'Accessibility', 'Links', 'Performance', 'Test report']);
     const box = (await deck.boundingBox())!;
-    expect(box.height, 'one screen on show and 0.7 of a screen per further card').toBeGreaterThanOrEqual(900 + 4 * 630 - 2);
-    expect(box.height).toBeLessThanOrEqual(900 + 4 * 630 + 2);
+    expect(box.height, 'one screen on show and 0.7 of a screen per further card').toBeGreaterThanOrEqual(900 + 5 * 630 - 2);
+    expect(box.height).toBeLessThanOrEqual(900 + 5 * 630 + 2);
     expect(await page.locator('.deck__pin').evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
     const top = await deck.evaluate((el) => el.getBoundingClientRect().top + scrollY);
     const state = () =>
@@ -36,7 +36,7 @@ test.describe('The Testing deck', () => {
     await expect.poll(async () => (await state()).slice(1).every((c) => !c.onScreen)).toBe(true);
     let s = await state();
     expect(s[0].onScreen).toBe(true);
-    expect(s.slice(1).every((c) => !c.onScreen), 'the other four are off screen').toBe(true);
+    expect(s.slice(1).every((c) => !c.onScreen), 'the other five are off screen').toBe(true);
     // half way: the third card has landed, the fifth has not; the pinned content has not moved
     const range = box.height - 900;
     await page.evaluate((y) => window.scrollTo(0, y), top + range / 2);
@@ -46,12 +46,12 @@ test.describe('The Testing deck', () => {
     expect(s[4].e, 'card five still to come').toBeLessThan(0.5);
     expect(s[2].onScreen).toBe(true);
     expect(await page.locator('.deck__pin').evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(0);
-    // at the end: all five dealt, each tilted its own few degrees, each a little lower than the last
+    // at the end: all six dealt, each tilted its own few degrees, each a little lower than the last
     await page.evaluate((y) => window.scrollTo(0, y), top + range);
     await expect.poll(async () => (await state()).every((c) => c.e >= 0.99)).toBe(true);
     s = await state();
     expect(s.every((c) => c.e >= 0.99)).toBe(true);
-    expect(s.map((c) => Math.abs(c.tilt) >= 1 && Math.abs(c.tilt) <= 4)).toEqual([true, true, true, true, true]);
+    expect(s.map((c) => Math.abs(c.tilt) >= 1 && Math.abs(c.tilt) <= 4)).toEqual([true, true, true, true, true, true]);
     expect(new Set(s.map((c) => Math.sign(c.tilt))).size, 'tilted both ways').toBe(2);
     for (let i = 1; i < s.length; i++) expect(s[i].y).toBeGreaterThan(s[i - 1].y);
     // clear of the track on the left and the scoreboard pill in the corner; no sideways scroll
@@ -64,8 +64,8 @@ test.describe('The Testing deck', () => {
       expect(c.bottom < pill.y - 4 || right[i] < pill.x - 4, 'clear of the scoreboard').toBe(true);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
-    // the top card's text is readable and selectable
-    const line = cards.last().locator('.step__for:not([hidden]) .step__list li').first();
+    // the top card's text (the report's) is readable and selectable
+    const line = cards.last().locator('.report__where');
     await expect(line).toBeVisible();
     // (the card settled first: a drag on a card still moving can miss its text)
     let last = '';
@@ -85,9 +85,9 @@ test.describe('The Testing deck', () => {
     expect((await page.evaluate(() => getSelection()?.toString() ?? '')).length).toBeGreaterThan(10);
     // each step ran as it was dealt
     await expect(page.locator('.step.is-pass')).toHaveCount(5, { timeout: 15_000 });
-    // after the fifth card normal scrolling resumes: the report follows
+    // after the report normal scrolling resumes: the footer follows
     await page.evaluate((y) => window.scrollTo(0, y), top + range + 900);
-    await expect.poll(() => page.locator('.report').evaluate((el) => el.getBoundingClientRect().top)).toBeLessThan(900);
+    await expect.poll(() => page.locator('footer').evaluate((el) => el.getBoundingClientRect().top)).toBeLessThan(900);
     // a jump to a step lands where it has been dealt
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.evaluate(() => (location.hash = '#step-performance'));
@@ -132,7 +132,7 @@ test.describe('The Testing deck', () => {
     await p2.goto('/testing/');
     await expect(p2.locator('[data-deck]')).not.toHaveClass(/is-deck/);
     expect(await p2.locator('.deck__card').last().evaluate((el) => getComputedStyle(el).transform)).toBe('none');
-    await expect(p2.locator('.deck__card').last().locator('.step__for:not([hidden]) .step__list')).toBeVisible();
+    await expect(p2.locator('.step').last().locator('.step__for:not([hidden]) .step__list')).toBeVisible();
     await expect(p2.locator('.deck__card').last()).toHaveCSS('opacity', '1');
     await quiet.close();
 

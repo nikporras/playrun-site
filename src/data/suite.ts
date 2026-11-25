@@ -15,7 +15,7 @@ import path from 'node:path';
 type JsonTest = { status?: string };
 type JsonSpec = { title: string; file: string; tests: JsonTest[] };
 type JsonSuite = { title: string; file?: string; specs: JsonSpec[]; suites?: JsonSuite[] };
-type Report = { suites: JsonSuite[]; stats?: { startTime?: string; duration?: number } };
+type Report = { suites: JsonSuite[]; stats?: { startTime?: string; duration?: number }; config?: { projects?: { name: string }[] } };
 
 export type Group = {
   id: string;
@@ -153,6 +153,22 @@ export function spell(seconds: number): string {
   if (s || !m) parts.push(`${s} second${s === 1 ? '' : 's'}`);
   return parts.join(' ');
 }
+
+/** The browsers the suite runs in, from Playwright's projects (in the report, or the list). */
+const ENGINES: [string, string][] = [
+  ['chromium', 'Chromium'],
+  ['firefox', 'Firefox'],
+  ['webkit', 'WebKit'],
+];
+const projects = new Set((report.config?.projects ?? []).map((p) => p.name));
+export const browsers = ENGINES.filter(([id]) => projects.has(id)).map(([, name]) => name);
+if (browsers.length === 0) throw new Error('No browsers in the suite: the Testing page names them.');
+
+/** The day the live site is checked, from the schedule in .github/workflows/live-check.yml. */
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const cron = readFileSync(path.join(root, '.github', 'workflows', 'live-check.yml'), 'utf8').match(/cron:\s*['"]([^'"]+)['"]/)?.[1];
+const weekday = cron?.trim().split(/\s+/)[4];
+export const liveDay = weekday && /^[0-7]$/.test(weekday) ? DAYS[Number(weekday) % 7] : null;
 
 /** The versions the loop names, read from the files that set them. */
 const workflow = readFileSync(path.join(root, '.github', 'workflows', 'deploy.yml'), 'utf8');

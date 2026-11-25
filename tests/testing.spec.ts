@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 
 /**
  * The Testing page as a guided test run: five steps that run live on the page with the shared
- * check engine, each with the way to see it yourself, a report at the end with a bug template,
+ * check engine, each with the way to see it yourself, a report card after them (the sixth card),
  * and on a phone the Pocket DevTools panel in place of the computer instructions.
  */
 test.describe('Testing, the guided test run', () => {
@@ -29,17 +29,22 @@ test.describe('Testing, the guided test run', () => {
     await expect(page.locator('.step.is-pass')).toHaveCount(5, { timeout: 15_000 });
     await expect(page.locator('[data-report-score]')).toHaveText('5 of 5 steps passed on your device.');
     await expect(page.locator('[data-report-result]')).toHaveText(['Pass', 'Pass', 'Pass', 'Pass', 'Pass']);
-    await expect(page.locator('[data-report-row="performance"] [data-report-detail]')).toContainText(/First paint at|loaded in/);
-    await expect(page.locator('[data-report-row="links"] [data-report-detail]')).toContainText(/\d+ of \d+ links/);
+    await expect(page.locator('[data-report-row].is-pass')).toHaveCount(5);
+    await expect(page.locator('[data-report-detail]')).toHaveCount(0);
     // this browser's instructions show, the phones' and Pocket DevTools do not
     await expect(page.getByText('Press F12').first()).toBeVisible();
     await expect(page.locator('.step__for[data-for="iphone"]').first()).toBeHidden();
     await expect(page.locator('.devtools')).toBeHidden();
-    // the suite's own numbers are on the report
-    await expect(page.locator('.report__suite')).toContainText(/\d+ checks in \d+ spec files/);
-    await expect(page.locator('.report__suite')).toContainText(/Playwright 1\./);
-    // (and the weekly check of the live site, .github/workflows/live-check.yml)
-    await expect(page.locator('.report__suite')).toContainText('Every Monday a separate check also runs against the live site');
+    // the suite's own number on the report, the same as Home's (both from src/data/suite.ts; a
+    // build with no run has only the list), and where it runs, from the Playwright projects and
+    // the live check's schedule (.github/workflows/live-check.yml)
+    const line = (await page.locator('.report__suite').textContent())!.trim();
+    expect(line).toMatch(/^\d+ checks (passed before this page went live|run before this page goes live)\.$/);
+    await page.goto('/');
+    const home = (await page.locator('.proof__line').textContent())!.match(/(\d+) checks/)![1];
+    expect(line.split(' ')[0]).toBe(home);
+    await page.goto('/testing/');
+    await expect(page.locator('.report__where')).toHaveText('Run in Chromium, Firefox and WebKit on every push, and against the live site every Monday.');
   });
 
   test("the steps for a computer are one action each with that browser's keys, and say what to expect; Tab really lands on Skip to content", async ({ page }) => {
@@ -235,7 +240,6 @@ test.describe('Performance under reduced motion', () => {
     expect(detail).not.toMatch(/n\/a|\b0ms/);
     // the load really had happened when it ran
     expect(await page.evaluate(() => (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming).loadEventEnd)).toBeGreaterThan(0);
-    await expect(page.locator('[data-report-row="performance"] [data-report-detail]')).not.toContainText('n/a');
     await expect(page.locator('[data-dev-perf]')).not.toContainText('n/a');
     await context.close();
   });
@@ -317,25 +321,31 @@ test('the title reads as one phrase in balanced lines: at most three at 300px, a
   }
 });
 
-// Phones and tablets: the five steps swipe (Swipe.astro), one on show with the next peeking in,
-// "n of 5", Previous and Next. A step runs when its card comes on show; the row is as tall as the
-// tallest card, so the buttons and what follows never move as the cards go by.
+// Phones and tablets: the five steps and the report swipe (Swipe.astro), one on show with the next
+// peeking in, "n of 6", Previous and Next. A step runs when its card comes on show; the row is as
+// tall as the tallest card, so the buttons and what follows never move as the cards go by.
 for (const [width, height] of [[375, 812], [768, 1024]] as const) {
-  test(`at ${width}px the steps swipe: one card on show, each labelled Step n of 5, run as it comes on show, the buttons never moving`, { tag: ['@viewports', '@a11y'] }, async ({ page }) => {
+  test(`at ${width}px the steps and the report swipe: one card on show, each labelled Step n of 6 and Report, 6 of 6, run as it comes on show, the buttons never moving`, { tag: ['@viewports', '@a11y'] }, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/testing/');
-    const region = page.getByRole('region', { name: 'The five steps' });
+    const region = page.getByRole('region', { name: 'The five steps and the report' });
     await expect(region).toHaveAttribute('aria-roledescription', 'carousel');
     const cards = region.locator('.step');
     await expect(cards).toHaveCount(5);
     for (let i = 0; i < 5; i++) {
       await expect(cards.nth(i)).toHaveAttribute('role', 'group');
-      await expect(cards.nth(i)).toHaveAttribute('aria-label', `Step ${i + 1} of 5`);
+      await expect(cards.nth(i)).toHaveAttribute('aria-label', `Step ${i + 1} of 6`);
+      // (the visible label keeps its own number alone)
+      await expect(cards.nth(i).locator('.step__num')).toHaveText(`Step ${i + 1}`);
     }
+    const report = region.locator('[data-report]');
+    await expect(report).toHaveAttribute('role', 'group');
+    await expect(report).toHaveAttribute('aria-roledescription', 'slide');
+    await expect(report).toHaveAttribute('aria-label', 'Report, 6 of 6');
     const track = region.locator('.swipe__track');
     await track.scrollIntoViewIfNeeded();
     const pos = region.locator('[data-swipe-pos]');
-    await expect(pos).toHaveText('1 of 5');
+    await expect(pos).toHaveText('1 of 6');
     // one on show, the next peeking in from the edge
     const b = await cards.evaluateAll((els) => els.slice(0, 2).map((e) => e.getBoundingClientRect().toJSON()));
     expect(b[0].left).toBeGreaterThanOrEqual(0);
@@ -362,11 +372,16 @@ for (const [width, height] of [[375, 812], [768, 1024]] as const) {
       const tallest = Math.max(...(await heights()));
       const before = await where();
       await next.click();
-      await expect(pos).toHaveText(`${k} of 5`);
+      await expect(pos).toHaveText(`${k} of 6`);
       await expect(cards.nth(k - 1)).toHaveClass(/is-(pass|fail|unmeasured)/, { timeout: 15_000 });
       if (Math.max(...(await heights())) === tallest) expect(await where(), `card ${k}: nothing under the row moved`).toEqual(before);
     }
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('playrun.games') ?? '{}').achievements ?? [])).toContain('selftest');
+    // and the last card is the report, every step in it
+    await next.click();
+    await expect(pos).toHaveText('6 of 6');
+    await expect(report).toHaveClass(/is-current/);
+    await expect(report.locator('[data-report-row]:not(.is-idle)')).toHaveCount(5);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   });
 }
@@ -376,7 +391,7 @@ test('at 375px with the Motion switch off all five run after load, wherever the 
   await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
   await page.goto('/testing/');
   await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 20_000 });
-  await expect(page.locator('.plan [data-swipe-pos]')).toHaveText('1 of 5');
+  await expect(page.locator('.plan [data-swipe-pos]')).toHaveText('1 of 6');
 });
 
 test('on a desktop the deck is as it was: no swipe buttons, no carousel', async ({ page }) => {
@@ -419,5 +434,46 @@ test('the old Quality address is a small page that sends visitors to Testing: sc
   await expect(page.locator('header nav').getByRole('link', { name: 'Testing', exact: true })).toHaveAttribute('aria-current', 'page');
   await expect(page.locator('footer').getByRole('link', { name: 'Testing', exact: true })).toHaveAttribute('href', '/testing/');
   await expect(page).toHaveTitle('Testing: how Nicolás Porras tests a build, live on this site');
+});
+
+// The report is the sixth card. It shows each step's result in words with its mark beside it (never
+// colour alone), the score, and the suite's lines. When it comes on show it runs any step not yet
+// run, so it is always complete, and a full run earns Tested the page.
+test('at 375px swiping straight to the report runs the steps not yet run, so the report is complete, and earns Tested the page', { tag: ['@a11y'] }, async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/testing/');
+  const track = page.locator('.plan .swipe__track');
+  await track.scrollIntoViewIfNeeded();
+  // the first card runs once the row is on screen; the next four wait
+  await expect(page.locator('#step-smoke')).toHaveClass(/is-(pass|fail|unmeasured)/, { timeout: 15_000 });
+  await page.waitForTimeout(600);
+  await expect(page.locator('.step.is-idle')).toHaveCount(4);
+  const report = page.locator('[data-report]');
+  await expect(report.locator('[data-report-result]')).toHaveText(['Pass', 'Not run yet', 'Not run yet', 'Not run yet', 'Not run yet']);
+  // straight to the end, past the four
+  await track.evaluate((el) => el.scrollTo({ left: el.scrollWidth, behavior: 'instant' }));
+  await expect(page.locator('.plan [data-swipe-pos]')).toHaveText('6 of 6');
+  await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 20_000 });
+  await expect(report.locator('[data-report-result]')).toHaveText(['Pass', 'Pass', 'Pass', 'Pass', 'Pass']);
+  await expect(report.locator('[data-report-score]')).toHaveText('5 of 5 steps passed on your device.');
+  await expect(report.locator('.report__row .step__mark')).toHaveCount(5);
+  for (const m of await report.locator('.report__row .step__mark').all()) await expect(m).toHaveAttribute('aria-hidden', 'true');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('playrun.games') ?? '{}').achievements ?? [])).toContain('selftest');
+  const axe = await new AxeBuilder({ page }).include('[data-report]').analyze();
+  expect(axe.violations.map((v) => v.id)).toEqual([]);
+});
+
+test('on a desktop the report is dealt as the sixth card and runs any step not yet run when it comes into view; the report level is gone, and so are its next links', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/testing/');
+  await page.mouse.move(640, 300);
+  await expect(page.locator('section.level')).toHaveCount(2);
+  await expect(page.locator('#report-title')).toHaveText('Test report');
+  await expect(page.getByRole('link', { name: /See the games|See the skills/ })).toHaveCount(0);
+  // a jump to the report lands where it is dealt; every step has run by then
+  await page.evaluate(() => (location.hash = '#report'));
+  await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 20_000 });
+  await expect(page.locator('[data-report-row].is-idle')).toHaveCount(0);
+  await expect(page.locator('[data-report-score]')).toHaveText(/steps passed on your device/);
 });
 
