@@ -322,7 +322,7 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     </section>
     <Bug id="quality-2" style="right: 10%; top: 1.5rem" tablet="right: 30%; top: 0.75rem" walk="x -2rem" />
     <!-- (in the strip at the level's foot, above the join: the report level it lived on is gone) -->
-    <Bug id="quality-3" style="left: 12%; bottom: calc(var(--join-h) + 0.75rem)" tablet="left: 10%; bottom: calc(var(--join-h) + 0.75rem)" phone="left: var(--gutter); bottom: calc(var(--join-h) + 0.5rem)" walk="x 2rem" />
+    <Bug id="quality-3" style="left: 12%; bottom: calc(var(--join-h) + 0.75rem)" tablet="left: 10%; bottom: calc(var(--join-h) + 0.75rem)" phone="left: var(--gutter); bottom: calc(var(--join-h) + 2.5rem)" walk="x 2rem" />
   </section>
 </Base>
 
@@ -660,24 +660,29 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     padding-bottom: 0.4rem;
     border-bottom: 1px solid var(--surface-2);
   }
-  .devtools__list li {
+  /* (the rows, items and timings are written by the script, so they take these rules through
+     :global: Astro's scoped rules reach only the elements in the markup) */
+  .devtools__list :global(li) {
     overflow-wrap: anywhere;
   }
-  .devtools__list li.is-error {
+  .devtools__list :global(li.is-error) {
     color: #f29a9a;
   }
-  .devtools__muted {
+  .devtools__muted,
+  .devtools__pane :global(.devtools__muted) {
     color: var(--muted);
   }
+  /* The network table: a fixed layout, so no cell's text ever runs into the next. The file takes
+     what is left and ends in an ellipsis; type, status and size keep their width. */
   .devtools__table {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
   }
   .devtools__table th,
-  .devtools__table td {
+  .devtools__table :global(td) {
     text-align: left;
-    padding: 0.2rem 0.4rem 0.2rem 0;
+    padding: 0.2rem 0.5rem 0.2rem 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -686,25 +691,58 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     color: var(--muted);
     font-weight: 400;
   }
-  .devtools__table th:nth-child(1) {
-    width: 46%;
+  .devtools__table th:nth-child(2) {
+    width: 8ch;
   }
-  .devtools__table td:nth-child(3).is-ok {
+  .devtools__table th:nth-child(3),
+  .devtools__table th:nth-child(4) {
+    width: 8.5ch;
+  }
+  .devtools__table :global(td.is-ok) {
     color: var(--accent);
   }
-  .devtools__table td:nth-child(3).is-bad {
+  .devtools__table :global(td.is-bad) {
     color: #f29a9a;
+  }
+  /* The narrowest phones (under 360px): each row stacks, the file on a line of its own, then the
+     type, status and size under it. */
+  @media (max-width: 22.49rem) {
+    .devtools__table,
+    .devtools__table thead,
+    .devtools__table tbody {
+      display: block;
+    }
+    .devtools__table tr,
+    .devtools__table :global(tr) {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 0.5rem;
+      padding: 0.3rem 0;
+      border-top: 1px solid var(--surface-2);
+    }
+    .devtools__table thead tr {
+      border-top: 0;
+    }
+    .devtools__table th,
+    .devtools__table :global(td) {
+      width: auto;
+      padding: 0;
+    }
+    .devtools__table th:first-child,
+    .devtools__table :global(td:first-child) {
+      grid-column: 1 / -1;
+    }
+  }
+  .devtools__perf :global(dt) {
+    color: var(--muted);
+  }
+  .devtools__perf :global(dd) {
+    margin: 0;
   }
   .devtools__perf {
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 0.2rem 1rem;
-    margin: 0;
-  }
-  .devtools__perf dt {
-    color: var(--muted);
-  }
-  .devtools__perf dd {
     margin: 0;
   }
 
@@ -987,12 +1025,22 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     if (net) {
       const rows = t.resources.slice(0, 40).map((r) => {
         const tr = document.createElement('tr');
-        const name = r.name.split('/').pop()?.split('?')[0] || r.name;
+        const file = r.name.split('/').pop()?.split('?')[0] || r.name;
+        // a readable name: Astro's script chunks lose their suffix ("Header.astro_astro_type_script_
+        // index_0_lang.Ab12.js" reads "Header.astro"); the full address stays in the title and for
+        // screen readers
+        const name = file.replace(/^(.+?\.astro)_astro_type_.*$/, '$1');
         const st = (r as PerformanceResourceTiming & { responseStatus?: number }).responseStatus;
-        const cells = [name, r.initiatorType, st ? String(st) : r.transferSize === 0 ? 'cache' : '200', r.transferSize ? kb(r.transferSize) : 'cache'];
+        const type = r.initiatorType === 'xmlhttprequest' ? 'xhr' : r.initiatorType;
+        const cells = [name, type, st ? String(st) : r.transferSize === 0 ? 'cache' : '200', r.transferSize ? kb(r.transferSize) : 'cache'];
         cells.forEach((text, i) => {
           const td = document.createElement('td');
-          td.textContent = text;
+          if (i === 0) {
+            td.title = r.name;
+            const shown = Object.assign(document.createElement('span'), { textContent: name });
+            shown.setAttribute('aria-hidden', 'true');
+            td.append(shown, Object.assign(document.createElement('span'), { className: 'visually-hidden', textContent: r.name }));
+          } else td.textContent = text;
           if (i === 2) td.className = st && st >= 400 ? 'is-bad' : 'is-ok';
           tr.append(td);
         });
