@@ -13,6 +13,7 @@
 import Sprite from './Sprite.astro';
 import PassMark from './PassMark.astro';
 import { BUGS } from '../data/bugs';
+import { inWords } from '../data/words';
 ---
 
 <nav class="hud" id="hud" aria-label="Level track" data-nosnippet hidden>
@@ -44,8 +45,9 @@ import { BUGS } from '../data/bugs';
   <div class="toast" role="status" aria-live="polite" data-toast>
     <div class="toast__icon" aria-hidden="true"><PassMark class="toast__mark" /></div>
     <p class="toast__text">
-      <small>Achievement unlocked</small>
+      <small data-toast-kicker>Achievement unlocked</small>
       <strong data-toast-title></strong>
+      <span class="toast__note" data-toast-note hidden></span>
     </p>
     <button type="button" class="toast__close" aria-label="Dismiss" data-toast-close>
       <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true" width="14" height="14">
@@ -78,6 +80,7 @@ import { BUGS } from '../data/bugs';
       <span class="visually-hidden" data-hud-off-sr></span>
     </button>
     <div class="score__panel" id="hud-panel">
+      <p class="score__why">{inWords(BUGS.length)} bugs are hidden across this site. Finding bugs is my day job; see how many you can catch.</p>
       <dl class="score__list">
         <div class="score__row" data-panel-level-stat>
           <dt>Level</dt>
@@ -346,6 +349,15 @@ import { BUGS } from '../data/bugs';
   .score.is-open .score__panel {
     display: block;
   }
+  /* (what the bugs are for, at the top of the card, in the reading face) */
+  .score__why {
+    margin: 0 0 var(--s-2);
+    font-family: var(--font-text);
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    max-width: none;
+  }
   .score__list {
     margin: 0;
     display: grid;
@@ -504,6 +516,19 @@ import { BUGS } from '../data/bugs';
   .toast strong {
     font-weight: 400;
     font-size: 1.25rem;
+  }
+  /* (the first bug's toast: what the bugs are for, in the reading face) */
+  .toast__note {
+    display: block;
+    max-width: 17rem;
+    margin-top: 0.35em;
+    font-family: var(--font-text);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+  .toast__note[hidden],
+  .toast small[hidden] {
+    display: none;
   }
   .toast__close {
     flex: none;

@@ -64,8 +64,15 @@ test.describe('Games', () => {
     await expect(bug.locator('.bug__net')).toBeVisible();
     await expect(page.locator('[data-hud-bugs]')).toHaveText('00');
     await expect(page.locator('[data-hud-bugs]')).toHaveText('01');
-    await expect(page.locator('[data-toast]')).toContainText('Caught your first bug');
-    await expect(page.locator('[data-toast]')).toHaveClass(/is-in/);
+    // the very first bug's toast says what the bugs are for, the total from the data
+    const { BUGS } = await import('../src/data/bugs');
+    const { inWords } = await import('../src/data/words');
+    const toastEl = page.locator('[data-toast]');
+    await expect(toastEl.locator('[data-toast-title]')).toHaveText(`Bug 1 of ${BUGS.length}.`);
+    await expect(toastEl.locator('[data-toast-note]')).toHaveText(`${inWords(BUGS.length)} are hidden on this site; finding them is my day job.`);
+    await expect(toastEl.locator('[data-toast-note]')).toHaveCSS('font-family', /^Montserrat/);
+    await expect(toastEl.locator('[data-toast-kicker]')).toBeHidden();
+    await expect(toastEl).toHaveClass(/is-in/);
     await expect(page.locator('[data-hud-ach]')).toHaveText('1/7');
     await expect(page.locator(`[data-bug="${id}"]`)).toBeHidden();
     // the toast sits above the scoreboard, bottom right
@@ -78,6 +85,8 @@ test.describe('Games', () => {
     await expect(page.locator(`[data-bug="${id}"]`)).toBeHidden();
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
     await expect(page.locator('.score__ach li.is-done')).toHaveText(['Caught your first bug']);
+    // the scoreboard's card opens with what the bugs are for, the total in words from the data
+    await expect(page.locator('.score__panel > :first-child')).toHaveText(`${inWords(BUGS.length)} bugs are hidden across this site. Finding bugs is my day job; see how many you can catch.`);
     await page.getByRole('button', { name: 'Reset' }).click();
     await expect(page.locator('[data-hud-bugs]')).toHaveText('00');
     await expect(page.locator(`[data-bug="${id}"]`)).toBeVisible();
@@ -835,3 +844,27 @@ for (const scale of [1, 1.25, 1.5]) {
     }
   });
 }
+
+// Later toasts stay as they were: "Achievement unlocked" and the achievement's name, three seconds.
+test('after the first bug, an achievement toast is the usual one: Achievement unlocked and its name, no note', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'first-bug' })));
+  const toast = page.locator('[data-toast]');
+  await expect(toast.locator('[data-toast-note]')).toBeVisible();
+  await page.locator('[data-toast-close]').click();
+  await page.evaluate(() => document.dispatchEvent(new CustomEvent('playrun:achieve', { detail: 'glitch' })));
+  await expect(toast.locator('[data-toast-title]')).toHaveText('Glitch spotted');
+  await expect(toast.locator('[data-toast-kicker]')).toHaveText('Achievement unlocked');
+  await expect(toast.locator('[data-toast-kicker]')).toBeVisible();
+  await expect(toast.locator('[data-toast-note]')).toBeHidden();
+});
+
+test('no bug total is typed into the source: the toast and the scoreboard take it from the data', async () => {
+  const fs = await import('node:fs');
+  for (const f of ['src/scripts/games.ts', 'src/components/Hud.astro']) {
+    const src = fs.readFileSync(f, 'utf8');
+    expect(src, f).not.toMatch(/\b(Twenty|twenty)\b/);
+    expect(src, f).not.toMatch(/of 20\b/);
+  }
+});
+

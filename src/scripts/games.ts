@@ -8,6 +8,7 @@ import { reducedMotion, offByDevice, whenMotion } from './motion';
 // (as count: track here is the HUD's level track)
 import { track as count } from './track';
 import { BUGS } from '../data/bugs';
+import { inWords } from '../data/words';
 
 type State = { on: boolean; bugs: string[]; achievements: string[] };
 
@@ -40,7 +41,7 @@ const read = (): State => {
       if (valid(kept)) {
         // (the Skills page's ids were once services: a visitor's catches and achievement carry over)
         const was = (id: string) => id.replace(/^services(?=$|-)/, 'skills');
-        // (a catch counts only while its bug is on the site: the twenty in BUGS)
+        // (a catch counts only while its bug is on the site: the ones in BUGS)
         const known = new Set<string>(BUGS);
         return { ...defaults(), ...kept, bugs: [...new Set((kept.bugs ?? []).map(was))].filter((id) => known.has(id)), achievements: (kept.achievements ?? []).map(was) };
       }
@@ -188,7 +189,9 @@ export function startGames() {
     bugs().forEach((b) => (b.hidden = !state.on || state.bugs.includes(b.dataset.bug!)));
   };
 
-  // Achievements: a toast for each, once, one at a time, three seconds, never blocking.
+  // Achievements: a toast for each, once, one at a time, three seconds, never blocking. The very
+  // first bug's toast says what the bugs are for ("Bug 1 of {total}. {Total in words} are hidden on this site;
+  // finding them is my day job.", the total from the data) and stays six seconds.
   const queue: string[] = [];
   let showing = false;
   let timer = 0;
@@ -202,10 +205,16 @@ export function startGames() {
     if (showing || !toast) return;
     const id = queue.shift();
     if (!id) return;
-    toast.querySelector('[data-toast-title]')!.textContent = ACHIEVEMENTS[id];
+    const first = id === 'first-bug';
+    const kicker = toast.querySelector<HTMLElement>('[data-toast-kicker]')!;
+    const note = toast.querySelector<HTMLElement>('[data-toast-note]')!;
+    kicker.hidden = first;
+    note.hidden = !first;
+    toast.querySelector('[data-toast-title]')!.textContent = first ? `Bug ${Math.max(1, state.bugs.length)} of ${BUGS.length}.` : ACHIEVEMENTS[id];
+    note.textContent = first ? `${inWords(BUGS.length)} are hidden on this site; finding them is my day job.` : '';
     toast.classList.add('is-in');
     showing = true;
-    timer = window.setTimeout(hide, 3000);
+    timer = window.setTimeout(hide, first ? 6000 : 3000);
   };
   toast?.querySelector('[data-toast-close]')?.addEventListener('click', hide);
   const achieve = (id: string) => {
@@ -234,7 +243,7 @@ export function startGames() {
       render();
       live.textContent = `Bug caught. ${state.bugs.length} found.`;
       achieve('first-bug');
-      // (counted across the whole site: ten of the twenty, then all of them)
+      // (counted across the whole site: ten, then every one of them)
       if (state.bugs.length >= 10) achieve('ten-bugs');
       if (state.bugs.length >= BUGS.length) achieve('all-bugs');
     }, CATCH_MS);

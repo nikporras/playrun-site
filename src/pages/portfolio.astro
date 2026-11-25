@@ -1,4 +1,5 @@
 ---
+import { inWords } from '../data/words';
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
@@ -24,7 +25,6 @@ const others = posts.filter((e) => !groups.includes(e));
 const count = shown.length;
 // (the companies the games were tested at)
 const companies = new Set(groups.map((e) => e.name)).size;
-const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty', 'Twenty-one', 'Twenty-two', 'Twenty-three', 'Twenty-four'];
 // The whole span of a post, from the start of its first role to the end of its last (in the name
 // of its list of games).
 const span = (g: (typeof groups)[number]) => {
@@ -50,7 +50,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
         <span class="mask"><span class="mask__line" style="--i: 1">tested</span></span>
       </h1>
       <p class="work__lead statement" data-load style="--d: 360ms">
-        {words[count] ?? count} titles across {words[companies]?.toLowerCase() ?? companies} companies, from where I started in 2021 to the latest releases.
+        {inWords(count)} titles across {inWords(companies).toLowerCase()} companies, from where I started in 2021 to the latest releases.
       </p>
     </div>
     <Join kind="clouds" from="var(--pr-navy)" to="var(--field-cyan)" seed="portfolio-titles" />
