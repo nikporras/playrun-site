@@ -119,12 +119,11 @@ export const employers: Employer[] = [
 /** The year the testing started: the hero and the stats count from it. */
 export const since = 2021;
 
-// The same order in the desktop nav and the bottom bar (which leaves Home to the logo and ends
-// with Contact).
+// The desktop nav and the footer; the bottom bar shows the same, then Contact. (Skills is part of
+// About now, at /about/#skills.)
 export const nav = [
   { label: 'Home', href: '/' },
   { label: 'About', href: '/about/' },
-  { label: 'Skills', href: '/skills/' },
   // (the page keeps its address, /portfolio/; everywhere it is called Games)
   { label: 'Games', href: '/portfolio/' },
   { label: 'Quality', href: '/quality/' },
@@ -147,17 +146,18 @@ export const legalNav = [
   { label: 'Accessibility', href: '/accessibility/' },
 ];
 
-// The platforms and stores I test on (Skills, the About page and the structured data), then the VR
-// headsets: a headset is listed only when a public title in the project data names it.
-export const platforms: [name: string, text: string][] = [
-  ['Nintendo Switch', 'Docked and handheld, Joy-Con and Pro Controller, sleep and resume.'],
-  ['Nintendo Switch 2', 'The same, plus the new hardware paths.'],
-  ['Xbox', 'Series X and S, Quick Resume, achievements, the Xbox app on PC.'],
-  ['PS5', 'Trophies, activities, DualSense features, and rest mode (the game must recover after the console sleeps mid-play).'],
-  ['Steam', 'Steam Deck, cloud saves, achievements, Steam Input.'],
-  ['Handhelds', 'Steam Deck and Windows handhelds: Deck Verified checks, controller-only play, text size on a small screen, sleep and resume.'],
-  ['Epic Games Store', 'Store requirements, achievements, launcher paths.'],
-  ['GOG', 'DRM-free build, Galaxy features, offline play.'],
+// The platforms and stores I test on (About's Kit, its facts and the structured data), each in its
+// group on the Kit (consoles and handhelds, or PC stores), then the VR headsets: a headset is
+// listed only when a public title in the project data names it.
+export const platforms: [name: string, text: string, group: 'console' | 'store'][] = [
+  ['Nintendo Switch', 'Docked and handheld, Joy-Con and Pro Controller, sleep and resume.', 'console'],
+  ['Nintendo Switch 2', 'The same, plus the new hardware paths.', 'console'],
+  ['Xbox', 'Series X and S, Quick Resume, achievements, the Xbox app on PC.', 'console'],
+  ['PS5', 'Trophies, activities, DualSense features, and rest mode (the game must recover after the console sleeps mid-play).', 'console'],
+  ['Steam', 'Steam Deck, cloud saves, achievements, Steam Input.', 'store'],
+  ['Handhelds', 'Steam Deck and Windows handhelds: Deck Verified checks, controller-only play, text size on a small screen, sleep and resume.', 'console'],
+  ['Epic Games Store', 'Store requirements, achievements, launcher paths.', 'store'],
+  ['GOG', 'DRM-free build, Galaxy features, offline play.', 'store'],
 ];
 export const vrPlatforms: { name: string; match: RegExp; text: string }[] = [
   { name: 'Meta Quest 2, 3 and Pro', match: /Meta Quest/, text: 'Standalone builds against the Meta store requirements, comfort and tracking.' },
@@ -166,14 +166,16 @@ export const vrPlatforms: { name: string; match: RegExp; text: string }[] = [
   { name: 'PS VR2', match: /PS VR2/, text: "PS VR2 on PS5, the Sense controllers and the console's own checks." },
 ];
 
-/** The headsets a public title names (Skills lists them, Home counts them). */
+/** The headsets a public title names (About's Kit lists them, Home counts them). */
 export const shownVR = (titles: { data: { platforms: string[] } }[]) => vrPlatforms.filter((v) => titles.some((t) => t.data.platforms.some((n) => v.match.test(n))));
 
-/** Every platform and store, then the headsets the given titles name: Skills' list and Home's count. */
-export const allPlatforms = (titles: { data: { platforms: string[] } }[]): [name: string, text: string][] => [...platforms, ...shownVR(titles).map((v): [string, string] => [v.name, v.text])];
+/** Every platform and store, then the headsets the given titles name: Home's count. */
+export const allPlatforms = (titles: { data: { platforms: string[] } }[]): [name: string, text: string][] => [
+  ...platforms.map(([name, text]): [string, string] => [name, text]),
+  ...shownVR(titles).map((v): [string, string] => [v.name, v.text]),
+];
 
-// What I bring: the tools, the languages and the education (Skills, the About page, the
-// structured data).
+// The tools, the languages and the education (About's Kit and facts, the structured data).
 export const tools = ['Jira and Confluence', 'TestRail', 'Unreal Engine: debugging, profiling, Blueprint', 'Agile and Scrum'];
 export const languages: { name: string; code: string; level: 'fluent' | 'intermediate' }[] = [
   { name: 'Spanish', code: 'es', level: 'fluent' },

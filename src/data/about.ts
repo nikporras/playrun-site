@@ -18,8 +18,8 @@ export async function about() {
   const isVR = (p: (typeof projects)[number]) => p.data.vr || p.data.platforms.some((n) => /VR|Quest/i.test(n));
   const vrCount = projects.filter(isVR).length;
   const vrNames = shownVR(projects).map((v) => v.name);
-  // (the handhelds entry reads as a phrase inside the sentence)
-  const flatNames = platforms.map(([name]) => (name === 'Handhelds' ? 'handhelds like Steam Deck' : name));
+  // (the handhelds entry reads as a phrase inside the sentence, in the words of its Kit detail)
+  const flatNames = platforms.map(([name]) => (name === 'Handhelds' ? 'Steam Deck and Windows handhelds' : name));
   // the current post: the newest role still running
   const now = employers.find((e) => e.roles.some((r) => /present/.test(r.when)))!;
   const nowRole = now.roles.find((r) => /present/.test(r.when))!;
