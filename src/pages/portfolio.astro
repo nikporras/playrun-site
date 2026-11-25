@@ -75,7 +75,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
                 <ul role="list" class="group__roles">
                   {g.roles.map((r) => (
                     <li class="group__role">
-                      {r.title} <span class="group__dot" aria-hidden="true">&middot;</span> {r.when}
+                      {r.title} <span class="group__dot" aria-hidden="true">&middot;</span> <span class="group__dates">{r.when}</span>
                     </li>
                   ))}
                 </ul>
@@ -88,7 +88,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
                 <ul role="list" class="group__grid">
                   {g.projects.map((p, i) => (
                     <li class="group__cell">
-                      <GameCard project={p} via={g.via} delay={i * 60} scan open={i === 0} trackerId={ids.get(p.id)} />
+                      <GameCard project={p} via={g.via} delay={i * 60} scan trackerId={ids.get(p.id)} />
                     </li>
                   ))}
                 </ul>
@@ -107,7 +107,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
                   <h4 class="others__name">{e.name}</h4>
                   {e.roles.map((r) => (
                     <p class="others__role">
-                      {r.title} <span class="group__dot" aria-hidden="true">&middot;</span> {r.when}
+                      {r.title} <span class="group__dot" aria-hidden="true">&middot;</span> <span class="group__dates">{r.when}</span>
                     </p>
                   ))}
                   <p class="others__lead">{e.lead}</p>
@@ -181,6 +181,10 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
   }
   .group__dot {
     margin-inline: 0.2em;
+  }
+  /* (a role's dates stay on one line) */
+  .group__dates {
+    white-space: nowrap;
   }
   .group__lead {
     font-size: 1rem;
@@ -284,38 +288,44 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
 
 <script>
   import { reducedMotion } from '../scripts/motion';
-  // The folded list on a phone: each company's cards are rows, one open at a time (the first to
-  // begin with). A tap on a row opens its card and folds the one that was open; the row stays under
-  // the finger while the cards above it fold. Once open, a card that runs off the screen is brought
-  // into view, and the games script is told to look at it (the scan plays on an open card only).
-  const phone = matchMedia('(max-width: 63.99rem)');
-  const still = { get matches() { return reducedMotion(); } };
-  const FOLD_MS = 280;
-  document.querySelectorAll<HTMLElement>('.group__grid').forEach((list) => {
-    const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-card]'));
-    const set = (card: HTMLElement, open: boolean) => {
-      card.classList.toggle('is-open', open);
-      card.querySelector('[data-card-toggle]')!.setAttribute('aria-expanded', String(open));
-    };
-    cards.forEach((card) => {
+  // The folded list below 64rem: each company's cards are rows, all folded to begin with. A tap on a
+  // row opens its card (height and opacity) and a second tap folds it; any number can be open. Once
+  // open, a card that runs off the screen is brought into view, and the games script is told to
+  // look at it (the scan plays on an open card only). As a company's list comes on screen its rows
+  // slide in one after another (the stagger is each card's --enter-delay); on a desktop the cards
+  // keep their own entrance, each as it enters.
+  const narrow = matchMedia('(max-width: 63.99rem)');
+  const OPEN_MS = 280;
+  const lists = Array.from(document.querySelectorAll<HTMLElement>('.group__grid'));
+  lists.forEach((list) => {
+    list.querySelectorAll<HTMLElement>('[data-card]').forEach((card) => {
       const button = card.querySelector<HTMLButtonElement>('[data-card-toggle]')!;
       button.addEventListener('click', () => {
         const opening = !card.classList.contains('is-open');
-        const before = button.getBoundingClientRect().top;
-        cards.forEach((c) => set(c, c === card && opening));
-        const until = performance.now() + (still.matches ? 0 : FOLD_MS);
-        const frame = () => {
-          const drift = button.getBoundingClientRect().top - before;
-          if (Math.abs(drift) > 0.5) scrollBy({ top: drift, behavior: 'instant' });
-          if (performance.now() < until) return requestAnimationFrame(frame);
-          if (!opening || !phone.matches) return;
+        card.classList.toggle('is-open', opening);
+        button.setAttribute('aria-expanded', String(opening));
+        if (!opening || !narrow.matches) return;
+        const still = reducedMotion();
+        setTimeout(() => {
           const r = card.getBoundingClientRect();
           const room = innerHeight - (parseFloat(getComputedStyle(document.body).paddingBottom) || 0);
-          if (r.bottom > room && r.height < room) scrollBy({ top: r.bottom - room + 8, behavior: still.matches ? 'instant' : 'smooth' });
+          if (r.bottom > room) scrollBy({ top: Math.min(r.bottom - room + 8, r.top - 16), behavior: still ? 'instant' : 'smooth' });
           document.dispatchEvent(new CustomEvent('playrun:cardopen'));
-        };
-        requestAnimationFrame(frame);
+        }, still ? 0 : OPEN_MS);
       });
     });
   });
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting || !narrow.matches) continue;
+          e.target.querySelectorAll('[data-card]').forEach((c) => c.classList.add('is-in'));
+          io.unobserve(e.target);
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0 },
+    );
+    lists.forEach((l) => io.observe(l));
+  }
 </script>

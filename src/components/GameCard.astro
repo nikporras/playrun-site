@@ -25,7 +25,7 @@ interface Props {
   delay?: number;
   /** A target for the track's scan: once on screen and settled, the ship scans it (a bonus, never a gate). */
   scan?: boolean;
-  /** Open in a phone's folded list (the first game of each company); the desktop always shows it whole. */
+  /** Open to begin with in the folded list below 64rem (none is, now); the desktop always shows it whole. */
   open?: boolean;
   /** Its tracker ID (PR-001...), shown small like a bug tracker's; decorative. */
   trackerId?: string;
@@ -485,8 +485,29 @@ const store = p.data.store ?? 'Steam';
       visibility: visible;
       transition-delay: 0s;
     }
+    /* opening: the height (grid rows) and the content fading in with it; closing, the reverse */
     :global(.js) .card__inner {
       overflow: hidden;
+      opacity: 0;
+      transition: opacity 200ms var(--ease-out);
+    }
+    :global(.js) .card.is-open .card__inner {
+      opacity: 1;
+      transition: opacity 260ms var(--ease-out) 60ms;
+    }
+    /* The rows' entrance: as a company's list comes on screen its rows slide up and in one after
+       another (--enter-delay, 60ms a row, set on the card), the script showing the whole list at
+       once. With motion off the rows are simply there (the global rule). */
+    :global(.js:not(.motion-off)) .card[data-enter='place'] {
+      transform: translateY(1rem);
+      transition:
+        opacity 300ms var(--ease-out),
+        transform 360ms var(--ease-out);
+      transition-delay: var(--enter-delay, 0ms);
+    }
+    :global(.js:not(.motion-off)) .card[data-enter='place'].is-in {
+      transform: none;
+      opacity: 1;
     }
     /* (spacing as margins inside the clip: padding on the folding row would keep it from closing) */
     :global(.js) .card__top {

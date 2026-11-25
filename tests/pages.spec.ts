@@ -10,10 +10,10 @@ const PAGES = [
     h1: /Games I've\s*tested/,
     must: [
       'Senior Quality Assurance Tester',
-      'VR Robotics Operator, client Google DeepMind, contract',
+      'VR Robotics Operator, client Google DeepMind',
       'Nexus Studios',
-      'Build and Distribution Technician, contract',
-      'QA Manager, contract',
+      'Build and Distribution Technician',
+      'QA Manager · Feb 2025 to Feb 2026',
       'Lead Quality Assurance Tester on one cancelled project.',
       'Apple Vision Pro',
       "Lou's Lagoon",
