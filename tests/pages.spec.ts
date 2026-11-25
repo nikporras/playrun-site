@@ -28,7 +28,7 @@ const PAGES = [
       'The Climb 2',
     ],
   },
-  { path: '/testing/', h1: /Let's test this\s*page together/, must: ['Smoke test', 'Responsive', 'Accessibility', 'Links', 'Performance', 'Bug report template', 'Playwright 1.'] },
+  { path: '/testing/', h1: /Let's test this\s*page together/, must: ['Smoke test', 'Responsive', 'Accessibility', 'Links', 'Performance', 'Playwright 1.'] },
   { path: '/privacy/', h1: /Privacy notice/, must: ['Nicolás Porras (PlayRun)', 'deleted after 24 months', 'ico.org.uk'] },
   { path: '/terms/', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales', 'Credits and trademarks', 'Pixel Operator by Jayvee Enaguas (CC0)', 'Montserrat by Julieta Ulanovsky and contributors (SIL Open Font License)', 'Game names and logos are trademarks of their respective owners'] },
   { path: '/accessibility/', h1: /Accessibility/, must: ['WCAG', 'reduced motion', 'Report a problem'] },

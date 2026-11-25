@@ -119,18 +119,15 @@ test.describe('Testing, the guided test run', () => {
     await expect(page.locator('#selftest')).toHaveCount(0);
   });
 
-  test('the bug report template copies, or selects itself where the clipboard is refused', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  test('the bug report template is parked: off the page, kept in src/data/samples.ts for later', async ({ page, request }) => {
+    const { bugReportTemplate } = await import('../src/data/samples');
+    const t = bugReportTemplate('playrunqa.com, 25 November 2026');
+    for (const line of ['Title: [what broke, in one line]', 'Build: playrunqa.com, 25 November 2026', 'Steps to reproduce:', 'Expected:', 'Actual:', 'Severity: [Blocker / Major / Minor / Cosmetic]', 'Attachments: [screenshot or video]']) expect(t).toContain(line);
     await page.goto('/testing/');
-    // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
-    await page.mouse.move(640, 300);
-    const pre = page.locator('[data-template]');
-    await expect(pre).toContainText('Steps to reproduce');
-    await expect(pre).toContainText('Severity: [Blocker / Major / Minor / Cosmetic]');
-    await page.getByRole('button', { name: 'Copy the template' }).click();
-    await expect(page.locator('[data-copy-status]')).toHaveText(/Copied\.|Selected/);
-    const clip = await page.evaluate(() => navigator.clipboard.readText().catch(() => ''));
-    if (clip) expect(clip).toContain('Steps to reproduce');
+    await expect(page.locator('[data-template], [data-copy]')).toHaveCount(0);
+    await expect(page.getByText(/Bug report template|Copy the template/)).toHaveCount(0);
+    // and no page carries it
+    for (const path of ['/', '/about/', '/portfolio/', '/testing/', '/contact/']) expect(await (await request.get(path)).text(), path).not.toContain('Steps to reproduce');
   });
 
   test('without script the plan still reads, with the steps to take yourself', async ({ browser }) => {
@@ -142,7 +139,6 @@ test.describe('Testing, the guided test run', () => {
     await expect(page.locator('.step')).toHaveCount(5);
     await expect(page.locator('.step__for .step__list').first()).toBeVisible();
     await expect(page.locator('[data-step-result]').first()).toContainText('script');
-    await expect(page.locator('[data-template]')).toBeVisible();
     await context.close();
   });
 

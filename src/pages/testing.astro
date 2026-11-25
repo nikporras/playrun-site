@@ -315,25 +315,6 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
           ? `Before this page deployed, its own suite ran: ${suite.passed} of ${suite.total} checks in ${suite.files} spec files passed on ${runDate}, in ${spell(suite.run.seconds)}, on Node ${versions.node} and Playwright ${versions.playwright}. A failing check stops the deploy. Every Monday a separate check also runs against the live site: every page, every link and the contact form's script.`
           : `Before every deploy, this page's own suite runs: ${suite.total} checks in ${suite.files} spec files, on Node ${versions.node} and Playwright ${versions.playwright}. A failing check stops the deploy. Every Monday a separate check also runs against the live site: every page, every link and the contact form's script.`}
       </p>
-      <div class="report__template" data-enter style="--enter-delay: 180ms">
-        <h3 class="report__subtitle">Bug report template</h3>
-        <p class="report__hint">Found something? Here's how I'd write it up. Copy it and fill it in.</p>
-        <pre class="report__pre" data-template tabindex="0">Title: [what broke, in one line]
-Build: playrunqa.com, {runDate ?? 'this build'}
-Device: [browser, OS, screen size]
-Steps to reproduce:
-  1.
-  2.
-  3.
-Expected:
-Actual:
-Severity: [Blocker / Major / Minor / Cosmetic]
-Attachments: [screenshot or video]</pre>
-        <div class="level__actions">
-          <button class="button button--navy" type="button" data-copy>Copy the template</button>
-          <span class="report__copied" data-copy-status aria-live="polite"></span>
-        </div>
-      </div>
       <div class="level__actions report__next" data-enter style="--enter-delay: 240ms">
         <a class="button button--navy" href="/portfolio/">See the games</a>
         <a class="textlink report__link" href="/about/#skills">See the skills</a>
@@ -765,35 +746,6 @@ Attachments: [screenshot or video]</pre>
   .report__suite {
     max-width: 70ch;
   }
-  .report__template {
-    border-top: 1px solid var(--rule);
-    padding-top: var(--s-4);
-  }
-  .report__subtitle {
-    font-size: 2rem;
-  }
-  .report__hint {
-    margin-top: var(--s-1);
-    max-width: 60ch;
-  }
-  .report__pre {
-    margin: var(--s-3) 0;
-    padding: var(--s-3);
-    background: var(--bg);
-    color: var(--ink);
-    --sel-bg: var(--accent);
-    --sel-ink: var(--accent-ink);
-    font-family: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    max-width: 60ch;
-  }
-  .report__copied {
-    font-family: var(--font-display);
-    font-size: 1.125rem;
-  }
   .report__link {
     color: var(--pr-navy);
   }
@@ -1056,24 +1008,4 @@ Attachments: [screenshot or video]</pre>
       /* no paint timing here */
     }
   }
-
-  // The template: to the clipboard, or selected for a manual copy where the clipboard is refused.
-  const copy = document.querySelector<HTMLButtonElement>('[data-copy]');
-  const pre = document.querySelector<HTMLElement>('[data-template]');
-  const copied = document.querySelector<HTMLElement>('[data-copy-status]');
-  copy?.addEventListener('click', async () => {
-    const text = pre?.textContent ?? '';
-    try {
-      await navigator.clipboard.writeText(text);
-      if (copied) copied.textContent = 'Copied.';
-    } catch {
-      if (pre) {
-        const range = document.createRange();
-        range.selectNodeContents(pre);
-        getSelection()?.removeAllRanges();
-        getSelection()?.addRange(range);
-      }
-      if (copied) copied.textContent = 'Selected: press Ctrl+C or Cmd+C.';
-    }
-  });
 </script>
