@@ -99,10 +99,10 @@ test.describe('under the policy', () => {
     await page.evaluate(() => document.fonts.ready);
     await page.locator('.card').first().scrollIntoViewIfNeeded();
     await expect(page.locator('.card__pass').first()).toBeVisible({ timeout: 10_000 });
+    // (with motion off every step runs once the page has loaded)
+    await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
     await page.goto('/testing/');
     await page.mouse.move(640, 300);
-    await page.evaluate(() => document.fonts.ready);
-    await page.getByRole('button', { name: 'Run every step' }).click();
     await expect(page.locator('.step.is-pass')).toHaveCount(5, { timeout: 15_000 });
     expect(errors, errors.join('\n')).toEqual([]);
   });

@@ -27,7 +27,6 @@ test.describe('Testing, the guided test run', () => {
       await page.waitForTimeout(150);
     }
     await expect(page.locator('.step.is-pass')).toHaveCount(5, { timeout: 15_000 });
-    await expect(page.locator('#run-status')).toHaveText('Every step has run. The report is at the end.');
     await expect(page.locator('[data-report-score]')).toHaveText('5 of 5 steps passed on your device.');
     await expect(page.locator('[data-report-result]')).toHaveText(['Pass', 'Pass', 'Pass', 'Pass', 'Pass']);
     await expect(page.locator('[data-report-row="performance"] [data-report-detail]')).toContainText(/First paint at|loaded in/);
@@ -89,29 +88,31 @@ test.describe('Testing, the guided test run', () => {
     expect(text).not.toMatch(/\bcenter\b|\boptimiz/);
   });
 
-  test('Run every step runs them all again, in order', async ({ page }) => {
+  test('the hero says what the page is, with no Run every step button or status line; with the Motion switch off every step runs after load, in order, with no errors', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+    await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
     await page.goto('/testing/');
     // the pointer starts at the top left corner, over the track, whose panel unfolds on hover: move it off
     await page.mouse.move(640, 300);
-    await page.evaluate(() => document.fonts.ready);
-    await page.getByRole('button', { name: 'Run every step' }).click();
-    await expect(page.locator('#run-status'), errors.join(' | ')).toContainText(/steps run|Every step has run/, { timeout: 15_000 });
+    await expect(page.locator('.qa .flag')).toHaveText('Testing');
+    await expect(page.locator('h1')).toHaveText("Let's test this page together");
+    await expect(page.locator('.qa__lead')).toHaveText('How I test, shown on this site: the same five checks I run on a game build, live on your device, and how you can check each one yourself.');
+    await expect(page.getByRole('button', { name: /Run every step|Run again/ })).toHaveCount(0);
+    await expect(page.locator('#run-status, #run-all')).toHaveCount(0);
     await expect(page.locator('.step.is-pass, .step.is-fail')).toHaveCount(5, { timeout: 15_000 });
     const states = await page.locator('.step').evaluateAll((els) => els.map((e) => `${e.getAttribute('data-step')}: ${e.querySelector('[data-step-result]')?.textContent}`));
     expect(errors, errors.join(' | ')).toEqual([]);
     await expect(page.locator('.step.is-pass'), states.join(' | ')).toHaveCount(5);
-    await expect(page.getByRole('button', { name: 'Run again' })).toBeEnabled();
     await expect(page.locator('[data-report-score]')).toHaveText('5 of 5 steps passed on your device.');
   });
 
   test('a full run earns Tested the page, the achievement Home no longer awards', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
     await page.goto('/testing/');
     await page.mouse.move(640, 300);
-    await page.getByRole('button', { name: 'Run every step' }).click();
-    await expect(page.locator('#run-status')).toHaveText('Every step has run. The report is at the end.', { timeout: 15_000 });
+    await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 15_000 });
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('playrun.games') ?? '{}').achievements ?? [])).toContain('selftest');
     // and Home has nothing that awards it
     await page.goto('/');
@@ -369,18 +370,16 @@ for (const [width, height] of [[375, 812], [768, 1024]] as const) {
       await expect(cards.nth(k - 1)).toHaveClass(/is-(pass|fail|unmeasured)/, { timeout: 15_000 });
       if (Math.max(...(await heights())) === tallest) expect(await where(), `card ${k}: nothing under the row moved`).toEqual(before);
     }
-    await expect(page.locator('#run-status')).toHaveText('Every step has run. The report is at the end.');
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('playrun.games') ?? '{}').achievements ?? [])).toContain('selftest');
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   });
 }
 
-test('at 375px Run every step still runs all five, wherever the swipe is', async ({ page }) => {
+test('at 375px with the Motion switch off all five run after load, wherever the swipe is', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
+  await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
   await page.goto('/testing/');
-  await page.getByRole('button', { name: 'Run every step' }).click();
-  await expect(page.locator('#run-status')).toHaveText('Every step has run. The report is at the end.', { timeout: 20_000 });
-  await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5);
+  await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 20_000 });
   await expect(page.locator('.plan [data-swipe-pos]')).toHaveText('1 of 5');
 });
 

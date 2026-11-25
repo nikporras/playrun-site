@@ -48,9 +48,10 @@ test('the clicks that count carry their event names: Get in touch everywhere, Li
     const title = await a.locator('xpath=ancestor::article[1]').locator('.card__title').textContent();
     expect(game, 'the game named').toBe(title?.trim());
   }
-  // Quality: Run every step, and each device with its option
+  // Testing: each device with its option (the event keeps its old name, so the counts run on);
+  // the Run every step button and its event are gone
   await page.goto('/testing/');
-  await expect(page.getByRole('button', { name: 'Run every step' })).toHaveAttribute('data-umami-event', 'quality-run');
+  await expect(page.locator('[data-umami-event="quality-run"]')).toHaveCount(0);
   for (const b of await page.locator('[data-picker] [data-device]').all()) {
     await expect(b).toHaveAttribute('data-umami-event', 'quality-device');
     await expect(b).toHaveAttribute('data-umami-event-device', (await b.getAttribute('data-device'))!);

@@ -47,14 +47,16 @@ const pick = () => {
 
 /**
  * The Testing page runs each step as it scrolls into view and rewrites that step's result line
- * and the report, the very text a drag might be crossing. Run every step first and wait for the
- * last result, so the page is still before the first drag.
+ * and the report, the very text a drag might be crossing. With motion off every step runs once the
+ * page has loaded: reload that way and wait for the last result, so the page is still before the
+ * first drag.
  */
 async function quiet(page: Page, path: string) {
   if (path !== '/testing/') return;
+  await page.evaluate(() => localStorage.setItem('playrun.motion', 'off'));
+  await page.reload();
   await page.mouse.move(640, 300);
-  await page.getByRole('button', { name: 'Run every step' }).click();
-  await expect(page.locator('#run-status')).toHaveText('Every step has run. The report is at the end.', { timeout: 20_000 });
+  await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 20_000 });
   await expect(page.locator('.step.is-running')).toHaveCount(0);
 }
 

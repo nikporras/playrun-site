@@ -154,8 +154,9 @@ test("the header policy and the page's own both allow everything the site does: 
   await page.goto('/about/');
   await page.getByRole('button', { name: 'Play Bug Sweep' }).click();
   await expect(page.locator('[data-sweep-pause]')).toBeVisible();
+  // (with motion off every step runs once the page has loaded)
+  await page.evaluate(() => localStorage.setItem('playrun.motion', 'off'));
   await page.goto('/testing/');
-  await page.getByRole('button', { name: 'Run every step' }).click();
   await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 30_000 });
   expect(violations).toEqual([]);
 });
