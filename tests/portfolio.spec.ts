@@ -623,3 +623,43 @@ for (const width of [300, 320, 375]) {
     }
   });
 }
+
+// Where the logo spells the game's name, the card shows the logo and hides its title from sight
+// only: a screen reader and a search engine still read it. Every other card shows its title (the
+// studio logo on the Historic VR titles, the freely lettered CLAWPUNK and Gang of Frogs, and
+// Fracked, which has no logo). The folded rows below 64rem carry the title and no logo.
+test('a logo that spells the name stands for the title on the card (the title kept for screen readers); the rest show their title; the folded rows show the title and no logo', { tag: ['@a11y'] }, async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/portfolio/');
+  const cards = await page.locator('.card').evaluateAll((els) =>
+    els.map((el) => {
+      const h = el.querySelector<HTMLElement>('.card__title')!;
+      const r = h.getBoundingClientRect();
+      return { title: h.textContent!.trim(), tag: h.tagName, hidden: h.classList.contains('visually-hidden'), w: r.width, h: r.height, logo: el.querySelectorAll('.card__logo img').length };
+    }),
+  );
+  expect(cards).toHaveLength(20);
+  const visible = cards.filter((c) => !c.hidden).map((c) => c.title).sort();
+  expect(visible).toEqual(['CLAWPUNK', 'Fracked', 'Gang of Frogs', 'Guildford Castle VR', 'Londinium: AD 215']);
+  for (const c of cards) {
+    if (c.hidden) {
+      expect(c.logo, `${c.title}: the logo stands for it`).toBe(1);
+      expect(c.w * c.h, `${c.title}: out of sight`).toBeLessThanOrEqual(1);
+    } else expect(c.h, `${c.title}: in sight`).toBeGreaterThan(20);
+  }
+  // still a heading with the game's name, in the accessibility tree
+  for (const name of ['Cyberpunk 2077', 'Beat Saber', 'Ghostbusters: Rise of the Ghost Lord']) await expect(page.getByRole('heading', { level: 4, name, exact: true })).toHaveCount(1);
+  // a tablet (768) and a phone: rows with the title, the ID and the year, no logo
+  for (const width of [768, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    const rows = page.locator('[data-card-toggle]');
+    await expect(rows.first()).toBeVisible();
+    expect(await rows.locator('img').count(), `${width}: no logo on a row`).toBe(0);
+    for (const i of [0, 5, 12]) await expect(rows.nth(i).locator('.card__name')).toBeVisible();
+  }
+  // a wide tablet (1024) has the whole cards
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(page.locator('[data-card-toggle]').first()).toBeHidden();
+  await expect(page.locator('.card__logo img').first()).toBeVisible();
+});
+

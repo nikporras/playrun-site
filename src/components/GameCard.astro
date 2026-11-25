@@ -5,15 +5,17 @@
  * the game, and the studio and publisher. A thin rule. My part: what I did on it (the most
  * prominent text on the card), the kinds of testing as labels right under it, the platforms, and
  * one outline button to its store page in a new tab. The company's accent colours the labels
- * through --g-accent and --g-ink, set on the group around the card. On a phone, with script, the
- * card folds to one row (a button) that opens the whole card in place.
+ * through --g-accent and --g-ink, set on the group around the card. Where the logo spells the
+ * game's name (namedLogos) the title is visually hidden, kept for screen readers and search. Below
+ * 64rem, with script, the card folds to one row (a button: the title, the tracker ID, the year and
+ * status, no logo) that opens the whole card in place.
  */
 import type { CollectionEntry } from 'astro:content';
 import { Image } from 'astro:assets';
 import GameIcon from './GameIcon.astro';
 import ExternalLink from './ExternalLink.astro';
 import PassMark from './PassMark.astro';
-import { logos, logoScale } from '../data/logos';
+import { logos, logoScale, namedLogos } from '../data/logos';
 
 interface Props {
   project: CollectionEntry<'projects'>;
@@ -31,18 +33,17 @@ const { project: p, via, delay = 0, scan = false, open = false, trackerId } = As
 const panel = `card-${p.id}`;
 const logo = logos[p.id];
 const logoK = logoScale[p.id] ?? 1;
+// (the logo says the name, so the title need not show)
+const named = !!logo && namedLogos.has(p.id);
 const when = p.data.status === 'in-development' ? 'In development' : `${p.data.year} · Released`;
 const store = p.data.store ?? 'Steam';
 ---
 
 <article class:list={['card tile--live', open && 'is-open']} data-enter="place" data-scan={scan ? '' : undefined} data-card style={`--enter-delay: ${delay}ms`}>
   <span class="card__pass" aria-hidden="true"><PassMark /> Pass</span>
-  <!-- On a phone (with script) the card folds to this row: a small logo, the title, the year and
-       status, a chevron; it opens the whole card below it. -->
+  <!-- Below 64rem (with script) the card folds to this row: the title, the tracker ID, the year
+       and status, a chevron; it opens the whole card below it, logo first. -->
   <button type="button" class="card__toggle" aria-expanded={open ? 'true' : 'false'} aria-controls={panel} data-card-toggle>
-    <span class="card__mini" aria-hidden="true">
-      {logo ? <Image src={logo} alt="" height={56} densities={[1, 2]} loading="lazy" decoding="async" /> : !p.data.wordmark && <GameIcon name={p.data.icon} />}
-    </span>
     <span class="card__name">{p.data.title}</span>
     {trackerId && <span class="card__id" aria-hidden="true" data-nosnippet>{trackerId}</span>}
     <span class="card__state">{when}</span>
@@ -65,7 +66,7 @@ const store = p.data.store ?? 'Steam';
         <p class="card__when">{when}</p>
       </div>
       {trackerId && <p class="card__id" aria-hidden="true" data-nosnippet>{trackerId}</p>}
-      <h4 class="card__title">{p.data.title}</h4>
+      <h4 class:list={['card__title', named && 'visually-hidden']}>{p.data.title}</h4>
       {via && <p class="card__via">{via}</p>}
       <p class="card__summary">{p.data.summary}</p>
       <p class="card__makers">
@@ -393,9 +394,9 @@ const store = p.data.store ?? 'Steam';
       font-size: 1.75rem;
     }
   }
-  /* A phone, with script: each card folds to a row, a button the width of the card. Open, the
-     whole card follows it in place, the same content in the same order as on a desktop. */
-  @media (max-width: 47.99rem) {
+  /* Phones and tablets, with script: each card folds to a row, a button the width of the card.
+     Open, the whole card follows it in place, the same content in the same order as on a desktop. */
+  @media (max-width: 63.99rem) {
     :global(.js) .card {
       gap: 0;
       padding-block: 0.5rem 0;
@@ -403,10 +404,10 @@ const store = p.data.store ?? 'Steam';
     :global(.js) .card__toggle {
       display: grid;
       /* the title has the whole first line; under it the tracker ID, the year and status at the right */
-      grid-template-columns: 2.5rem auto minmax(0, 1fr) 0.875rem;
+      grid-template-columns: auto minmax(0, 1fr) 0.875rem;
       grid-template-areas:
-        'mini name name chevron'
-        'mini id state chevron';
+        'name name chevron'
+        'id state chevron';
       align-items: center;
       gap: 0.375rem 0.75rem;
       width: calc(100% + 2 * var(--s-2));
@@ -419,27 +420,6 @@ const store = p.data.store ?? 'Steam';
     }
     :global(.js) .card__toggle:focus-visible {
       outline-offset: -3px;
-    }
-    .card__mini {
-      display: block;
-      height: 1.5rem;
-    }
-    .card__mini :global(img) {
-      height: 100%;
-      width: auto;
-      max-width: 100%;
-      object-fit: contain;
-      object-position: left center;
-    }
-    .card__mini :global(.gameicon) {
-      width: 1.5rem;
-      height: 1.5rem;
-    }
-    .card__mini :global(.gameicon rect:not(.px-navy)) {
-      fill: var(--g-accent, var(--accent-2));
-    }
-    .card__mini {
-      grid-area: mini;
     }
     .card__chevron {
       grid-area: chevron;
@@ -470,7 +450,6 @@ const store = p.data.store ?? 'Steam';
       transform: rotate(180deg);
     }
     /* open, the card itself shows the logo and the year right below: the row keeps the title */
-    :global(.js) .card.is-open .card__mini,
     :global(.js) .card.is-open .card__state {
       visibility: hidden;
     }

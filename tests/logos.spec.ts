@@ -6,8 +6,8 @@ import sharp from 'sharp';
 /**
  * The games' logos show whole: every file has a clear margin all round (nothing of the logo on its
  * edge rows or columns), and on the page no logo image is cut by its own box or by anything round
- * it, nor stretched out of its shape: on Home's row of logos (moving and still), on the Games
- * cards and on the phone rows.
+ * it, nor stretched out of its shape: on Home's row of logos (moving and still) and on the Games
+ * cards (the folded rows below 64rem carry no logo).
  */
 const DIR = join(process.cwd(), 'src/assets/logos');
 
@@ -97,8 +97,8 @@ for (const [width, height] of [[1440, 900], [768, 1024], [375, 812]] as const) {
       const card = cards.nth(i);
       const toggle = card.locator('.card__toggle');
       if ((await toggle.isVisible()) && (await toggle.getAttribute('aria-expanded')) === 'false') {
-        // the folded row's small logo first, then the opened card's
-        for (const l of await unclipped(page, `article.card >> nth=${i} >> .card__mini img`)) expect(l.problems, `Games row: ${l.name}`).toEqual([]);
+        // (the folded row has no logo; the opened card has)
+        await expect(toggle.locator('img, svg:not(.card__chevron)')).toHaveCount(0);
         await toggle.click();
         await expect(card).toHaveClass(/is-open/);
       }

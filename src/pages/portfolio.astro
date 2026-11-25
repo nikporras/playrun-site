@@ -288,7 +288,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
   // begin with). A tap on a row opens its card and folds the one that was open; the row stays under
   // the finger while the cards above it fold. Once open, a card that runs off the screen is brought
   // into view, and the games script is told to look at it (the scan plays on an open card only).
-  const phone = matchMedia('(max-width: 47.99rem)');
+  const phone = matchMedia('(max-width: 63.99rem)');
   const still = { get matches() { return reducedMotion(); } };
   const FOLD_MS = 280;
   document.querySelectorAll<HTMLElement>('.group__grid').forEach((list) => {
