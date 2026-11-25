@@ -6,7 +6,7 @@
  * line on hover, focus or tap), My story (Level 4), Bug Sweep (Level 5, loads only when Play is
  * pressed), and the key facts with the questions and answers in one closed dropdown (Level 6), all
  * built from the site's own data (src/data/about.ts, src/data/skills.ts, src/config.ts). Six bugs to
- * catch, one a level.
+ * catch: two on the intro, then one on each level up to Bug Sweep (none by the dropdown).
  */
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
@@ -51,6 +51,8 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
       {summaryFirstPerson.map((p) => <p class="about__summary statement">{p}</p>)}
     </div>
     <Bug id="about-1" style="right: 8%; top: 4rem" tablet="right: 6%; top: 1.25rem" phone="right: var(--gutter); bottom: calc(var(--join-h) + 0.5rem)" walk="x -2rem" />
+    <!-- (the Quick facts level's bug, its id kept, in the strip at the level's foot) -->
+    <Bug id="skills-5" style="left: 30%; bottom: calc(var(--join-h) + 0.5rem)" tablet="left: 30%; bottom: calc(var(--join-h) + 0.5rem)" phone="left: var(--gutter); bottom: calc(var(--join-h) + 0.5rem)" walk="x 2rem" />
     <Join kind="clouds" from="var(--pr-navy)" to="var(--field-blue)" seed="about-skills" />
   </section>
 
@@ -262,8 +264,6 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
         </div>
       </div>
     </details>
-    <!-- (beside the label, above the dropdown: on show and catchable with it closed) -->
-    <Bug id="skills-5" style="right: 10%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" walk="x -2rem" />
   </section>
 </Base>
 
@@ -281,12 +281,10 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
   .about__summary + .about__summary {
     margin-top: var(--s-2);
   }
-  /* (on a phone the h1 and the intro fill the column from the label down, so the level's bug walks
-     in a strip at its foot, above the clouds) */
-  @media (max-width: 47.99rem) {
-    .about.has-join-bottom {
-      padding-bottom: calc(var(--s-5) + var(--join-h) + 3.5rem);
-    }
+  /* (the h1 and the intro fill the column, so the level's bugs walk in a strip at its foot, above
+     the clouds: both on a phone, one on wider screens) */
+  .about.has-join-bottom {
+    padding-bottom: calc(var(--s-5) + var(--join-h) + 3.5rem);
   }
   /* What I test: navy cards on the blue field, the icon and title, the line, three bullets. In a
      column (motion off on a desktop, no script) they stack; in the deck they share one stage

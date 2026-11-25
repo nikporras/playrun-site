@@ -101,13 +101,14 @@ test('the About page: one h1, the two-paragraph intro, What I test, the Kit, My 
   await expect(answer('What is PlayRun?')).toHaveText("PlayRun is the name I work under. playrunqa.com is my QA portfolio: the games I've tested, how I test, and a site that runs its own test suite. It does not offer services.");
   // no third person left in the answers
   for (const a of await page.locator('.qa__item p').allTextContents()) expect(a).not.toMatch(/\b(he|his|him)\b/i);
-  // nothing that waits to show; six bugs to catch, one a level (Skills' five moved here, under
-  // their old ids so a catch already made still counts), never inside the dropdown
+  // nothing that waits to show; six bugs to catch (Skills' five moved here, under their old ids so
+  // a catch already made still counts): two on the intro, one on each level up to Bug Sweep, none on
+  // the Quick facts and FAQ level
   await expect(page.locator('[data-enter], [data-load]')).toHaveCount(0);
   await expect(page.locator('[data-bug]')).toHaveCount(6);
-  const ids = ['about-1', 'skills-1', 'skills-2', 'skills-3', 'skills-4', 'skills-5'];
-  for (const [i, id] of ids.entries()) await expect(page.locator(`[data-level="${i + 1}"] > [data-bug="${id}"]`), id).toHaveCount(1);
-  await expect(page.locator('details.faq [data-bug]')).toHaveCount(0);
+  const spots: [number, string][] = [[1, 'about-1'], [1, 'skills-5'], [2, 'skills-1'], [3, 'skills-2'], [4, 'skills-3'], [5, 'skills-4']];
+  for (const [level, id] of spots) await expect(page.locator(`[data-level="${level}"] > [data-bug="${id}"]`), id).toHaveCount(1);
+  await expect(page.locator('[data-level="6"] [data-bug]')).toHaveCount(0);
   await expect(page.locator('[data-level]')).toHaveCount(6);
   await expect(page.locator('#hud')).toHaveCount(1);
   await expect(page.locator('#dock')).toHaveCount(1);
@@ -407,11 +408,19 @@ for (const width of [300, 320, 375, 768]) {
   });
 }
 
-test('the bug on Quick facts and FAQ shows and can be caught with the dropdown closed', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 812 });
+for (const [width, height] of [[375, 812], [1024, 768], [1440, 900]] as const) test(`at ${width}px the bug from Quick facts and FAQ walks on the intro, in the strip at its foot, and can be caught`, async ({ page }) => {
+  await page.setViewportSize({ width, height });
   await page.goto('/about/');
   await expect(page.locator('details.faq')).not.toHaveAttribute('open');
   const bug = page.locator('[data-bug="skills-5"]');
+  // under the intro's last line and above the clouds
+  const [last, join, box] = await page.evaluate(() => [
+    document.querySelector('.about__summary:last-of-type')!.getBoundingClientRect().bottom,
+    document.querySelector('[data-level="1"] > .join')!.getBoundingClientRect().top,
+    document.querySelector('[data-bug="skills-5"]')!.getBoundingClientRect().toJSON(),
+  ]);
+  expect(box.top).toBeGreaterThan(last);
+  expect(box.bottom).toBeLessThanOrEqual(join + 1);
   await bug.evaluate((b) => {
     b.getAnimations().forEach((a) => a.pause());
     b.scrollIntoView({ block: 'center' });
