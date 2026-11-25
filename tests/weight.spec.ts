@@ -9,7 +9,6 @@ import { test, expect } from '@playwright/test';
 // in KB, with room to grow (each page was well under when the budgets were set)
 const BUDGETS: Record<string, number> = {
   '/': 250,
-  '/skills/': 150,
   '/portfolio/': 200,
   '/quality/': 150,
   '/contact/': 150,

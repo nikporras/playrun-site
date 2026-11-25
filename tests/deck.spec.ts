@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
  * scroll and the five test steps are dealt as cards, each rising from below, tilting a few degrees
  * and stacking on the last, scrubbed by the scroll. Phones slide the cards in one at a time;
  * reduced motion and no script keep them still. The content stays readable and selectable, and
- * nothing overlaps the track or the scoreboard. Skills Level 2 is plain rows again.
+ * nothing overlaps the track or the scoreboard. About's What I test uses the same deck (about.spec.ts).
  */
 test.describe('The Quality deck', () => {
   test('pins and deals the five steps with the scroll, transform only, clear of the track and the scoreboard', async ({ page }) => {
@@ -145,15 +145,17 @@ test.describe('The Quality deck', () => {
     await plain.close();
   });
 
-  test('Skills Level 2 is plain rows again', async ({ page }) => {
+  test("the deck on About deals What I test the same way: one deck to a page, its cards tilted, transform only", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/skills/');
-    await expect(page.locator('[data-deck]')).toHaveCount(0);
-    await expect(page.locator('.six__row')).toHaveCount(5);
-    const rows = await page.locator('.six__row').evaluateAll((els) => els.map((el) => ({ pos: getComputedStyle(el).position, transform: getComputedStyle(el).transform, top: el.getBoundingClientRect().top + scrollY })));
-    for (const r of rows) expect(r.pos).toBe('static');
-    for (let i = 1; i < rows.length; i++) expect(rows[i].top).toBeGreaterThan(rows[i - 1].top);
-    expect((await page.locator('.six').boundingBox())!.height, 'no pinned height').toBeLessThan(2000);
-    await expect(page.locator('.six__row').first().locator('.row__title')).toHaveText('Functional testing');
+    await page.goto('/about/');
+    await expect(page.locator('[data-deck]')).toHaveCount(1);
+    await expect(page.locator('[data-deck]')).toHaveClass(/is-deck/);
+    const top = await page.locator('[data-deck]').evaluate((el) => el.getBoundingClientRect().top + scrollY);
+    const range = await page.locator('[data-deck]').evaluate((el) => (el as HTMLElement).offsetHeight - innerHeight);
+    await page.evaluate((y) => scrollTo(0, y), top + range);
+    await expect.poll(() => page.locator('.area').last().evaluate((el) => getComputedStyle(el).getPropertyValue('--e').trim())).toBe('1');
+    const looks = await page.locator('.area').evaluateAll((els) => els.map((el) => ({ pos: getComputedStyle(el).position, transform: getComputedStyle(el).transform })));
+    for (const l of looks) expect(l.pos).toBe('absolute');
+    expect(looks.slice(1).every((l) => l.transform.startsWith('matrix(') && !l.transform.startsWith('matrix(1, 0, 0, 1,')), 'tilted').toBe(true);
   });
 });

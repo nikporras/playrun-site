@@ -229,7 +229,7 @@ test.describe('Home', () => {
     for (const options of [{ javaScriptEnabled: false }, { reducedMotion: 'reduce' as const }]) {
       const context = await browser.newContext({ ...options, viewport: { width: 375, height: 780 } });
       const p = await context.newPage();
-      await p.goto('/skills/');
+      await p.goto('/about/');
       await expect(p.getByRole('navigation', { name: 'Site' }).getByRole('link')).toHaveText(['Home', 'About', 'Games', 'Quality', 'Contact']);
       // (no ship on the bar, with or without script)
       await expect(p.locator('.hud__runner')).toBeHidden();
@@ -1175,7 +1175,7 @@ test.describe('Home', () => {
     await expect(page.locator('.hero button:not([data-bug])')).toHaveCount(0);
     await expect(page.locator('.final').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
     await expect(page.locator('footer').getByRole('link', { name: 'Get in touch' })).toHaveCount(0);
-    for (const path of ['/skills/', '/portfolio/', '/quality/', '/contact/', '/terms/', '/privacy/']) {
+    for (const path of ['/portfolio/', '/quality/', '/contact/', '/terms/', '/privacy/']) {
       await page.goto(path);
       await expect(page.locator('main').getByRole('link', { name: 'Get in touch' }), path).toHaveCount(0);
     }
@@ -1389,7 +1389,7 @@ test('on a desktop the scoreboard never covers the row of logos, wherever the pa
 // scaled by a fraction (1.25, 1.5) when the two edges round to different device pixels. The field
 // starts under the join's front layer (the same colour), not at its edge, on every page.
 test("no hairline where a level's clouds meet its blue: the field starts under the front layer of the join", { tag: ['@brand'] }, async ({ page }) => {
-  for (const path of ['/', '/skills/', '/portfolio/', '/quality/', '/contact/']) {
+  for (const path of ['/', '/portfolio/', '/quality/', '/contact/']) {
     await page.goto(path);
     const levels = await page.locator('.level.has-join-top').evaluateAll((els) =>
       els.map((el) => {

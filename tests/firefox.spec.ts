@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-const PAGES = ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/'];
+const PAGES = ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/'];
 
 test('in Firefox every page loads clean: no script errors, no console errors, no failed requests', async ({ page }) => {
   test.setTimeout(90_000);

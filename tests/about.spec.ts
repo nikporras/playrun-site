@@ -1,11 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 /**
  * The About page: the facts about Nicolás Porras in the first person, for people and for AI, from
- * the site's own data. The facts and answers sit in one closed dropdown, all of it in the HTML; one
- * bug to catch, on Level 1 (its game is Bug Sweep, sweep.spec.ts).
+ * the site's own data, in six levels: the intro, What I test (the five areas, dealt on a desktop and
+ * swiped on phones and tablets), the Kit, My story, Bug Sweep (sweep.spec.ts) and the closed Quick
+ * facts and FAQ dropdown, all of it in the HTML. One bug to catch on each level. The old /skills/
+ * address leads to What I test.
  */
 const projects = () => {
   const dir = path.join(process.cwd(), 'src', 'content', 'projects');
@@ -16,9 +18,10 @@ const projects = () => {
     .map((t) => ({ title: t.split('\n').find((l) => l.startsWith('title:'))!.slice(6).trim().replace(/^"|"$/g, ''), vr: /^vr: true/m.test(t) || /^platforms:.*(VR|Quest)/m.test(t) }));
 };
 
-test('the About page: one h1, the two-paragraph intro, My story, then Bug Sweep and the closed Quick facts and FAQ dropdown holding a real table of key facts and the questions as h4s, all from the data', { tag: ['@pages'] }, async ({ page }) => {
+test('the About page: one h1, the two-paragraph intro, What I test, the Kit, My story, then Bug Sweep and the closed Quick facts and FAQ dropdown holding a real table of key facts and the questions as h4s, all from the data', { tag: ['@pages'] }, async ({ page }) => {
   await page.goto('/about/');
-  await expect(page).toHaveTitle('About Nicolás Porras, game QA tester in London');
+  await expect(page).toHaveTitle('About Nicolás Porras, game QA tester in London: skills, platforms and story');
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', 'Nicolás Porras is a game QA tester in London: the five areas he tests, the platforms, headsets and tools he tests with, his story, and quick facts and answers.');
   await expect(page.locator('h1')).toHaveText('About Nicolás Porras');
   const all = projects();
   const vr = all.filter((p) => p.vr).length;
@@ -29,16 +32,17 @@ test('the About page: one h1, the two-paragraph intro, My story, then Bug Sweep 
   ]);
   // every credit named in the summary is a public title
   for (const credit of ['Cyberpunk 2077', 'NBA 2K21', 'Ghostbusters: Rise of the Ghost Lord', 'Synapse', "Lou's Lagoon"]) expect(all.map((p) => p.title)).toContain(credit);
-  await expect(page.getByRole('heading', { level: 2 })).toHaveText(['My story', 'I love playing and making games', 'Quick facts and FAQ']);
-  // My story sits under the intro, in my own words
-  await expect(page.locator('.about__more p')).toHaveText([
+  await expect(page.getByRole('heading', { level: 2 })).toHaveText(['What I test', 'Platforms, tools and languages', 'My story', 'I love playing and making games', 'Quick facts and FAQ']);
+  // My story is a level of its own, in my own words
+  await expect(page.locator('.story__text p')).toHaveText([
     'My first QA job had nothing to do with games. My family makes clothes in Colombia, and my summer job for some extra cash (not forced haha) was checking every garment before it was packed and shipped. Being part of that process, and seeing up close what my parents had built, is where it all started.',
     "I've been on the move since school: two years of high school in New Jersey, then four years in China, where I learned Mandarin and worked as a translator and shipping agent, finding products for clients, checking their quality and making sure every shipment to Colombia and South America went through properly.",
     'Then came three years in Australia, studying IT in Melbourne and working as head bartender at Rod Laver Arena and Marvel Stadium for the Australian Open, Formula 1, the Melbourne Cup and big concerts, which meant working the green rooms for artists like Elton John, Pink and Harry Styles. Back in the UK I became an assistant food and beverage manager. Hospitality taught me to keep calm when everything moves fast, and to lead a team through it.',
     "Since arriving in London I've worked in games, which have always been my hobby and my passion. Living in all those places is why I speak five languages and why I'm comfortable working with teams from anywhere. Outside work I play a lot of games, I'm always learning something new, and I love music, especially Latin music. Put some on and I'll be dancing.",
   ]);
-  // the order: intro, My story, Bug Sweep, the dropdown
-  const tops = await page.locator('.about__summary, .about__more, [data-sweep], details.faq').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+  // the order: intro, What I test, the Kit, My story, Bug Sweep, the dropdown
+  await expect(page.locator('[data-level] .flag')).toHaveText(['About', 'Level 2 · Skills', 'Level 3 · Kit', 'Level 4 · My story', 'Level 5 · Play', 'Level 6 · Facts and FAQ']);
+  const tops = await page.locator('.about__summary, #skills, .kit__board, .story__text, [data-sweep], details.faq').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
   // the dropdown starts closed, its whole content in the HTML (search and AI read it), then opens
   const faq = page.locator('details.faq');
@@ -60,7 +64,7 @@ test('the About page: one h1, the two-paragraph intro, My story, then Bug Sweep 
   await expect(cell('Education')).toContainText('Diploma of Information Technology, Swinburne University of Technology, 2017 to 2019');
   await expect(cell('Profiles').getByRole('link', { name: /LinkedIn/ })).toHaveAttribute('href', /linkedin\.com/);
   // the questions
-  await expect(page.getByRole('heading', { level: 3 })).toHaveText(['Key facts', 'Questions and answers']);
+  await expect(page.locator('details.faq').getByRole('heading', { level: 3 })).toHaveText(['Key facts', 'Questions and answers']);
   await expect(page.getByRole('heading', { level: 4 })).toHaveText([
     'Who are you?',
     "What's your current role?",
@@ -97,11 +101,14 @@ test('the About page: one h1, the two-paragraph intro, My story, then Bug Sweep 
   await expect(answer('What is PlayRun?')).toHaveText("PlayRun is the name I work under. playrunqa.com is my QA portfolio: the games I've tested, how I test, and a site that runs its own test suite. It does not offer services.");
   // no third person left in the answers
   for (const a of await page.locator('.qa__item p').allTextContents()) expect(a).not.toMatch(/\b(he|his|him)\b/i);
-  // nothing that waits to show; one bug to catch, on Level 1 beside My story, never inside the dropdown (one of the site's twenty)
+  // nothing that waits to show; six bugs to catch, one a level (Skills' five moved here, under
+  // their old ids so a catch already made still counts), never inside the dropdown
   await expect(page.locator('[data-enter], [data-load]')).toHaveCount(0);
-  await expect(page.locator('[data-bug]')).toHaveCount(1);
-  await expect(page.locator('[data-level="1"] [data-bug="about-1"]')).toHaveCount(1);
-  await expect(page.locator('[data-level]')).toHaveCount(3);
+  await expect(page.locator('[data-bug]')).toHaveCount(6);
+  const ids = ['about-1', 'skills-1', 'skills-2', 'skills-3', 'skills-4', 'skills-5'];
+  for (const [i, id] of ids.entries()) await expect(page.locator(`[data-level="${i + 1}"] > [data-bug="${id}"]`), id).toHaveCount(1);
+  await expect(page.locator('details.faq [data-bug]')).toHaveCount(0);
+  await expect(page.locator('[data-level]')).toHaveCount(6);
   await expect(page.locator('#hud')).toHaveCount(1);
   await expect(page.locator('#dock')).toHaveCount(1);
 });
@@ -111,11 +118,347 @@ test('About is in the desktop nav, the footer and second in the bottom bar of ph
   await page.goto('/');
   await expect(page.locator('.header__nav').getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about/');
   // the desktop nav and the bottom bar share one order: Home first on desktop only, Contact last on both
-  await expect(page.locator('.header__nav').getByRole('link')).toHaveText(['Home', 'About', 'Skills', 'Games', 'Quality', 'Get in touch']);
+  await expect(page.locator('.header__nav').getByRole('link')).toHaveText(['Home', 'About', 'Games', 'Quality', 'Get in touch']);
   await expect(page.locator('footer').getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about/');
   await expect(page.locator('.hero__value').getByRole('link', { name: 'More about me' })).toHaveAttribute('href', '/about/');
   await page.setViewportSize({ width: 375, height: 780 });
   await expect(page.locator('.tabbar').getByRole('link')).toHaveText(['Home', 'About', 'Games', 'Quality', 'Contact']);
   await expect(page.locator('.tabbar').getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about/');
   await expect(page.locator('footer').getByRole('link', { name: 'About' })).toBeVisible();
+});
+
+// ------------------------------------------------------------------------------------------------
+// What I test, the Kit, the old Skills address
+
+const AREAS = [
+  ['Functional testing', 'Every path a player can take, with a test plan agreed before the build lands and a regression pass on every build after.', ['Clear test plans, agreed before testing', 'Regression passes on every build', 'Build acceptance before a milestone']],
+  ['Platforms and certification', 'The same build on every console, PC store and handheld, checked against its requirements before submission, not after a rejection.', ['Platform requirement checks', 'Platform certification checks (TRC, XR, Lotcheck)', 'One report per platform build']],
+  ['Performance and stress', 'Frame rate, memory and load times on low and recommended spec rigs, with Unreal Engine profiling and long sessions.', ['Unreal Engine profiling', 'Low and recommended spec rigs', 'Long session and soak tests']],
+  ['Playtesting and UX', 'Where players get lost, bored or stuck: the onboarding, the difficulty, the readability and the first ten minutes.', ['Onboarding notes', 'Difficulty and pacing notes', 'Readability on every screen']],
+  ['Bug reporting', "Steps, severity, media and a build number on every bug, in the team's own tracker, and a quality report at each milestone.", ['Jira, Confluence or TestRail', 'Steps, severity, media, build number', 'Milestone quality reports']],
+] as const;
+
+const achieved = (page: Page) => page.evaluate(() => (JSON.parse(localStorage.getItem('playrun.games') ?? '{}').achievements ?? []) as string[]);
+
+test('What I test: Level 2 at #skills, the lead, five cards each with a pixel icon, its title, one line and three bullets, each labelled n of 5', { tag: ['@pages'] }, async ({ page }) => {
+  await page.goto('/about/');
+  const level = page.locator('section#skills');
+  await expect(level).toHaveAttribute('data-level', '2');
+  await expect(level.locator('h2')).toHaveText('What I test');
+  await expect(level.locator('.level__lead')).toHaveText('Five areas I cover on every project.');
+  const cards = level.locator('.area');
+  await expect(cards).toHaveCount(5);
+  for (const [i, [title, line, bullets]] of AREAS.entries()) {
+    const card = cards.nth(i);
+    await expect(card).toHaveAttribute('role', 'group');
+    await expect(card).toHaveAttribute('aria-label', `${i + 1} of 5`);
+    await expect(card.locator('h3')).toHaveText(title);
+    await expect(card.locator('.area__line')).toHaveText(line);
+    await expect(card.locator('.area__list li')).toHaveText([...bullets]);
+    await expect(card.locator('svg.area__icon path')).toHaveAttribute('d', /^M\d/);
+    await expect(card.locator('svg.area__icon')).toHaveAttribute('aria-hidden', 'true');
+  }
+  await expect(page.getByRole('region', { name: 'The five areas I test' })).toHaveCount(1);
+});
+
+test('What I test on a desktop: dealt as a deck with motion, a column of five with motion off', { tag: ['@viewports'] }, async ({ browser }) => {
+  for (const motion of ['on', 'off']) {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.addInitScript((m) => localStorage.setItem('playrun.motion', m), motion);
+    await page.goto('/about/');
+    const deck = page.locator('[data-deck]');
+    if (motion === 'on') {
+      await expect(deck).toHaveClass(/is-deck/);
+      expect((await deck.boundingBox())!.height, 'the deck is several screens tall').toBeGreaterThan(900 * 2);
+      // pinned, then dealt: half way through, the first cards are down and the last is still below the screen
+      const top = await deck.evaluate((el) => el.getBoundingClientRect().top + scrollY);
+      await page.evaluate((y) => scrollTo(0, y + (document.querySelector('[data-deck]') as HTMLElement).offsetHeight / 2 - innerHeight / 2), top);
+      await expect.poll(() => page.locator('.area').last().evaluate((el) => el.getBoundingClientRect().top)).toBeGreaterThan(900);
+      expect(await page.locator('.area').first().evaluate((el) => el.getBoundingClientRect().top)).toBeLessThan(900);
+      // the swipe's buttons are for phones and tablets only
+      await expect(page.locator('.swipe__controls')).toBeHidden();
+    } else {
+      await expect(deck).not.toHaveClass(/is-deck/);
+      const boxes = await page.locator('.area').evaluateAll((els) => els.map((e) => ({ top: e.getBoundingClientRect().top + scrollY, pos: getComputedStyle(e).position, w: e.getBoundingClientRect().width })));
+      for (const b of boxes) expect(b.pos).toBe('static');
+      for (let i = 1; i < boxes.length; i++) expect(boxes[i].top).toBeGreaterThan(boxes[i - 1].top);
+      await expect(page.locator('.swipe__controls')).toBeHidden();
+    }
+    await context.close();
+  }
+});
+
+for (const [width, height] of [[300, 640], [375, 812], [768, 1024]] as const) {
+  test(`What I test at ${width}px is a swipe: one card at a time with the next peeking in, n of 5, Previous and Next and the arrow keys, no auto-advance`, { tag: ['@viewports', '@a11y'] }, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/about/');
+    const region = page.getByRole('region', { name: 'The five areas I test' });
+    await expect(region).toHaveAttribute('aria-roledescription', 'carousel');
+    const track = region.locator('.swipe__track');
+    await track.scrollIntoViewIfNeeded();
+    const pos = region.locator('[data-swipe-pos]');
+    const prev = region.getByRole('button', { name: 'Previous card' });
+    const next = region.getByRole('button', { name: 'Next card' });
+    await expect(pos).toHaveText('1 of 5');
+    await expect(pos).toHaveAttribute('aria-live', 'polite');
+    await expect(prev).toHaveAttribute('aria-disabled', 'true');
+    // the first card fills the column, the next one peeks in from the edge
+    const boxes = await page.locator('.area').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON()));
+    expect(boxes[0].left).toBeGreaterThanOrEqual(0);
+    expect(boxes[0].right).toBeLessThan(width);
+    expect(boxes[1].left, 'the next card peeks in').toBeLessThan(width);
+    expect(width - boxes[1].left, 'only a peek').toBeLessThan(80);
+    // no auto-advance
+    await page.waitForTimeout(1500);
+    await expect(pos).toHaveText('1 of 5');
+    for (let k = 2; k <= 5; k++) {
+      await next.click();
+      await expect(pos).toHaveText(`${k} of 5`);
+    }
+    await expect(next).toHaveAttribute('aria-disabled', 'true');
+    await expect(next).toBeFocused();
+    const last = await page.locator('.area').last().evaluate((e) => e.getBoundingClientRect().toJSON());
+    expect(last.left).toBeGreaterThanOrEqual(0);
+    expect(last.right).toBeLessThanOrEqual(width);
+    await prev.click();
+    await expect(pos).toHaveText('4 of 5');
+    // the row takes the keyboard's focus with a visible ring (Shift+Tab from Previous), and the arrows move it
+    await page.keyboard.press('Shift+Tab');
+    await expect(track).toBeFocused();
+    expect(await track.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid');
+    await page.keyboard.press('ArrowLeft');
+    await expect(pos).toHaveText('3 of 5');
+    await page.keyboard.press('ArrowRight');
+    await expect(pos).toHaveText('4 of 5');
+    // a finger swipe moves it too (the dots follow)
+    await track.evaluate((el) => el.scrollTo({ left: 0, behavior: 'instant' }));
+    await expect(pos).toHaveText('1 of 5');
+    await expect(region.locator('.swipe__dot.is-on')).toHaveCount(1);
+    await expect(region.locator('.swipe__dot').first()).toHaveClass(/is-on/);
+    // nothing sideways on the page
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  });
+}
+
+test('with motion off the swipe still works, and the buttons move it at once, with no smooth scroll', { tag: ['@viewports'] }, async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
+  await page.goto('/about/');
+  const track = page.locator('.swipe__track');
+  expect(await track.evaluate((el) => [getComputedStyle(el).scrollBehavior, getComputedStyle(el).scrollSnapType])).toEqual(['auto', 'x mandatory']);
+  await track.scrollIntoViewIfNeeded();
+  await page.getByRole('button', { name: 'Next card' }).click();
+  // at once: the very next frame already shows the second card at the start
+  const left = await track.evaluate((el) => new Promise<number>((r) => requestAnimationFrame(() => r(el.scrollLeft))));
+  const step = await page.locator('.area').evaluateAll((els) => (els[1] as HTMLElement).offsetLeft - (els[0] as HTMLElement).offsetLeft);
+  expect(Math.abs(left - step)).toBeLessThanOrEqual(2);
+  await expect(page.locator('[data-swipe-pos]')).toHaveText('2 of 5');
+});
+
+test('without script the five cards still show: a column on a desktop, a scrolling row on a phone, no buttons', async ({ browser }) => {
+  for (const [w, h] of [[1440, 900], [375, 812]] as const) {
+    const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: w, height: h } });
+    const page = await context.newPage();
+    await page.goto('/about/');
+    await expect(page.locator('.area')).toHaveCount(5);
+    await expect(page.locator('.swipe__controls')).toBeHidden();
+    const overflow = await page.locator('.swipe__track').evaluate((el) => getComputedStyle(el).overflowX);
+    expect(overflow).toBe(w < 1024 ? 'auto' : 'visible');
+    await context.close();
+  }
+});
+
+test('Read every skill is earned once all five cards have been seen: dealt on a desktop, swiped to on a phone, or in the column', async ({ browser }) => {
+  const ways = [
+    { name: 'dealt', viewport: { width: 1440, height: 900 }, motion: 'on' },
+    { name: 'column', viewport: { width: 1440, height: 900 }, motion: 'off' },
+    { name: 'swiped', viewport: { width: 375, height: 812 }, motion: 'on' },
+  ];
+  for (const way of ways) {
+    const context = await browser.newContext({ viewport: way.viewport });
+    const page = await context.newPage();
+    await page.addInitScript((m) => localStorage.getItem('playrun.motion') || localStorage.setItem('playrun.motion', m), way.motion);
+    await page.goto('/about/');
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    if (way.name === 'swiped') {
+      await page.locator('.swipe__track').scrollIntoViewIfNeeded();
+      await page.waitForTimeout(300);
+      for (let k = 1; k < 5; k++) {
+        expect(await achieved(page), `${way.name}: not before card ${k + 1}`).not.toContain('skills');
+        await page.getByRole('button', { name: 'Next card' }).click();
+        await expect(page.locator('[data-swipe-pos]')).toHaveText(`${k + 1} of 5`);
+        await page.waitForTimeout(250);
+      }
+    } else {
+      // down through the level in small steps, as a reader would
+      const [from, to] = await page.locator('#skills').evaluate((el) => [el.getBoundingClientRect().top + scrollY, el.getBoundingClientRect().bottom + scrollY]);
+      // (never before the last card is mostly on screen)
+      const shown = () => page.locator('.area').last().evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0)) / r.height;
+      });
+      let seen = false;
+      for (let y = from; y < to; y += 150) {
+        await page.evaluate((yy) => scrollTo(0, yy), y);
+        await page.waitForTimeout(60);
+        const f = await shown();
+        if (!seen && f < 0.5) expect(await achieved(page), `${way.name}: not before the last card`).not.toContain('skills');
+        if (f >= 0.6) seen = true;
+      }
+    }
+    await expect.poll(() => achieved(page), way.name).toContain('skills');
+    await context.close();
+  }
+});
+
+const KIT = [
+  ['Consoles and handhelds', ['Nintendo Switch', 'Nintendo Switch 2', 'Xbox', 'PS5', 'Handhelds']],
+  ['PC stores', ['Steam', 'Epic Games Store', 'GOG']],
+  ['VR', ['Meta Quest 2, 3 and Pro', 'PC VR', 'PS VR', 'PS VR2']],
+  ['Tools', ['Jira and Confluence', 'TestRail', 'Unreal Engine: debugging, profiling, Blueprint', 'Agile and Scrum']],
+  ['Languages', ['Spanish, fluent', 'English, fluent', 'Chinese, intermediate', 'Portuguese, intermediate', 'Italian, intermediate']],
+  ['Education', ['Diploma of Information Technology, Swinburne University of Technology, 2017 to 2019', 'Mandarin, South China Normal University, Guangzhou, 2015 to 2017']],
+] as const;
+
+test('the Kit: six labelled groups of chips from the data; the platform and headset chips are buttons whose detail shows on hover, keyboard focus or a tap, read as their description', { tag: ['@pages', '@a11y'] }, async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/about/');
+  const kit = page.locator('section.kit');
+  await expect(kit.locator('h2')).toHaveText('Platforms, tools and languages');
+  await expect(kit.locator('.level__lead')).toHaveText('What I test on, and what I test with.');
+  await expect(kit.locator('.kit__title')).toHaveText(KIT.map(([t]) => t));
+  for (const [title, chips] of KIT) {
+    const group = kit.getByRole('region', { name: title }).or(kit.locator('.kit__group').filter({ has: page.getByRole('heading', { name: title, exact: true }) })).first();
+    await expect(group.locator('.chip'), title).toHaveText([...chips]);
+  }
+  // which chips open a detail: the platforms and the headsets, nothing else
+  const buttons = kit.locator('button[data-chip]');
+  await expect(buttons).toHaveCount(5 + 3 + 4);
+  const handhelds = kit.getByRole('button', { name: 'Handhelds' });
+  const detail = 'Steam Deck and Windows handhelds: Deck Verified checks, controller-only play, text size on a small screen, sleep and resume.';
+  await expect(handhelds).toHaveAccessibleDescription(detail);
+  await expect(handhelds).toHaveAttribute('aria-expanded', 'false');
+  const tip = kit.locator('.chip__tip', { hasText: detail });
+  await expect(tip).toBeHidden();
+  // hover
+  await handhelds.hover();
+  await expect(tip).toBeVisible();
+  await expect(handhelds).toHaveAttribute('aria-expanded', 'true');
+  await page.mouse.move(5, 5);
+  await expect(tip).toBeHidden();
+  // the keyboard: Tab reaches it and shows it, Escape hides it, focus stays
+  await kit.getByRole('button', { name: 'PS5' }).focus();
+  await page.keyboard.press('Tab');
+  await expect(handhelds).toBeFocused();
+  await expect(tip).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(tip).toBeHidden();
+  await expect(handhelds).toBeFocused();
+  // a click keeps it open; one at a time; a click elsewhere closes it
+  await handhelds.click();
+  await page.mouse.move(5, 5);
+  await expect(tip).toBeVisible();
+  await kit.getByRole('button', { name: 'GOG' }).click();
+  await expect(tip).toBeHidden();
+  await expect(kit.locator('.chip__tip:visible')).toHaveText(['DRM-free build, Galaxy features, offline play.']);
+  await page.mouse.click(700, 60);
+  await expect(kit.locator('.chip__tip:visible')).toHaveCount(0);
+  // the open detail sits under its group, over what follows: nothing moves
+  const before = await page.locator('.story__text').evaluate((el) => el.getBoundingClientRect().top + scrollY);
+  await handhelds.click();
+  expect(await page.locator('.story__text').evaluate((el) => el.getBoundingClientRect().top + scrollY)).toBe(before);
+  // tools, languages and education are plain items, not buttons
+  for (const name of ['TestRail', 'Spanish, fluent']) await expect(kit.getByRole('button', { name })).toHaveCount(0);
+});
+
+test('on a touch screen a tap opens a chip detail and a second tap closes it', { tag: ['@viewports'] }, async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  await page.goto('/about/');
+  const chip = page.getByRole('button', { name: 'PS VR2' });
+  await chip.scrollIntoViewIfNeeded();
+  await chip.tap();
+  const tip = page.locator('.chip__tip:visible');
+  await expect(tip).toHaveText(["PS VR2 on PS5, the Sense controllers and the console's own checks."]);
+  const box = (await tip.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(375);
+  await chip.tap();
+  await expect(tip).toHaveCount(0);
+  await context.close();
+});
+
+for (const width of [300, 320, 375, 768]) {
+  test(`at ${width}px the Kit wraps cleanly: every chip inside the column, nothing cut or sideways`, { tag: ['@viewports'] }, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/about/');
+    const column = await page.locator('section.kit').evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { left: el.getBoundingClientRect().left + parseFloat(cs.paddingLeft), right: el.getBoundingClientRect().right - parseFloat(cs.paddingRight) };
+    });
+    for (const b of await page.locator('.kit .chip').evaluateAll((els) => els.map((e) => ({ r: e.getBoundingClientRect().toJSON(), cut: e.scrollWidth > e.clientWidth + 1 })))) {
+      expect(b.r.left).toBeGreaterThanOrEqual(column.left - 1);
+      expect(b.r.right).toBeLessThanOrEqual(column.right + 1);
+      expect(b.cut).toBe(false);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  });
+}
+
+test('the bug on Quick facts and FAQ shows and can be caught with the dropdown closed', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/about/');
+  await expect(page.locator('details.faq')).not.toHaveAttribute('open');
+  const bug = page.locator('[data-bug="skills-5"]');
+  await bug.evaluate((b) => {
+    b.getAnimations().forEach((a) => a.pause());
+    b.scrollIntoView({ block: 'center' });
+  });
+  await expect(bug).toBeVisible();
+  await bug.click();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('playrun.games') ?? '{}').bugs ?? [])).toContain('skills-5');
+  await expect(page.locator('details.faq')).not.toHaveAttribute('open');
+});
+
+test('the old Skills address is a small page that sends visitors to What I test: script and meta refresh, a canonical to About, never indexed, out of the sitemap', { tag: ['@pages', '@links'] }, async ({ request }) => {
+  const res = await request.get('/skills/');
+  expect(res.status()).toBe(200);
+  const html = await res.text();
+  expect(html).toMatch(/<meta http-equiv="refresh" content="0;url=\/about\/#skills">/);
+  expect(html).toContain('<link rel="canonical" href="https://playrunqa.com/about/">');
+  expect(html).toContain('<meta name="robots" content="noindex">');
+  expect(html).toMatch(/<script[^>]*>location\.replace\(`\/about\/#skills`\);?<\/script>/);
+  expect(html).toContain('This page is now part of About.');
+  expect(html).toMatch(/<a href="\/about\/#skills"[^>]*>Go to What I test<\/a>/);
+  const sitemap = await (await request.get('/sitemap-0.xml')).text();
+  expect(sitemap).not.toContain('/skills/');
+});
+
+for (const [width, height] of [[375, 812], [390, 844], [1440, 900]] as const) {
+  test(`at ${width}x${height} /skills/ lands on the What I test heading, not the top of About`, { tag: ['@links'] }, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/skills/');
+    await page.waitForURL('**/about/#skills');
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForLoadState('load');
+    await page.waitForTimeout(500);
+    const head = await page.locator('#skills-title').evaluate((el) => el.getBoundingClientRect().toJSON());
+    expect(await page.evaluate(() => scrollY), 'scrolled down from the top of About').toBeGreaterThan(200);
+    // the heading on screen near the top, clear of the header
+    const header = await page.locator('header').evaluate((el) => (getComputedStyle(el).position === 'fixed' || getComputedStyle(el).position === 'sticky' ? el.getBoundingClientRect().bottom : 0));
+    expect(head.top, 'the heading under the header').toBeGreaterThanOrEqual(header);
+    expect(head.bottom, 'the heading in the top half of the screen').toBeLessThan(height / 2);
+  });
+}
+
+test('every link that went to Skills now goes to What I test on About', { tag: ['@links'] }, async ({ page }) => {
+  for (const [path, name] of [['/portfolio/', 'See the skills'], ['/quality/', 'See the skills']] as const) {
+    await page.goto(path);
+    await expect(page.getByRole('link', { name, exact: true })).toHaveAttribute('href', '/about/#skills');
+  }
+  for (const path of ['/', '/about/', '/portfolio/', '/quality/', '/contact/']) {
+    await page.goto(path);
+    expect(await page.locator('a[href^="/skills"]').count(), path).toBe(0);
+  }
 });

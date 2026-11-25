@@ -36,7 +36,7 @@ for (const [width, height] of SIZES) {
     await openAbout(page);
     const section = page.locator('section', { has: page.getByRole('heading', { name: 'I love playing and making games', level: 2 }) });
     await expect(section).toBeVisible();
-    await expect(section.locator('.flag')).toHaveText(/Level 2 · Play/);
+    await expect(section.locator('.flag')).toHaveText(/Level 5 · Play/);
     await expect(section).toContainText("Here's one I made while building this site.");
     // the text alternative and the names
     await expect(page.locator('[data-sweep-stage]')).toHaveAccessibleDescription(/Bug Sweep is a short arcade game/);
@@ -289,8 +289,8 @@ test('three hits is game over, with Try again; the field pauses when the tab is 
   await page.locator('[data-sweep-stage]').evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + scrollY + el.getBoundingClientRect().height * 0.8));
   await page.waitForTimeout(300);
   expect((await state(page)).mode, 'a fifth still on screen: still playing').toBe('play');
-  // wholly scrolled away
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  // wholly scrolled away (back up the page: below it there is too little left to scroll it off)
+  await page.evaluate(() => window.scrollTo(0, 0));
   await expect.poll(async () => (await state(page)).mode).toBe('paused');
   await expect(page.locator('[data-sweep-text]')).toHaveText('Paused while you were away.');
 });

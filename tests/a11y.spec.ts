@@ -17,7 +17,7 @@ const scan = async (page: Page, what: string) => {
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   expect(results.violations, `${what}: ${JSON.stringify(results.violations, null, 2)}`).toEqual([]);
 };
-const PAGES = ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+const PAGES = ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
 
 for (const [width, height] of [
   [1440, 900],
@@ -40,7 +40,7 @@ for (const [width, height] of [
     const context = await browser.newContext({ viewport: { width, height } });
     const page = await context.newPage();
     // the scoreboard, open
-    await page.goto('/skills/');
+    await page.goto('/about/');
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
     await expect(page.locator('.score__panel')).toBeVisible();
     await scan(page, 'the scoreboard open');
@@ -98,6 +98,9 @@ for (const [width, height] of [
 for (const [width, height] of [[1440, 900], [375, 812]] as const) {
   test(`About's Quick facts and FAQ dropdown (${width}px): keyboard, visible focus, axe clean closed and open`, { tag: ['@a11y'] }, async ({ page }) => {
     await page.setViewportSize({ width, height });
+    // (the CLICK ME or TAP hint, decorative and gone after five seconds, would be read by axe half
+    // faded beside the level's bug; games.spec covers it)
+    await page.addInitScript(() => sessionStorage.setItem('playrun.taphint', 'shown'));
     await page.goto('/about/');
     const faq = page.locator('details.faq');
     const summary = faq.locator('summary');

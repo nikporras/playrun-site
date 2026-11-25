@@ -55,7 +55,7 @@ test('/llms.txt says who the site is about in the shared summary, lists the page
   expect(text).toContain(`> ${summary}`);
   expect(text).toContain('This site is a portfolio and CV. All facts here match his LinkedIn profile.');
   const pages = [...text.slice(text.indexOf('## Pages'), text.indexOf('## Profiles')).matchAll(/^- \[([^\]]+)\]\((https:\/\/playrunqa\.com[^)]*)\): .{20,}$/gm)];
-  expect(pages.map((m) => m[1])).toEqual(['About', 'Games', 'Skills', 'Quality', 'Contact']);
+  expect(pages.map((m) => m[1])).toEqual(['About', 'Games', 'Quality', 'Contact']);
   for (const [, , url] of pages) expect((await request.get(new URL(url).pathname)).status(), url).toBe(200);
   // (LinkedIn turns automated requests away, so the profile is checked as an address, not fetched)
   expect(text.slice(text.indexOf('## Profiles'))).toMatch(/^- \[LinkedIn\]\(https:\/\/www\.linkedin\.com\/in\/[^)]+\)$/m);
@@ -63,7 +63,7 @@ test('/llms.txt says who the site is about in the shared summary, lists the page
   expect(sitemap).not.toContain('llms.txt');
 });
 
-test('only the decorative game UI is kept out of snippets: level labels, +1s, the glitch card, the HUD and scoreboard; never a heading, the hero intro, a card or Skills content', { tag: ['@pages'] }, async ({ page }) => {
+test('only the decorative game UI is kept out of snippets: level labels, +1s, the glitch card, the HUD and scoreboard; never a heading, the hero intro, a card or What I test', { tag: ['@pages'] }, async ({ page }) => {
   await page.goto('/');
   for (const sel of ['.flag', '.bug__plus', '[data-glitch-card]', '#hud', '#dock']) {
     const marked = await page.locator(sel).evaluateAll((els) => els.map((el) => el.hasAttribute('data-nosnippet')));
@@ -71,10 +71,10 @@ test('only the decorative game UI is kept out of snippets: level labels, +1s, th
     expect(marked.every(Boolean), `${sel} carries data-nosnippet`).toBe(true);
   }
   const kept = (sel: string) => page.locator(sel).evaluateAll((els) => els.filter((el) => el.closest('[data-nosnippet]')).map((el) => el.textContent?.trim().slice(0, 40)));
-  for (const path of ['/', '/skills/', '/portfolio/', '/about/']) {
+  for (const path of ['/', '/portfolio/', '/about/']) {
     await page.goto(path);
     expect(await kept('h1, h2, h3, h4'), `${path}: headings`).toEqual([]);
     expect(await kept('.hero__value, .card__title, .card__summary, .card__did, .card__tags, .about__summary, .qa__item, .facts'), `${path}: content`).toEqual([]);
-    if (path === '/skills/') expect(await kept('main p:not(.flag), main li'), 'Skills content').toEqual([]);
+    if (path === '/about/') expect(await kept('.area p, .area li, .chip, .chip__tip, .story__text p'), 'What I test, the Kit and My story').toEqual([]);
   }
 });

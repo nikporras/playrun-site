@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
  * Every level's label (the flag: "Level 2 · Games" and the like) starts at the same left edge as
  * every other on the page: the left edge of the content column, whatever the level centres below it.
  */
-const PAGES = ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+const PAGES = ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
 
 for (const [width, height] of [
   [1440, 900],

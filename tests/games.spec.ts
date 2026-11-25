@@ -118,7 +118,7 @@ test.describe('Games', () => {
     await expect(page.locator('[data-hud-level]')).not.toHaveText('1');
   });
 
-  for (const path of ['/', '/skills/', '/portfolio/', '/quality/']) test(`${path}: the track is a rail no wider than the ship on the left, its numbers fully visible; the scoreboard is a compact card bottom right that opens on Enter, a click or a tap and closes on the pill, Escape or a click outside`, async ({ page }) => {
+  for (const path of ['/', '/portfolio/', '/quality/']) test(`${path}: the track is a rail no wider than the ship on the left, its numbers fully visible; the scoreboard is a compact card bottom right that opens on Enter, a click or a tap and closes on the pill, Escape or a click outside`, async ({ page }) => {
     {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(path);
@@ -229,7 +229,7 @@ test.describe('Games', () => {
   test('the scoreboard never sits on the footer; on a phone or a tablet there is no track (no ship, no line, no markers) and the counter holds the right end of the bar', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     // the end of the page: the scoreboard never sits on the footer's last line
-    await page.goto('/skills/');
+    await page.goto('/about/');
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await page.waitForTimeout(200);
     const legal = (await page.locator('.footer__legal').boundingBox())!;
@@ -244,7 +244,7 @@ test.describe('Games', () => {
       [300, 640],
     ] as const) {
       await page.setViewportSize({ width: w, height: h });
-      await page.goto('/skills/');
+      await page.goto('/about/');
       await expect(page.locator('#dock')).toBeVisible();
       await expect(page.locator('#hud')).toBeHidden();
       expect(await page.locator('.hud__runner, .hud__floor, .hud__jump').evaluateAll((els) => els.filter((e) => e.getClientRects().length > 0).length), 'nothing of the track shows').toBe(0);
@@ -406,7 +406,7 @@ test.describe('The click hint and the speech bubble, with a mouse', () => {
     await bug.evaluate((b) => b.getAnimations().forEach((a) => a.pause()));
     await bug.click();
     await expect(hint).toHaveCount(0);
-    await page.goto('/skills/');
+    await page.goto('/about/');
     await page.waitForTimeout(2000);
     await expect(page.locator('.bug__tap')).toHaveCount(0);
   });
@@ -424,7 +424,7 @@ test.describe('The click hint and the speech bubble, with a mouse', () => {
     await page.addInitScript(() => sessionStorage.setItem('playrun.taphint', 'shown'));
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    await page.goto('/skills/');
+    await page.goto('/about/');
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
     const bugs = page.locator('.bug:not([hidden])');
     const n = await bugs.count();
@@ -469,7 +469,7 @@ test.describe('The click hint and the speech bubble, with a mouse', () => {
   test('at 1440px with motion off the bubble shows still, and there is no CLICK ME', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
-    await page.goto('/skills/');
+    await page.goto('/about/');
     await page.waitForTimeout(2500);
     await expect(page.locator('.bug__tap')).toHaveCount(0);
     const bug = page.locator('.bug:not([hidden])').first();
@@ -567,7 +567,7 @@ test.describe('Kept in the browser', () => {
       sessionStorage.setItem('playrun.ticket', 'kept');
       sessionStorage.setItem('playrun.glitch', 'done');
     });
-    await page.goto('/skills/');
+    await page.goto('/about/');
     await expect(page.locator('[data-hud-ach]')).toHaveText('2/7');
     await page.getByRole('button', { name: /^Scoreboard/ }).click();
     await expect(page.locator('.score__ach li.is-done')).toHaveText(['Caught your first bug', 'Read every skill']);
@@ -579,7 +579,7 @@ test.describe('Kept in the browser', () => {
 
   test('the level track is a navigation landmark and the scoreboard a complementary one, each named', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/skills/');
+    await page.goto('/about/');
     await expect(page.getByRole('navigation', { name: 'Level track' })).toBeAttached();
     await expect(page.getByRole('complementary', { name: 'Scoreboard' })).toBeVisible();
   });
@@ -591,7 +591,7 @@ test.describe('Kept in the browser', () => {
 for (const width of [1024, 1280, 1440, 1920]) {
   test(`at ${width}px the ship has no solid background: transparent, outlined by its own shape, the same size${width >= 1024 ? ', the rail hidden behind it' : ''}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
-    await page.goto('/skills/');
+    await page.goto('/about/');
     const ship = page.locator('.hud__ship');
     await expect(ship).toBeVisible();
     const look = await ship.evaluate((el) => {
@@ -650,7 +650,7 @@ for (const width of [1280, 1440, 1920]) {
     }
     expect(contrast(LINE, NAVY), 'the line on the navy field').toBeGreaterThanOrEqual(3);
     const under: string[] = [];
-    for (const path of ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/']) {
+    for (const path of ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/']) {
       await page.goto(path);
       await expect(page.locator('#hud')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
       // every marker a navy box with its number
@@ -682,7 +682,7 @@ for (const width of [1280, 1440, 1920]) {
 // "Caught 10 bugs" unlocks at ten, "Caught every bug" at twenty, a kept catch of a bug that is gone
 // no longer counts, earlier progress earns its due quietly, and Reset starts afresh.
 test.describe('Twenty bugs', () => {
-  const PAGES = ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html'];
+  const PAGES = ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html'];
   const kept = (bugs: string[], achievements: string[] = []) => JSON.stringify({ on: true, bugs, achievements });
 
   test('the site has exactly twenty bugs, at least one on every main page', async ({ request }) => {
@@ -692,7 +692,7 @@ test.describe('Twenty bugs', () => {
     const all = Object.values(found).flat();
     expect(all.length).toBe(20);
     expect(new Set(all)).toEqual(new Set(BUGS));
-    for (const path of ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/']) expect(found[path].length, path).toBeGreaterThanOrEqual(1);
+    for (const path of ['/', '/about/', '/portfolio/', '/quality/', '/contact/']) expect(found[path].length, path).toBeGreaterThanOrEqual(1);
   });
 
   test('the tenth catch on the site unlocks Caught 10 bugs, the twentieth Caught every bug; Reset clears both', async ({ page }) => {
@@ -760,7 +760,7 @@ for (const [width, height] of [
     test.setTimeout(90_000);
     await page.setViewportSize({ width, height });
     const gaps: string[] = [];
-    for (const path of ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html']) {
+    for (const path of ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html']) {
       await page.goto(path);
       // (Home's Level 2 lets clicks through its see-through top to the hero's text: for this look at
       // what is painted at the edge, it answers for its own area again)
@@ -811,7 +811,7 @@ for (const scale of [1, 1.25, 1.5]) {
     for (const [width, height] of [[1024, 768], [1280, 800], [1440, 900], [1920, 1080]] as const) {
       const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: scale });
       const page = await context.newPage();
-      await page.goto('/skills/');
+      await page.goto('/about/');
       await page.addStyleTag({ content: 'html, body { background: #ff00ff !important; } body > :not(#hud), .bug, .hud__runner > .hud__ship { visibility: hidden !important; }' });
       const jumps = page.locator('.hud__levels .hud__jump');
       await expect(jumps.first()).toBeVisible();

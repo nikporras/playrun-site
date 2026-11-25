@@ -39,7 +39,7 @@ test('the social card is a 1200 by 630 picture of Nicolás Porras, Game QA Teste
   expect(res.status()).toBe(200);
   const meta = await sharp(await res.body()).metadata();
   expect([meta.width, meta.height]).toEqual([1200, 630]);
-  for (const path of ['/', '/skills/', '/about/']) {
+  for (const path of ['/', '/about/']) {
     await page.goto(path);
     const c = (sel: string) => page.locator(sel).getAttribute('content');
     const card = await c('meta[property="og:image"]');
@@ -68,7 +68,7 @@ test('the social card is a 1200 by 630 picture of Nicolás Porras, Game QA Teste
 // font file is ever requested twice on a page.
 test('every page asks for each font once, and no font is preloaded', { tag: ['@brand'] }, async ({ page }) => {
   const twice: string[] = [];
-  for (const path of ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/']) {
+  for (const path of ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/']) {
     const fonts: string[] = [];
     const listen = (r: import('@playwright/test').Request) => /\.woff2?$/.test(r.url()) && fonts.push(r.url());
     page.on('request', listen);

@@ -9,7 +9,7 @@ import sharp from 'sharp';
  * markers, the scoreboard and the bottom bar, and what lies behind its body (read from a screenshot
  * with the bug hidden) stands at least 3:1 against the body's colour for most of its area.
  */
-const PAGES = ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/'];
+const PAGES = ['/', '/about/', '/portfolio/', '/quality/', '/contact/'];
 
 const lum = ([r, g, b]: number[]) => {
   const f = (v: number) => {

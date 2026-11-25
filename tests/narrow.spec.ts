@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
  * motion on and off, never scrolls sideways (once a live check reported an overflow at 317px), and
  * nothing is cut off at the side inside a box that clips it (the Bug Sweep canvas once was).
  */
-const PAGES = ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+const PAGES = ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
 
 for (const width of [300, 320]) {
   for (const motion of ['on', 'off'] as const) {
@@ -30,8 +30,9 @@ for (const width of [300, 320]) {
         // the content would just be lost): text, images, controls and the game's canvas
         const cut = await page.evaluate(() => {
           // (decorative or clipped by design: the joins, the bugs, the logo row's window, the glitch's
-          // slices, the halo, the drum's faded neighbours offset to the right of the active row)
-          const SKIP = '[aria-hidden="true"], .visually-hidden, .ticker__view, .join, .bug, .hero__glitch, .halo__clip, [data-shot], .hud, .dock, .tabbar, .drum__row:not([data-d="0"])';
+          // slices, the halo, the drum's faded neighbours offset to the right of the active row, the
+          // swipe's cards beside the one on show: about.spec checks that one fits)
+          const SKIP = '[aria-hidden="true"], .visually-hidden, .ticker__view, .join, .bug, .hero__glitch, .halo__clip, [data-shot], .hud, .dock, .tabbar, .drum__row:not([data-d="0"]), .swipe__track > *';
           const out: string[] = [];
           for (const el of document.querySelectorAll<HTMLElement>('main :is(p, h1, h2, h3, h4, a, button, img, canvas, li, td, th, input, textarea, label, dt, dd, pre, code, span)')) {
             if ((el.tagName !== 'CANVAS' && el.closest(SKIP)) || !el.getClientRects().length) continue;

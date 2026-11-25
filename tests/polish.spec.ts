@@ -14,7 +14,7 @@ test('the 404 asks not to be indexed and carries no canonical, share address or 
   await expect(page.locator('meta[property="og:url"]')).toHaveCount(0);
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0);
   // and the real pages are indexable
-  await page.goto('/skills/');
+  await page.goto('/about/');
   await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
 });
@@ -28,7 +28,7 @@ test('every page in the sitemap carries the date of the last commit to its sourc
   const sources: Record<string, string[]> = {
     '/': ['src/pages/index.astro', ...data],
     '/portfolio/': ['src/pages/portfolio.astro', 'src/components/GameCard.astro', ...data],
-    '/about/': ['src/pages/about.astro', 'src/data/about.ts', ...data],
+    '/about/': ['src/pages/about.astro', 'src/data/about.ts', 'src/data/skills.ts', 'src/components/Swipe.astro', ...data],
   };
   for (const e of entries) {
     expect(e.lastmod, `${e.path} has a date`).toBeTruthy();

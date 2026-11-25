@@ -6,9 +6,8 @@ The website of **PlayRun**, the personal game QA portfolio of Nicolás Porras in
 
 ## What is on it
 
-- **Home**: who I am, a slow row of the official logos of the games I have tested (in one colour, with a pause button), my career in numbers on a turning drum, a board of the site's own checks that visitors can run in their browser, and what I play after hours. The name glitches as the hero scrolls away, and a small card asks whether to track it.
-- **About**: the key facts about me and short answers to common questions, and Bug Sweep, a small arcade game I made while building the site (it loads only when you press Play).
-- **Skills**: what I test and how, as experience from shipped games: functional testing, platforms and stores, performance, playtesting and bug reports, plus the tools and the way I work.
+- **Home**: who I am, a slow row of the official logos of the games I have tested (in one colour, with a pause button), my career in numbers on a turning drum, one line on how the site is tested with a link to Quality, and what I play after hours. The name glitches as the hero scrolls away, and a small card asks whether to track it.
+- **About**: what I test (five areas, dealt as a deck on a desktop and swiped on a phone), the platforms, headsets, tools, languages and education I work with, my story, Bug Sweep, a small arcade game I made while building the site (it loads only when you press Play), and the key facts and short answers to common questions. The old /skills/ address leads to What I test.
 - **Games**: every title I can name in public, grouped by post with the role and dates, each card with what I did, the kinds of testing and one button to its store page.
 - **Quality**: "Let's test this page together", a five-step test run that happens live in your browser, with how to check each step yourself in Chrome or Edge, Firefox, Safari, on an iPhone or on Android (and Pocket DevTools on a phone), a report, and a bug report template.
 - **Contact**: a form for networking, opportunities and saying hello.

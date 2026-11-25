@@ -3,27 +3,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-/** The inner pages: Skills, Portfolio, Quality, and the legal pages. */
+/** The inner pages: Games (the Portfolio), Quality, and the legal pages. (About has about.spec.ts.) */
 const PAGES = [
-  {
-    path: '/skills/',
-    h1: /What I test\s*and how/,
-    must: [
-      'Functional testing',
-      'Bug reporting',
-      'GOG',
-      'Tools, methods, languages and education',
-      'TestRail',
-      'Swinburne University of Technology',
-      "I test the same build on Nintendo Switch, Switch 2, Xbox, PS5, PC and handhelds like Steam Deck, against each platform's and store's own requirements (Steam, Epic Games Store, GOG). Each one has its own requirements, so I check them before submission, not after a rejection.",
-      'Platform certification checks (TRC, XR, Lotcheck)',
-      'Each platform build against its certification and store requirements.',
-      'Clear test plans, agreed before testing',
-      'A test plan agreed with the team before testing starts',
-      'Trophies, activities, DualSense features, and rest mode (the game must recover after the console sleeps mid-play).',
-      'Then I report exactly what broke down, and where.',
-    ],
-  },
   {
     path: '/portfolio/',
     h1: /Games I've\s*tested/,
@@ -180,7 +161,7 @@ for (const p of PAGES) {
 test('the content sits in a centred column of at most 1280px with wide margins, at every width', { tag: ['@viewports'] }, async ({ page }) => {
   for (const width of [390, 1280, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/skills/');
+    await page.goto('/about/');
     const m = await page.locator('.level').first().evaluate((el) => {
       const cs = getComputedStyle(el);
       return { left: parseFloat(cs.paddingLeft), right: parseFloat(cs.paddingRight), content: el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) };
@@ -324,48 +305,8 @@ test('every card has a logo or its icon, the labels and one store button in a ne
   expect(sitemap, 'the About page is a page again').toContain('/about/<');
 });
 
-test('every Skills paragraph is full first-person sentences, and the In practice items are readable labels', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/skills/');
-  const texts = await page.locator('.six__text').allTextContents();
-  expect(texts).toHaveLength(5);
-  for (const t of texts) {
-    for (const sentence of t.split(/(?<=[.!?])\s+/)) {
-      expect(sentence, `${sentence}: starts with a capital and ends with a full stop`).toMatch(/^[A-Z].*[.!?]$/);
-      expect(sentence, `${sentence}: has a subject, I or a noun phrase with a verb`).toMatch(/\b(I|I've|I'm|Each|Then|Every)\b/);
-    }
-  }
-  const tags = page.locator('.six__tags li');
-  expect(await tags.count()).toBe(15);
-  const style = await tags.first().evaluate((el) => {
-    const cs = getComputedStyle(el);
-    return { size: parseFloat(cs.fontSize), border: cs.borderTopWidth, radius: cs.borderTopLeftRadius, bg: cs.backgroundColor, color: cs.color, family: cs.fontFamily };
-  });
-  expect(style.size, 'readable').toBeGreaterThanOrEqual(16);
-  expect(style.border).toBe('1px');
-  expect(style.radius).not.toBe('0px');
-  expect(style.bg).toBe('rgb(12, 21, 42)');
-  expect(style.color).toBe('rgb(229, 231, 234)');
-  expect(style.family).toMatch(/mono|Consolas|Courier/i);
-  // on a phone the labels wrap into rows inside the column, none cut off
-  await page.setViewportSize({ width: 375, height: 812 });
-  const rows = await tags.evaluateAll((els) => els.slice(0, 3).map((el) => ({ left: el.getBoundingClientRect().left, right: el.getBoundingClientRect().right, top: Math.round(el.getBoundingClientRect().top) })));
-  for (const r of rows) {
-    expect(r.right).toBeLessThanOrEqual(375);
-    expect(r.left).toBeGreaterThanOrEqual(16);
-  }
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
-});
-
-test('the skills jump list lands on each skill', async ({ page }) => {
-  await page.goto('/skills/');
-  const ids = await page.locator('.svc__jump a').evaluateAll((as) => (as as HTMLAnchorElement[]).map((a) => a.getAttribute('href')!.slice(1)));
-  expect(ids.length).toBe(5);
-  for (const id of ids) await expect(page.locator(`#${id}`)).toHaveCount(1);
-});
-
 test('the trailing-slash address is the one official form: every internal link answers 200 with no redirect, the canonical and og:url match it, the sitemap lists it, and a missing page is still the 404', { tag: ['@pages', '@links'] }, async ({ request, page }) => {
-  const routes = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
+  const routes = ['/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
   const seen = new Set<string>();
   for (const route of routes) {
     const res = await request.get(route, { maxRedirects: 0 });
@@ -394,8 +335,8 @@ test('the trailing-slash address is the one official form: every internal link a
     expect(res.status(), `${url} answers 200 with no redirect`).toBe(200);
   }
   // the slash-free form is never a second copy of a page: the host sends it to the slash form
-  const bare = await request.get('/skills', { maxRedirects: 0 });
-  expect([301, 302, 308, 404], '/skills is a redirect or nothing, never a copy').toContain(bare.status());
+  const bare = await request.get('/quality', { maxRedirects: 0 });
+  expect([301, 302, 308, 404], '/quality is a redirect or nothing, never a copy').toContain(bare.status());
   const missing = await request.get('/this-page-is-not-in-the-build/');
   expect(missing.status()).toBe(404);
   expect(await missing.text()).toContain('Game over');
@@ -407,7 +348,7 @@ test('the trailing-slash address is the one official form: every internal link a
 test('the old services and credits addresses send visitors on', { tag: ['@pages', '@links'] }, async ({ request, page }) => {
   const services = await request.get('/services/');
   expect(services.status()).toBe(200);
-  expect(await services.text()).toMatch(/http-equiv="refresh"[^>]*url=\/skills\//);
+  expect(await services.text()).toMatch(/http-equiv="refresh"[^>]*url=\/about\/#skills/);
   const credits = await request.get('/credits/');
   expect(credits.status()).toBe(200);
   expect(await credits.text()).toMatch(/http-equiv="refresh"[^>]*url=\/terms\/#credits/);
@@ -415,7 +356,8 @@ test('the old services and credits addresses send visitors on', { tag: ['@pages'
   expect(sitemap).not.toContain('/credits/');
   await page.goto('/');
   await expect(page.locator('footer').getByRole('link', { name: 'Credits' })).toHaveCount(0);
-  await expect(page.locator('footer').getByRole('link')).toContainText(['Home', 'About', 'Skills', 'Games', 'Quality', 'Contact']);
+  await expect(page.locator('footer').getByRole('link')).toContainText(['Home', 'About', 'Games', 'Quality', 'Contact']);
+  await expect(page.locator('footer').getByRole('link', { name: 'Skills' })).toHaveCount(0);
   // the page is called Games everywhere a link names it; its address stays /portfolio/
   await expect(page.locator(':is(header, footer, .tabbar) a', { hasText: 'Portfolio' })).toHaveCount(0);
   await expect(page.locator('header').getByRole('link', { name: 'Games', exact: true })).toHaveAttribute('href', '/portfolio/');
@@ -423,7 +365,7 @@ test('the old services and credits addresses send visitors on', { tag: ['@pages'
 });
 
 test('no controller or headset sprite anywhere, and nothing stands in their place', async ({ page }) => {
-  for (const path of ['/', '/skills/', '/portfolio/', '/contact/', '/quality/', '/terms/']) {
+  for (const path of ['/', '/portfolio/', '/contact/', '/quality/', '/terms/']) {
     await page.goto(path);
     await expect(page.locator('.sprite--controller, .sprite--headset'), path).toHaveCount(0);
     await expect(page.locator('.plat__photo'), path).toHaveCount(0);
@@ -468,7 +410,7 @@ test('the built site is a portfolio, offers no work, links to no repository and 
 });
 
 test('every h1 reads with its words apart in the HTML, as it does on screen (the two-line titles included)', { tag: ['@pages'] }, async ({ page }) => {
-  for (const path of ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/']) {
+  for (const path of ['/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/']) {
     await page.goto(path);
     const h1 = await page.locator('h1').evaluate((el) => ({ text: (el.textContent ?? '').replace(/\s+/g, ' ').trim(), seen: (el as HTMLElement).innerText.replace(/\s+/g, ' ').trim() }));
     expect(h1.text, `${path}: the h1 in the HTML`).toBe(h1.seen);
@@ -480,7 +422,7 @@ test('every h1 reads with its words apart in the HTML, as it does on screen (the
 test('every page has its own title and description, the same in the og and Twitter tags, and no "test experts" suffix', { tag: ['@pages'] }, async ({ page }) => {
   const expected: Record<string, [string, string]> = {
     '/': ['Nicolás Porras, Game QA Tester in London | PlayRun', 'Game QA portfolio of Nicolás Porras in London: testing console, PC and VR games since 2021, from compliance (CQA) to release, including two QA lead roles.'],
-    '/skills/': ['Game QA skills and how I test | Nicolás Porras', 'How Nicolás Porras tests games: functional and regression testing, platform compliance on Switch, Xbox and PS5, performance, playtesting and bug reports.'],
+    '/about/': ['About Nicolás Porras, game QA tester in London: skills, platforms and story', 'Nicolás Porras is a game QA tester in London: the five areas he tests, the platforms, headsets and tools he tests with, his story, and quick facts and answers.'],
     '/portfolio/': ["Games I've tested, QA portfolio | Nicolás Porras", "The 20 games Nicolás Porras has tested since 2021, from Cyberpunk 2077 and NBA 2K21 to VR titles at nDreams and Historic VR, with his part in each."],
     '/quality/': ['How I test: a live QA run on this page | Nicolás Porras', 'A five step QA run you can watch on this page: smoke, responsive, accessibility, links and performance checks, plus a bug report template.'],
     '/contact/': ['Contact | Nicolás Porras, game QA tester', 'Get in touch with Nicolás Porras, a game QA tester in London, about networking, opportunities, a game QA question or just to say hello.'],
@@ -510,11 +452,9 @@ test('every page has its own title and description, the same in the og and Twitt
   expect(expected['/portfolio/'][1]).toContain(`The ${cards} games`);
 });
 
-test('Skills lists the VR headsets the games were tested on beside the consoles and stores, and Home links from the logo ticker to every game', { tag: ['@pages'] }, async ({ page }) => {
-  await page.goto('/skills/');
-  await expect(page.locator('#plat-title')).toHaveText('Platforms I test on');
-  await expect(page.locator('#plat-title ~ .level__lead')).toHaveText("Flat screen and VR. Every build has to pass its platform's own checks, from console certification to the VR store requirements.");
-  await expect(page.locator('.plat__title')).toHaveText(['Nintendo Switch', 'Nintendo Switch 2', 'Xbox', 'PS5', 'Steam', 'Handhelds', 'Epic Games Store', 'GOG', 'Meta Quest 2, 3 and Pro', 'PC VR', 'PS VR', 'PS VR2']);
+test("About's Kit lists the VR headsets the games were tested on beside the consoles and stores, and Home links from the logo ticker to every game", { tag: ['@pages'] }, async ({ page }) => {
+  await page.goto('/about/');
+  await expect(page.locator('.kit button[data-chip] > span')).toHaveText(['Nintendo Switch', 'Nintendo Switch 2', 'Xbox', 'PS5', 'Handhelds', 'Steam', 'Epic Games Store', 'GOG', 'Meta Quest 2, 3 and Pro', 'PC VR', 'PS VR', 'PS VR2']);
   await page.goto('/');
   const more = page.locator('.wall').getByRole('link', { name: "See every game I've tested" });
   await expect(more).toHaveAttribute('href', '/portfolio/');
@@ -537,7 +477,7 @@ test('no line explains the page to itself: the helper lines that read like a tem
     'This is the shape of a report',
     'Nothing else, and no account',
   ];
-  for (const page of ['index.html', 'skills/index.html', 'portfolio/index.html', 'quality/index.html', 'contact/index.html']) {
+  for (const page of ['index.html', 'about/index.html', 'portfolio/index.html', 'quality/index.html', 'contact/index.html']) {
     const html = readFileSync(join(process.cwd(), 'dist', page), 'utf8');
     for (const line of gone) expect(html, `${page}: ${line}`).not.toContain(line);
   }
@@ -545,7 +485,7 @@ test('no line explains the page to itself: the helper lines that read like a tem
 
 test('the footer sits flush with the foot of the screen at the end of every page, short or long, with no gap below it', { tag: ['@viewports'] }, async ({ page }) => {
   test.setTimeout(120_000);
-  const paths = ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+  const paths = ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
   // (1440x4000: a window taller than the short pages, so the footer has to grow to the bottom)
   for (const [width, height] of [[1920, 1080], [1440, 900], [1440, 4000], [1024, 768], [768, 1024], [375, 812], [300, 640]] as const) {
     await page.setViewportSize({ width, height });

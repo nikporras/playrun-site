@@ -19,7 +19,7 @@ const DATA = ['src/content/projects', 'src/config.ts'];
 const SOURCES = {
   '/': ['src/pages/index.astro', ...DATA],
   '/portfolio/': ['src/pages/portfolio.astro', 'src/components/GameCard.astro', ...DATA],
-  '/about/': ['src/pages/about.astro', 'src/data/about.ts', ...DATA],
+  '/about/': ['src/pages/about.astro', 'src/data/about.ts', 'src/data/skills.ts', 'src/components/Swipe.astro', ...DATA],
 };
 /** @param {string} path */
 const sourcesOf = (path) => SOURCES[path] ?? [`src/pages${path.replace(/\/$/, '')}.astro`];
@@ -32,7 +32,7 @@ const lastCommit = (paths) => {
   }
 };
 
-const redirects = { '/services': '/skills/', '/credits': '/terms/#credits', ...projectRedirects };
+const redirects = { '/services': '/about/#skills', '/credits': '/terms/#credits', ...projectRedirects };
 
 // Every redirect page is written twice: as the folder Astro builds (/services/index.html) and as a
 // file beside it (/services.html). GitHub Pages serves the file for the old slash-free address, so
@@ -115,7 +115,8 @@ export default defineConfig({
   trailingSlash: 'always',
   // (every page's CSS in its own HTML: nothing to fetch before the first paint)
   build: { format: 'directory', inlineStylesheets: 'always' },
-  // The About page was folded into Home, the Portfolio and Skills; its address goes home.
+  // The Services page became Skills, and Skills is now part of About (/skills/ is a page of its
+  // own that sends visitors there, src/pages/skills.astro).
   // The Credits page was folded into the Terms page.
   redirects,
   integrations: [
@@ -129,11 +130,11 @@ export default defineConfig({
         if (date) item.lastmod = date;
         return item;
       },
-      // Redirect pages are not pages, and llms.txt is for machines; the addresses in the map carry
-      // the trailing slash.
+      // Redirect pages are not pages (Skills' included), and llms.txt is for machines; the
+      // addresses in the map carry the trailing slash.
       filter: (page) => {
         const path = new URL(page).pathname.replace(/\/$/, '');
-        return !/^\/portfolio\/./.test(path) && !['/services', '/credits', '/llms.txt'].includes(path);
+        return !/^\/portfolio\/./.test(path) && !['/services', '/skills', '/credits', '/llms.txt'].includes(path);
       },
     }),
   ],

@@ -4,13 +4,13 @@ import { test, expect, type Page } from '@playwright/test';
  * Text can be selected with the mouse on every page: nothing sits over it (link overlays, bugs,
  * the HUD, entrance layers), and the highlight is visible on every field.
  */
-const PAGES = ['/', '/skills/', '/portfolio/', '/contact/', '/quality/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
+const PAGES = ['/', '/portfolio/', '/contact/', '/quality/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
 
 async function settle(page: Page) {
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
   await page.evaluate(() => {
     document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in'));
-    // the Skills deck is scrubbed by the scroll; the plain rows are what a drag can reach
+    // a deck (Quality, About) is scrubbed by the scroll; the plain column is what a drag can reach
     document.querySelectorAll('[data-deck]').forEach((e) => e.classList.remove('is-deck'));
     return Promise.all(
       document
@@ -32,6 +32,8 @@ const pick = () => {
     if (text.length < 40 || e.querySelector('p, li') || !e.getClientRects().length) return false;
     // (a row on the turning stats drum moves between the pick and the drag; the still list is a plain list)
     if (e.closest('.drum.is-live')) return false;
+    // (a chip button and its hidden detail: a drag across a button selects nothing)
+    if (e.querySelector('button')) return false;
     // (the content of a closed dropdown is hidden, nothing to drag across)
     if (e.closest('details:not([open]) > :not(summary)')) return false;
     const link = e.querySelector('a');

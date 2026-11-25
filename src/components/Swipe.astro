@@ -1,0 +1,139 @@
+---
+/**
+ * A swipe for phones and tablets (below 64rem): a row of cards, one at a time with the next one
+ * peeking at the edge, scroll snap, dots and "n of N", and Previous and Next buttons for the
+ * keyboard and screen readers. No auto-advance. On a desktop it does nothing: the slot's list keeps
+ * whatever layout the page gives it (About's deck, Quality's steps later).
+ *
+ * Markup: <Swipe label="..." count={n}> around the list. The list carries `swipe__track` and each
+ * card is one of its children, a group labelled "n of N" by the page (role="group",
+ * aria-roledescription="slide"). src/scripts/swipe.ts runs every [data-swipe] on the page: without
+ * it the row still scrolls and snaps, and the buttons stay hidden.
+ */
+interface Props {
+  /** The region's name, read by screen readers ("The five areas I test"). */
+  label: string;
+  /** How many cards. */
+  count: number;
+  class?: string;
+  [attr: string]: unknown;
+}
+const { label, count, class: extra, ...rest } = Astro.props;
+---
+
+<div class:list={['swipe', extra]} role="region" aria-label={label} data-swipe {...rest}>
+  <slot />
+  <div class="swipe__controls" data-swipe-controls>
+    <button type="button" class="swipe__btn" data-swipe-prev aria-label="Previous card">
+      <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 3h1v1H1zM2 2h1v3H2zM3 1h1v5H3zM4 0h1v7H4z" fill="currentColor" /></svg>
+    </button>
+    <p class="swipe__where">
+      <span class="swipe__dots" aria-hidden="true">
+        {Array.from({ length: count }, (_, i) => <span class:list={['swipe__dot', i === 0 && 'is-on']}></span>)}
+      </span>
+      <span class="swipe__pos" data-swipe-pos aria-live="polite">1 of {count}</span>
+    </p>
+    <button type="button" class="swipe__btn" data-swipe-next aria-label="Next card">
+      <svg viewBox="0 0 7 7" shape-rendering="crispEdges" aria-hidden="true"><path d="M5 3h1v1H5zM4 2h1v3H4zM3 1h1v5H3zM2 0h1v7H2z" fill="currentColor" /></svg>
+    </button>
+  </div>
+</div>
+
+<style>
+  /* (the list and its cards come from the page's slot, so the rules reach them through :global) */
+  .swipe__controls {
+    display: none;
+  }
+  @media (max-width: 63.99rem) {
+    /* The row runs to both screen edges, so the next card peeks in from the edge; each card is the
+       column's width less the peek, and snaps to the column's left edge. */
+    .swipe :global(.swipe__track) {
+      display: flex;
+      gap: var(--s-2);
+      margin: 0 calc(-1 * var(--gutter));
+      padding: 0 var(--gutter);
+      scroll-padding-inline: var(--gutter);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+      list-style: none;
+    }
+    .swipe :global(.swipe__track::-webkit-scrollbar) {
+      display: none;
+    }
+    .swipe :global(.swipe__track > *) {
+      flex: 0 0 calc(100% - 2.75rem);
+      min-width: 0;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+    }
+    .swipe :global(.swipe__track:focus-visible) {
+      outline: 3px solid var(--pr-light);
+      outline-offset: 3px;
+    }
+    /* With motion off the buttons jump at once (the snap after a finger swipe follows the finger). */
+    :global(.motion-off) .swipe :global(.swipe__track) {
+      scroll-behavior: auto;
+    }
+    :global(.js) .swipe__controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--s-2);
+      margin-top: var(--s-3);
+    }
+  }
+  .swipe__btn {
+    display: inline-grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    flex: none;
+    border: 2px solid currentColor;
+    background: var(--pr-navy);
+    color: var(--pr-light);
+    cursor: pointer;
+  }
+  .swipe__btn svg {
+    width: 1rem;
+    height: 1rem;
+  }
+  .swipe__btn:hover:not([aria-disabled='true']) {
+    color: var(--pr-cyan);
+  }
+  .swipe__btn:focus-visible {
+    outline: 3px solid var(--pr-light);
+    outline-offset: 3px;
+  }
+  .swipe__btn[aria-disabled='true'] {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .swipe__where {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.375rem;
+    margin: 0;
+    max-width: none;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .swipe__dots {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .swipe__dot {
+    width: 0.625rem;
+    height: 0.625rem;
+    border: 2px solid currentColor;
+  }
+  .swipe__dot.is-on {
+    background: currentColor;
+  }
+</style>

@@ -25,7 +25,7 @@ test('the clicks that count carry their event names: Get in touch everywhere, Li
   await expect(page.locator('[data-glitch-yes]')).toHaveAttribute('data-umami-event', 'glitch-tracked');
   await expect(page.locator('[data-glitch-no]')).toHaveAttribute('data-umami-event', 'glitch-ignored');
   // every link to the contact page and every email link counts as Get in touch, on every page
-  for (const path of ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/']) {
+  for (const path of ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/']) {
     const html = await (await request.get(path)).text();
     const links = [...html.matchAll(/<a\b[^>]*href="(\/contact\/|mailto:studio@playrunqa\.com)"[^>]*>/g)]
       .map((m) => m[0])

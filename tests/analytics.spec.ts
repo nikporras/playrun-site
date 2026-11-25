@@ -7,7 +7,7 @@ import { test, expect, type Page, type Route } from '@playwright/test';
  * hosts do not resolve in its browsers, and the pages here are never playrunqa.com, except below,
  * where the live domain is played by the preview and the gateway is answered here.
  */
-const PAGES = ['/', '/about/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html'];
+const PAGES = ['/', '/about/', '/portfolio/', '/quality/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/404.html'];
 const UMAMI = /umami\.(is|dev)/;
 const ID = '1b852413-81ed-4ebf-bbfc-fd63237d3cc4';
 
@@ -166,7 +166,7 @@ test('on the live domain, ?notrack stops even that first page view, and ?track l
   const sent = await asLive(page);
   await page.goto('https://playrunqa.com/?notrack');
   await page.waitForLoadState('networkidle');
-  await page.goto('https://playrunqa.com/skills/');
+  await page.goto('https://playrunqa.com/about/');
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(500);
   expect(sent, 'nothing sent while off').toEqual([]);

@@ -6,6 +6,7 @@
  * offer, no availability, no email.
  */
 import { contact, education, employers, languages, social, site, summary } from '../config';
+import { areas } from './skills';
 
 export const PERSON = `${site.url}/#person`;
 export const WEBSITE = `${site.url}/#website`;
@@ -33,6 +34,8 @@ const KNOWS_ABOUT = [
   'Unreal Engine',
   'Bug reporting',
 ];
+// (and the five areas on About's What I test, each named once)
+for (const a of areas) if (!KNOWS_ABOUT.includes(a.title)) KNOWS_ABOUT.push(a.title);
 
 const MONTH: Record<string, string> = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
 /** "Jul 2026" as 2026-07, "2021" as 2021; "present" has no date. */

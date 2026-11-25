@@ -5,12 +5,12 @@ import { test, expect, type Page } from '@playwright/test';
  * on any page at any width, anywhere along their walk. Every visible bug's box is sampled along
  * its walk and checked, with a small margin, against every text block and tile on the page.
  */
-const PAGES = ['/', '/skills/', '/portfolio/', '/contact/', '/quality/'];
+const PAGES = ['/', '/about/', '/portfolio/', '/contact/', '/quality/'];
 const WIDTHS = [390, 768, 1024, 1440];
 const MARGIN = 6;
 
 const TEXT = 'main :is(p, li, dt, dd, h1, h2, h3, h4, label, input, textarea, button:not(.bug), a, img, figure, picture, svg:not([aria-hidden="true"]), .flag)';
-const TILES = 'main :is(.card, .row, .bring__panel, .run__state, .plat__panel, .panel, .stat, .drum, .stats__head, .ticker, .group__head, .step, .devtools, .report__body, .next__step, .pixtile, .tile, form, .hero__figure, .hero__ticket.is-in)';
+const TILES = 'main :is(.card, .row, .area, .kit__chips, .faq__summary, .sweep, .panel, .stat, .drum, .stats__head, .ticker, .group__head, .step, .devtools, .report__body, .next__step, .pixtile, .tile, form, .hero__figure, .hero__ticket.is-in)';
 
 async function settle(page: Page) {
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });

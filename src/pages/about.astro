@@ -1,25 +1,46 @@
 ---
 /**
- * About, in the first person: the intro and My story (Level 1), Bug Sweep (Level 2, loads only
- * when Play is pressed), and the key facts with the questions and answers in one closed dropdown
- * (Level 3), all built from the site's own data (src/data/about.ts). Plain text from the first
- * paint, no entrance that hides anything. One bug to catch, on Level 1.
+ * About, in the first person: the intro (Level 1), What I test (Level 2, id "skills": the five
+ * areas as a dealt deck on a desktop and a swipe on phones and tablets), the Kit (Level 3: the
+ * platforms, headsets, tools, languages and education, the platforms and headsets with a detail
+ * line on hover, focus or tap), My story (Level 4), Bug Sweep (Level 5, loads only when Play is
+ * pressed), and the key facts with the questions and answers in one closed dropdown (Level 6), all
+ * built from the site's own data (src/data/about.ts, src/data/skills.ts, src/config.ts). Six bugs to
+ * catch, one a level.
  */
+import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import ExternalLink from '../components/ExternalLink.astro';
 import Join from '../components/Join.astro';
 import Sprite from '../components/Sprite.astro';
 import Bug from '../components/Bug.astro';
-import { contact } from '../config';
+import Swipe from '../components/Swipe.astro';
+import { contact, education, languages, platforms, shownVR, tools } from '../config';
 import { about } from '../data/about';
+import { areas, iconPath } from '../data/skills';
 
 const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
+
+// The Kit, in labelled groups, all from the data. A chip with a detail (the platforms and the
+// headsets) is a button that shows it.
+type Chip = { name: string; detail?: string };
+const titles = (await getCollection('projects')).filter((p) => p.data.public);
+const kit: { id: string; title: string; chips: Chip[] }[] = [
+  { id: 'consoles', title: 'Consoles and handhelds', chips: platforms.filter(([, , g]) => g === 'console').map(([name, detail]) => ({ name, detail })) },
+  { id: 'stores', title: 'PC stores', chips: platforms.filter(([, , g]) => g === 'store').map(([name, detail]) => ({ name, detail })) },
+  { id: 'vr', title: 'VR', chips: shownVR(titles).map((v) => ({ name: v.name, detail: v.text })) },
+  { id: 'tools', title: 'Tools', chips: tools.map((name) => ({ name })) },
+  { id: 'languages', title: 'Languages', chips: languages.map((l) => ({ name: `${l.name}, ${l.level}` })) },
+  { id: 'education', title: 'Education', chips: education.map((e) => ({ name: [e.course, e.school, 'place' in e ? e.place : '', e.when].filter(Boolean).join(', ') })) },
+];
+// each card lands at its own small angle in the deck
+const TILT = [-2.5, 2, -1.5, 2.5, -2];
 ---
 
 <Base
   title="About"
-  fullTitle={`About ${contact.name}, game QA tester in London`}
-  description={`${contact.name} is a game QA tester in London. Key facts and short answers about his roles, the games he has tested, VR, tools and languages.`}
+  fullTitle={`About ${contact.name}, game QA tester in London: skills, platforms and story`}
+  description={`${contact.name} is a game QA tester in London: the five areas he tests, the platforms, headsets and tools he tests with, his story, and quick facts and answers.`}
   kind="AboutPage"
   faq={qa}
 >
@@ -29,20 +50,114 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
       <h1 id="about-title" class="page__title about__title">About {contact.name}</h1>
       {summaryFirstPerson.map((p) => <p class="about__summary statement">{p}</p>)}
     </div>
-    <section class="about__more level__body" aria-labelledby="more-title">
-      <h2 id="more-title" class="about__moretitle">My story</h2>
-      {personal.map((p) => <p>{p}</p>)}
-    </section>
-    <Bug id="about-1" style="right: 10%; top: 45%" tablet="right: 6%; top: 1.25rem" walk="y -2rem" />
-    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-cyan)" seed="about-play" />
+    <Bug id="about-1" style="right: 8%; top: 4rem" tablet="right: 6%; top: 1.25rem" phone="right: var(--gutter); bottom: calc(var(--join-h) + 0.5rem)" walk="x -2rem" />
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-blue)" seed="about-skills" />
   </section>
 
-  <!-- Level 2: Bug Sweep, a small arcade game. Nothing of the game loads or runs until Play is
+  <!-- Level 2: What I test. On a desktop with motion the five cards are dealt as on Quality
+       (src/scripts/deck.ts); on phones and tablets they swipe (Swipe.astro); with motion off on a
+       desktop they stand in a column. Each card seen counts towards Read every skill. -->
+  <section id="skills" class="level level--blue has-join-bottom skills" data-level="2" aria-labelledby="skills-title">
+    <Join kind="terrain" from="var(--field-blue)" to="var(--field-green)" seed="about-kit" />
+    <div class="level__head">
+      <p class="flag" data-nosnippet><span>Level 2 &middot; Skills</span></p>
+      <h2 id="skills-title" class="level__title">What I test</h2>
+      <p class="level__lead">Five areas I cover on every project.</p>
+    </div>
+    <Swipe label="The five areas I test" count={areas.length} class="deck level__body" data-deck>
+      <div class="deck__pin">
+        <div class="areas deck__stage swipe__track">
+          {
+            areas.map((a, i) => (
+              <div
+                class="area deck__card"
+                id={`skill-${a.id}`}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${i + 1} of ${areas.length}`}
+                data-achieve="skills"
+                style={`--i: ${i}; --tilt: ${TILT[i]}deg`}
+              >
+                <div class="area__head">
+                  <svg class="area__icon" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+                    <path d={iconPath(a.icon)} fill="currentColor" />
+                  </svg>
+                  <h3 class="area__title">{a.title}</h3>
+                </div>
+                <p class="area__line">{a.line}</p>
+                <ul role="list" class="area__list">
+                  {a.bullets.map((b) => (
+                    <li>{b}</li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </Swipe>
+    <Bug id="skills-1" style="right: 10%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" walk="x -2rem" />
+  </section>
+
+  <!-- Level 3: the Kit. The platform and headset chips are buttons: hover, keyboard focus or a tap
+       shows the detail under the group (aria-expanded; the detail is also its description). -->
+  <section class="level level--green has-join-bottom kit" data-level="3" aria-labelledby="kit-title">
+    <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="about-story" />
+    <div class="level__head">
+      <p class="flag" data-nosnippet><span>Level 3 &middot; Kit</span></p>
+      <h2 id="kit-title" class="level__title">Platforms, tools and languages</h2>
+      <p class="level__lead">What I test on, and what I test with.</p>
+    </div>
+    <div class="kit__board level__body" data-kit>
+      {
+        kit.map((g) => (
+          <section class="kit__group" aria-labelledby={`kit-${g.id}`}>
+            <h3 id={`kit-${g.id}`} class="kit__title">{g.title}</h3>
+            <ul role="list" class="kit__chips">
+              {g.chips.map((c, i) =>
+                c.detail ? (
+                  <li class="kit__item">
+                    <button type="button" class="chip chip--more" aria-expanded="false" aria-controls={`tip-${g.id}-${i}`} aria-describedby={`tip-${g.id}-${i}`} data-chip>
+                      <span>{c.name}</span>
+                      <svg class="chip__mark" viewBox="0 0 5 5" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+                        <path class="chip__plus" d="M2 0h1v5H2zM0 2h2v1H0zM3 2h2v1H3z" fill="currentColor" />
+                      </svg>
+                    </button>
+                    <span class="chip__tip" id={`tip-${g.id}-${i}`} role="tooltip">{c.detail}</span>
+                  </li>
+                ) : (
+                  <li class="kit__item">
+                    <span class="chip">{c.name}</span>
+                  </li>
+                ),
+              )}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+    <Bug id="skills-2" style="right: 10%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" walk="x -2rem" />
+  </section>
+
+  <!-- Level 4: my story, in my own words -->
+  <section class="level level--navy has-join-bottom story" data-level="4" aria-labelledby="more-title">
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-cyan)" seed="about-play" />
+    <div class="level__head">
+      <p class="flag" data-nosnippet><span>Level 4 &middot; My story</span></p>
+      <h2 id="more-title" class="level__title">My story</h2>
+    </div>
+    <div class="story__text level__body">
+      {personal.map((p) => <p>{p}</p>)}
+    </div>
+    <Bug id="skills-3" style="right: 10%; top: 1.5rem" tablet="right: 6%; top: 1.25rem" walk="x -2rem" />
+  </section>
+
+  <!-- Level 5: Bug Sweep, a small arcade game. Nothing of the game loads or runs until Play is
        pressed: the code arrives then (src/scripts/sweep.ts, a dynamic import). -->
-  <section class="level level--cyan has-join-bottom play" data-level="2" aria-labelledby="play-title">
+  <section class="level level--cyan has-join-bottom play" data-level="5" aria-labelledby="play-title">
     <Join kind="terrain" from="var(--field-cyan)" to="var(--field-blue)" seed="about-facts" />
     <div class="level__head">
-      <p class="flag" data-nosnippet><span>Level 2 &middot; Play</span></p>
+      <p class="flag" data-nosnippet><span>Level 5 &middot; Play</span></p>
       <h2 id="play-title" class="level__title">I love playing and making games</h2>
       <p class="level__lead">Here's one I made while building this site.</p>
     </div>
@@ -97,15 +212,16 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
       </div>
       <p class="visually-hidden" aria-live="polite" data-sweep-live></p>
     </div>
+    <Bug id="skills-4" style="right: 8%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 3: the key facts and the questions and answers, in one closed dropdown (a native
+  <!-- Level 6: the key facts and the questions and answers, in one closed dropdown (a native
        details element): all of it is in the HTML for search and AI, and the FAQ structured data
        comes from the same answers. -->
-  <section class="level level--blue has-join-bottom" data-level="3" aria-labelledby="faq-title">
+  <section class="level level--blue has-join-bottom" data-level="6" aria-labelledby="faq-title">
     <Join kind="terrain" from="var(--field-blue)" to="var(--pr-navy)" seed="about-foot" />
     <div class="level__head">
-      <p class="flag" data-nosnippet><span>Level 3 &middot; Facts and FAQ</span></p>
+      <p class="flag" data-nosnippet><span>Level 6 &middot; Facts and FAQ</span></p>
     </div>
     <details class="faq level__body">
       <summary class="faq__summary">
@@ -146,6 +262,8 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
         </div>
       </div>
     </details>
+    <!-- (beside the label, above the dropdown: on show and catchable with it closed) -->
+    <Bug id="skills-5" style="right: 10%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" walk="x -2rem" />
   </section>
 </Base>
 
@@ -163,21 +281,234 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
   .about__summary + .about__summary {
     margin-top: var(--s-2);
   }
-  /* My story: plain paragraphs under the summary, on the sky. */
-  .about__more {
+  /* (on a phone the h1 and the intro fill the column from the label down, so the level's bug walks
+     in a strip at its foot, above the clouds) */
+  @media (max-width: 47.99rem) {
+    .about.has-join-bottom {
+      padding-bottom: calc(var(--s-5) + var(--join-h) + 3.5rem);
+    }
+  }
+  /* What I test: navy cards on the blue field, the icon and title, the line, three bullets. In a
+     column (motion off on a desktop, no script) they stack; in the deck they share one stage
+     (global.css); on phones and tablets they swipe (Swipe.astro). */
+  .areas {
+    display: grid;
+    gap: var(--s-3);
+  }
+  .area {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas:
+      'head line'
+      'head list';
+    align-content: start;
+    column-gap: var(--s-5);
+    row-gap: var(--s-2);
+    padding: var(--s-4);
+    background: var(--pr-navy);
+    color: var(--pr-light);
+    border: 2px solid var(--surface-2);
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
+  }
+  .area__head {
+    grid-area: head;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-2);
+  }
+  .area__icon {
+    width: 2rem;
+    height: 2rem;
+    flex: none;
+    color: var(--pr-green);
+  }
+  .area__title {
+    font-size: 2rem;
+    line-height: 1.05;
+  }
+  .area__line {
+    grid-area: line;
+    font-size: 1.125rem;
+    line-height: 1.5;
+    max-width: none;
+  }
+  .area__list {
+    grid-area: list;
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    line-height: 1.2;
+  }
+  .area__list li {
+    display: flex;
+    gap: 0.625rem;
+    max-width: none;
+  }
+  .area__list li::before {
+    content: '';
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-top: 0.35em;
+    background: var(--pr-green);
+  }
+  @media (max-width: 63.99rem) {
+    .area {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'head'
+        'line'
+        'list';
+      padding: var(--s-3);
+    }
+    .area__head {
+      flex-direction: row;
+      align-items: center;
+    }
+    .area__icon {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+    .area__title {
+      font-size: 1.5rem;
+    }
+    .area__line {
+      font-size: 1rem;
+    }
+    .area__list {
+      font-size: 1rem;
+    }
+  }
+
+  /* The Kit: labelled groups of chips on the green field, three groups a row on a desktop, two on
+     a tablet, one on a phone. A chip with a detail is a button; its detail opens as a light card
+     under the group's chips, over what follows (nothing moves), its notch under the chip. */
+  .kit__board {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--s-4) var(--s-4);
+  }
+  .kit__group {
+    position: relative;
+    min-width: 0;
+  }
+  .kit__title {
+    margin-bottom: var(--s-2);
+    font-size: 1.25rem;
+    line-height: 1.1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .kit__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .kit__item {
+    max-width: 100%;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid var(--pr-navy);
+    background: var(--pr-navy);
+    color: var(--pr-light);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    line-height: 1.2;
+    text-align: left;
+    overflow-wrap: anywhere;
+    /* (selected text shows green on the navy chip, as on the cards) */
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
+  }
+  .chip--more {
+    cursor: pointer;
+  }
+  .chip__mark {
+    flex: none;
+    width: 0.625rem;
+    height: 0.625rem;
+    color: var(--pr-green);
+  }
+  .chip--more:hover,
+  .chip--more[aria-expanded='true'] {
+    background: var(--pr-light);
+    color: var(--pr-navy);
+  }
+  .chip--more:hover .chip__mark,
+  .chip--more[aria-expanded='true'] .chip__mark {
+    color: var(--pr-navy);
+  }
+  .chip--more[aria-expanded='true'] .chip__mark {
+    transform: rotate(45deg);
+  }
+  .chip--more:focus-visible {
+    outline: 3px solid var(--pr-navy);
+    outline-offset: 3px;
+  }
+  .chip__tip {
+    position: absolute;
+    z-index: 5;
+    left: 0;
+    right: 0;
+    top: calc(100% + 0.75rem);
+    display: none;
+    padding: var(--s-2);
+    background: var(--pr-light);
+    color: var(--pr-navy);
+    border: 2px solid var(--pr-navy);
+    font-size: 1rem;
+    line-height: 1.45;
+  }
+  /* the notch, under the chip that opened it (placed by script; at the left edge without it) */
+  .chip__tip::before {
+    content: '';
+    position: absolute;
+    top: -0.625rem;
+    left: clamp(0.75rem, calc(var(--x, 1.5rem) - 0.5rem), calc(100% - 1.75rem));
+    width: 1rem;
+    height: 0.625rem;
+    background: var(--pr-navy);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+  :global(.js) .chip--more[aria-expanded='true'] + .chip__tip,
+  :global(html:not(.js)) .chip--more:is(:hover, :focus-visible) + .chip__tip {
+    display: block;
+  }
+  @media (max-width: 63.99rem) {
+    .kit__board {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .kit__board {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--s-3);
+    }
+    .kit__title {
+      font-size: 1.125rem;
+    }
+  }
+
+  /* My story: plain paragraphs on the navy. */
+  .story__text {
     display: grid;
     gap: var(--s-2);
     max-width: 68ch;
-    margin-top: var(--s-4);
-  }
-  .about__moretitle {
-    font-size: 1.75rem;
-    line-height: 1.1;
-  }
-  @media (max-width: 47.99rem) {
-    .about__moretitle {
-      font-size: 1.375rem;
-    }
   }
   /* Quick facts and FAQ: one closed dropdown on the blue field. The summary is a navy bar with the
      title and a pixel chevron that turns when open; inside, the key facts (navy rows) and the
@@ -527,6 +858,67 @@ const { summaryFirstPerson, personal, facts, qa, linkedin } = await about();
 </style>
 
 <script>
+  import { startDeck } from '../scripts/deck';
+  import { startSwipes } from '../scripts/swipe';
+
+  // What I test: dealt on a desktop with motion, swiped on phones and tablets.
+  startDeck();
+  startSwipes();
+
+  // The Kit: a chip with a detail shows it while a mouse is over it or the keyboard is on it, and
+  // a click or a tap keeps it open until the next one, a tap elsewhere or Escape. One at a time.
+  const board = document.querySelector<HTMLElement>('[data-kit]');
+  if (board) {
+    const chips = Array.from(board.querySelectorAll<HTMLButtonElement>('[data-chip]'));
+    let kept: HTMLButtonElement | null = null;
+    const show = (chip: HTMLButtonElement, on: boolean) => {
+      if (on) {
+        chips.forEach((c) => c !== chip && c.setAttribute('aria-expanded', 'false'));
+        const group = chip.closest('.kit__group')!.getBoundingClientRect();
+        const box = chip.getBoundingClientRect();
+        (chip.nextElementSibling as HTMLElement).style.setProperty('--x', `${box.left + box.width / 2 - group.left}px`);
+      }
+      chip.setAttribute('aria-expanded', String(on));
+    };
+    const shut = () => {
+      chips.forEach((c) => c.setAttribute('aria-expanded', 'false'));
+      kept = null;
+    };
+    for (const chip of chips) {
+      chip.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'mouse' && !kept) show(chip, true);
+      });
+      chip.addEventListener('pointerleave', (e) => {
+        if (e.pointerType === 'mouse' && kept !== chip) show(chip, false);
+      });
+      chip.addEventListener('focus', () => {
+        if (chip.matches(':focus-visible') && kept !== chip) {
+          kept = null;
+          show(chip, true);
+        }
+      });
+      chip.addEventListener('blur', () => {
+        if (kept === chip) kept = null;
+        show(chip, false);
+      });
+      chip.addEventListener('click', () => {
+        if (kept === chip) {
+          kept = null;
+          show(chip, false);
+        } else {
+          kept = chip;
+          show(chip, true);
+        }
+      });
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') shut();
+    });
+    document.addEventListener('pointerdown', (e) => {
+      if (kept && !kept.contains(e.target as Node)) shut();
+    });
+  }
+
   // Bug Sweep: the game's code arrives only when Play is pressed (a module of its own).
   const root = document.querySelector<HTMLElement>('[data-sweep]');
   const play = root?.querySelector<HTMLButtonElement>('[data-sweep-action]');

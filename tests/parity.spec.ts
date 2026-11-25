@@ -8,8 +8,8 @@ import { test, expect, type Page } from '@playwright/test';
  * (bugs, joins, the shot) are not content. The folded cards are all in the page, one tap away: the
  * phone's read opens every one of them first.
  */
-const PAGES = ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
-const EXCEPT = '.devtools, .tabbar, .hud, .dock, [data-shot], .card__toggle, .bug, .join';
+const PAGES = ['/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+const EXCEPT = '.devtools, .tabbar, .hud, .dock, [data-shot], .card__toggle, .bug, .join, .swipe__controls';
 
 const content = (page: Page) =>
   page.evaluate((except) => {

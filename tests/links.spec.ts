@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
  * Links that leave the site open in a new tab, hand nothing to the other site, and say so to
  * assistive tech. Links inside the site stay in the same tab.
  */
-const PAGES = ['/', '/skills/', '/portfolio/', '/contact/', '/quality/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
+const PAGES = ['/', '/portfolio/', '/contact/', '/quality/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
 const SITE = 'https://playrunqa.com';
 
 for (const path of PAGES) {
@@ -39,7 +39,7 @@ for (const path of PAGES) {
 test('on every page and width the logo in the header is the way home: a visible link named PlayRun home', { tag: ['@links'] }, async ({ page }) => {
   for (const width of [375, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const path of ['/', '/skills/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/']) {
+    for (const path of ['/', '/portfolio/', '/quality/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/']) {
       await page.goto(path);
       const home = page.locator('header').getByRole('link', { name: 'PlayRun home', exact: true });
       await expect(home, `${path} at ${width}`).toBeVisible();
@@ -50,7 +50,7 @@ test('on every page and width the logo in the header is the way home: a visible 
 
 test('the logo shows it is a link: the pointer, cyan with a bar under it on hover, a ring on keyboard focus', { tag: ['@links'] }, async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/skills/');
+  await page.goto('/about/');
   const home = page.locator('header').getByRole('link', { name: 'PlayRun home', exact: true });
   const look = () => home.evaluate((a) => ({ cursor: getComputedStyle(a).cursor, color: getComputedStyle(a).color, bar: getComputedStyle(a, '::after').transform, outline: getComputedStyle(a).outlineStyle }));
   const rest = await look();
