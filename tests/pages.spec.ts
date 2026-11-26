@@ -267,7 +267,15 @@ test('every card has a logo or its icon, the labels and one store button in a ne
   expect(outline.fill, 'navy inside').toBe('rgb(12, 21, 42)');
   expect(outline.clip, 'notched corners').toMatch(/^polygon\(/);
   expect(outline.radius).toBe('0px');
-  expect(outline.size).toBeLessThan(parseFloat(await page.locator('.next .button').first().evaluate((el) => getComputedStyle(el).fontSize)));
+  // (a size smaller than the solid button, measured on one made for the purpose)
+  const solid = await page.evaluate(() => {
+    const a = Object.assign(document.createElement('a'), { className: 'button', textContent: 'x' });
+    document.querySelector('main')!.append(a);
+    const size = parseFloat(getComputedStyle(a).fontSize);
+    a.remove();
+    return size;
+  });
+  expect(outline.size).toBeLessThan(solid);
   await store.hover();
   await expect.poll(() => store.evaluate((el) => getComputedStyle(el, '::before').backgroundColor)).toBe('rgb(103, 193, 140)');
   expect(await store.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(12, 21, 42)');

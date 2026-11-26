@@ -55,11 +55,12 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     </div>
     <Join kind="clouds" from="var(--pr-navy)" to="var(--field-cyan)" seed="portfolio-titles" />
     <Bug id="portfolio-1" style="right: 12%; top: 9rem" tablet="right: var(--gutter); top: 6rem" walk="x -2rem" />
+    <Bug id="portfolio-4" style="right: 30%; bottom: calc(var(--join-h) + 1rem)" tablet="left: 45%; bottom: calc(var(--join-h) + 0.75rem)" phone="left: var(--gutter); bottom: calc(var(--join-h) + 0.75rem)" walk="x 2rem" />
   </section>
 
   <!-- Level 2: every post, newest first, with its titles -->
   <section class="level level--cyan has-join-bottom titles" data-level="2" aria-labelledby="titles-title">
-    <Join kind="terrain" from="var(--field-cyan)" to="var(--field-green)" seed="portfolio-next" />
+    <Join kind="terrain" from="var(--field-cyan)" to="var(--pr-navy)" seed="portfolio-next" />
     <div class="level__head">
       <p class="flag" data-nosnippet data-enter><span>Level 2 &middot; By company</span></p>
       <h2 id="titles-title" class="level__title" data-enter="wipe">Games I've tested, by studio</h2>
@@ -118,28 +119,21 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
         )
       }
     </div>
-    <Bug id="portfolio-2" style="right: 10%; bottom: 0.75rem" walk="x -2rem" />
-    <Bug id="portfolio-3" style="right: 8%; top: 1.5rem" tablet="left: 45%; top: 0.75rem" phone="left: 1rem; bottom: 0.25rem" walk="x -2rem" />
+    <Bug id="portfolio-2" style="right: 10%; bottom: calc(var(--join-h) + 0.75rem)" walk="x -2rem" />
+    <Bug id="portfolio-3" style="right: 8%; top: 1.5rem" tablet="left: 45%; top: 0.75rem" phone="left: 1rem; bottom: calc(var(--join-h) + 0.25rem)" walk="x -2rem" />
   </section>
 
-  <!-- Level 3: a short way on -->
-  <section class="level level--green level--tight has-join-bottom next" data-level="3" aria-labelledby="next-title">
-    <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="portfolio-foot" />
-    <div class="level__head">
-      <p class="flag" data-nosnippet data-enter><span>Level 3 &middot; Next</span></p>
-      <h2 id="next-title" class="level__title level__title--small" data-enter="wipe">How I test games, and this site</h2>
-      <div class="level__actions" data-enter style="--enter-delay: 160ms">
-        <a class="button button--navy" href="/about/#skills">See the skills</a>
-        <a class="button button--navy" href="/testing/">How I test this site</a>
-      </div>
-    </div>
-    <Bug id="portfolio-4" style="right: 10%; top: 40%" tablet="right: 8%; top: 2rem" phone="right: 1rem; top: 0.25rem" walk="y 1.5rem" />
-  </section>
 </Base>
 
 <style>
   .work {
     padding-top: var(--s-3);
+  }
+  /* (a strip at the foot of each level, above its join, where the bugs walk clear of the text:
+     portfolio-4 under the intro, portfolio-2 and portfolio-3 under Other roles) */
+  .work.has-join-bottom,
+  .titles.has-join-bottom {
+    padding-bottom: calc(var(--s-5) + var(--join-h) + 3.5rem);
   }
   .work__lead {
     max-width: 40ch;
@@ -253,10 +247,6 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
   .group__cell:nth-last-child(2):nth-child(3n + 1),
   .group__cell:last-child:nth-child(3n + 2) {
     grid-column: span 3;
-  }
-  .level__title--small {
-    font-size: var(--step-head);
-    font-size: round(var(--step-head), 16px);
   }
 
   @media (max-width: 63.99rem) {

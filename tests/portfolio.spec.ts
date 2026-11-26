@@ -738,3 +738,18 @@ test('a logo that spells the name stands for the title on the card (the title ke
   await expect(page.locator('.card__logo img').first()).toBeVisible();
 });
 
+// The Games page ends with the games and Other roles, the join into the footer after them: no
+// closing level of links that only repeat the nav.
+test('the Games page has two levels and ends with the list, the join running into the footer', { tag: ['@pages'] }, async ({ page }) => {
+  await page.goto('/portfolio/');
+  await expect(page.locator('main > section.level')).toHaveCount(2);
+  await expect(page.locator('[data-level] .flag')).toHaveText(['Games', 'Level 2 · By company']);
+  await expect(page.locator('main')).not.toContainText('How I test games, and this site');
+  await expect(page.locator('main').getByRole('link', { name: /See the skills|How I test this site/ })).toHaveCount(0);
+  const last = page.locator('main > section.level').last();
+  await expect(last.locator('.others')).toHaveCount(1);
+  await expect(last.locator(':scope > .join')).toHaveCount(1);
+  // (Games keeps four bugs)
+  await expect(page.locator('main [data-bug]')).toHaveCount(4);
+});
+

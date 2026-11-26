@@ -535,11 +535,7 @@ for (const [width, height] of [[375, 812], [390, 844], [1440, 900]] as const) {
   });
 }
 
-test('every link that went to Skills now goes to What I test on About', { tag: ['@links'] }, async ({ page }) => {
-  for (const [path, name] of [['/portfolio/', 'See the skills']] as const) {
-    await page.goto(path);
-    await expect(page.getByRole('link', { name, exact: true })).toHaveAttribute('href', '/about/#skills');
-  }
+test('no link on the site goes to the old Skills page', { tag: ['@links'] }, async ({ page }) => {
   for (const path of ['/', '/about/', '/portfolio/', '/testing/', '/contact/']) {
     await page.goto(path);
     expect(await page.locator('a[href^="/skills"]').count(), path).toBe(0);
