@@ -312,3 +312,56 @@ test('Bug Sweep plays whatever the motion setting: under the device’s reduced 
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('playrun.games') ?? '{}').achievements)).toContain('bugsweep');
   await context.close();
 });
+
+// A vertical swipe that starts on the field (or on the poster before Play) scrolls the page, before
+// and during a game: only the Left, Fire and Right buttons keep the touch, held to move or fire,
+// and the page never scrolls under a held button. Real touches (Chromium's own input), so the
+// browser's touch-action decides, not a script.
+test('at 375x812 a swipe on the field scrolls the page before Play and during a game, and a held button moves the ship without scrolling', { tag: ['@viewports'] }, async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 });
+  const page = await context.newPage();
+  await openAbout(page);
+  const cdp = await context.newCDPSession(page);
+  const swipe = async (x: number, y: number, dy: number, holdMs = 0) => {
+    const steps = 8;
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+    for (let i = 1; i <= steps; i++) {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y + (dy * i) / steps }] });
+      await page.waitForTimeout(16);
+    }
+    if (holdMs) await page.waitForTimeout(holdMs);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await page.waitForTimeout(300);
+  };
+  const scrollY = () => page.evaluate(() => scrollY);
+  const centre = async (sel: string) => {
+    const b = (await page.locator(sel).boundingBox())!;
+    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+  };
+  // before Play: a swipe up on the poster scrolls the page down
+  await page.locator('.sweep__stage').scrollIntoViewIfNeeded();
+  let at = await centre('.sweep__stage');
+  let before = await scrollY();
+  await swipe(at.x, at.y, -160);
+  expect(await scrollY(), 'the page scrolls from the poster').toBeGreaterThan(before + 40);
+  // during a game: the same on the field
+  await page.getByRole('button', { name: 'Play Bug Sweep' }).tap();
+  await expect.poll(async () => (await state(page)).mode).toBe('play');
+  await hook(page, 'calm', true);
+  at = await centre('.sweep__stage canvas');
+  before = await scrollY();
+  await swipe(at.x, at.y, -120);
+  expect(await scrollY(), 'the page scrolls from the field during a game').toBeGreaterThan(before + 30);
+  // (the field back on screen, the game playing again)
+  await page.locator('.sweep__stage').scrollIntoViewIfNeeded();
+  if ((await state(page)).mode === 'paused') await page.getByRole('button', { name: /Resume/ }).first().tap();
+  await expect.poll(async () => (await state(page)).mode).toBe('play');
+  // a held Right: the ship moves and the page stays put, even with the finger dragging upwards
+  const right = await centre('[data-sweep-right]');
+  const x0 = (await state(page)).shipX;
+  before = await scrollY();
+  await swipe(right.x, right.y, -60, 400);
+  expect((await state(page)).shipX, 'the ship moved right').toBeGreaterThan(x0 + 10);
+  expect(Math.abs((await scrollY()) - before), 'no scroll under a held button').toBeLessThanOrEqual(1);
+  await context.close();
+});

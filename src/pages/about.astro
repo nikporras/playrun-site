@@ -705,7 +705,8 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
     aspect-ratio: 5 / 4;
     background: var(--pr-navy);
     overflow: hidden;
-    touch-action: none;
+    /* (no touch-action here: a swipe on the field or the poster scrolls the page, before and
+       during a game; only the Left, Fire and Right buttons keep the touch to themselves) */
   }
   .sweep__stage:focus-visible {
     outline: 3px solid var(--pr-light);
@@ -801,7 +802,6 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
     display: grid;
     grid-template-columns: 1fr 1.25fr 1fr;
     gap: var(--s-1);
-    touch-action: none;
     user-select: none;
     -webkit-user-select: none;
   }
