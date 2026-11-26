@@ -7,7 +7,7 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
  * hits is game over, and Try again starts afresh. The suite's build carries a handle on the game
  * (`sweepTest`, test builds only; the production build leaves it out, checked in CI).
  */
-type State = { mode: string; lives: number; shipX: number; shipW: number; bugW: number; stars: { x: number; y: number }[]; left: number; shots: number; touch: boolean; scale: number; bugs: { x: number; y: number; alive: boolean; diving: boolean }[] };
+type State = { mode: string; lives: number; shipX: number; shipW: number; bugW: number; stars: { x: number; y: number }[]; left: number; shots: number; touch: boolean; scale: number; bugs: { x: number; y: number; alive: boolean; diving: boolean }[]; glitching: boolean; glitchBug: number; clock: number };
 // (before the game's code has arrived there is no handle yet: the mode reads 'none')
 const state = (page: Page) => page.locator('[data-sweep]').evaluate((el) => (el as unknown as { sweepTest?: { state: () => unknown } }).sweepTest?.state() ?? { mode: 'none' }) as Promise<State>;
 const hook = (page: Page, name: string, arg?: unknown) =>
@@ -331,7 +331,14 @@ test('at 375x812 a swipe on the field scrolls the page before Play and during a 
     }
     if (holdMs) await page.waitForTimeout(holdMs);
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await page.waitForTimeout(300);
+    // (a swipe flings on: wait for the page to come to rest)
+    let rest = -1;
+    for (let k = 0; k < 40; k++) {
+      await page.waitForTimeout(100);
+      const now = await page.evaluate(() => scrollY);
+      if (now === rest) break;
+      rest = now;
+    }
   };
   const scrollY = () => page.evaluate(() => scrollY);
   const centre = async (sel: string) => {
@@ -345,7 +352,10 @@ test('at 375x812 a swipe on the field scrolls the page before Play and during a 
   await swipe(at.x, at.y, -160);
   expect(await scrollY(), 'the page scrolls from the poster').toBeGreaterThan(before + 40);
   // during a game: the same on the field
-  await page.getByRole('button', { name: 'Play Bug Sweep' }).tap();
+  const playButton = page.getByRole('button', { name: 'Play Bug Sweep' });
+  await playButton.scrollIntoViewIfNeeded();
+  // (starting the game is not what this test is about: a plain press, the swipes stay real touches)
+  await playButton.dispatchEvent('click');
   await expect.poll(async () => (await state(page)).mode).toBe('play');
   await hook(page, 'calm', true);
   at = await centre('.sweep__stage canvas');
@@ -365,3 +375,78 @@ test('at 375x812 a swipe on the field scrolls the page before Play and during a 
   expect(Math.abs((await scrollY()) - before), 'no scroll under a held button').toBeLessThanOrEqual(1);
   await context.close();
 });
+
+// KNOWN ISSUE QA-002, on purpose: the third bug in the top row glitches for 0.3 s each time it lands
+// back in formation after a dive. It is a live example for the QA Lab's bug reports, not a failure:
+// these checks make sure it stays purely visual (its place, its hitbox and the score unchanged).
+test.describe('Bug Sweep, known issue QA-002 (intentional)', () => {
+  test('the glitch is drawing only: the bug keeps its place, is still hit where it is, and the score counts as usual', { tag: ['@bugsweep'] }, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openAbout(page);
+    await play(page);
+    await hook(page, 'seed', 7);
+    await hook(page, 'calm', true);
+    await hook(page, 'manual', true);
+    await hook(page, 'advance', 100);
+    const s0 = await state(page);
+    expect(s0.glitchBug, 'the third bug in the top row').toBe(2);
+    expect(s0.glitching).toBe(false);
+    const frame = () => hook(page, 'frame') as Promise<string>;
+    const plain = await frame();
+    // on demand: the same clock, only the picture differs
+    await hook(page, 'glitch');
+    const s1 = await state(page);
+    expect(s1.glitching).toBe(true);
+    expect(s1.clock).toBe(s0.clock);
+    expect(s1.bugs).toEqual(s0.bugs);
+    expect(s1.left).toBe(s0.left);
+    expect(s1.lives).toBe(s0.lives);
+    expect(await frame(), 'the sprite is drawn in slices').not.toBe(plain);
+    // a shot at it, kept glitching all the way: the bug below it goes first, then it is hit where
+    // it stands, and each counts as one
+    await hook(page, 'aimAt', 2);
+    const shootUntil = async (i: number) => {
+      for (let k = 0; k < 60 && (await state(page)).bugs[i].alive; k++) {
+        await hook(page, 'glitch');
+        await hook(page, 'shoot');
+        await hook(page, 'advance', 50);
+      }
+    };
+    await shootUntil(7);
+    expect((await state(page)).left).toBe(s0.left - 1);
+    await shootUntil(2);
+    const s2 = await state(page);
+    expect(s2.bugs[2].alive, 'hit mid-glitch, where it stands').toBe(false);
+    expect(s2.left).toBe(s0.left - 2);
+    // the others untouched
+    for (const i of [0, 1, 3, 4, 5, 6, 8, 9]) expect(s2.bugs[i].alive).toBe(true);
+  });
+
+  test('it happens to the same bug every time it lands back in formation after a dive, and to no other', { tag: ['@bugsweep'] }, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openAbout(page);
+    await play(page);
+    await hook(page, 'seed', 3);
+    await hook(page, 'calm', true);
+    await hook(page, 'manual', true);
+    const landed = async (i: number) => {
+      await hook(page, 'dive', i);
+      expect((await state(page)).bugs[i].diving).toBe(true);
+      // (the ship moved away from where the dive is aimed, so it misses and comes back round)
+      await hook(page, 'aimAt', i < 3 ? 4 : 0);
+      for (let k = 0; k < 400 && (await state(page)).bugs[i].diving; k++) await hook(page, 'advance', 50);
+      return state(page);
+    };
+    for (let round = 0; round < 2; round++) {
+      const s = await landed(2);
+      expect(s.bugs[2].diving, 'back in formation').toBe(false);
+      expect(s.glitching, `round ${round + 1}: it glitches as it lands`).toBe(true);
+      await hook(page, 'advance', 400);
+      expect((await state(page)).glitching, 'over after 0.3 s').toBe(false);
+    }
+    const other = await landed(0);
+    expect(other.bugs[0].diving).toBe(false);
+    expect(other.glitching, 'no other bug glitches').toBe(false);
+  });
+});
+

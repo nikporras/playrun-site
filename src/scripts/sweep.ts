@@ -14,6 +14,12 @@
  * down to move and to keep firing; on a touch screen the dives are slower, for thumbs. It pauses
  * with Esc or the Pause button, when the tab is hidden and when the field leaves the screen. It
  * plays whatever the motion setting: the player starts it on purpose.
+ *
+ * KNOWN ISSUE QA-002 (intentional, kept on purpose as a live example for the QA Lab's bug reports):
+ * the third bug in the top row glitches for a moment each time it lands back in formation after a
+ * dive, its sprite drawn as three slices jumping sideways, like the name glitch on Home. Only the
+ * drawing changes: its place, hitbox, movement and score are the same as every other bug's. See
+ * GLITCH below. Not a test failure: tests/sweep.spec.ts checks it stays purely visual.
  */
 import { SHIP_SMALL as SHIP, BUG, smallBand } from '../data/sprites';
 import { track } from './track';
@@ -26,6 +32,10 @@ const SHIP_W = SHIP[0].length;
 const SHIP_H = SHIP.length;
 const BUG_W = BUG[0].length;
 const BUG_H = BUG.length;
+// KNOWN ISSUE QA-002 (intentional): the bug that glitches (row 0, col 2: the third in the top row,
+// index 2 in the formation), how long the glitch lasts after it lands, and the slices: rows of its
+// sprite and how far each one jumps sideways, in game pixels.
+const GLITCH = { bug: 2, seconds: 0.3, slices: [[0, 3, -2], [3, 3, 2], [6, BUG_H - 6, -1]] as const };
 const SHIP_Y = H - SHIP_H - 3;
 
 type Mode = 'play' | 'paused' | 'won' | 'over';
@@ -119,6 +129,8 @@ export function startSweep(root: HTMLElement) {
   let cooldown = 0;
   let nextDive = 2;
   let clock = 0;
+  // (KNOWN ISSUE QA-002: until when, on the game clock, the glitching bug is drawn in slices)
+  let glitchUntil = -1;
   let calm = false; // (test builds only: no dives, no sway)
   let random = Math.random; // (test builds can seed it, to replay a game)
   let bugs: Bug[] = [];
@@ -143,6 +155,7 @@ export function startSweep(root: HTMLElement) {
     hurt = 0;
     cooldown = 0;
     clock = 0;
+    glitchUntil = -1;
     nextDive = 2;
     shots = [];
     bursts = [];
@@ -296,6 +309,9 @@ export function startSweep(root: HTMLElement) {
           b.dive = null;
           b.x = home.x;
           b.y = home.y;
+          // KNOWN ISSUE QA-002 (intentional): the third bug in the top row glitches as it lands.
+          // Drawing only: nothing about its place or its hitbox changes.
+          if (b === bugs[GLITCH.bug]) glitchUntil = clock + GLITCH.seconds;
         } else {
           b.x += (dx / dist) * move;
           b.y += (dy / dist) * move;
@@ -356,7 +372,16 @@ export function startSweep(root: HTMLElement) {
       if (!b.alive) continue;
       // (the legs: a one-pixel step every so often, like the site's bugs)
       const bob = Math.floor(clock * 3 + b.col) % 2;
-      ctx.drawImage(bugArt, Math.round(b.x) * s, (Math.round(b.y) + bob) * s, BUG_W * s, BUG_H * s);
+      const bx = Math.round(b.x);
+      const by = Math.round(b.y) + bob;
+      // KNOWN ISSUE QA-002 (intentional): the glitching bug in slices, two quick bursts like the
+      // name glitch on Home (the first and the last third of the glitch), whole in between.
+      const glitchLeft = glitchUntil - clock;
+      if (b === bugs[GLITCH.bug] && glitchLeft > 0 && (glitchLeft > (GLITCH.seconds * 2) / 3 || glitchLeft < GLITCH.seconds / 3)) {
+        for (const [y0, h, dx] of GLITCH.slices) ctx.drawImage(bugArt, 0, y0, BUG_W, h, (bx + dx) * s, (by + y0) * s, BUG_W * s, h * s);
+        continue;
+      }
+      ctx.drawImage(bugArt, bx * s, by * s, BUG_W * s, BUG_H * s);
     }
     ctx.fillStyle = C.light;
     for (const shot of shots) px(shot.x, shot.y, 2, 4);
@@ -449,7 +474,25 @@ export function startSweep(root: HTMLElement) {
   // production build leaves this out entirely, so nothing can be unlocked from the console.
   if (import.meta.env.DEV || import.meta.env.PUBLIC_TEST_HOOKS === '1') {
     (root as HTMLElement & { sweepTest?: unknown }).sweepTest = {
-      state: () => ({ mode, lives, shipX, shipW: SHIP_W, bugW: BUG_W, stars, left: left(), shots: shots.length, touch: touchQuery.matches, bugs: bugs.map((b) => ({ x: b.x, y: b.y, alive: b.alive, diving: !!b.dive })), scale: s }),
+      state: () => ({ mode, lives, shipX, shipW: SHIP_W, bugW: BUG_W, stars, left: left(), shots: shots.length, touch: touchQuery.matches, bugs: bugs.map((b) => ({ x: b.x, y: b.y, alive: b.alive, diving: !!b.dive })), scale: s, glitching: clock < glitchUntil, glitchBug: GLITCH.bug, clock }),
+      // KNOWN ISSUE QA-002 on demand: the glitch starts now, as if the bug had just landed
+      glitch: () => {
+        glitchUntil = clock + GLITCH.seconds;
+        draw();
+      },
+      // (the ship under one bug, by its index in the formation)
+      aimAt: (i: number) => {
+        const b = bugs[i];
+        if (b) shipX = Math.max(0, Math.min(W - SHIP_W, b.x + BUG_W / 2 - SHIP_W / 2));
+      },
+      shoot: () => fire(),
+      // (the field as drawn now, for a test to compare frames)
+      frame: () => canvas.toDataURL(),
+      // (one bug sent on a dive at once, by its index in the formation)
+      dive: (i: number) => {
+        const b = bugs[i];
+        if (b?.alive && !b.dive) b.dive = { phase: 'down', t: 0, x0: b.x, y0: b.y, target: shipX + SHIP_W / 2 - BUG_W / 2, dir: 1 };
+      },
       calm: (on: boolean) => (calm = on),
       seed: (n: number) => {
         let a = n >>> 0;
