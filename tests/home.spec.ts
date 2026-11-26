@@ -822,21 +822,20 @@ test.describe('Home', () => {
     });
   }
 
-  // The approved captions, word for word (the year and the headsets from the data).
+  // The approved captions, word for word (the year from the data).
   const CAPTIONS = [
     'Started in 2021. Still finding things.',
     'From outsourced QA to in-house teams.',
-    "From Cyberpunk 2077 and NBA 2K21 to this year's releases.",
-    'Quest, PC VR, PS VR and PS VR2. Headset tan included.',
-    'Certification checks on Switch, Xbox and PS5, plus the PC stores.',
-    'Tester to Lead at nDreams in a year. QA Manager at Historic VR, with a team of 10.',
+    "From Cyberpunk 2077 to this year's releases.",
+    'Quest to PS VR2. Headset tan included.',
+    'Switch, Xbox, PS5 and the PC stores.',
+    'Lead at nDreams in a year. Team of 10 at Historic VR.',
   ];
 
-  // Every caption stays inside its row at every width, and no row runs into the next (a longer
-  // caption grows its row). The line counts are recorded on the test: the six approved lines run
-  // to three or more below 414px, and the last one at 1024 (reported to Nicolás, 26 November 2026).
-  for (const width of [300, 320, 375, 768, 1024, 1280, 1440, 1920]) {
-    test(`at ${width}px every stat caption stays inside its row and the rows never overlap`, { tag: ['@viewports'] }, async ({ page }) => {
+  // Every caption keeps to two lines from 375px up (three at most at 300 to 360px) and stays
+  // inside its row. The line counts are recorded on the test.
+  for (const width of [300, 320, 360, 375, 390, 414, 768, 1024, 1280, 1440, 1920]) {
+    test(`at ${width}px every stat caption keeps to ${width >= 375 ? 'two lines' : 'three lines'} inside its row`, { tag: ['@viewports'] }, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/');
       await page.evaluate(() => document.fonts.ready);
@@ -854,7 +853,10 @@ test.describe('Home', () => {
       );
       expect(caps.map((c) => c.text)).toEqual(CAPTIONS);
       test.info().annotations.push({ type: 'caption-lines', description: `${width}px: ${caps.map((c) => c.lines).join(' ')}` });
-      for (const c of caps) expect(c.inRow, `"${c.text}" inside its row`).toBe(true);
+      for (const c of caps) {
+        expect(c.inRow, `"${c.text}" inside its row`).toBe(true);
+        expect(c.lines, `"${c.text}" at ${width}px`).toBeLessThanOrEqual(width >= 375 ? 2 : 3);
+      }
       // (the rows as laid out, in order, one under the next)
       const rows = await drum.locator('.drum__row:not(.drum__clone)').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, h: r.height }; }));
       for (const r of rows) expect(r.h).toBeGreaterThan(0);
