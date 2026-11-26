@@ -324,7 +324,7 @@ const KIT = [
   ['Education', ['Diploma of Information Technology, Swinburne University of Technology, 2017 to 2019', 'Mandarin, South China Normal University, Guangzhou, 2015 to 2017']],
 ] as const;
 
-test('the Kit: six labelled groups of chips from the data; a platform or headset chip opens in place into a small card with its detail inside it, one at a time', { tag: ['@pages', '@a11y'] }, async ({ page }) => {
+test('the Kit: six labelled groups of chips from the data; a platform or headset chip opens a bubble under it with its detail, one at a time, closing four ways', { tag: ['@pages', '@a11y'] }, async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/about/');
   const kit = page.locator('section.kit');
@@ -332,7 +332,7 @@ test('the Kit: six labelled groups of chips from the data; a platform or headset
   await expect(kit.locator('.level__lead')).toHaveText('What I test on, and what I test with.');
   await expect(kit.locator('.kit__title')).toHaveText(KIT.map(([t]) => t));
   for (const [title, chips] of KIT) {
-    const group = kit.getByRole('region', { name: title }).or(kit.locator('.kit__group').filter({ has: page.getByRole('heading', { name: title, exact: true }) })).first();
+    const group = kit.locator('.kit__group').filter({ has: page.getByRole('heading', { name: title, exact: true }) }).first();
     await expect(group.locator('.chip'), title).toHaveText([...chips]);
   }
   // which chips open a detail: the platforms and the headsets, nothing else
@@ -340,56 +340,46 @@ test('the Kit: six labelled groups of chips from the data; a platform or headset
   await expect(buttons).toHaveCount(5 + 3 + 4);
   const handhelds = kit.getByRole('button', { name: 'Handhelds', exact: true });
   const detail = 'Steam Deck and Windows handhelds: Deck Verified checks, controller-only play, text size on a small screen, sleep and resume.';
-  const item = handhelds.locator('xpath=..');
-  const tip = item.locator('.chip__tip');
+  const tip = page.locator(`#${await handhelds.getAttribute('aria-controls')}`);
   await expect(handhelds).toHaveAttribute('aria-expanded', 'false');
-  await expect(handhelds).toHaveAttribute('aria-controls', (await tip.getAttribute('id'))!);
   await expect(tip).toBeHidden();
-  // hover and focus alone open nothing
+  // hover alone opens nothing
   await handhelds.hover();
   await expect(tip).toBeHidden();
   await page.mouse.move(5, 5);
-  // a press opens it in place: the detail inside the chip's own box, the chips after it reflowing
-  const steam = kit.getByRole('button', { name: 'Steam', exact: true });
-  const top = (name: string) => kit.getByRole('button', { name, exact: true }).evaluate((el) => el.getBoundingClientRect().top + scrollY);
-  const nextBefore = await top('PS5');
+  // a press: the bubble with the line, the chip pressed, the line read out, the focus on the chip
   await handhelds.click();
-  await expect(handhelds).toHaveAttribute('aria-expanded', 'true');
   await expect(tip).toBeVisible();
-  await expect(tip).toHaveText(detail);
-  const card = (await item.boundingBox())!;
-  const t = (await tip.boundingBox())!;
-  expect(t.x).toBeGreaterThanOrEqual(card.x - 0.5);
-  expect(t.y).toBeGreaterThanOrEqual(card.y - 0.5);
-  expect(t.x + t.width).toBeLessThanOrEqual(card.x + card.width + 0.5);
-  expect(t.y + t.height).toBeLessThanOrEqual(card.y + card.height + 0.5);
-  const b = (await handhelds.boundingBox())!;
-  expect(t.y, 'the detail under the name').toBeGreaterThanOrEqual(b.y + b.height - 1);
-  // (the chip before it stays where it was)
-  expect(await top('PS5')).toBe(nextBefore);
-  // a second press closes it, the focus kept on the chip
+  await expect(tip).toContainText(detail);
+  await expect(handhelds).toHaveAttribute('aria-expanded', 'true');
+  await expect(handhelds).toHaveCSS('background-color', 'rgb(229, 231, 234)');
+  await expect(page.locator('[data-kit-live]')).toHaveText(`Handhelds: ${detail}`);
+  await expect(handhelds).toBeFocused();
+  // 1. the chip again
   await handhelds.click();
   await expect(tip).toBeHidden();
-  await expect(handhelds).toBeFocused();
   await expect(handhelds).toHaveAttribute('aria-expanded', 'false');
-  // the keyboard: Enter opens it, Escape closes it, focus stays
-  await handhelds.focus();
+  // 2. the bubble's Close, the focus back on the chip
+  await handhelds.click();
+  await tip.getByRole('button', { name: 'Close' }).click();
+  await expect(tip).toBeHidden();
+  await expect(handhelds).toBeFocused();
+  // 3. Escape, from the keyboard: Enter opens it, Escape closes it, the focus stays
   await page.keyboard.press('Enter');
   await expect(tip).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(tip).toBeHidden();
   await expect(handhelds).toBeFocused();
-  await page.keyboard.press(' ');
-  await expect(tip).toBeVisible();
   // one at a time
+  await handhelds.click();
   await kit.getByRole('button', { name: 'GOG' }).click();
   await expect(tip).toBeHidden();
-  await expect(kit.locator('.chip__tip:visible')).toHaveText(['DRM-free build, Galaxy features, offline play.']);
+  await expect(kit.locator('.chip__tip:visible')).toHaveCount(1);
+  await expect(kit.locator('.chip__tip:visible')).toContainText('DRM-free build, Galaxy features, offline play.');
   await expect(kit.locator('button[data-chip][aria-expanded="true"]')).toHaveCount(1);
-  // a press elsewhere closes it
+  // 4. a click elsewhere
   await page.mouse.click(700, 60);
   await expect(kit.locator('.chip__tip:visible')).toHaveCount(0);
-  await expect(steam).toHaveAttribute('aria-expanded', 'false');
   // axe with one open
   await handhelds.click();
   const axe = await new AxeBuilder({ page }).include('section.kit').analyze();
@@ -398,56 +388,70 @@ test('the Kit: six labelled groups of chips from the data; a platform or headset
   for (const name of ['TestRail', 'Spanish, fluent']) await expect(kit.getByRole('button', { name })).toHaveCount(0);
 });
 
-// Open, a chip never lays anything over anything: every chip, the open card, the groups and what
-// follows keep clear of each other, from 300px up; below 30rem the open card takes the whole row.
+// Open, a bubble moves nothing: every chip and what follows the Kit stay where they were; the bubble
+// is wholly on screen, shifted sideways near an edge, its arrow on the chip's middle.
 for (const width of [300, 375, 768, 1440]) {
-  test(`at ${width}px an open Kit chip overlaps nothing, and the chips after it reflow`, { tag: ['@viewports'] }, async ({ page }) => {
+  test(`at ${width}px a Kit bubble moves no chip, stays on screen and points at its chip`, { tag: ['@viewports', '@a11y'] }, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/about/');
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
     const kit = page.locator('section.kit');
-    for (const name of ['Handhelds', 'Meta Quest 2, 3 and Pro', 'Steam']) {
-      const chip = kit.getByRole('button', { name, exact: true });
+    const layout = () =>
+      kit.evaluate((el) => ({
+        chips: [...el.querySelectorAll('.chip')].map((c) => {
+          const r = c.getBoundingClientRect();
+          return [Math.round(r.left), Math.round(r.top + scrollY)];
+        }),
+        next: Math.round(el.nextElementSibling!.getBoundingClientRect().top + scrollY),
+      }));
+    for (const chip of await kit.locator('button[data-chip]').all()) {
       await chip.scrollIntoViewIfNeeded();
+      const before = await layout();
       await chip.click();
-      await expect(chip.locator('xpath=..').locator('.chip__tip')).toBeVisible();
-      const boxes = await kit.evaluate((el) => {
-        const r = (e: Element) => e.getBoundingClientRect().toJSON() as DOMRect;
-        return {
-          items: [...el.querySelectorAll('.kit__item')].map((e) => ({ r: r(e), open: e.classList.contains('is-open'), text: e.textContent!.trim().slice(0, 30) })),
-          groups: [...el.querySelectorAll('.kit__group')].map((g) => r(g)),
-          titles: [...el.querySelectorAll('.kit__title')].map((g) => r(g)),
-          column: (() => { const cs = getComputedStyle(el); const b = el.getBoundingClientRect(); return { left: b.left + parseFloat(cs.paddingLeft), right: b.right - parseFloat(cs.paddingRight) }; })(),
-          after: r(el.nextElementSibling!),
-        };
-      });
-      const hit = (a: DOMRect, b: DOMRect) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5;
-      for (let a = 0; a < boxes.items.length; a++) {
-        for (let c = a + 1; c < boxes.items.length; c++) expect(hit(boxes.items[a].r, boxes.items[c].r), `${boxes.items[a].text} / ${boxes.items[c].text}`).toBe(false);
-        for (const t of boxes.titles) expect(hit(boxes.items[a].r, t), `${boxes.items[a].text} over a group title`).toBe(false);
-        expect(boxes.items[a].r.left).toBeGreaterThanOrEqual(boxes.column.left - 1);
-        expect(boxes.items[a].r.right).toBeLessThanOrEqual(boxes.column.right + 1);
-      }
-      for (let a = 0; a < boxes.groups.length; a++) for (let c = a + 1; c < boxes.groups.length; c++) expect(hit(boxes.groups[a], boxes.groups[c]), 'groups apart').toBe(false);
-      for (const g of boxes.groups) expect(g.bottom, 'the Kit ends above what follows').toBeLessThanOrEqual(boxes.after.top + 1);
-      const open = boxes.items.find((x) => x.open)!;
-      if (width < 480) expect(Math.abs(open.r.width - (boxes.column.right - boxes.column.left)), 'the open card takes the whole row').toBeLessThanOrEqual(2);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+      const tip = page.locator(`#${await chip.getAttribute('aria-controls')}`);
+      await expect(tip).toBeVisible();
+      expect(await layout(), 'nothing moves').toEqual(before);
+      const m = await page.evaluate(
+        ([c, t]) => {
+          const chipBox = document.querySelector(`[aria-controls="${c}"]`)!.getBoundingClientRect();
+          const tipEl = document.getElementById(t)!;
+          const tipBox = tipEl.getBoundingClientRect();
+          const x = parseFloat(getComputedStyle(tipEl).getPropertyValue('--x'));
+          return { left: tipBox.left, right: tipBox.right, top: tipBox.top, chipBottom: chipBox.bottom, chipMid: chipBox.left + chipBox.width / 2, arrow: tipBox.left + x, vw: document.documentElement.clientWidth };
+        },
+        [(await chip.getAttribute('aria-controls'))!, (await chip.getAttribute('aria-controls'))!] as const,
+      );
+      expect(m.left, 'inside the screen').toBeGreaterThanOrEqual(0);
+      expect(m.right).toBeLessThanOrEqual(m.vw);
+      expect(m.top, 'under its chip').toBeGreaterThan(m.chipBottom);
+      expect(Math.abs(m.arrow - m.chipMid), 'the arrow on the chip').toBeLessThanOrEqual(2);
+      await chip.click();
+      await expect(tip).toBeHidden();
     }
+    // axe with one open
+    await kit.locator('button[data-chip]').last().click();
+    // (the bug's CLICK ME hint fades out after 5 s, part way through this long test: left out)
+    const axe = await new AxeBuilder({ page }).include('section.kit').exclude('.bug__anchor').analyze();
+    expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => `${n.target.join(' ')} ${n.failureSummary?.slice(0, 160)}`).join(' | ')}`)).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   });
 }
 
-test('without script every platform and headset chip shows its detail inside it', { tag: ['@a11y'] }, async ({ browser }) => {
+test('without script the platform and headset details are plain lines under each group', { tag: ['@a11y'] }, async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 375, height: 812 } });
   const page = await context.newPage();
   await page.goto('/about/');
   const tips = page.locator('section.kit .chip__tip');
   await expect(tips).toHaveCount(12);
-  for (const t of await tips.all()) await expect(t).toBeVisible();
-  await expect(page.locator('section.kit button[data-chip]').first()).toHaveAttribute('aria-expanded', 'true');
+  for (const t of await tips.all()) {
+    await expect(t).toBeVisible();
+    expect(await t.evaluate((el) => getComputedStyle(el).position)).toBe('static');
+  }
+  await expect(page.locator('section.kit .chip__close').first()).toBeHidden();
   await context.close();
 });
 
-test('on a touch screen a tap opens a chip in place and a second tap closes it', { tag: ['@viewports'] }, async ({ browser }) => {
+test('on a touch screen a tap opens a chip bubble and a second tap closes it', { tag: ['@viewports'] }, async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
   const page = await context.newPage();
   await page.goto('/about/');
@@ -455,7 +459,7 @@ test('on a touch screen a tap opens a chip in place and a second tap closes it',
   await chip.scrollIntoViewIfNeeded();
   await chip.tap();
   const tip = page.locator('.chip__tip:visible');
-  await expect(tip).toHaveText(["PS VR2 on PS5, the Sense controllers and the console's own checks."]);
+  await expect(tip).toContainText("PS VR2 on PS5, the Sense controllers and the console's own checks.");
   const box = (await tip.boundingBox())!;
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(375);

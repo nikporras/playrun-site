@@ -101,9 +101,10 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
     <Bug id="skills-1" style="right: 10%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" walk="x -2rem" />
   </section>
 
-  <!-- Level 3: the Kit. The platform and headset chips are buttons: a press opens that chip in place
-       into a small card with its detail inside it (aria-expanded, aria-controls); the chips after it
-       reflow. Without script every one is open, its detail showing. -->
+  <!-- Level 3: the Kit. The platform and headset chips are buttons: a press opens a small bubble
+       under that chip with its detail, floating over what is below (nothing moves); aria-expanded,
+       aria-controls, the line read out through a status line. Without script the details are plain
+       lines under each group. -->
   <section class="level level--green has-join-bottom kit" data-level="3" aria-labelledby="kit-title">
     <Join kind="terrain" from="var(--field-green)" to="var(--pr-navy)" seed="about-story" />
     <div class="level__head">
@@ -119,14 +120,13 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
             <ul role="list" class="kit__chips">
               {g.chips.map((c, i) =>
                 c.detail ? (
-                  <li class="kit__item kit__item--more">
-                    <button type="button" class="chip chip--more" aria-expanded="true" aria-controls={`tip-${g.id}-${i}`} data-chip>
+                  <li class="kit__item">
+                    <button type="button" class="chip chip--more" aria-expanded="false" aria-controls={`tip-${g.id}-${i}`} data-chip>
                       <span>{c.name}</span>
                       <svg class="chip__mark" viewBox="0 0 5 5" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
                         <path class="chip__plus" d="M2 0h1v5H2zM0 2h2v1H0zM3 2h2v1H3z" fill="currentColor" />
                       </svg>
                     </button>
-                    <span class="chip__tip" id={`tip-${g.id}-${i}`}>{c.detail}</span>
                   </li>
                 ) : (
                   <li class="kit__item">
@@ -135,9 +135,26 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
                 ),
               )}
             </ul>
+            {g.chips.some((c) => c.detail) && (
+              <div class="kit__tips">
+                {g.chips.map(
+                  (c, i) =>
+                    c.detail && (
+                      <p class="chip__tip" id={`tip-${g.id}-${i}`} data-tip>
+                        <b class="chip__tip-name">{c.name}:</b> {c.detail}
+                        <button type="button" class="chip__close" data-tip-close>
+                          <span class="visually-hidden">Close</span>
+                          <svg viewBox="0 0 5 5" width="10" height="10" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path d="M0 0h1v1H0zM4 0h1v1H4zM1 1h1v1H1zM3 1h1v1H3zM2 2h1v1H2zM1 3h1v1H1zM3 3h1v1H3zM0 4h1v1H0zM4 4h1v1H4z" fill="currentColor" /></svg>
+                        </button>
+                      </p>
+                    ),
+                )}
+              </div>
+            )}
           </section>
         ))
       }
+      <p class="visually-hidden" role="status" data-kit-live></p>
     </div>
     <Bug id="skills-2" style="right: 10%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" walk="x -2rem" />
   </section>
@@ -456,46 +473,82 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
     outline: 3px solid var(--pr-navy);
     outline-offset: 3px;
   }
-  /* A chip with a detail opens in place: the chip becomes a small light card, its name and mark on
-     top and the detail inside it under them; the chips after it reflow (nothing laid over anything).
-     One open at a time (the script). Below 30rem the open card takes the whole row. Without script
-     every one stands open, so every detail reads. */
+  /* A chip's bubble: a small light card under the chip with a pixel arrow pointing up at it (placed
+     by the script: --x is the arrow's place along it), floating over what is below, so nothing
+     moves. Without script the bubbles are plain lines under the group's chips. */
+  .kit__group {
+    position: relative;
+  }
+  .kit__tips {
+    margin-top: var(--s-2);
+    display: grid;
+    gap: 0.5rem;
+  }
   .chip__tip {
-    display: none;
-    padding: 0 0.75rem 0.75rem;
-    font-family: var(--font-text);
+    margin: 0;
+    max-width: 34em;
     font-size: 1rem;
     line-height: 1.45;
   }
-  .kit__item--more.is-open,
-  :global(html:not(.js)) .kit__item--more {
-    flex: 0 1 20rem;
-    display: flex;
-    flex-direction: column;
+  .chip__tip-name {
+    font-weight: 600;
+  }
+  .chip__close {
+    display: none;
+  }
+  :global(.js) .kit__tips {
+    display: contents;
+  }
+  :global(.js) .chip__tip {
+    position: absolute;
+    z-index: 6;
+    display: none;
+    width: max-content;
+    max-width: min(18rem, calc(100vw - 1rem));
+    padding: 0.75rem 2.75rem 0.75rem 0.875rem;
     background: var(--pr-light);
     color: var(--pr-navy);
     border: 2px solid var(--pr-navy);
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
   }
-  .kit__item--more.is-open .chip,
-  :global(html:not(.js)) .kit__item--more .chip {
-    width: 100%;
-    border: 0;
-    background: transparent;
-    color: var(--pr-navy);
-  }
-  .kit__item--more.is-open .chip__mark,
-  :global(html:not(.js)) .kit__item--more .chip__mark {
-    color: var(--pr-navy);
-  }
-  .kit__item--more.is-open .chip__tip,
-  :global(html:not(.js)) .kit__item--more .chip__tip {
+  :global(.js) .chip__tip.is-open {
     display: block;
   }
-  @media (max-width: 29.99rem) {
-    .kit__item--more.is-open,
-    :global(html:not(.js)) .kit__item--more {
-      flex-basis: 100%;
-    }
+  /* the arrow: a pixel triangle on the top edge, a navy outline round the light */
+  :global(.js) .chip__tip::before,
+  :global(.js) .chip__tip::after {
+    content: '';
+    position: absolute;
+    left: calc(var(--x, 1.5rem) - 0.5rem);
+    width: 1rem;
+    height: 0.5rem;
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+  :global(.js) .chip__tip::before {
+    top: calc(-0.5rem - 2px);
+    background: var(--pr-navy);
+  }
+  :global(.js) .chip__tip::after {
+    top: calc(-0.5rem + 1px);
+    background: var(--pr-light);
+  }
+  :global(.js) .chip__close {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    color: var(--pr-navy);
+  }
+  .chip__close:hover {
+    background: var(--field-light-surface);
+  }
+  .chip__close:focus-visible {
+    outline: 3px solid var(--pr-navy);
+    outline-offset: -3px;
   }
   @media (max-width: 63.99rem) {
     .kit__board {
@@ -871,41 +924,66 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
   startDeck();
   startSwipes();
 
-  // The Kit: a press opens a chip in place, its detail inside it, and closes any other; a second
-  // press, Escape or a press elsewhere closes it. The focus stays where it is.
+  // The Kit: a press opens the chip's bubble under it, floating (nothing moves), and closes any
+  // other; the chip again, the bubble's Close, Escape or a click elsewhere closes it. The bubble
+  // stays inside the screen, shifted sideways near an edge, its arrow on the chip's middle. The
+  // line is read out through the status line; the focus stays on the chip.
   const board = document.querySelector<HTMLElement>('[data-kit]');
-  if (board) {
-    const chips = Array.from(board.querySelectorAll<HTMLButtonElement>('[data-chip]'));
+  const live = board?.querySelector<HTMLElement>('[data-kit-live]');
+  if (board && live) {
     let open: HTMLButtonElement | null = null;
-    const set = (chip: HTMLButtonElement, on: boolean) => {
-      chip.setAttribute('aria-expanded', String(on));
-      chip.parentElement!.classList.toggle('is-open', on);
+    const tipOf = (chip: HTMLButtonElement) => document.getElementById(chip.getAttribute('aria-controls')!)!;
+    const place = () => {
+      if (!open) return;
+      const tip = tipOf(open);
+      const group = open.closest<HTMLElement>('.kit__group')!.getBoundingClientRect();
+      const chip = open.getBoundingClientRect();
+      const width = tip.offsetWidth;
+      const mid = chip.left + chip.width / 2;
+      const gap = 8;
+      const left = Math.min(Math.max(mid - width / 2, gap), document.documentElement.clientWidth - gap - width);
+      tip.style.left = `${Math.round(left - group.left)}px`;
+      tip.style.top = `${Math.round(chip.bottom - group.top + 12)}px`;
+      tip.style.setProperty('--x', `${Math.round(mid - left)}px`);
     };
-    // (with script they start closed; the markup has them open for a page without it)
-    chips.forEach((c) => set(c, false));
     const shut = () => {
-      if (open) set(open, false);
+      if (!open) return;
+      open.setAttribute('aria-expanded', 'false');
+      tipOf(open).classList.remove('is-open');
       open = null;
     };
-    for (const chip of chips) {
-      chip.addEventListener('click', () => {
-        const was = open === chip;
+    const show = (chip: HTMLButtonElement) => {
+      shut();
+      open = chip;
+      chip.setAttribute('aria-expanded', 'true');
+      const tip = tipOf(chip);
+      tip.classList.add('is-open');
+      place();
+      // (the name and the line, without the Close button's words)
+      live.textContent = [...tip.childNodes].filter((n) => !(n instanceof HTMLButtonElement)).map((n) => n.textContent).join('').replace(/\s+/g, ' ').trim();
+    };
+    board.addEventListener('click', (e) => {
+      const t = e.target as Element;
+      const chip = t.closest<HTMLButtonElement>('[data-chip]');
+      if (chip) {
+        if (open === chip) shut();
+        else show(chip);
+        return;
+      }
+      if (t.closest('[data-tip-close]')) {
+        const was = open;
         shut();
-        if (!was) {
-          set(chip, true);
-          open = chip;
-        }
-      });
-    }
+        was?.focus();
+      }
+    });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') shut();
     });
-    // (on the click, never the press: closing on the press reflows the chips under the pointer, and
-    // the click would land on whatever moved there)
     document.addEventListener('click', (e) => {
       const t = e.target as Element;
-      if (open && !open.parentElement!.contains(t) && !t.closest?.('[data-chip]')) shut();
+      if (open && !t.closest?.('[data-chip], [data-tip]')) shut();
     });
+    addEventListener('resize', place);
   }
 
   // Bug Sweep: the game's code arrives only when Play is pressed (a module of its own).
