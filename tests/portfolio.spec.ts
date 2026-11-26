@@ -753,3 +753,43 @@ test('the Games page has two levels and ends with the list, the join running int
   await expect(page.locator('main [data-bug]')).toHaveCount(4);
 });
 
+
+// Each role in a company header on a phone: the title on one line, the dates on their own line
+// under it (smaller, lighter), no dot; from 48rem title and dates share a line with the dot.
+for (const width of [300, 375, 390, 1440]) {
+  test(`company headers at ${width}px: each role's title on one line, the dates ${width < 768 ? 'under it, no dot' : 'beside it after the dot'}`, { tag: ['@viewports'] }, async ({ browser }, info) => {
+    const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto('/portfolio/');
+    await page.evaluate(() => document.fonts.ready);
+    const roles = await page.locator('.group__role').evaluateAll((lis) =>
+      lis.map((li) => {
+        const title = li.querySelector('.group__title')!;
+        const dates = li.querySelector('.group__dates')!.getBoundingClientRect();
+        const lineH = parseFloat(getComputedStyle(title).lineHeight);
+        const t = title.getClientRects();
+        const tops = new Set([...t].map((r) => Math.round(r.top)));
+        const range = document.createRange();
+        range.selectNodeContents(title);
+        const lines = new Set([...range.getClientRects()].filter((r) => r.width > 0.5).map((r) => Math.round(r.top))).size;
+        const last = [...range.getClientRects()].pop()!;
+        return { text: title.textContent, lines, lineH, tops: tops.size, datesBelow: dates.top >= last.bottom - 1, dot: li.querySelector('.group__dot')!.getClientRects().length > 0, titleSize: parseFloat(getComputedStyle(title).fontSize), datesSize: parseFloat(getComputedStyle(li.querySelector('.group__dates')!).fontSize) };
+      }),
+    );
+    expect(roles.length).toBeGreaterThan(3);
+    info.annotations.push({ type: 'role-title-lines', description: JSON.stringify({ width, lines: roles.map((r) => r.lines) }) });
+    for (const r of roles) {
+      if (width < 768) {
+        expect(r.lines, `${r.text} at ${width}px`).toBe(1);
+        expect(r.datesBelow, `${r.text}: dates under the title`).toBe(true);
+        expect(r.dot).toBe(false);
+        expect(r.datesSize).toBeLessThan(r.titleSize);
+      } else {
+        expect(r.lines).toBe(1);
+        expect(r.datesBelow).toBe(false);
+        expect(r.dot).toBe(true);
+      }
+    }
+    await context.close();
+  });
+}

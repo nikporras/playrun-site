@@ -76,7 +76,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
                 <ul role="list" class="group__roles">
                   {g.roles.map((r) => (
                     <li class="group__role">
-                      {r.title} <span class="group__dot" aria-hidden="true">&middot;</span> <span class="group__dates">{r.when}</span>
+                      <span class="group__title">{r.title}</span> <span class="group__dot" aria-hidden="true">&middot;</span> <span class="group__dates">{r.when}</span>
                     </li>
                   ))}
                 </ul>
@@ -108,7 +108,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
                   <h4 class="others__name">{e.name}</h4>
                   {e.roles.map((r) => (
                     <p class="others__role">
-                      {r.title} <span class="group__dot" aria-hidden="true">&middot;</span> <span class="group__dates">{r.when}</span>
+                      <span class="group__title">{r.title}</span> <span class="group__dot" aria-hidden="true">&middot;</span> <span class="group__dates">{r.when}</span>
                     </p>
                   ))}
                   <p class="others__lead">{e.lead}</p>
@@ -249,6 +249,32 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     grid-column: span 3;
   }
 
+  /* On phones each role is two lines: the title a step smaller, then the dates under it, smaller
+     and lighter, no dot. From 48rem title and dates share a line with the dot between. */
+  @media (max-width: 47.99rem) {
+    .group__roles,
+    .others__role {
+      font-size: 0.9375rem;
+      line-height: 1.35;
+    }
+    .group__role + .group__role,
+    .others__role + .others__role {
+      margin-top: 0.5rem;
+    }
+    .group__title,
+    .group__dates {
+      display: block;
+    }
+    .group__dot {
+      display: none;
+    }
+    .group__dates {
+      margin-top: 0.1rem;
+      font-size: 0.875rem;
+      font-weight: 400;
+      color: var(--muted-2, var(--muted));
+    }
+  }
   @media (max-width: 63.99rem) {
     .group + .group {
       margin-top: var(--s-5);
