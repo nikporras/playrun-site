@@ -343,7 +343,7 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     <div class="level__head">
       <p class="flag" data-nosnippet data-enter><span>Level 3 &middot; Test plan</span></p>
       <h2 id="testplan-title" class="level__title" data-enter="wipe">Test plan: Bug Sweep</h2>
-      <p class="level__lead" data-enter style="--enter-delay: 80ms">The plan for the game on my <a href="/about/#sweep-title">About page</a>, written the way I write one for a game build.</p>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">The plan for the game on my <a href="/about/#bug-sweep">About page</a>, written the way I write one for a game build.</p>
     </div>
     <div class="testplan__grid level__body">
       <section class="tp" aria-labelledby="tp-scope">
@@ -484,10 +484,9 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
             <ul class="ticket__notes">{t.cause.map((c) => <li>{c}</li>)}</ul>
             <h4 class="ticket__sub">Resolution</h4>
             <ul class="ticket__notes">
-              {t.resolution.map((r) => (
-                <li>{r.includes('Bug Sweep on my About page') ? <Fragment>{r.replace(/Bug Sweep on my About page\.$/, '')}<a href="/about/#sweep-title">Bug Sweep on my About page</a>.</Fragment> : r}</li>
-              ))}
+              {t.resolution.map((r) => <li>{r}</li>)}
             </ul>
+            {t.play && <a class="button ticket__play" href={t.play.href}>{t.play.label}</a>}
           </article>
         ))
       }
@@ -1106,8 +1105,8 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     font-size: 0.9375rem;
     white-space: nowrap;
   }
-  .testplan a,
-  .reports a {
+  .testplan a:not(.button),
+  .reports a:not(.button) {
     color: inherit;
   }
   @media (max-width: 63.99rem) {
@@ -1240,6 +1239,12 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
   }
   .ticket__evidence {
     margin: 0;
+  }
+  .ticket__play {
+    margin-top: var(--s-3);
+    font-size: 1.125rem;
+    min-height: 2.75rem;
+    padding-inline: 1.25rem;
   }
   .ticket__evidence :global(img) {
     width: 100%;

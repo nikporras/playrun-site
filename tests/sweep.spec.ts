@@ -7,7 +7,7 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
  * hits is game over, and Try again starts afresh. The suite's build carries a handle on the game
  * (`sweepTest`, test builds only; the production build leaves it out, checked in CI).
  */
-type State = { mode: string; lives: number; shipX: number; shipW: number; bugW: number; stars: { x: number; y: number }[]; left: number; shots: number; touch: boolean; scale: number; bugs: { x: number; y: number; alive: boolean; diving: boolean }[]; glitching: boolean; glitchBug: number; clock: number };
+type State = { mode: string; lives: number; shipX: number; shipW: number; bugW: number; stars: { x: number; y: number }[]; left: number; shots: number; touch: boolean; scale: number; bugs: { x: number; y: number; alive: boolean; diving: boolean }[]; glitching: boolean; glitchBug: number; glitchSeconds: number; clock: number };
 // (before the game's code has arrived there is no handle yet: the mode reads 'none')
 const state = (page: Page) => page.locator('[data-sweep]').evaluate((el) => (el as unknown as { sweepTest?: { state: () => unknown } }).sweepTest?.state() ?? { mode: 'none' }) as Promise<State>;
 const hook = (page: Page, name: string, arg?: unknown) =>
@@ -422,6 +422,47 @@ test.describe('Bug Sweep, known issue QA-002 (intentional)', () => {
     for (const i of [0, 1, 3, 4, 5, 6, 8, 9]) expect(s2.bugs[i].alive).toBe(true);
   });
 
+  // Reproducible: the glitching bug makes the first dive of every game, 2 to 3 seconds after Play,
+  // on a desktop and on a touch screen, whatever the seed; later dives stay random.
+  for (const touch of [false, true]) {
+    test(`the third bug in the top row makes the first dive of every game, 2 to 3 seconds in, and glitches for about 0.8 s as it lands (${touch ? 'touch' : 'desktop'})`, { tag: ['@bugsweep'] }, async ({ browser }) => {
+      const context = await browser.newContext(touch ? { viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true } : { viewport: { width: 1440, height: 900 } });
+      const page = await context.newPage();
+      await openAbout(page);
+      for (const seed of [1, 2, 3]) {
+        if (seed === 1) await play(page);
+        else {
+          // (a new game: Esc pauses, then the page reloads for a fresh one)
+          await page.reload();
+          await page.locator('[data-sweep]').scrollIntoViewIfNeeded();
+          await play(page);
+        }
+        await hook(page, 'manual', true);
+        await hook(page, 'seed', seed);
+        let first = -1;
+        let at = 0;
+        for (let k = 0; k < 60 && first < 0; k++) {
+          await hook(page, 'advance', 100);
+          const st = await state(page);
+          first = st.bugs.findIndex((b) => b.diving);
+          at = st.clock;
+        }
+        expect(first, `seed ${seed}: the first dive is the third bug in the top row`).toBe(2);
+        expect(at, 'between 2 and 3 seconds in').toBeGreaterThanOrEqual(2);
+        expect(at).toBeLessThanOrEqual(3);
+        // (the ship out of the way, so the dive misses and comes back round)
+        await hook(page, 'aimAt', 4);
+        for (let k = 0; k < 300 && (await state(page)).bugs[2].diving; k++) await hook(page, 'advance', 50);
+        const landed = await state(page);
+        expect(landed.bugs[2].diving).toBe(false);
+        expect(landed.bugs[2].alive).toBe(true);
+        expect(landed.glitching, 'it glitches as it lands').toBe(true);
+        expect(landed.glitchSeconds).toBeCloseTo(0.8, 5);
+      }
+      await context.close();
+    });
+  }
+
   test('it happens to the same bug every time it lands back in formation after a dive, and to no other', { tag: ['@bugsweep'] }, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await openAbout(page);
@@ -441,8 +482,11 @@ test.describe('Bug Sweep, known issue QA-002 (intentional)', () => {
       const s = await landed(2);
       expect(s.bugs[2].diving, 'back in formation').toBe(false);
       expect(s.glitching, `round ${round + 1}: it glitches as it lands`).toBe(true);
-      await hook(page, 'advance', 400);
-      expect((await state(page)).glitching, 'over after 0.3 s').toBe(false);
+      // (about 0.8 s: still on at 0.7 s, over by 0.9 s)
+      await hook(page, 'advance', 700);
+      expect((await state(page)).glitching, 'still on at 0.7 s').toBe(true);
+      await hook(page, 'advance', 200);
+      expect((await state(page)).glitching, 'over after about 0.8 s').toBe(false);
     }
     const other = await landed(0);
     expect(other.bugs[0].diving).toBe(false);

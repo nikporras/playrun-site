@@ -24,6 +24,8 @@ export type Ticket = {
   evidence: { alt: string; caption: string };
   cause: string[];
   resolution: string[];
+  /** a way to try it yourself, as a button under the resolution */
+  play?: { label: string; href: string };
 };
 
 export const tickets: Ticket[] = [
@@ -74,22 +76,23 @@ export const tickets: Ticket[] = [
     ],
     severity: ['Low', "Cosmetic: the bug's hitbox, movement and score are unaffected."],
     priority: ['Low', 'It does not affect play.'],
-    frequency: 'Always, every time that bug returns from a dive.',
+    frequency: 'Always: it makes the first dive of every game and glitches as it lands, and again after any later dive it makes.',
     preconditions: 'The game playing, with the third bug in the top row not yet shot.',
     steps: [
       'Open the About page and press Play Bug Sweep.',
-      'Leave the third bug in the top row alone.',
-      'Wait for it to dive and come back round. Dives are picked at random, so this can take several dives.',
-      'Watch it as it lands in its place.',
+      'Watch the third bug in the top row: it dives first, about 2 to 3 seconds in.',
+      'Do not shoot it, and watch it come back round.',
+      'It glitches as it lands back in formation.',
     ],
     expected: 'It settles in formation looking like the other bugs.',
-    actual: 'For about 0.3 seconds its sprite splits into slices that jump sideways, then it looks normal again.',
+    actual: 'For about 0.8 seconds its sprite splits into slices that jump sideways and flicker, then it looks normal again.',
     evidence: {
       alt: 'The Bug Sweep field: ten bugs in two rows, the third in the top row drawn as slices shifted sideways.',
       caption: 'Captured in a test build with the glitch triggered on demand.',
     },
-    cause: ["Intentional. I left it in on purpose as a live example: the slice offset is drawn for 0.3 seconds after that bug's dive ends, and only the drawing changes."],
+    cause: ["Intentional. I left it in on purpose as a live example: that bug always makes the first dive, and the slice offset is drawn for 0.8 seconds after its dive ends. Only the drawing changes."],
     resolution: ["Won't fix: kept on purpose as a live example. Try to reproduce it yourself in Bug Sweep on my About page."],
+    play: { label: 'Play Bug Sweep and try to reproduce it', href: '/about/#bug-sweep' },
   },
 ];
 

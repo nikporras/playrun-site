@@ -16,8 +16,10 @@
  * plays whatever the motion setting: the player starts it on purpose.
  *
  * KNOWN ISSUE QA-002 (intentional, kept on purpose as a live example for the QA Lab's bug reports):
- * the third bug in the top row glitches for a moment each time it lands back in formation after a
- * dive, its sprite drawn as three slices jumping sideways, like the name glitch on Home. Only the
+ * the third bug in the top row makes the first dive of every game (2.5 s after Play, so a player
+ * sees it come back within the first few seconds) and glitches for about 0.8 s each time it lands
+ * back in formation after a dive, its sprite drawn as three slices jumping sideways with one
+ * flicker, like the name glitch on Home. Only the
  * drawing changes: its place, hitbox, movement and score are the same as every other bug's. See
  * GLITCH below. Not a test failure: tests/sweep.spec.ts checks it stays purely visual.
  */
@@ -33,9 +35,10 @@ const SHIP_H = SHIP.length;
 const BUG_W = BUG[0].length;
 const BUG_H = BUG.length;
 // KNOWN ISSUE QA-002 (intentional): the bug that glitches (row 0, col 2: the third in the top row,
-// index 2 in the formation), how long the glitch lasts after it lands, and the slices: rows of its
-// sprite and how far each one jumps sideways, in game pixels.
-const GLITCH = { bug: 2, seconds: 0.3, slices: [[0, 3, -2], [3, 3, 2], [6, BUG_H - 6, -1]] as const };
+// index 2 in the formation), how long the glitch lasts after it lands, the slices (rows of its
+// sprite and how far each one jumps sideways, in game pixels), the one flicker in the middle (the
+// sprite whole for that long) and when its first dive starts.
+const GLITCH = { bug: 2, seconds: 0.8, slices: [[0, 3, -4], [3, 3, 3], [6, BUG_H - 6, -3]] as const, flicker: 0.05, firstDive: 2.5 };
 const SHIP_Y = H - SHIP_H - 3;
 
 type Mode = 'play' | 'paused' | 'won' | 'over';
@@ -127,7 +130,9 @@ export function startSweep(root: HTMLElement) {
   let shipX = (W - SHIP_W) / 2;
   let hurt = 0; // seconds of blinking after a hit, when nothing can hit the ship
   let cooldown = 0;
-  let nextDive = 2;
+  let nextDive = GLITCH.firstDive;
+  // (KNOWN ISSUE QA-002: the glitching bug makes the first dive of every game)
+  let firstDive = true;
   let clock = 0;
   // (KNOWN ISSUE QA-002: until when, on the game clock, the glitching bug is drawn in slices)
   let glitchUntil = -1;
@@ -156,7 +161,8 @@ export function startSweep(root: HTMLElement) {
     cooldown = 0;
     clock = 0;
     glitchUntil = -1;
-    nextDive = 2;
+    nextDive = GLITCH.firstDive;
+    firstDive = true;
     shots = [];
     bursts = [];
     bugs = [];
@@ -349,7 +355,10 @@ export function startSweep(root: HTMLElement) {
       const diving = bugs.filter((b) => b.alive && b.dive).length;
       const ready = bugs.filter((b) => b.alive && !b.dive);
       if (diving < t.most && ready.length) {
-        const b = ready[Math.floor(random() * ready.length)];
+        // KNOWN ISSUE QA-002: the first dive of a game is the glitching bug's, the rest at random
+        const picked = ready[Math.floor(random() * ready.length)];
+        const b = firstDive && ready.includes(bugs[GLITCH.bug]) ? bugs[GLITCH.bug] : picked;
+        firstDive = false;
         b.dive = { phase: 'down', t: 0, x0: b.x, y0: b.y, target: shipX + SHIP_W / 2 - BUG_W / 2, dir: random() < 0.5 ? -1 : 1 };
       }
       const [lo, hi] = t.every;
@@ -374,10 +383,10 @@ export function startSweep(root: HTMLElement) {
       const bob = Math.floor(clock * 3 + b.col) % 2;
       const bx = Math.round(b.x);
       const by = Math.round(b.y) + bob;
-      // KNOWN ISSUE QA-002 (intentional): the glitching bug in slices, two quick bursts like the
-      // name glitch on Home (the first and the last third of the glitch), whole in between.
+      // KNOWN ISSUE QA-002 (intentional): the glitching bug in slices for the whole glitch, whole
+      // again for one flicker in the middle.
       const glitchLeft = glitchUntil - clock;
-      if (b === bugs[GLITCH.bug] && glitchLeft > 0 && (glitchLeft > (GLITCH.seconds * 2) / 3 || glitchLeft < GLITCH.seconds / 3)) {
+      if (b === bugs[GLITCH.bug] && glitchLeft > 0 && Math.abs(glitchLeft - GLITCH.seconds / 2) > GLITCH.flicker / 2) {
         for (const [y0, h, dx] of GLITCH.slices) ctx.drawImage(bugArt, 0, y0, BUG_W, h, (bx + dx) * s, (by + y0) * s, BUG_W * s, h * s);
         continue;
       }
@@ -474,7 +483,7 @@ export function startSweep(root: HTMLElement) {
   // production build leaves this out entirely, so nothing can be unlocked from the console.
   if (import.meta.env.DEV || import.meta.env.PUBLIC_TEST_HOOKS === '1') {
     (root as HTMLElement & { sweepTest?: unknown }).sweepTest = {
-      state: () => ({ mode, lives, shipX, shipW: SHIP_W, bugW: BUG_W, stars, left: left(), shots: shots.length, touch: touchQuery.matches, bugs: bugs.map((b) => ({ x: b.x, y: b.y, alive: b.alive, diving: !!b.dive })), scale: s, glitching: clock < glitchUntil, glitchBug: GLITCH.bug, clock }),
+      state: () => ({ mode, lives, shipX, shipW: SHIP_W, bugW: BUG_W, stars, left: left(), shots: shots.length, touch: touchQuery.matches, bugs: bugs.map((b) => ({ x: b.x, y: b.y, alive: b.alive, diving: !!b.dive })), scale: s, glitching: clock < glitchUntil, glitchBug: GLITCH.bug, glitchSeconds: GLITCH.seconds, clock }),
       // KNOWN ISSUE QA-002 on demand: the glitch starts now, as if the bug had just landed
       glitch: () => {
         glitchUntil = clock + GLITCH.seconds;

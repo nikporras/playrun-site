@@ -570,7 +570,9 @@ test('two bug reports written like real tickets, each with every field, steps, e
   const two = tickets.nth(1);
   await expect(two).toContainText('Low. Cosmetic');
   await expect(two.locator('figcaption')).toHaveText('Captured in a test build with the glitch triggered on demand.');
-  await expect(two.getByRole('link', { name: 'Bug Sweep on my About page' })).toHaveAttribute('href', '/about/#sweep-title');
+  await expect(two.getByRole('link', { name: 'Play Bug Sweep and try to reproduce it' })).toHaveAttribute('href', '/about/#bug-sweep');
+  await expect(two).toContainText('Watch the third bug in the top row: it dives first, about 2 to 3 seconds in.');
+  await expect(two).toContainText('For about 0.8 seconds');
   await expect(two).toContainText("Won't fix: kept on purpose as a live example.");
   // the template, on the same scale as the tickets
   await expect(reports.locator('#template-title')).toHaveText('My bug report template');
@@ -590,3 +592,36 @@ for (const width of [1440, 375]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   });
 }
+
+// QA-002's button goes to the game on About and lands with its heading in view, above the bottom
+// bar on a phone.
+for (const [width, height] of [[1440, 900], [375, 812]] as const) {
+  test(`at ${width}x${height} QA-002's button lands on Bug Sweep with the game's heading in view`, { tag: ['@links'] }, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/qa-lab/');
+    const button = page.locator('#qa-002').getByRole('link', { name: 'Play Bug Sweep and try to reproduce it' });
+    await button.scrollIntoViewIfNeeded();
+    await button.click();
+    await expect(page).toHaveURL(/\/about\/#bug-sweep$/);
+    const heading = page.locator('#sweep-title');
+    // (the page scrolls smoothly to the game: wait for it to come to rest)
+    const where = () =>
+      heading.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const bar = document.querySelector('.tabbar');
+        const floor = bar && getComputedStyle(bar).display !== 'none' ? bar.getBoundingClientRect().top : innerHeight;
+        return { top: Math.round(r.top), bottom: Math.round(r.bottom), floor: Math.round(floor), y: Math.round(scrollY) };
+      });
+    await expect
+      .poll(async () => {
+        const b = await where();
+        return b.top >= 0 && b.bottom <= b.floor;
+      }, { timeout: 8000 })
+      .toBe(true);
+    const box = await where();
+    expect(box.top, 'the heading below the top of the screen').toBeGreaterThanOrEqual(0);
+    expect(box.bottom, 'the heading clear of the bottom bar').toBeLessThanOrEqual(box.floor);
+    await expect(page.getByRole('button', { name: 'Play Bug Sweep' })).toBeVisible();
+  });
+}
+

@@ -164,7 +164,7 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
       <h2 id="play-title" class="level__title">I love playing and making games</h2>
       <p class="level__lead">Here's one I made while building this site.</p>
     </div>
-    <div class="sweep level__body" data-sweep>
+    <div class="sweep level__body" id="bug-sweep" data-sweep>
       <p id="sweep-desc" class="visually-hidden">
         Bug Sweep is a short arcade game. You fly a pixel ship along the bottom of the screen and fire upward at ten bugs that fly in formation at the top; now and then one dives at the ship.
         Sweep all ten to clear the level. A bug that hits the ship costs a life, and after three it's game over.
@@ -642,6 +642,8 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
      crisp at every size), then on touch screens and on tablets and phones the Left, Fire and
      Right buttons, in the page's flow so the bottom bar never covers them. */
   .sweep {
+    /* (a link to #bug-sweep lands with the game's heading in view, clear of the screen's top) */
+    scroll-margin-top: var(--s-3);
     /* (text selected on the navy screen shows green, as in the footer) */
     --sel-bg: var(--accent);
     --sel-ink: var(--accent-ink);
