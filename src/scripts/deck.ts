@@ -13,17 +13,23 @@ export function startDeck() {
   if (!deck) return;
   const cards = Array.from(deck.querySelectorAll<HTMLElement>('.deck__card'));
   const stage = deck.querySelector<HTMLElement>('.deck__stage');
-  if (!stage || cards.length < 2) return;
+  const pin = deck.querySelector<HTMLElement>('.deck__pin');
+  if (!stage || !pin || cards.length < 2) return;
   const wide = matchMedia('(min-width: 64rem)');
   const ease = (k: number) => 1 - Math.pow(1 - k, 3);
   const steps = cards.length - 1;
   let on = false;
   deck.style.setProperty('--n', String(cards.length));
   const top = () => deck.getBoundingClientRect().top + scrollY;
-  const range = () => Math.max(1, deck.offsetHeight - innerHeight);
+  // (the scroll the deck stays pinned for: its height less the pinned stage's own)
+  const range = () => Math.max(1, deck.offsetHeight - pin.offsetHeight);
   const measure = () => {
-    if (!on) return;
+    if (!on) {
+      deck.style.removeProperty('--pin-h');
+      return;
+    }
     stage.style.setProperty('--stage-h', `${Math.max(...cards.map((c) => c.offsetHeight)) + cards.length * 12}px`);
+    deck.style.setProperty('--pin-h', `${pin.offsetHeight}px`);
   };
   const scrub = () => {
     if (!on) return;
@@ -66,7 +72,18 @@ export function startDeck() {
   });
   // A card's content can grow after it is dealt (a live result arriving): keep the stage tall enough.
   if ('ResizeObserver' in window) {
-    const ro = new ResizeObserver(() => measure());
+    // (on the next frame: measuring inside the callback changes the deck's height in the same
+    // frame and the browser reports a ResizeObserver loop)
+    let pending = false;
+    const ro = new ResizeObserver(() => {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(() => {
+        pending = false;
+        measure();
+        scrub();
+      });
+    });
     cards.forEach((c) => ro.observe(c));
   }
   const jump = () => {

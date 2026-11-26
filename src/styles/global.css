@@ -1031,7 +1031,9 @@ html:not(.games) .bug {
    than the last and tilted its own few degrees. Transform only; the card's own entrance (opacity,
    a transition) is off. Without is-deck the cards stand in flow. */
 .deck.is-deck {
-  height: calc(100vh + (var(--n, 5) - 1) * 70vh);
+  /* (the stage as tall as its cards, --pin-h from deck.ts, plus 0.7 of a screen of scroll for each
+     card after the first: the pin lets go as the last card lands, with no empty tail after it) */
+  height: calc(var(--pin-h, 100vh) + (var(--n, 5) - 1) * 70vh);
   overflow: clip;
 }
 /* (the cards start at the stage's top, so the first one sits under the level head at the usual
@@ -1043,10 +1045,6 @@ html:not(.games) .bug {
 .deck.is-deck .deck__pin {
   position: sticky;
   top: 0;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
   padding-block: var(--s-3);
 }
 .deck.is-deck .deck__stage {

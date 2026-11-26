@@ -19,8 +19,9 @@ test.describe('The QA Lab deck', () => {
     await expect(cards).toHaveCount(6);
     await expect(cards.locator('.step__title')).toHaveText(['Smoke test', 'Responsive', 'Accessibility', 'Links', 'Performance', 'Test report']);
     const box = (await deck.boundingBox())!;
-    expect(box.height, 'one screen on show and 0.7 of a screen per further card').toBeGreaterThanOrEqual(900 + 5 * 630 - 2);
-    expect(box.height).toBeLessThanOrEqual(900 + 5 * 630 + 2);
+    const pinH = await page.locator('.deck__pin').evaluate((el) => (el as HTMLElement).offsetHeight);
+    expect(box.height, 'the stage on show and 0.7 of a screen per further card').toBeGreaterThanOrEqual(pinH + 5 * 630 - 2);
+    expect(box.height).toBeLessThanOrEqual(pinH + 5 * 630 + 2);
     expect(await page.locator('.deck__pin').evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
     const top = await deck.evaluate((el) => el.getBoundingClientRect().top + scrollY);
     const state = () =>
@@ -38,7 +39,7 @@ test.describe('The QA Lab deck', () => {
     expect(s[0].onScreen).toBe(true);
     expect(s.slice(1).every((c) => !c.onScreen), 'the other five are off screen').toBe(true);
     // half way: the third card has landed, the fifth has not; the pinned content has not moved
-    const range = box.height - 900;
+    const range = box.height - pinH;
     await page.evaluate((y) => window.scrollTo(0, y), top + range / 2);
     await expect.poll(async () => (await state())[2].e).toBeGreaterThanOrEqual(0.99);
     s = await state();
@@ -157,7 +158,7 @@ test.describe('The QA Lab deck', () => {
     await expect(page.locator('[data-deck]')).toHaveCount(1);
     await expect(page.locator('[data-deck]')).toHaveClass(/is-deck/);
     const top = await page.locator('[data-deck]').evaluate((el) => el.getBoundingClientRect().top + scrollY);
-    const range = await page.locator('[data-deck]').evaluate((el) => (el as HTMLElement).offsetHeight - innerHeight);
+    const range = await page.locator('[data-deck]').evaluate((el) => (el as HTMLElement).offsetHeight - (el.querySelector('.deck__pin') as HTMLElement).offsetHeight);
     await page.evaluate((y) => scrollTo(0, y), top + range);
     await expect.poll(() => page.locator('.area').last().evaluate((el) => getComputedStyle(el).getPropertyValue('--e').trim())).toBe('1');
     const looks = await page.locator('.area').evaluateAll((els) => els.map((el) => ({ pos: getComputedStyle(el).position, transform: getComputedStyle(el).transform })));
@@ -194,3 +195,32 @@ for (const [width, height] of [[1440, 900], [1920, 1080]] as const) {
     });
   }
 }
+
+// No empty tail: the pin lets go as the last card lands, and the next level follows the deck at
+// the level's own foot (its padding, the join included), never a screen of empty field.
+for (const path of ['/about/', '/qa-lab/']) {
+  for (const [width, height] of [[1280, 720], [1440, 900], [1915, 910], [1920, 1080]] as const) {
+    test(`${path} at ${width}x${height}: once the last card lands the next level follows the deck at the normal gap, with no empty tail`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto(path);
+      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+      await page.evaluate(() => document.fonts.ready);
+      const deck = page.locator('[data-deck]');
+      await expect(deck).toHaveClass(/is-deck/);
+      const g = await deck.evaluate((d) => ({ top: d.getBoundingClientRect().top + scrollY, range: (d as HTMLElement).offsetHeight - (d.querySelector('.deck__pin') as HTMLElement).offsetHeight }));
+      // just past the last landing
+      await page.evaluate((y) => window.scrollTo(0, y), g.top + g.range + 2);
+      await expect.poll(() => page.locator('.deck__card').last().evaluate((el) => parseFloat((el as HTMLElement).style.getPropertyValue('--e') || '0'))).toBeGreaterThanOrEqual(0.99);
+      const m = await deck.evaluate((d) => {
+        const level = d.closest('.level')!;
+        const next = level.nextElementSibling!;
+        const stack = Math.max(...[...d.querySelectorAll('.deck__card')].map((c) => c.getBoundingClientRect().bottom));
+        return { deckBottom: d.getBoundingClientRect().bottom, stack, next: next.getBoundingClientRect().top, gap: parseFloat(getComputedStyle(level).paddingBottom), pinTop: d.querySelector('.deck__pin')!.getBoundingClientRect().top };
+      });
+      expect(m.next - m.deckBottom, 'the deck to the next level: the normal gap').toBeLessThanOrEqual(m.gap + 2);
+      // (the stack ends at the deck's foot: nothing empty under it inside the deck)
+      expect(m.deckBottom - m.stack, 'no empty field under the stack').toBeLessThanOrEqual(64);
+    });
+  }
+}
+
