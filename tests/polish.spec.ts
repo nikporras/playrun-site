@@ -29,7 +29,7 @@ test('every page in the sitemap carries the date of the last commit to its sourc
     '/': ['src/pages/index.astro', ...data],
     '/portfolio/': ['src/pages/portfolio.astro', 'src/components/GameCard.astro', ...data],
     '/about/': ['src/pages/about.astro', 'src/data/about.ts', 'src/data/skills.ts', 'src/components/Swipe.astro', ...data],
-    '/qa-lab/': ['src/pages/testing.astro', 'src/components/Swipe.astro', 'src/scripts/checks.ts', 'src/data/suite.ts', ...data],
+    '/qa-lab/': ['src/pages/qa-lab.astro', 'src/components/Swipe.astro', 'src/scripts/checks.ts', 'src/data/suite.ts', 'src/data/qalab.ts', 'src/data/samples.ts', ...data],
   };
   for (const e of entries) {
     expect(e.lastmod, `${e.path} has a date`).toBeTruthy();

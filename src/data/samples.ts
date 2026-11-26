@@ -1,7 +1,7 @@
 /**
- * Parked for the future work samples page, shown nowhere for now (nothing imports it, so it ships
- * nowhere): the bug report template that was on the Testing page's report. `build` names the build
- * it is written against, such as the site and the date it was deployed.
+ * My bug report template, shown under the two tickets in the QA Lab (Level 4). `build` names the
+ * build it is written against: the site and the date it was deployed. Severity on the same Low to
+ * Critical scale as the tickets.
  */
 export const bugReportTemplate = (build: string) => `Title: [what broke, in one line]
 Build: ${build}
@@ -12,5 +12,5 @@ Steps to reproduce:
   3.
 Expected:
 Actual:
-Severity: [Blocker / Major / Minor / Cosmetic]
+Severity: [Low / Medium / High / Critical]
 Attachments: [screenshot or video]`;

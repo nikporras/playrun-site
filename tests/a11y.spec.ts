@@ -4,7 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 /**
  * Accessibility beyond the first paint: axe (WCAG 2.1 A and AA) on every page at a phone's width
  * too, on About and the 404, and on the parts that open on demand: the scoreboard, an achievement
- * toast, the glitch card, Bug Sweep playing, paused and over, and the Testing steps for a phone.
+ * toast, the glitch card, Bug Sweep playing, paused and over, and the QA Lab live checks for a phone.
  */
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const scan = async (page: Page, what: string) => {
@@ -35,7 +35,7 @@ for (const [width, height] of [
     await context.close();
   });
 
-  test(`what opens on demand passes axe at ${width}px: the scoreboard, a toast, the glitch card, Bug Sweep playing, paused and over, the Testing steps for a phone`, { tag: ['@a11y'] }, async ({ browser }) => {
+  test(`what opens on demand passes axe at ${width}px: the scoreboard, a toast, the glitch card, Bug Sweep playing, paused and over, the QA Lab live checks for a phone`, { tag: ['@bugsweep', '@a11y'] }, async ({ browser }) => {
     test.setTimeout(120_000);
     const context = await browser.newContext({ viewport: { width, height } });
     const page = await context.newPage();

@@ -5,8 +5,19 @@ import Join from '../components/Join.astro';
 import Swipe from '../components/Swipe.astro';
 import PassMark from '../components/PassMark.astro';
 import CrossMark from '../components/CrossMark.astro';
-import { browsers, liveDay, suite } from '../data/suite';
+import { Image } from 'astro:assets';
+import { browsers, bugSweep, liveDay, suite } from '../data/suite';
 import { listed } from '../config';
+import { testPlan, tickets } from '../data/qalab';
+import { bugReportTemplate } from '../data/samples';
+import qa001 from '../assets/qa-lab/qa-001.webp';
+import qa002 from '../assets/qa-lab/qa-002.png';
+
+// Level 3 and 4: the dates read in words, the run that deployed the page (or the build, locally)
+const day = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/London' });
+const deployed = suite.run ? day(suite.run.startedAt) : null;
+const evidence: Record<string, ImageMetadata> = { 'QA-001': qa001, 'QA-002': qa002 };
+const template = bugReportTemplate(`playrunqa.com, ${deployed ? `deployed ${deployed}` : `built ${day(new Date())}`}`);
 
 // The run that deployed this page: GitHub Actions builds only after the suite has passed and
 // hands the build that run's report (src/data/suite.ts). A local build has no run.
@@ -175,15 +186,15 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     <Bug id="quality-1" style="right: 12%; top: 9rem" tablet="right: 10%; bottom: calc(var(--join-h) + 0.5rem)" walk="x -2rem" />
   </section>
 
-  <!-- Level 2: the test plan. The five steps are cards; on a desktop with motion the level pins
+  <!-- Level 2: the live checks. The five steps are cards; on a desktop with motion the level pins
        and they are dealt in one by one with the scroll, like drawing the next test case
        (src/scripts/deck.ts adds is-deck). On phones and tablets they swipe (Swipe.astro), each step
        running when its card is the one on show; with motion off on a desktop they stand in a column. -->
   <section class="level level--blue has-join-bottom plan" data-level="2" aria-labelledby="plan-title">
     <Join kind="terrain" from="var(--field-blue)" to="var(--pr-navy)" seed="quality-report" />
     <div class="level__head">
-      <p class="flag" data-nosnippet data-enter><span>Level 2 &middot; The test plan</span></p>
-      <h2 id="plan-title" class="level__title" data-enter="wipe">The five-step QA run on this page</h2>
+      <p class="flag" data-nosnippet data-enter><span>Level 2 &middot; Live checks</span></p>
+      <h2 id="plan-title" class="level__title" data-enter="wipe">Live checks</h2>
       <p class="level__lead" data-enter style="--enter-delay: 80ms">Smoke, responsive, accessibility, links, performance. Pass or fail, live, on your device.</p>
     </div>
     <!-- The device picker: each step then shows only the instructions for that browser or phone
@@ -323,6 +334,168 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     <Bug id="quality-2" style="right: 10%; top: 1.5rem" tablet="right: 30%; top: 0.75rem" walk="x -2rem" />
     <!-- (in the strip at the level's foot, above the join: the report level it lived on is gone) -->
     <Bug id="quality-3" style="left: 12%; bottom: calc(var(--join-h) + 0.75rem)" tablet="left: 10%; bottom: calc(var(--join-h) + 0.75rem)" phone="left: var(--gutter); bottom: calc(var(--join-h) + 2.5rem)" walk="x 2rem" />
+  </section>
+
+  <!-- Level 3: the test plan for Bug Sweep, the game on the About page. Every count, test title,
+       browser and result comes from the suite (src/data/suite.ts, the checks tagged @bugsweep). -->
+  <section class="level level--navy has-join-bottom testplan" data-level="3" aria-labelledby="testplan-title">
+    <Join kind="clouds" from="var(--pr-navy)" to="var(--field-light)" seed="qa-lab-plan" />
+    <div class="level__head">
+      <p class="flag" data-nosnippet data-enter><span>Level 3 &middot; Test plan</span></p>
+      <h2 id="testplan-title" class="level__title" data-enter="wipe">Test plan: Bug Sweep</h2>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">The plan for the game on my <a href="/about/#sweep-title">About page</a>, written the way I write one for a game build.</p>
+    </div>
+    <div class="testplan__grid level__body">
+      <section class="tp" aria-labelledby="tp-scope">
+        <h3 id="tp-scope" class="tp__title">Scope</h3>
+        <h4 class="tp__sub">In scope</h4>
+        <ul class="tp__list">{testPlan.scope.in.map((t) => <li>{t}</li>)}</ul>
+        <h4 class="tp__sub">Out of scope</h4>
+        <ul class="tp__list">{testPlan.scope.out.map((t) => <li>{t}</li>)}</ul>
+      </section>
+      <section class="tp" aria-labelledby="tp-platforms">
+        <h3 id="tp-platforms" class="tp__title">Platforms and devices</h3>
+        <dl class="tp__fields">
+          <dt>Automated</dt>
+          <dd data-tp-automated>{listed(bugSweep.browsers)} in CI on every push, at {testPlan.automatedSizes}.</dd>
+          <dt>By hand</dt>
+          <dd><ul class="tp__list">{testPlan.byHand.map((t) => <li>{t}</li>)}</ul></dd>
+        </dl>
+      </section>
+      <section class="tp" aria-labelledby="tp-risks">
+        <h3 id="tp-risks" class="tp__title">Risks</h3>
+        <ul class="tp__list">{testPlan.risks.map((t) => <li>{t}</li>)}</ul>
+      </section>
+      <section class="tp" aria-labelledby="tp-types">
+        <h3 id="tp-types" class="tp__title">Test types</h3>
+        <table class="tp__table">
+          <thead><tr><th scope="col">Type</th><th scope="col">What I check</th></tr></thead>
+          <tbody>{testPlan.types.map(([k, v]) => <tr><th scope="row">{k}</th><td>{v}</td></tr>)}</tbody>
+        </table>
+      </section>
+      <section class="tp tp--wide" aria-labelledby="tp-auto">
+        <h3 id="tp-auto" class="tp__title">What the automated tests cover</h3>
+        <p class="tp__note" data-tp-total>{bugSweep.total} checks in {bugSweep.files.length} spec files, tagged for Bug Sweep:</p>
+        <table class="tp__table" data-tp-coverage>
+          <thead><tr><th scope="col">Spec file</th><th scope="col">Checks</th><th scope="col">What they cover</th></tr></thead>
+          <tbody>
+            {bugSweep.files.map((f) => (
+              <tr>
+                <th scope="row"><code>{f.file}</code></th>
+                <td class="num">{f.checks.reduce((n, c) => n + c.total, 0)}</td>
+                <td><ul class="tp__list tp__list--tight">{f.checks.map((c) => <li>{c.title}</li>)}</ul></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+      <section class="tp" aria-labelledby="tp-hand">
+        <h3 id="tp-hand" class="tp__title">Checked by hand</h3>
+        <ul class="tp__list">{testPlan.checkedByHand.map((t) => <li>{t}</li>)}</ul>
+      </section>
+      <section class="tp" aria-labelledby="tp-criteria">
+        <h3 id="tp-criteria" class="tp__title">Entry and exit criteria</h3>
+        <dl class="tp__fields">
+          <dt>Entry</dt>
+          <dd><ul class="tp__list">{testPlan.entry.map((t) => <li>{t}</li>)}</ul></dd>
+          <dt>Exit</dt>
+          <dd><ul class="tp__list">{testPlan.exit.map((t) => <li>{t}</li>)}</ul></dd>
+          <dt>After release</dt>
+          <dd>The check of the live site{liveDay ? ` every ${liveDay}` : ''}, which also plays Bug Sweep under the site's security policy.</dd>
+        </dl>
+      </section>
+      <section class="tp" aria-labelledby="tp-run">
+        <h3 id="tp-run" class="tp__title">How a test run goes</h3>
+        <ol class="tp__steps">{testPlan.run.map(([k, v]) => <li><strong>{k}</strong>: {v}</li>)}</ol>
+      </section>
+      <section class="tp" aria-labelledby="tp-results">
+        <h3 id="tp-results" class="tp__title">Results</h3>
+        <table class="tp__table" data-tp-results>
+          <thead><tr><th scope="col">Checks</th><th scope="col">Passed</th><th scope="col">Failed</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="num">{bugSweep.total}</td>
+              <td class="num">{suite.run ? bugSweep.passed : 'Not run yet'}</td>
+              <td class="num">{suite.run ? bugSweep.failed : 'Not run yet'}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="tp__note">{suite.run ? `From the run that deployed this page, ${deployed}.` : 'The run that deploys this page fills these in.'}</p>
+      </section>
+      <section class="tp" aria-labelledby="tp-known">
+        <h3 id="tp-known" class="tp__title">Known issues</h3>
+        <ul class="tp__list"><li><a href="#qa-002">QA-002</a>: one enemy bug glitches when it returns to formation. Low, kept on purpose.</li></ul>
+      </section>
+    </div>
+  </section>
+
+  <!-- Level 4: two real bugs from building this site, as tickets, and my template. -->
+  <section class="level level--light has-join-bottom reports" data-level="4" aria-labelledby="reports-title">
+    <Join kind="terrain" from="var(--field-light)" to="var(--pr-navy)" seed="qa-lab-foot" />
+    <div class="level__head">
+      <p class="flag" data-nosnippet data-enter><span>Level 4 &middot; Bug reports</span></p>
+      <h2 id="reports-title" class="level__title" data-enter="wipe">Bug reports</h2>
+      <p class="level__lead" data-enter style="--enter-delay: 80ms">Two real bugs from building this site, written the way I log them at work.</p>
+    </div>
+    <div class="reports__list level__body">
+      {
+        tickets.map((t) => (
+          <article class="ticket" id={t.id.toLowerCase()} aria-labelledby={`${t.id.toLowerCase()}-title`}>
+            <header class="ticket__head">
+              <p class="ticket__id">{t.id}</p>
+              <h3 id={`${t.id.toLowerCase()}-title`} class="ticket__title">{t.title}</h3>
+              <p class:list={['ticket__status', `ticket__status--${t.state}`]}><span class="visually-hidden">Status: </span>{t.status}</p>
+            </header>
+            <dl class="ticket__fields">
+              <dt>Environment</dt>
+              <dd>
+                <dl class="ticket__env">
+                  {t.environment.map(([k, v]) => (
+                    <>
+                      <dt>{k}</dt>
+                      <dd>{v}</dd>
+                    </>
+                  ))}
+                </dl>
+              </dd>
+              <dt>Severity</dt>
+              <dd><strong>{t.severity[0]}</strong>. {t.severity[1]}</dd>
+              <dt>Priority</dt>
+              <dd><strong>{t.priority[0]}</strong>. {t.priority[1]}</dd>
+              <dt>Frequency</dt>
+              <dd>{t.frequency}</dd>
+              <dt>Preconditions</dt>
+              <dd>{t.preconditions}</dd>
+            </dl>
+            <h4 class="ticket__sub">Steps to reproduce</h4>
+            <ol class="ticket__steps">{t.steps.map((step) => <li>{step}</li>)}</ol>
+            <dl class="ticket__fields">
+              <dt>Expected</dt>
+              <dd>{t.expected}</dd>
+              <dt>Actual</dt>
+              <dd>{t.actual}</dd>
+            </dl>
+            <h4 class="ticket__sub">Evidence</h4>
+            <figure class="ticket__evidence">
+              <Image src={evidence[t.id]} alt={t.evidence.alt} widths={[320, 480, 640]} sizes="(min-width: 64rem) 30rem, 90vw" loading="lazy" decoding="async" format="webp" />
+              <figcaption>{t.evidence.caption}</figcaption>
+            </figure>
+            <h4 class="ticket__sub">Notes on the cause</h4>
+            <ul class="ticket__notes">{t.cause.map((c) => <li>{c}</li>)}</ul>
+            <h4 class="ticket__sub">Resolution</h4>
+            <ul class="ticket__notes">
+              {t.resolution.map((r) => (
+                <li>{r.includes('Bug Sweep on my About page') ? <Fragment>{r.replace(/Bug Sweep on my About page\.$/, '')}<a href="/about/#sweep-title">Bug Sweep on my About page</a>.</Fragment> : r}</li>
+              ))}
+            </ul>
+          </article>
+        ))
+      }
+      <section class="template" aria-labelledby="template-title">
+        <h3 id="template-title" class="template__title">My bug report template</h3>
+        <pre class="template__body">{template}</pre>
+      </section>
+    </div>
   </section>
 </Base>
 
@@ -835,6 +1008,284 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
   @media (max-width: 47.99rem) {
     :global(html:not(.js)) .devtools {
       display: block;
+    }
+  }
+
+  /* Level 3: the test plan, in blocks on the navy (two a row from 64rem, the coverage table the
+     whole row). Headings in the display face, everything to read in Montserrat. */
+  .testplan__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s-4) var(--s-5);
+  }
+  .tp {
+    min-width: 0;
+  }
+  .tp--wide {
+    grid-column: 1 / -1;
+  }
+  .tp__title {
+    margin-bottom: var(--s-2);
+    font-size: 1.5rem;
+    line-height: 1.1;
+    color: var(--accent-2);
+  }
+  .tp__sub {
+    margin: var(--s-2) 0 var(--s-1);
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .tp__sub:first-of-type {
+    margin-top: 0;
+  }
+  .tp__list,
+  .tp__steps {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 0.35rem;
+  }
+  .tp__list--tight {
+    gap: 0.2rem;
+    font-size: 0.9375rem;
+  }
+  .tp__list li,
+  .tp__steps li {
+    max-width: 34em;
+  }
+  .tp__note {
+    margin: 0 0 var(--s-2);
+    color: var(--muted);
+  }
+  .tp__results + .tp__note {
+    margin-top: var(--s-2);
+  }
+  .tp__fields {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.5rem var(--s-3);
+    margin: 0;
+  }
+  .tp__fields dt {
+    font-family: var(--font-display);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .tp__fields dd {
+    margin: 0;
+  }
+  .tp__table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--s-2);
+  }
+  .tp__table th,
+  .tp__table td {
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    text-align: left;
+    vertical-align: top;
+    border-top: 1px solid var(--surface-2);
+  }
+  .tp__table thead th {
+    border-top: 0;
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .tp__table tbody th {
+    font-weight: 600;
+  }
+  .tp__table code {
+    font-size: 0.9375rem;
+    white-space: nowrap;
+  }
+  .testplan a,
+  .reports a {
+    color: inherit;
+  }
+  @media (max-width: 63.99rem) {
+    .testplan__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 47.99rem) {
+    /* (the coverage table keeps to the column: fixed widths, the file names free to wrap) */
+    .tp__table[data-tp-coverage] {
+      table-layout: fixed;
+    }
+    .tp__table[data-tp-coverage] th:first-child {
+      width: 6.5rem;
+    }
+    .tp__table[data-tp-coverage] th:nth-child(2) {
+      width: 3.5rem;
+    }
+    .tp__table[data-tp-coverage] code {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .tp__table td,
+    .tp__table th {
+      overflow-wrap: anywhere;
+    }
+    .tp__fields {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.25rem;
+    }
+    .tp__fields dd + dt {
+      margin-top: var(--s-1);
+    }
+  }
+
+  /* Level 4: the tickets, navy cards on the light field, then the template. */
+  .reports__list {
+    display: grid;
+    gap: var(--s-5);
+  }
+  .ticket {
+    padding: var(--s-4);
+    background: var(--pr-navy);
+    color: var(--ink);
+    max-width: 52rem;
+    --sel-bg: var(--accent);
+    --sel-ink: var(--accent-ink);
+  }
+  .ticket__head {
+    display: grid;
+    gap: var(--s-1);
+    margin-bottom: var(--s-3);
+  }
+  .ticket__id {
+    margin: 0;
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    color: var(--accent-2);
+  }
+  .ticket__title {
+    font-size: 1.5rem;
+    line-height: 1.15;
+  }
+  .ticket__status {
+    justify-self: start;
+    margin: 0;
+    padding: 0.2rem 0.5rem 0.15rem;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--pr-navy);
+  }
+  .ticket__status--fixed {
+    background: var(--accent);
+  }
+  .ticket__status {
+    --sel-bg: var(--pr-navy);
+    --sel-ink: var(--pr-light);
+  }
+  .ticket__status--open {
+    background: var(--pr-blue-ink);
+  }
+  .ticket__fields,
+  .ticket__env {
+    display: grid;
+    grid-template-columns: 9.5rem minmax(0, 1fr);
+    gap: 0.5rem var(--s-3);
+    margin: 0 0 var(--s-3);
+  }
+  .ticket__env {
+    grid-template-columns: 8rem minmax(0, 1fr);
+    margin: 0;
+  }
+  .ticket__fields > dt,
+  .ticket__env > dt {
+    font-family: var(--font-display);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .ticket__env > dt {
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .ticket dd {
+    margin: 0;
+  }
+  /* (about 70 characters a line at most, as everywhere people read) */
+  .ticket dd,
+  .ticket li {
+    max-width: 33em;
+  }
+  .ticket__sub {
+    margin: var(--s-3) 0 var(--s-1);
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .ticket__steps + .ticket__fields {
+    margin-top: var(--s-3);
+  }
+  .ticket__steps,
+  .ticket__notes {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 0.35rem;
+  }
+  .ticket__evidence {
+    margin: 0;
+  }
+  .ticket__evidence :global(img) {
+    width: 100%;
+    max-width: 30rem;
+    height: auto;
+    border: 2px solid var(--surface-2);
+    image-rendering: auto;
+  }
+  #qa-002 .ticket__evidence :global(img) {
+    image-rendering: pixelated;
+  }
+  .ticket__evidence figcaption {
+    margin-top: var(--s-1);
+    font-size: var(--step-small);
+    color: var(--muted);
+  }
+  .template {
+    max-width: 52rem;
+    color: var(--pr-navy);
+  }
+  .template__title {
+    margin-bottom: var(--s-2);
+    font-size: 1.5rem;
+  }
+  .template__body {
+    margin: 0;
+    padding: var(--s-3);
+    background: var(--field-light-surface);
+    border: 2px solid var(--pr-navy);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 47.99rem) {
+    .ticket {
+      padding: var(--s-3) var(--s-2);
+    }
+    .ticket__fields,
+    .ticket__env {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.25rem;
+    }
+    .ticket__fields > dd + dt,
+    .ticket__env > dd + dt {
+      margin-top: var(--s-1);
     }
   }
 </style>

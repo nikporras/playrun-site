@@ -93,7 +93,7 @@ test.describe('under the policy', () => {
     expect(errors, errors.join('\n')).toEqual([]);
   });
 
-  test('the Portfolio scan and the Testing run, with nothing blocked', { tag: ['@console'] }, async ({ page }) => {
+  test('the Portfolio scan and the QA Lab run, with nothing blocked', { tag: ['@console'] }, async ({ page }) => {
     const errors = await watch(page);
     await page.goto('/portfolio/');
     await page.evaluate(() => document.fonts.ready);
@@ -173,7 +173,7 @@ const extensionNoise = () => {
   }
   dispatchEvent(new ErrorEvent('error', { message: 'Uncaught TypeError: x is undefined', filename: 'safari-web-extension://e1/script.js' }));
 };
-test("an extension's violations and errors do not count: Testing's Smoke test still passes", { tag: ['@console'] }, async ({ page }) => {
+test("an extension's violations and errors do not count: the QA Lab's Smoke test still passes", { tag: ['@console'] }, async ({ page }) => {
   await page.goto('/testing/');
   await page.evaluate(extensionNoise);
   expect(await page.evaluate(() => (window as unknown as { __playrunErrors: string[] }).__playrunErrors)).toEqual([]);

@@ -37,7 +37,7 @@ test('in Firefox every page loads clean: no script errors, no console errors, no
 
 test.use({ reducedMotion: 'reduce' });
 
-test('in Firefox the Testing picker is preselected as Firefox and the five steps finish, Performance never failing on a missing figure', async ({ page }) => {
+test('in Firefox the QA Lab picker is preselected as Firefox and the five steps finish, Performance never failing on a missing figure', async ({ page }) => {
   await page.goto('/qa-lab/');
   await expect(page.locator('[data-picker] [aria-pressed="true"]')).toHaveText('Firefox');
   await expect(page.locator('.step__for:not([hidden])').first()).toHaveAttribute('data-for', 'firefox');

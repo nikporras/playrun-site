@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
  * reduced motion and no script keep them still. The content stays readable and selectable, and
  * nothing overlaps the track or the scoreboard. About's What I test uses the same deck (about.spec.ts).
  */
-test.describe('The Testing deck', () => {
+test.describe('The QA Lab deck', () => {
   test('pins and deals the five steps and the report with the scroll, transform only, clear of the track and the scoreboard', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/qa-lab/');
@@ -92,9 +92,9 @@ test.describe('The Testing deck', () => {
     expect((await page.evaluate(() => getSelection()?.toString() ?? '')).length).toBeGreaterThan(10);
     // each step ran as it was dealt
     await expect(page.locator('.step.is-pass')).toHaveCount(5, { timeout: 15_000 });
-    // after the report normal scrolling resumes: the footer follows
+    // after the report normal scrolling resumes: the test plan follows
     await page.evaluate((y) => window.scrollTo(0, y), top + range + 900);
-    await expect.poll(() => page.locator('footer').evaluate((el) => el.getBoundingClientRect().top)).toBeLessThan(900);
+    await expect.poll(() => page.locator('.testplan').evaluate((el) => el.getBoundingClientRect().top)).toBeLessThan(900);
     // a jump to a step lands where it has been dealt
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.evaluate(() => (location.hash = '#step-performance'));
@@ -170,7 +170,7 @@ test.describe('The Testing deck', () => {
 // content: never centred in a screen-tall stage with a gap above it.
 for (const [width, height] of [[1440, 900], [1920, 1080]] as const) {
   for (const path of ['/about/', '/qa-lab/']) {
-    test(`${path} at ${width}x${height}: the first card of the deck sits under the level head (and Testing's picker) at the usual gap`, async ({ page }) => {
+    test(`${path} at ${width}x${height}: the first card of the deck sits under the level head (and the QA Lab's picker) at the usual gap`, async ({ page }) => {
       await page.setViewportSize({ width, height });
       await page.goto(path);
       const deck = page.locator('[data-deck]');

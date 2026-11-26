@@ -500,7 +500,7 @@ test('the footer sits flush with the foot of the screen at the end of every page
 // One check count on the whole site, on the Testing page only, from src/data/suite.ts
 // (`suite.checks`): no other page in the sitemap, nor llms.txt, shows a number of checks. In a
 // local or test build there is no run, so it is every check in Playwright's own list.
-test('the check count shows on the Testing page only, the number from the suite data', { tag: ['@pages'] }, async ({ page, request }) => {
+test('the check count shows on the QA Lab only, the number from the suite data', { tag: ['@pages'] }, async ({ page, request }) => {
   const { execFileSync } = await import('node:child_process');
   const { createRequire } = await import('node:module');
   const pathMod = await import('node:path');
@@ -521,10 +521,12 @@ test('the check count shows on the Testing page only, the number from the suite 
   for (const p of paths) {
     await page.goto(p);
     const text = await page.locator('body').innerText();
-    for (const m of text.matchAll(/(\d[\d,]*)\s+checks\b/g)) seen.push(`${p}: ${m[1]}`);
+    // (the suite's count: "N checks passed" or "N checks run"; the test plan's own tally of the
+    // Bug Sweep checks is another number, from the same data)
+    for (const m of text.matchAll(/(\d[\d,]*)\s+checks\s+(?:passed|run)\b/g)) seen.push(`${p}: ${m[1]}`);
   }
-  for (const m of (await (await request.get('/llms.txt')).text()).matchAll(/(\d[\d,]*)\s+checks\b/g)) seen.push(`/llms.txt: ${m[1]}`);
+  for (const m of (await (await request.get('/llms.txt')).text()).matchAll(/(\d[\d,]*)\s+checks\s+(?:passed|run)\b/g)) seen.push(`/llms.txt: ${m[1]}`);
   expect(seen.filter((s) => !s.startsWith('/qa-lab/: ')), 'no other page shows a count').toEqual([]);
-  expect(seen.length, 'Testing shows the count once').toBe(1);
+  expect(seen.length, 'the QA Lab shows the count once').toBe(1);
   for (const s of seen) expect(s.split(': ')[1].replace(/,/g, ''), s).toBe(String(total));
 });

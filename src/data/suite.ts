@@ -12,8 +12,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
-type JsonTest = { status?: string };
-type JsonSpec = { title: string; file: string; tests: JsonTest[] };
+type JsonTest = { status?: string; projectName?: string };
+type JsonSpec = { title: string; file: string; tags?: string[]; tests: JsonTest[] };
 type JsonSuite = { title: string; file?: string; specs: JsonSpec[]; suites?: JsonSuite[] };
 type Report = { suites: JsonSuite[]; stats?: { startTime?: string; duration?: number }; config?: { projects?: { name: string }[] } };
 
@@ -186,3 +186,45 @@ export const versions = {
   node: workflow.match(/node-version:\s*['"]?(\d+)/)?.[1] ?? null,
   playwright: (JSON.parse(readFileSync(path.join(root, 'node_modules', '@playwright', 'test', 'package.json'), 'utf8')) as { version: string }).version,
 };
+
+/**
+ * The checks on Bug Sweep, for the QA Lab's test plan: every test tagged @bugsweep, with its file,
+ * its title, the browsers it runs in and, from a run, how many passed. Read from the same list or
+ * report as everything above, so no count or title is ever typed in.
+ */
+export type TaggedCheck = { file: string; title: string; total: number; passed: number; failed: number; projects: string[] };
+const tagged = (tag: string): TaggedCheck[] => {
+  const out: TaggedCheck[] = [];
+  const walk = (s: JsonSuite) => {
+    for (const spec of s.specs ?? []) {
+      if (!(spec.tags ?? []).includes(tag.replace(/^@/, '')) && !(spec.tags ?? []).includes(tag)) continue;
+      const tests = spec.tests ?? [];
+      out.push({
+        file: path.basename(spec.file),
+        title: spec.title,
+        total: tests.length,
+        passed: tests.filter((t) => t.status === 'expected' || t.status === 'flaky').length,
+        failed: tests.filter((t) => t.status === 'unexpected').length,
+        projects: [...new Set(tests.map((t) => t.projectName ?? ''))].filter(Boolean),
+      });
+    }
+    for (const c of s.suites ?? []) walk(c);
+  };
+  for (const s of report.suites) walk(s);
+  return out;
+};
+export const bugSweep = (() => {
+  const checks = tagged('@bugsweep');
+  if (checks.length === 0) throw new Error('No checks tagged @bugsweep: the QA Lab test plan lists them.');
+  const files = [...new Set(checks.map((c) => c.file))].map((file) => ({ file, checks: checks.filter((c) => c.file === file) }));
+  const engines = new Set(checks.flatMap((c) => c.projects));
+  return {
+    checks,
+    files,
+    total: checks.reduce((n, c) => n + c.total, 0),
+    passed: checks.reduce((n, c) => n + c.passed, 0),
+    failed: checks.reduce((n, c) => n + c.failed, 0),
+    browsers: ENGINES.filter(([id]) => engines.has(id)).map(([, name]) => name),
+  };
+})();
+

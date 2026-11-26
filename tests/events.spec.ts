@@ -16,7 +16,7 @@ const record = (page: Page) =>
 const events = (page: Page) => page.evaluate(() => (window as unknown as { __events: unknown[] }).__events) as Promise<Event[]>;
 const named = async (page: Page, name: string) => (await events(page)).filter(([n]) => n === name);
 
-test('the clicks that count carry their event names: Get in touch everywhere, LinkedIn, See every game, store links with the game, the Testing run and device, the glitch', async ({ page, request }) => {
+test('the clicks that count carry their event names: Get in touch everywhere, LinkedIn, See every game, store links with the game, the QA Lab run and device, the glitch', async ({ page, request }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await expect(page.locator('.header__action')).toHaveAttribute('data-umami-event', 'get-in-touch');
@@ -85,7 +85,7 @@ test('what a click cannot see is counted by name: a message sent, the email way 
   expect(JSON.stringify(await events(page))).not.toMatch(/Ada|example\.com|Hello from/);
 });
 
-test('Bug Sweep counts a start, a clear and a game over; an achievement counts with its name; the Motion switch counts on and off', async ({ page }) => {
+test('Bug Sweep counts a start, a clear and a game over; an achievement counts with its name; the Motion switch counts on and off', { tag: ['@bugsweep'] }, async ({ page }) => {
   await record(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/about/');

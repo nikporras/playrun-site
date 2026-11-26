@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+
+const require = createRequire(import.meta.url);
 
 /**
  * The Testing page as a guided test run: five steps that run live on the page with the shared
@@ -118,17 +123,6 @@ test.describe('QA Lab, the live checks', () => {
     // and Home has nothing that awards it
     await page.goto('/');
     await expect(page.locator('#selftest')).toHaveCount(0);
-  });
-
-  test('the bug report template is parked: off the page, kept in src/data/samples.ts for later', async ({ page, request }) => {
-    const { bugReportTemplate } = await import('../src/data/samples');
-    const t = bugReportTemplate('playrunqa.com, 25 November 2026');
-    for (const line of ['Title: [what broke, in one line]', 'Build: playrunqa.com, 25 November 2026', 'Steps to reproduce:', 'Expected:', 'Actual:', 'Severity: [Blocker / Major / Minor / Cosmetic]', 'Attachments: [screenshot or video]']) expect(t).toContain(line);
-    await page.goto('/qa-lab/');
-    await expect(page.locator('[data-template], [data-copy]')).toHaveCount(0);
-    await expect(page.getByText(/Bug report template|Copy the template/)).toHaveCount(0);
-    // and no page carries it
-    for (const path of ['/', '/about/', '/portfolio/', '/qa-lab/', '/contact/']) expect(await (await request.get(path)).text(), path).not.toContain('Steps to reproduce');
   });
 
   test('without script the plan still reads, with the steps to take yourself', async ({ browser }) => {
@@ -469,7 +463,7 @@ test('on a desktop the report is dealt as the sixth card and runs any step not y
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/qa-lab/');
   await page.mouse.move(640, 300);
-  await expect(page.locator('section.level')).toHaveCount(2);
+  await expect(page.locator('section.level')).toHaveCount(4);
   await expect(page.locator('#report-title')).toHaveText('Test report');
   await expect(page.getByRole('link', { name: /See the games|See the skills/ })).toHaveCount(0);
   // a jump to the report lands where it is dealt; every step has run by then
@@ -479,3 +473,120 @@ test('on a desktop the report is dealt as the sixth card and runs any step not y
   await expect(page.locator('[data-report-score]')).toHaveText(/steps passed on your device/);
 });
 
+// Round 9: the QA Lab in four levels: the hero, the live checks, the test plan for Bug Sweep and
+// two bug reports with my template.
+const tagged = () => {
+  const cli = path.join(path.dirname(require.resolve('@playwright/test/package.json')), 'cli.js');
+  const list = JSON.parse(execFileSync(process.execPath, [cli, 'test', '--list', '--reporter=json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: '', PLAYWRIGHT_JSON_OUTPUT_FILE: '' } }));
+  const out: { file: string; title: string; n: number; projects: string[] }[] = [];
+  type S = { specs?: { title: string; file: string; tags?: string[]; tests: { projectName: string }[] }[]; suites?: S[] };
+  const walk = (s: S) => {
+    for (const sp of s.specs ?? []) if ((sp.tags ?? []).includes('bugsweep')) out.push({ file: path.basename(sp.file), title: sp.title, n: sp.tests.length, projects: sp.tests.map((t) => t.projectName) });
+    for (const c of s.suites ?? []) walk(c);
+  };
+  for (const s of list.suites) walk(s);
+  return out;
+};
+
+test('the QA Lab has four levels in order: the hero, Live checks, Test plan and Bug reports', { tag: ['@pages'] }, async ({ page }) => {
+  await page.goto('/qa-lab/');
+  await expect(page.locator('main > section.level')).toHaveCount(4);
+  await expect(page.locator('[data-level] > .level__head .flag')).toHaveText(['QA Lab', 'Level 2 · Live checks', 'Level 3 · Test plan', 'Level 4 · Bug reports']);
+  await expect(page.locator('main h2.level__title')).toHaveText(['Live checks', 'Test plan: Bug Sweep', 'Bug reports']);
+  await expect(page.locator('h1')).toHaveText('Inside my QA Lab');
+  // the live checks as they were: the picker, the five steps and the report, Pocket DevTools
+  const live = page.locator('[data-level="2"]');
+  await expect(live.locator('[data-picker]')).toHaveCount(1);
+  await expect(live.locator('.step')).toHaveCount(5);
+  await expect(live.locator('[data-report]')).toHaveCount(1);
+  await expect(live.locator('.devtools')).toHaveCount(1);
+  // the three bugs stay on the page
+  await expect(page.locator('main [data-bug]')).toHaveCount(3);
+});
+
+test('the test plan for Bug Sweep: every block, the coverage and the results from the suite, the known issue linked', { tag: ['@pages'] }, async ({ page }) => {
+  await page.goto('/qa-lab/');
+  const plan = page.locator('.testplan');
+  await expect(plan.locator('h3')).toHaveText(['Scope', 'Platforms and devices', 'Risks', 'Test types', 'What the automated tests cover', 'Checked by hand', 'Entry and exit criteria', 'How a test run goes', 'Results', 'Known issues']);
+  await expect(plan.locator('h4')).toHaveText(['In scope', 'Out of scope']);
+  // the checks tagged for Bug Sweep, from Playwright's own list: files, titles, counts, browsers
+  const checks = tagged();
+  expect(checks.length).toBeGreaterThan(5);
+  const total = checks.reduce((n, c) => n + c.n, 0);
+  const files = [...new Set(checks.map((c) => c.file))];
+  await expect(plan.locator('[data-tp-total]')).toHaveText(`${total} checks in ${files.length} spec files, tagged for Bug Sweep:`);
+  const rows = plan.locator('[data-tp-coverage] tbody tr');
+  await expect(rows.locator('th')).toHaveText(files);
+  for (const [i, f] of files.entries()) {
+    const mine = checks.filter((c) => c.file === f);
+    await expect(rows.nth(i).locator('td').first()).toHaveText(String(mine.reduce((n, c) => n + c.n, 0)));
+    await expect(rows.nth(i).locator('li')).toHaveText(mine.map((c) => c.title));
+  }
+  const names: Record<string, string> = { chromium: 'Chromium', firefox: 'Firefox', webkit: 'WebKit' };
+  for (const e of new Set(checks.flatMap((c) => c.projects))) await expect(plan.locator('[data-tp-automated]')).toContainText(names[e]);
+  // the results: the total from the list; passed and failed from a run (a local build has none)
+  await expect(plan.locator('[data-tp-results] tbody td').first()).toHaveText(String(total));
+  await expect(plan.locator('[data-tp-results] tbody td').nth(1)).toHaveText(/^(\d+|Not run yet)$/);
+  // the devices checked by hand, as given, and the criteria
+  await expect(plan).toContainText('Samsung Galaxy S25 Ultra, Firefox for Android (touch).');
+  await expect(plan).toContainText('Windows PC, Firefox (keyboard).');
+  await expect(plan).toContainText('The change is pushed to main and CI starts.');
+  await expect(plan).toContainText('No open issue above Low.');
+  await expect(plan.locator('dt')).toContainText(['Automated', 'By hand', 'Entry', 'Exit', 'After release']);
+  // every table has its header cells
+  for (const t of await plan.locator('table').all()) expect(await t.locator('thead th[scope="col"]').count()).toBeGreaterThan(0);
+  // the known issue goes to its ticket
+  await plan.getByRole('link', { name: 'QA-002' }).click();
+  await expect(page).toHaveURL(/#qa-002$/);
+  await expect(page.locator('#qa-002')).toBeInViewport();
+});
+
+test('two bug reports written like real tickets, each with every field, steps, evidence with alt text, the cause and the resolution; then my template', { tag: ['@pages', '@a11y'] }, async ({ page }) => {
+  await page.goto('/qa-lab/');
+  const reports = page.locator('.reports');
+  const tickets = reports.locator('article.ticket');
+  await expect(tickets).toHaveCount(2);
+  await expect(tickets.locator('.ticket__id')).toHaveText(['QA-001', 'QA-002']);
+  await expect(tickets.locator('h3')).toHaveText(["Pocket DevTools: the Network table's columns overlap on Android phones", 'Bug Sweep: one enemy bug glitches when it returns to formation']);
+  await expect(tickets.locator('.ticket__status')).toHaveText(['Status: Fixed, verified', "Status: Won't fix (known issue)"]);
+  for (const t of await tickets.all()) {
+    await expect(t.locator(':scope > .ticket__fields > dt')).toHaveText(['Environment', 'Severity', 'Priority', 'Frequency', 'Preconditions', 'Expected', 'Actual']);
+    await expect(t.locator('h4')).toHaveText(['Steps to reproduce', 'Evidence', 'Notes on the cause', 'Resolution']);
+    expect(await t.locator('.ticket__steps li').count()).toBeGreaterThanOrEqual(3);
+    await expect(t.locator('.ticket__env dt')).toContainText(['Found on', 'Build']);
+    const img = t.locator('figure img');
+    await img.scrollIntoViewIfNeeded();
+    await expect(img).toHaveAttribute('alt', /.{30,}/);
+    await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+    await expect(t.locator('figcaption')).not.toBeEmpty();
+  }
+  const one = tickets.nth(0);
+  await expect(one).toContainText('Samsung Galaxy S25 Ultra, Firefox for Android.');
+  await expect(one).toContainText('Playwright Pixel 7 profile (Chromium, Android)');
+  await expect(one).toContainText('Not browser-specific');
+  await expect(one).toContainText('e5ad238');
+  await expect(one).toContainText('tests/pocket.spec.ts');
+  await expect(one.locator('figcaption')).toHaveText('Reproduced from build 299e74b at 390 pixels wide.');
+  const two = tickets.nth(1);
+  await expect(two).toContainText('Low. Cosmetic');
+  await expect(two.locator('figcaption')).toHaveText('Captured in a test build with the glitch triggered on demand.');
+  await expect(two.getByRole('link', { name: 'Bug Sweep on my About page' })).toHaveAttribute('href', '/about/#sweep-title');
+  await expect(two).toContainText("Won't fix: kept on purpose as a live example.");
+  // the template, on the same scale as the tickets
+  await expect(reports.locator('#template-title')).toHaveText('My bug report template');
+  await expect(reports.locator('.template__body')).toContainText('Severity: [Low / Medium / High / Critical]');
+  await expect(reports.locator('.template__body')).toContainText(/Build: playrunqa\.com, (deployed|built) \d+ \w+ 20\d\d/);
+});
+
+for (const width of [1440, 375]) {
+  test(`at ${width}px the test plan and the bug reports pass axe, and nothing in them scrolls sideways`, { tag: ['@a11y', '@viewports'] }, async ({ page }) => {
+    // (motion off: every entrance shows at once, so axe never reads a line mid fade)
+    await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/qa-lab/');
+    await page.evaluate(() => document.querySelectorAll('[data-enter]').forEach((e) => e.classList.add('is-in')));
+    const axe = await new AxeBuilder({ page }).include('.testplan').include('.reports').analyze();
+    expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(' ')}`)).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  });
+}

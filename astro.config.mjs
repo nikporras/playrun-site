@@ -20,7 +20,7 @@ const SOURCES = {
   '/': ['src/pages/index.astro', ...DATA],
   '/portfolio/': ['src/pages/portfolio.astro', 'src/components/GameCard.astro', ...DATA],
   '/about/': ['src/pages/about.astro', 'src/data/about.ts', 'src/data/skills.ts', 'src/components/Swipe.astro', ...DATA],
-  '/qa-lab/': ['src/pages/qa-lab.astro', 'src/components/Swipe.astro', 'src/scripts/checks.ts', 'src/data/suite.ts', ...DATA],
+  '/qa-lab/': ['src/pages/qa-lab.astro', 'src/components/Swipe.astro', 'src/scripts/checks.ts', 'src/data/suite.ts', 'src/data/qalab.ts', 'src/data/samples.ts', ...DATA],
 };
 /** @param {string} path */
 const sourcesOf = (path) => SOURCES[path] ?? [`src/pages${path.replace(/\/$/, '')}.astro`];

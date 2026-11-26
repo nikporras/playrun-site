@@ -29,7 +29,7 @@ const play = async (page: Page) => {
 };
 
 for (const [width, height] of SIZES) {
-  test(`Bug Sweep (${width}x${height}): the section, nothing of the game loaded until Play, then the field crisp at a whole number of pixels, the right controls, on screen above the bottom bar`, async ({ page }) => {
+  test(`Bug Sweep (${width}x${height}): the section, nothing of the game loaded until Play, then the field crisp at a whole number of pixels, the right controls, on screen above the bottom bar`, { tag: ['@bugsweep'] }, async ({ page }) => {
     await page.setViewportSize({ width, height });
     const fetched: string[] = [];
     page.on('request', (r) => fetched.push(r.url()));
@@ -102,7 +102,7 @@ for (const [width, height] of SIZES) {
   });
 }
 
-test('Bug Sweep with the keyboard: arrows and A and D move, Space fires, and the page never scrolls; Esc pauses and resumes', async ({ page }) => {
+test('Bug Sweep with the keyboard: arrows and A and D move, Space fires, and the page never scrolls; Esc pauses and resumes', { tag: ['@bugsweep'] }, async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openAbout(page);
   await play(page);
@@ -155,7 +155,7 @@ const press = async (b: Locator, ms: number) => {
   await b.dispatchEvent('pointerup', { pointerId: 7, pointerType: 'touch', isPrimary: true, button: 0, buttons: 0 });
 };
 
-test('Bug Sweep by touch at 375x812: held Left and Right move the ship, Fire fires, and the dives are slower for thumbs', async ({ browser }) => {
+test('Bug Sweep by touch at 375x812: held Left and Right move the ship, Fire fires, and the dives are slower for thumbs', { tag: ['@bugsweep'] }, async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 });
   const page = await context.newPage();
   await openAbout(page);
@@ -183,7 +183,7 @@ test('Bug Sweep by touch at 375x812: held Left and Right move the ship, Fire fir
 // The bot plays on the game's own clock: the clock is stopped and moved on by a quarter of a second
 // for each decision, so the game is the same however busy the machine is (no real-time race with
 // the rest of the suite), and with the seed fixed it is the same game every time.
-test('Bug Sweep is winnable with the touch buttons at 375x812, playing at a thumb’s pace (a decision every quarter second of game time)', async ({ browser }) => {
+test('Bug Sweep is winnable with the touch buttons at 375x812, playing at a thumb’s pace (a decision every quarter second of game time)', { tag: ['@bugsweep'] }, async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 });
   const page = await context.newPage();
   await openAbout(page);
@@ -226,7 +226,7 @@ test('Bug Sweep is winnable with the touch buttons at 375x812, playing at a thum
   await context.close();
 });
 
-test('clearing all ten bugs: Level cleared, the achievement Bug Sweep cleared with the toast, the counter at 1/7; Play again starts afresh; Reset clears the achievement', async ({ page }) => {
+test('clearing all ten bugs: Level cleared, the achievement Bug Sweep cleared with the toast, the counter at 1/7; Play again starts afresh; Reset clears the achievement', { tag: ['@bugsweep'] }, async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openAbout(page);
   await expect(page.locator('[data-hud-ach]')).toHaveText('0/7');
@@ -258,7 +258,7 @@ test('clearing all ten bugs: Level cleared, the achievement Bug Sweep cleared wi
   await expect(page.locator('.score__ach li.is-done')).toHaveCount(0);
 });
 
-test('three hits is game over, with Try again; the field pauses when the tab is hidden and when it leaves the screen', async ({ page }) => {
+test('three hits is game over, with Try again; the field pauses when the tab is hidden and when it leaves the screen', { tag: ['@bugsweep'] }, async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 1024 });
   await openAbout(page);
   await play(page);
@@ -295,7 +295,7 @@ test('three hits is game over, with Try again; the field pauses when the tab is 
   await expect(page.locator('[data-sweep-text]')).toHaveText('Paused while you were away.');
 });
 
-test('Bug Sweep plays whatever the motion setting: under the device’s reduced motion it runs, and a clear is still kept', async ({ browser }) => {
+test('Bug Sweep plays whatever the motion setting: under the device’s reduced motion it runs, and a clear is still kept', { tag: ['@bugsweep'] }, async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
   const page = await context.newPage();
   await openAbout(page);
@@ -317,7 +317,7 @@ test('Bug Sweep plays whatever the motion setting: under the device’s reduced 
 // and during a game: only the Left, Fire and Right buttons keep the touch, held to move or fire,
 // and the page never scrolls under a held button. Real touches (Chromium's own input), so the
 // browser's touch-action decides, not a script.
-test('at 375x812 a swipe on the field scrolls the page before Play and during a game, and a held button moves the ship without scrolling', { tag: ['@viewports'] }, async ({ browser }) => {
+test('at 375x812 a swipe on the field scrolls the page before Play and during a game, and a held button moves the ship without scrolling', { tag: ['@bugsweep', '@viewports'] }, async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 });
   const page = await context.newPage();
   await openAbout(page);

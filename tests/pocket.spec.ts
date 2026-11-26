@@ -95,15 +95,15 @@ for (const width of [300, 375, 390]) {
   });
 }
 
-test('at 390px bug quality-3 is wholly on screen and catchable above the bottom bar, with Pocket DevTools shown', async ({ page }) => {
+test('at 390px bug quality-3 is wholly on screen and catchable above the bottom bar, with Pocket DevTools shown, down to the foot of its level', async ({ page }) => {
   await page.goto('/qa-lab/');
   const bug = page.locator('[data-bug="quality-3"]');
-  // scrolled until the bug just clears the bar, and at the foot of the page
-  for (const where of ['above the bar', 'page end'] as const) {
+  // scrolled until the bug just clears the bar, and to the foot of its level
+  for (const where of ['above the bar', 'level end'] as const) {
     await bug.evaluate((el, where) => {
       const bar = document.querySelector('.tabbar')!.getBoundingClientRect().height;
       const r = el.getBoundingClientRect();
-      window.scrollTo({ top: where === 'page end' ? document.documentElement.scrollHeight : r.bottom + scrollY - (innerHeight - bar) + 24, behavior: 'instant' });
+      window.scrollTo({ top: where === 'level end' ? el.closest('.level')!.getBoundingClientRect().bottom + scrollY - (innerHeight - bar) : r.bottom + scrollY - (innerHeight - bar) + 24, behavior: 'instant' });
     }, where);
     await page.waitForTimeout(200);
     const m = await bug.evaluate((el) => {
