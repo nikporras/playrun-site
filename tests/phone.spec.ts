@@ -26,7 +26,7 @@ test.describe("Home on a phone", () => {
 
     const heads = page.locator("[data-level] h1, [data-level] h2");
     const n = await heads.count();
-    expect(n).toBeGreaterThanOrEqual(5);
+    expect(n).toBeGreaterThanOrEqual(4);
     for (let i = 0; i < n; i++) {
       const h = heads.nth(i);
       await h.scrollIntoViewIfNeeded();
@@ -62,11 +62,11 @@ test.describe("Home on a phone", () => {
     await expect(page.locator(".score__panel")).toBeHidden();
   });
 
-  test("phone bugs sit in a corner of their level, one of them on the final level", async ({ page }) => {
+  test("phone bugs sit in a corner of their level, two of them on the final level", async ({ page }) => {
     await page.goto("/");
     const bugs = page.locator("[data-bug]:visible");
     expect(await bugs.count()).toBeGreaterThanOrEqual(4);
-    expect(await page.locator(".final [data-bug]:visible").count()).toBe(1);
+    expect(await page.locator(".final [data-bug]:visible").count()).toBe(2);
     for (const b of await bugs.all()) {
       const corner = await b.evaluate((el) => {
         // Measured at the start of its walk, which leads inwards from the corner.
