@@ -151,11 +151,11 @@ export const platforms: [name: string, text: string, group: 'console' | 'store']
   ['Epic Games Store', 'Store requirements, achievements, launcher paths.', 'store'],
   ['GOG', 'DRM-free build, Galaxy features, offline play.', 'store'],
 ];
-export const vrPlatforms: { name: string; match: RegExp; text: string }[] = [
-  { name: 'Meta Quest 2, 3 and Pro', match: /Meta Quest/, text: 'Standalone builds against the Meta store requirements, comfort and tracking.' },
-  { name: 'PC VR', match: /PC VR/, text: 'SteamVR headsets on PC, seated and room scale.' },
-  { name: 'PS VR', match: /^PS VR$/, text: 'PlayStation VR, its Move controllers and the camera.' },
-  { name: 'PS VR2', match: /PS VR2/, text: "PS VR2 on PS5, the Sense controllers and the console's own checks." },
+export const vrPlatforms: { name: string; short: string; match: RegExp; text: string }[] = [
+  { name: 'Meta Quest 2, 3 and Pro', short: 'Quest', match: /Meta Quest/, text: 'Standalone builds against the Meta store requirements, comfort and tracking.' },
+  { name: 'PC VR', short: 'PC VR', match: /PC VR/, text: 'SteamVR headsets on PC, seated and room scale.' },
+  { name: 'PS VR', short: 'PS VR', match: /^PS VR$/, text: 'PlayStation VR, its Move controllers and the camera.' },
+  { name: 'PS VR2', short: 'PS VR2', match: /PS VR2/, text: "PS VR2 on PS5, the Sense controllers and the console's own checks." },
 ];
 
 /** The headsets a public title names (About's Kit lists them, Home counts them). */

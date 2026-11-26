@@ -8,7 +8,7 @@ import Join from '../components/Join.astro';
 import GameIcon from '../components/GameIcon.astro';
 import HeroHalo from '../components/HeroHalo.astro';
 import { logos } from '../data/logos';
-import { allPlatforms, contact, employers, leadRoles, listed, playrun, primaryAction, since, site } from '../config';
+import { allPlatforms, contact, employers, leadRoles, listed, playrun, primaryAction, shownVR, since, site } from '../config';
 
 import portrait from '../assets/photos/nicolas.png';
 
@@ -67,12 +67,12 @@ const wall = [...FEATURED.flatMap((id) => byPost.filter((p) => p.id === id)), ..
 const isVR = (p: (typeof shown)[number]) => p.data.vr || p.data.platforms.some((name) => /VR|Quest/i.test(name));
 // Each stat carries a short caption, shown under it while it is the active row: light, and true.
 const stats = [
-  { n: new Date().getFullYear() - since, suffix: '+', label: 'years in QA', cap: 'Started in 2021. Still finding things.' },
+  { n: new Date().getFullYear() - since, suffix: '+', label: 'years in QA', cap: `Started in ${since}. Still finding things.` },
   { n: new Set(employers.map((e) => e.name)).size, suffix: '', label: 'companies', cap: 'From outsourced QA to in-house teams.' },
-  { n: shown.length, suffix: '', label: 'games', cap: 'Released titles and games still in development.' },
-  { n: shown.filter(isVR).length, suffix: '', label: 'VR games', cap: 'Headset tan included.' },
-  { n: allPlatforms(all.filter((p) => p.data.public)).length, suffix: '', label: 'platforms', cap: 'Consoles, PC stores and VR headsets.' },
-  { n: leadRoles.length, suffix: '', label: 'QA lead roles', cap: `At ${listed([...new Set(leadRoles.map((r) => r.at))])}.` },
+  { n: shown.length, suffix: '', label: 'games', cap: "From Cyberpunk 2077 and NBA 2K21 to this year's releases." },
+  { n: shown.filter(isVR).length, suffix: '', label: 'VR games', cap: `${listed(shownVR(shown).map((v) => v.short))}. Headset tan included.` },
+  { n: allPlatforms(all.filter((p) => p.data.public)).length, suffix: '', label: 'platforms', cap: 'Certification checks on Switch, Xbox and PS5, plus the PC stores.' },
+  { n: leadRoles.length, suffix: '', label: 'QA lead roles', cap: 'Tester to Lead at nDreams in a year. QA Manager at Historic VR, with a team of 10.' },
 ];
 
 const ALT = 'Nicolás Porras wearing a VR headset pushed up on his head';

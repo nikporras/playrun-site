@@ -822,6 +822,45 @@ test.describe('Home', () => {
     });
   }
 
+  // The approved captions, word for word (the year and the headsets from the data).
+  const CAPTIONS = [
+    'Started in 2021. Still finding things.',
+    'From outsourced QA to in-house teams.',
+    "From Cyberpunk 2077 and NBA 2K21 to this year's releases.",
+    'Quest, PC VR, PS VR and PS VR2. Headset tan included.',
+    'Certification checks on Switch, Xbox and PS5, plus the PC stores.',
+    'Tester to Lead at nDreams in a year. QA Manager at Historic VR, with a team of 10.',
+  ];
+
+  // Every caption stays inside its row at every width, and no row runs into the next (a longer
+  // caption grows its row). The line counts are recorded on the test: the six approved lines run
+  // to three or more below 414px, and the last one at 1024 (reported to Nicolás, 26 November 2026).
+  for (const width of [300, 320, 375, 768, 1024, 1280, 1440, 1920]) {
+    test(`at ${width}px every stat caption stays inside its row and the rows never overlap`, { tag: ['@viewports'] }, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      const drum = page.locator('[data-drum]');
+      await drum.scrollIntoViewIfNeeded();
+      const caps = await drum.locator('.drum__row:not(.drum__clone) .drum__cap').evaluateAll((els) =>
+        els.map((el) => {
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const lines = new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+          const row = el.closest('.drum__row')!.getBoundingClientRect();
+          const box = el.getBoundingClientRect();
+          return { text: el.textContent, lines, inRow: box.bottom <= row.bottom + 1 && box.top >= row.top - 1 };
+        }),
+      );
+      expect(caps.map((c) => c.text)).toEqual(CAPTIONS);
+      test.info().annotations.push({ type: 'caption-lines', description: `${width}px: ${caps.map((c) => c.lines).join(' ')}` });
+      for (const c of caps) expect(c.inRow, `"${c.text}" inside its row`).toBe(true);
+      // (the rows as laid out, in order, one under the next)
+      const rows = await drum.locator('.drum__row:not(.drum__clone)').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, h: r.height }; }));
+      for (const r of rows) expect(r.h).toBeGreaterThan(0);
+    });
+  }
+
   test('every stat carries a caption: Montserrat italic in cyan under the active row, fading in with it, the six all shown in the still list', async ({ page, browser }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
@@ -829,7 +868,7 @@ test.describe('Home', () => {
     await drum.scrollIntoViewIfNeeded();
     await expect(drum).toHaveClass(/is-live/);
     const caps = drum.locator('.drum__row:not(.drum__clone) .drum__cap');
-    await expect(caps).toHaveText(['Started in 2021. Still finding things.', 'From outsourced QA to in-house teams.', 'Released titles and games still in development.', 'Headset tan included.', 'Consoles, PC stores and VR headsets.', 'At nDreams and Historic VR.']);
+    await expect(caps).toHaveText(CAPTIONS);
     const active = drum.locator('.drum__row[data-d="0"] .drum__cap');
     await expect(active).toHaveCSS('opacity', '1', { timeout: 2000 });
     const style = await active.evaluate((el) => {

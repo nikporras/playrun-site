@@ -35,15 +35,24 @@ for (const path of PAGES) {
       const result = await page.evaluate(
         ([TEXT, TILES, MARGIN]) => {
           type Box = { l: number; t: number; r: number; b: number; w: number; h: number };
-          const box = (e: Element): Box => {
+          const box = (e: Element, clip = false): Box => {
             const r = e.getBoundingClientRect();
-            return { l: r.left + scrollX, t: r.top + scrollY, r: r.right + scrollX, b: r.bottom + scrollY, w: r.width, h: r.height };
+            let [l, t, rr, bb] = [r.left, r.top, r.right, r.bottom];
+            // (only the part an ancestor with hidden overflow lets show: the stats drum's window
+            // clips its rows beyond the five on show)
+            for (let a = clip ? e.parentElement : null; a && a !== document.body; a = a.parentElement) {
+              const cs = getComputedStyle(a);
+              if (cs.overflowY !== 'hidden' && cs.overflowY !== 'clip') continue;
+              const c = a.getBoundingClientRect();
+              [l, t, rr, bb] = [Math.max(l, c.left), Math.max(t, c.top), Math.min(rr, c.right), Math.min(bb, c.bottom)];
+            }
+            return { l: l + scrollX, t: t + scrollY, r: rr + scrollX, b: bb + scrollY, w: Math.max(0, rr - l), h: Math.max(0, bb - t) };
           };
           const hits = (a: Box, b: Box) => a.l - MARGIN < b.r && a.r + MARGIN > b.l && a.t - MARGIN < b.b && a.b + MARGIN > b.t;
           const bugs = [...document.querySelectorAll<HTMLElement>('.bug')].filter((b) => !b.hidden && b.offsetParent);
           // (a row of the stats drum beyond the five on show is hidden, and does not count)
           const others = [...document.querySelectorAll<HTMLElement>(`${TEXT}, ${TILES}`)].filter((e) => !e.closest('.bug') && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden');
-          const boxes = others.map((e) => ({ e, b: box(e) })).filter(({ b }) => b.w > 0 && b.h > 0);
+          const boxes = others.map((e) => ({ e, b: box(e, true) })).filter(({ b }) => b.w > 0 && b.h > 0);
           const out: string[] = [];
           let walked = 0;
           for (const bug of bugs) {
