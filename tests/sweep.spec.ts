@@ -335,12 +335,12 @@ test('at 375x812 a swipe on the field scrolls the page before Play and during a 
     let rest = -1;
     for (let k = 0; k < 40; k++) {
       await page.waitForTimeout(100);
-      const now = await page.evaluate(() => scrollY);
+      const now = await page.evaluate(() => window.scrollY);
       if (now === rest) break;
       rest = now;
     }
   };
-  const scrollY = () => page.evaluate(() => scrollY);
+  const pageY = () => page.evaluate(() => window.scrollY);
   const centre = async (sel: string) => {
     const b = (await page.locator(sel).boundingBox())!;
     return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
@@ -348,9 +348,9 @@ test('at 375x812 a swipe on the field scrolls the page before Play and during a 
   // before Play: a swipe up on the poster scrolls the page down
   await page.locator('.sweep__stage').scrollIntoViewIfNeeded();
   let at = await centre('.sweep__stage');
-  let before = await scrollY();
+  let before = await pageY();
   await swipe(at.x, at.y, -160);
-  expect(await scrollY(), 'the page scrolls from the poster').toBeGreaterThan(before + 40);
+  expect(await pageY(), 'the page scrolls from the poster').toBeGreaterThan(before + 40);
   // during a game: the same on the field
   const playButton = page.getByRole('button', { name: 'Play Bug Sweep' });
   await playButton.scrollIntoViewIfNeeded();
@@ -359,9 +359,9 @@ test('at 375x812 a swipe on the field scrolls the page before Play and during a 
   await expect.poll(async () => (await state(page)).mode).toBe('play');
   await hook(page, 'calm', true);
   at = await centre('.sweep__stage canvas');
-  before = await scrollY();
+  before = await pageY();
   await swipe(at.x, at.y, -120);
-  expect(await scrollY(), 'the page scrolls from the field during a game').toBeGreaterThan(before + 30);
+  expect(await pageY(), 'the page scrolls from the field during a game').toBeGreaterThan(before + 30);
   // (the field back on screen, the game playing again)
   await page.locator('.sweep__stage').scrollIntoViewIfNeeded();
   if ((await state(page)).mode === 'paused') await page.getByRole('button', { name: /Resume/ }).first().tap();
@@ -369,10 +369,10 @@ test('at 375x812 a swipe on the field scrolls the page before Play and during a 
   // a held Right: the ship moves and the page stays put, even with the finger dragging upwards
   const right = await centre('[data-sweep-right]');
   const x0 = (await state(page)).shipX;
-  before = await scrollY();
+  before = await pageY();
   await swipe(right.x, right.y, -60, 400);
   expect((await state(page)).shipX, 'the ship moved right').toBeGreaterThan(x0 + 10);
-  expect(Math.abs((await scrollY()) - before), 'no scroll under a held button').toBeLessThanOrEqual(1);
+  expect(Math.abs((await pageY()) - before), 'no scroll under a held button').toBeLessThanOrEqual(1);
   await context.close();
 });
 
