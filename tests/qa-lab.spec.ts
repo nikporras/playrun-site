@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, devices } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
@@ -643,3 +643,50 @@ for (const [width, height] of [[1440, 900], [375, 812]] as const) {
   });
 }
 
+
+for (const width of [300, 375, 390]) {
+  test(`on a phone at ${width}px every QA Lab table stacks: each row a block, the first cell its heading, the column names as labels`, { tag: ['@viewports'] }, async ({ browser }) => {
+    // (a phone's user agent, so the page picks the phone and shows Pocket DevTools)
+    const context = await browser.newContext({ ...devices['Pixel 7'], viewport: { width, height: 800 }, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto('/qa-lab/');
+    // (the network rows are written once the page has loaded)
+    await expect(page.locator('[data-dev-network] td[data-label]').first()).toBeAttached();
+    const tables = await page.locator('main table').evaluateAll((ts) =>
+      ts.filter((t) => t.getClientRects().length).map((t) => {
+        const head = t.querySelector('thead')!.getBoundingClientRect();
+        const rows = [...t.querySelectorAll('tbody tr')].map((tr) => {
+          const cells = [...tr.children] as HTMLElement[];
+          const first = cells[0].getBoundingClientRect();
+          return {
+            display: getComputedStyle(tr).display,
+            // the first cell sits above every other cell of its row
+            firstAbove: cells.slice(1).every((c) => c.getBoundingClientRect().top >= first.bottom - 1),
+            labels: cells.slice(1).map((c) => c.dataset.label ? getComputedStyle(c, '::before').content.includes(c.dataset.label) : true),
+          };
+        });
+        return { cls: t.className, headHidden: head.width <= 1 && head.height <= 1, rows };
+      }),
+    );
+    expect(tables.length).toBeGreaterThanOrEqual(3);
+    for (const t of tables) {
+      expect(t.headHidden, t.cls).toBe(true);
+      for (const r of t.rows) {
+        expect(r.display, t.cls).not.toBe('table-row');
+        expect(r.labels.every(Boolean), t.cls).toBe(true);
+      }
+      // (the results row is three labelled numbers side by side; every other row is heading first)
+      if (!t.cls.includes('tp__table') || t.rows.length > 1) for (const r of t.rows) expect(r.firstAbove, t.cls).toBe(true);
+    }
+    await context.close();
+  });
+}
+
+test('on a desktop the QA Lab tables stay tables with their header row', { tag: ['@viewports'] }, async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/qa-lab/');
+  for (const t of await page.locator('.testplan table').all()) {
+    expect(await t.evaluate((el) => getComputedStyle(el).display)).toBe('table');
+    await expect(t.locator('thead th').first()).toBeVisible();
+  }
+});

@@ -37,7 +37,7 @@ test('a phone picks itself: its steps show, and the panel shows the console, the
 
 // The network table never lets one cell's text run into another, from 300px up: short names for
 // Astro's script chunks (the full address in the title and for screen readers), a fixed layout with
-// the file cut short by an ellipsis, and under 360px each row stacked.
+// the file cut short by an ellipsis, and on a phone each row stacked.
 for (const width of [300, 375, 390]) {
   test(`at ${width}px no cell of the network table overlaps another, and the script chunks read by their short names`, { tag: ['@viewports', '@a11y'] }, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
@@ -46,7 +46,8 @@ for (const width of [300, 375, 390]) {
     await table.scrollIntoViewIfNeeded();
     await expect.poll(() => page.locator('[data-dev-network] tr').count()).toBeGreaterThan(5);
     await page.evaluate(() => document.fonts.ready);
-    const rows = await page.locator('.devtools__table tr').evaluateAll((trs) =>
+    // (the body rows: on a phone the header row is there for screen readers only)
+    const rows = await page.locator('.devtools__table tbody tr').evaluateAll((trs) =>
       trs.map((tr) => {
         const cells = [...tr.children] as HTMLElement[];
         return cells.map((c, i) => {
@@ -87,7 +88,7 @@ for (const width of [300, 375, 390]) {
       expect(f.title).toMatch(/^https?:\/\//);
       expect(f.full).toBe(f.title);
     }
-    // under 360px each row stacks: the file on a line of its own
+    // on a phone each row stacks: the file on a line of its own
     if (width < 360) {
       const first = rows.find((c) => c.length === 4 && c[0].text !== 'File')!;
       expect(first[1].top, 'type under the file').toBeGreaterThanOrEqual(first[0].bottom - 1);
