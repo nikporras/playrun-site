@@ -35,15 +35,11 @@ test.describe('Testing, the guided test run', () => {
     await expect(page.getByText('Press F12').first()).toBeVisible();
     await expect(page.locator('.step__for[data-for="iphone"]').first()).toBeHidden();
     await expect(page.locator('.devtools')).toBeHidden();
-    // the suite's own number on the report, the same as Home's (both from src/data/suite.ts; a
-    // build with no run has only the list), and where it runs, from the Playwright projects and
-    // the live check's schedule (.github/workflows/live-check.yml)
+    // the suite's own number on the report (src/data/suite.ts; a build with no run has only the
+    // list; pages.spec checks it against Playwright's), and where it runs, from the Playwright
+    // projects and the live check's schedule (.github/workflows/live-check.yml)
     const line = (await page.locator('.report__suite').textContent())!.trim();
     expect(line).toMatch(/^\d+ checks (passed before this page went live|run before this page goes live)\.$/);
-    await page.goto('/');
-    const home = (await page.locator('.proof__line').textContent())!.match(/(\d+) checks/)![1];
-    expect(line.split(' ')[0]).toBe(home);
-    await page.goto('/testing/');
     await expect(page.locator('.report__where')).toHaveText('Run in Chromium, Firefox and WebKit on every push, and against the live site every Monday.');
   });
 

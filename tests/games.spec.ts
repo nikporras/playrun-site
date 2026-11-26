@@ -37,7 +37,7 @@ test.describe('Games', () => {
     await expect(page.locator('.hud__runner')).toBeVisible();
     // the controls live on the scoreboard card, which the pill opens
     const pill = page.getByRole('button', { name: /^Scoreboard/ });
-    await expect(pill).toHaveAccessibleName(/level\s*Lv\s*1\s*\/\s*5\s*00 bugs caught\s*0\/7 achievements/);
+    await expect(pill).toHaveAccessibleName(/level\s*Lv\s*1\s*\/\s*4\s*00 bugs caught\s*0\/7 achievements/);
     await pill.click();
     await page.getByRole('button', { name: /Games on/ }).click();
     await expect(page.locator('html')).not.toHaveClass(/(^|\s)games(\s|$)/);
@@ -516,9 +516,9 @@ test.describe('Jump markers', () => {
       await page.goto('/');
       await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
       const jumps = page.locator('.hud__levels .hud__jump');
-      await expect(jumps).toHaveCount(4);
+      await expect(jumps).toHaveCount(3);
       const names = await jumps.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')));
-      expect(names).toEqual(["Jump to Level 2: Games I've tested", 'Jump to Level 3: My game QA career in numbers', 'Jump to Level 4: Tested like one of my games', 'Jump to Level 5: After hours']);
+      expect(names).toEqual(["Jump to Level 2: Games I've tested", 'Jump to Level 3: My game QA career in numbers', 'Jump to Level 4: Want the full story?']);
       const column = await page.locator('.level').first().evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft));
       for (const b of await jumps.evaluateAll((els) => els.map((el) => el.getBoundingClientRect()))) {
         expect(b.height).toBeGreaterThanOrEqual(hit);
@@ -528,8 +528,14 @@ test.describe('Jump markers', () => {
       }
       // a jump: Level 4's top comes to the top of the screen and its heading takes focus
       await page.getByRole('button', { name: /^Jump to Level 4/ }).click();
-      await expect.poll(() => page.evaluate(() => Math.round(document.querySelector('[data-level="4"]')!.getBoundingClientRect().top)), { timeout: 3000 }).toBeLessThanOrEqual(2);
-      await expect(page.locator('#proof-title')).toBeFocused();
+      // (Home's close is short: the jump goes as far as the page scrolls, the level then whole on screen)
+      const landed = () => page.evaluate(() => {
+        const top = Math.round(document.querySelector('[data-level="4"]')!.getBoundingClientRect().top);
+        const end = Math.ceil(scrollY + innerHeight) >= document.documentElement.scrollHeight - 1;
+        return top <= 2 || (end && top >= 0);
+      });
+      await expect.poll(landed, { timeout: 3000 }).toBe(true);
+      await expect(page.locator('#final-title')).toBeFocused();
       // the keyboard reaches them with a ring
       await jumps.first().focus();
       await page.keyboard.press('Shift+Tab');
@@ -543,9 +549,9 @@ test.describe('Jump markers', () => {
     await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
-    await page.getByRole('button', { name: /^Jump to Level 5/ }).click();
-    const at = await page.evaluate(() => Math.round(document.querySelector('[data-level="5"]')!.getBoundingClientRect().top));
-    expect(Math.abs(at), 'there at once').toBeLessThanOrEqual(2);
+    await page.getByRole('button', { name: /^Jump to Level 4/ }).click();
+    const at = await page.evaluate(() => ({ top: Math.round(document.querySelector('[data-level="4"]')!.getBoundingClientRect().top), end: Math.ceil(scrollY + innerHeight) >= document.documentElement.scrollHeight - 1 }));
+    expect(Math.abs(at.top) <= 2 || (at.end && at.top >= 0), 'there at once (as far as the page scrolls)').toBe(true);
     await page.goto('/portfolio/');
     const names = await page.locator('.hud__levels .hud__jump').evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')));
     // (the rail shows two digits: the name carries them and the year)

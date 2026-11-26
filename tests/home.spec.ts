@@ -1134,46 +1134,26 @@ test.describe('Home', () => {
     await quiet.close();
   });
 
-  test('Level 4 is one line with the whole suite counted and one link to Testing, on at most two lines on a desktop and three at 300px', async ({ page }) => {
-    // the count, from Playwright's own list, loops expanded (the number the build reads)
-    const cli = path.join(path.dirname(require.resolve('@playwright/test/package.json')), 'cli.js');
-    const list = JSON.parse(execFileSync(process.execPath, [cli, 'test', '--list', '--reporter=json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: '', PLAYWRIGHT_JSON_OUTPUT_FILE: '' } }));
-    let total = 0;
-    const walk = (s: { specs?: { tests: unknown[] }[]; suites?: unknown[] }) => {
-      for (const sp of s.specs ?? []) total += sp.tests.length;
-      for (const c of (s.suites ?? []) as (typeof s)[]) walk(c);
-    };
-    for (const s of list.suites) walk(s);
-    expect(total).toBeGreaterThan(0);
-
+  // Home ends short: hero, logos, stats, then the close. The Proof hook and After hours are gone.
+  test('Home has four levels and ends with the close: Want the full story?, Get in touch and More about me, nothing else', async ({ page }) => {
     await page.goto('/');
-    const level = page.locator('[data-level="4"]');
-    await expect(level.locator('h2')).toHaveText('Tested like one of my games');
-    await expect(level.locator('h2')).toHaveClass(/visually-hidden/);
-    const line = level.locator('.proof__line');
-    await expect(line).toHaveText(`Tested like one of my games: ${total} checks run on every change before it goes live.`);
-    // one line and one link, nothing else: no button, no board, no status
-    await expect(level.locator('.level__head > *')).toHaveCount(4); // the flag, the hidden h2, the line, the link
-    await expect(level.getByRole('button', { name: /test this page|run again/i })).toHaveCount(0);
-    await expect(level.locator('.panel, #selftest, #selftest-status, #selftest-score')).toHaveCount(0);
-    const links = level.getByRole('link');
-    await expect(links).toHaveCount(1);
-    await expect(links).toHaveText('See how I test this site');
-    await expect(links).toHaveAttribute('href', '/testing/');
-
-    const lines = () =>
-      line.evaluate((el) => {
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
-      });
-    for (const [w, h, most] of [[1024, 768, 2], [1280, 800, 2], [1440, 900, 2], [1920, 1080, 2], [300, 640, 3]] as const) {
-      await page.setViewportSize({ width: w, height: h });
-      await page.evaluate(() => document.fonts.ready);
-      await line.scrollIntoViewIfNeeded();
-      expect(await lines(), `lines at ${w}px`).toBeLessThanOrEqual(most);
-      await expect(links).toBeVisible();
-    }
+    await expect(page.locator('main > section.level')).toHaveCount(4);
+    await expect(page.locator('[data-level] .flag')).toHaveText(['Level 1 · Start', 'Level 2 · Games', 'Level 3 · Stats', 'Level 4 · Final level']);
+    await expect(page.locator('main')).not.toContainText('Tested like one of my games');
+    await expect(page.locator('main')).not.toContainText('After hours');
+    await expect(page.locator('main')).not.toContainText(/\d+ checks/);
+    const close = page.locator('[data-level="4"]');
+    await expect(close).toHaveClass(/level--light/);
+    await expect(close.locator('h2')).toHaveText('Want the full story?');
+    await expect(close.locator('.level__head > *')).toHaveCount(3); // the flag, the heading, the actions
+    const links = close.getByRole('link');
+    await expect(links).toHaveText(['Get in touch', 'More about me']);
+    await expect(links.nth(0)).toHaveAttribute('href', '/contact/');
+    await expect(links.nth(0)).toHaveAttribute('data-umami-event', 'get-in-touch');
+    await expect(links.nth(1)).toHaveAttribute('href', '/about/');
+    await expect(close.locator('p:not(.flag)')).toHaveCount(0);
+    // (Home keeps five bugs)
+    await expect(page.locator('main [data-bug]')).toHaveCount(5);
   });
 
   test('Get in touch appears in the nav and the end of Home only; the hero has no buttons', async ({ page }) => {
@@ -1245,7 +1225,7 @@ test.describe('Home', () => {
     await expect(page.locator('.drum__row:not(.drum__clone)').first()).toContainText('5+');
     await expect(page.locator('.drum__clone').first()).toBeHidden();
     await expect(page.locator('[data-drum-next]')).toBeHidden();
-    await expect(page.locator('.final__text')).toContainText('Helldivers, The Witcher and God of War');
+    await expect(page.locator('#final-title')).toHaveText('Want the full story?');
     await context.close();
   });
 

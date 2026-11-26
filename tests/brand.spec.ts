@@ -85,7 +85,7 @@ test('every page asks for each font once, and no font is preloaded', { tag: ['@b
 // Two faces, two jobs: Pixel Operator for display (titles, nav, flags, chips, buttons, stats, the
 // scoreboard, Pocket DevTools), Montserrat for everything people read.
 const READ: Record<string, string[]> = {
-  '/': ['.hero__value', '.proof__line', '.final__text'],
+  '/': ['.hero__value', '.drum__cap'],
   '/about/': ['.level__lead', '.area__line', '.area__list li', '.facts th', '.facts td', '.story__text p'],
   '/portfolio/': ['.level__lead', '.group__lead', '.group__roles', '.card__summary', '.card__makers'],
   '/testing/': ['.level__lead', '.step__ask', '.step__list li'],
