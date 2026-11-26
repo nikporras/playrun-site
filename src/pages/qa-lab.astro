@@ -376,19 +376,27 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
       </section>
       <section class="tp tp--wide" aria-labelledby="tp-auto">
         <h3 id="tp-auto" class="tp__title">What the automated tests cover</h3>
-        <p class="tp__note" data-tp-total>{bugSweep.total} checks in {bugSweep.files.length} spec files, tagged for Bug Sweep:</p>
-        <table class="tp__table" data-tp-coverage>
-          <thead><tr><th scope="col">Spec file</th><th scope="col">Checks</th><th scope="col">What they cover</th></tr></thead>
-          <tbody>
+        <p class="tp__total" data-tp-total>{bugSweep.total} checks, run on every change</p>
+        <!-- (the groups and their counts come from each check's tag in the suite: suite.ts COVERAGE) -->
+        <ul role="list" class="tp__groups" data-tp-groups>
+          {bugSweep.groups.map((g) => (
+            <li class="tp__group">
+              <span class="tp__count">{g.total}</span>
+              <span class="tp__what"><strong class="tp__name">{g.name}</strong> <span class="tp__line">{g.line}</span></span>
+            </li>
+          ))}
+        </ul>
+        <details class="tp__more" data-tp-coverage>
+          <summary class="tp__summary">See every test</summary>
+          <div class="tp__files">
             {bugSweep.files.map((f) => (
-              <tr>
-                <th scope="row"><code><Breakable text={f.file} /></code></th>
-                <td class="num">{f.checks.reduce((n, c) => n + c.total, 0)}</td>
-                <td><ul class="tp__list tp__list--tight">{f.checks.map((c) => <li>{c.title}</li>)}</ul></td>
-              </tr>
+              <section class="tp__file">
+                <h4 class="tp__filename"><code><Breakable text={f.file} /></code></h4>
+                <ul class="tp__list tp__list--tight">{f.lines.map((l) => <li>{l.title}</li>)}</ul>
+              </section>
             ))}
-          </tbody>
-        </table>
+          </div>
+        </details>
       </section>
       <section class="tp" aria-labelledby="tp-hand">
         <h3 id="tp-hand" class="tp__title">Checked by hand</h3>
@@ -1106,6 +1114,95 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     font-size: 0.9375rem;
     white-space: nowrap;
   }
+  /* What the automated tests cover: the total, the groups in plain words with their counts, then
+     every test in a closed dropdown. */
+  .tp__total {
+    margin: 0 0 var(--s-2);
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    line-height: 1.2;
+    max-width: none;
+  }
+  .tp__groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: var(--s-2) var(--s-4);
+    margin: 0 0 var(--s-3);
+    padding: 0;
+  }
+  .tp__group {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: var(--s-2);
+    align-items: baseline;
+  }
+  .tp__count {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--accent);
+    text-align: right;
+  }
+  .tp__name {
+    display: block;
+    font-weight: 600;
+  }
+  .tp__line {
+    color: var(--muted);
+  }
+  .tp__more {
+    border-top: 1px solid var(--surface-2);
+    border-bottom: 1px solid var(--surface-2);
+  }
+  .tp__summary {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 0;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    cursor: pointer;
+    list-style: none;
+  }
+  .tp__summary::-webkit-details-marker {
+    display: none;
+  }
+  /* (a pixel arrow that turns down when open) */
+  .tp__summary::before {
+    content: '';
+    width: 0.5rem;
+    height: 0.75rem;
+    background: currentColor;
+    clip-path: polygon(0 0, 25% 0, 25% 12.5%, 50% 12.5%, 50% 25%, 75% 25%, 75% 37.5%, 100% 37.5%, 100% 62.5%, 75% 62.5%, 75% 75%, 50% 75%, 50% 87.5%, 25% 87.5%, 25% 100%, 0 100%);
+  }
+  .tp__more[open] > .tp__summary::before {
+    transform: rotate(90deg);
+  }
+  .tp__summary:hover {
+    color: var(--ink);
+  }
+  .tp__summary:focus-visible {
+    outline: 3px solid var(--accent-2);
+    outline-offset: 4px;
+  }
+  .tp__files {
+    display: grid;
+    gap: var(--s-3);
+    padding: var(--s-1) 0 var(--s-3);
+  }
+  .tp__filename {
+    margin: 0 0 var(--s-1);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 400;
+  }
+  .tp__filename code {
+    font-size: 0.9375rem;
+  }
   .testplan a:not(.button),
   .reports a:not(.button) {
     color: inherit;
@@ -1116,19 +1213,6 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     }
   }
   @media (max-width: 47.99rem) {
-    /* (the coverage table keeps to the column: fixed widths, the file names wrap only before a dot) */
-    .tp__table[data-tp-coverage] {
-      table-layout: fixed;
-    }
-    .tp__table[data-tp-coverage] th:first-child {
-      width: 6.5rem;
-    }
-    .tp__table[data-tp-coverage] th:nth-child(2) {
-      width: 3.5rem;
-    }
-    .tp__table[data-tp-coverage] code {
-      white-space: normal;
-    }
     .tp__fields {
       grid-template-columns: minmax(0, 1fr);
       gap: 0.25rem;

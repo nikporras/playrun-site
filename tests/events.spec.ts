@@ -85,7 +85,7 @@ test('what a click cannot see is counted by name: a message sent, the email way 
   expect(JSON.stringify(await events(page))).not.toMatch(/Ada|example\.com|Hello from/);
 });
 
-test('Bug Sweep counts a start, a clear and a game over; an achievement counts with its name; the Motion switch counts on and off', { tag: ['@bugsweep'] }, async ({ page }) => {
+test('Bug Sweep counts a start, a clear and a game over; an achievement counts with its name; the Motion switch counts on and off', { tag: ['@bugsweep', '@events'] }, async ({ page }) => {
   await record(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/about/');

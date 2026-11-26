@@ -192,7 +192,7 @@ export const versions = {
  * its title, the browsers it runs in and, from a run, how many passed. Read from the same list or
  * report as everything above, so no count or title is ever typed in.
  */
-export type TaggedCheck = { file: string; title: string; total: number; passed: number; failed: number; projects: string[] };
+export type TaggedCheck = { file: string; title: string; total: number; passed: number; failed: number; projects: string[]; tags: string[] };
 const tagged = (tag: string): TaggedCheck[] => {
   const out: TaggedCheck[] = [];
   const walk = (s: JsonSuite) => {
@@ -206,6 +206,7 @@ const tagged = (tag: string): TaggedCheck[] => {
         passed: tests.filter((t) => t.status === 'expected' || t.status === 'flaky').length,
         failed: tests.filter((t) => t.status === 'unexpected').length,
         projects: [...new Set(tests.map((t) => t.projectName ?? ''))].filter(Boolean),
+        tags: (spec.tags ?? []).map((t) => t.replace(/^@/, '')),
       });
     }
     for (const c of s.suites ?? []) walk(c);
@@ -213,13 +214,48 @@ const tagged = (tag: string): TaggedCheck[] => {
   for (const s of report.suites) walk(s);
   return out;
 };
+/**
+ * The plain summary of the Bug Sweep checks on the QA Lab: each check carries exactly one of these
+ * tags beside @bugsweep, and the counts come from the tags. The words live here; the numbers never.
+ */
+const COVERAGE: { tag: string; name: string; line: string }[] = [
+  { tag: 'gameplay', name: 'Gameplay', line: 'Loading, rules, lives, winning, losing and pausing.' },
+  { tag: 'controls', name: 'Controls', line: 'Keyboard and touch, and a swipe still scrolls the page.' },
+  { tag: 'a11y', name: 'Accessibility', line: 'Axe while playing, paused and over, and play with motion reduced.' },
+  { tag: 'events', name: 'Analytics events', line: 'A start, a clear, a game over and the achievement.' },
+  { tag: 'known', name: 'Known issue QA-002', line: 'The glitch stays visual and only ever hits one bug.' },
+];
+
+// Checks that differ only by the screen size in their title ("(1440x900)", "at 375px") read as one
+// line: "... (at 1440, 768 and 375px)".
+const SIZE = /\s*\((\d{3,4})x\d{3,4}\)|\s+at (\d{3,4})(?:x\d{3,4}|px)\b/;
+const and = (a: string[]) => (a.length > 1 ? `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}` : a.join(''));
+const merged = (checks: TaggedCheck[]) => {
+  const lines = new Map<string, { title: string; widths: string[]; total: number }>();
+  for (const c of checks) {
+    const m = c.title.match(SIZE);
+    const key = m ? c.title.replace(SIZE, '') : c.title;
+    const e = lines.get(key) ?? { title: c.title, widths: [], total: 0 };
+    if (m) e.widths.push(m[1] ?? m[2]);
+    e.total += c.total;
+    lines.set(key, e);
+  }
+  return [...lines.entries()].map(([key, e]) => ({ title: e.widths.length > 1 ? `${key} (at ${and(e.widths)}px)` : e.title, total: e.total }));
+};
+
 export const bugSweep = (() => {
   const checks = tagged('@bugsweep');
   if (checks.length === 0) throw new Error('No checks tagged @bugsweep: the QA Lab test plan lists them.');
-  const files = [...new Set(checks.map((c) => c.file))].map((file) => ({ file, checks: checks.filter((c) => c.file === file) }));
+  for (const c of checks) {
+    const n = COVERAGE.filter((g) => c.tags.includes(g.tag)).length;
+    if (n !== 1) throw new Error(`"${c.title}" (${c.file}) needs exactly one of ${COVERAGE.map((g) => '@' + g.tag).join(', ')} beside @bugsweep (it has ${n}).`);
+  }
+  const groups = COVERAGE.map((g) => ({ ...g, total: checks.filter((c) => c.tags.includes(g.tag)).reduce((n, c) => n + c.total, 0) })).filter((g) => g.total > 0);
+  const files = [...new Set(checks.map((c) => c.file))].map((file) => ({ file, checks: checks.filter((c) => c.file === file), lines: merged(checks.filter((c) => c.file === file)) }));
   const engines = new Set(checks.flatMap((c) => c.projects));
   return {
     checks,
+    groups,
     files,
     total: checks.reduce((n, c) => n + c.total, 0),
     passed: checks.reduce((n, c) => n + c.passed, 0),

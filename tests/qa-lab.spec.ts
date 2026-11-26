@@ -260,7 +260,7 @@ test.describe('Performance under reduced motion', () => {
     await expect(step.locator('.step__state')).toHaveCSS('text-transform', 'uppercase');
     expect(await step.locator('.step__state').evaluate((el) => getComputedStyle(el).color), 'grey').toBe('rgb(170, 179, 197)');
     expect(detail).toContain('paint timing not reported by this browser');
-    expect(detail).not.toMatch(/n\/a|0ms/);
+    expect(detail).not.toMatch(/n\/a|\b0ms/);
     await expect(page.locator('[data-report-row="performance"] [data-report-result]')).toHaveText('Not measured');
     await expect(page.locator('[data-report-score]')).toHaveText('4 of 4 measured steps passed on your device, 1 not measured.');
     await context.close();
@@ -478,10 +478,10 @@ test('on a desktop the report is dealt as the sixth card and runs any step not y
 const tagged = () => {
   const cli = path.join(path.dirname(require.resolve('@playwright/test/package.json')), 'cli.js');
   const list = JSON.parse(execFileSync(process.execPath, [cli, 'test', '--list', '--reporter=json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: '', PLAYWRIGHT_JSON_OUTPUT_FILE: '' } }));
-  const out: { file: string; title: string; n: number; projects: string[] }[] = [];
+  const out: { file: string; title: string; n: number; projects: string[]; tags: string[] }[] = [];
   type S = { specs?: { title: string; file: string; tags?: string[]; tests: { projectName: string }[] }[]; suites?: S[] };
   const walk = (s: S) => {
-    for (const sp of s.specs ?? []) if ((sp.tags ?? []).includes('bugsweep')) out.push({ file: path.basename(sp.file), title: sp.title, n: sp.tests.length, projects: sp.tests.map((t) => t.projectName) });
+    for (const sp of s.specs ?? []) if ((sp.tags ?? []).includes('bugsweep')) out.push({ file: path.basename(sp.file), title: sp.title, n: sp.tests.length, projects: sp.tests.map((t) => t.projectName), tags: sp.tags ?? [] });
     for (const c of s.suites ?? []) walk(c);
   };
   for (const s of list.suites) walk(s);
@@ -508,20 +508,38 @@ test('the test plan for Bug Sweep: every block, the coverage and the results fro
   await page.goto('/qa-lab/');
   const plan = page.locator('.testplan');
   await expect(plan.locator('h3')).toHaveText(['Scope', 'Platforms and devices', 'Risks', 'Test types', 'What the automated tests cover', 'Checked by hand', 'Entry and exit criteria', 'How a test run goes', 'Results', 'Known issues']);
-  await expect(plan.locator('h4')).toHaveText(['In scope', 'Out of scope']);
+  await expect(plan.locator('h4:not(.tp__filename)')).toHaveText(['In scope', 'Out of scope']);
   // the checks tagged for Bug Sweep, from Playwright's own list: files, titles, counts, browsers
   const checks = tagged();
   expect(checks.length).toBeGreaterThan(5);
   const total = checks.reduce((n, c) => n + c.n, 0);
   const files = [...new Set(checks.map((c) => c.file))];
-  await expect(plan.locator('[data-tp-total]')).toHaveText(`${total} checks in ${files.length} spec files, tagged for Bug Sweep:`);
-  const rows = plan.locator('[data-tp-coverage] tbody tr');
-  await expect(rows.locator('th')).toHaveText(files);
+  // the plain summary: the total, then the groups in plain words, each count from the tags
+  await expect(plan.locator('[data-tp-total]')).toHaveText(`${total} checks, run on every change`);
+  const groups: [string, string][] = [['gameplay', 'Gameplay'], ['controls', 'Controls'], ['a11y', 'Accessibility'], ['events', 'Analytics events'], ['known', 'Known issue QA-002']];
+  for (const c of checks) expect(groups.filter(([t]) => c.tags.includes(t)), `one group for "${c.title}"`).toHaveLength(1);
+  const shown = groups.map(([t, name]) => [name, checks.filter((c) => c.tags.includes(t)).reduce((n, c) => n + c.n, 0)] as const).filter(([, n]) => n > 0);
+  const items = plan.locator('[data-tp-groups] li');
+  await expect(items.locator('.tp__name')).toHaveText(shown.map(([name]) => name));
+  await expect(items.locator('.tp__count')).toHaveText(shown.map(([, n]) => String(n)));
+  expect(shown.reduce((n, [, k]) => n + k, 0)).toBe(total);
+  // every test in a closed dropdown, per file, sizes merged into one line
+  const more = plan.locator('details[data-tp-coverage]');
+  await expect(more).not.toHaveAttribute('open', '');
+  await expect(more.locator('summary')).toHaveText('See every test');
+  await expect(more.locator('li').first()).toBeHidden();
+  await more.locator('summary').click();
+  await expect(more.locator('h4')).toHaveText(files);
+  const SIZE = /\s*\((\d{3,4})x\d{3,4}\)|\s+at (\d{3,4})(?:x\d{3,4}|px)\b/;
   for (const [i, f] of files.entries()) {
-    const mine = checks.filter((c) => c.file === f);
-    await expect(rows.nth(i).locator('td').first()).toHaveText(String(mine.reduce((n, c) => n + c.n, 0)));
-    await expect(rows.nth(i).locator('li')).toHaveText(mine.map((c) => c.title));
+    const keys = [...new Set(checks.filter((c) => c.file === f).map((c) => c.title.replace(SIZE, '')))];
+    const lines = more.locator('.tp__file').nth(i).locator('li');
+    await expect(lines).toHaveCount(keys.length);
   }
+  await expect(more).toContainText('passes axe: the scoreboard');
+  await expect(more).toContainText('(at 1440 and 375px)');
+  await expect(more).toContainText('(at 1440, 768 and 375px)');
+  await expect(more).not.toContainText('1440x900');
   const names: Record<string, string> = { chromium: 'Chromium', firefox: 'Firefox', webkit: 'WebKit' };
   for (const e of new Set(checks.flatMap((c) => c.projects))) await expect(plan.locator('[data-tp-automated]')).toContainText(names[e]);
   // the results: the total from the list; passed and failed from a run (a local build has none)
