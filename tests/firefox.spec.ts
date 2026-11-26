@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-const PAGES = ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/'];
+const PAGES = ['/', '/about/', '/portfolio/', '/qa-lab/', '/contact/', '/privacy/', '/terms/', '/accessibility/'];
 
 test('in Firefox every page loads clean: no script errors, no console errors, no failed requests', async ({ page }) => {
   test.setTimeout(90_000);
@@ -38,7 +38,7 @@ test('in Firefox every page loads clean: no script errors, no console errors, no
 test.use({ reducedMotion: 'reduce' });
 
 test('in Firefox the Testing picker is preselected as Firefox and the five steps finish, Performance never failing on a missing figure', async ({ page }) => {
-  await page.goto('/testing/');
+  await page.goto('/qa-lab/');
   await expect(page.locator('[data-picker] [aria-pressed="true"]')).toHaveText('Firefox');
   await expect(page.locator('.step__for:not([hidden])').first()).toHaveAttribute('data-for', 'firefox');
   await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 20_000 });

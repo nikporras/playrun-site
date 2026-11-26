@@ -135,7 +135,7 @@ test("Cloudflare's security headers are on every page: HSTS, no framing (X-Frame
   expect(missing).toEqual([]);
 });
 
-test("the header policy and the page's own both allow everything the site does: the pages, Bug Sweep, the Testing run, the forms, with no violation anywhere", async ({ page }) => {
+test("the header policy and the page's own both allow everything the site does: the pages, Bug Sweep, the QA Lab run, the forms, with no violation anywhere", async ({ page }) => {
   await quiet(page);
   const violations: string[] = [];
   // (heard from the very start of every page, before any of its own scripts)
@@ -150,13 +150,13 @@ test("the header policy and the page's own both allow everything the site does: 
     await page.goto(url, { waitUntil: 'load' });
     await page.evaluate(() => document.fonts.ready);
   }
-  // what loads or runs on demand: Bug Sweep's code, and the Testing run's own requests
+  // what loads or runs on demand: Bug Sweep's code, and the QA Lab run's own requests
   await page.goto('/about/');
   await page.getByRole('button', { name: 'Play Bug Sweep' }).click();
   await expect(page.locator('[data-sweep-pause]')).toBeVisible();
   // (with motion off every step runs once the page has loaded)
   await page.evaluate(() => localStorage.setItem('playrun.motion', 'off'));
-  await page.goto('/testing/');
+  await page.goto('/qa-lab/');
   await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 30_000 });
   expect(violations).toEqual([]);
 });

@@ -68,7 +68,7 @@ test('the social card is a 1200 by 630 picture of Nicolás Porras, Game QA Teste
 // font file is ever requested twice on a page.
 test('every page asks for each font once, and no font is preloaded', { tag: ['@brand'] }, async ({ page }) => {
   const twice: string[] = [];
-  for (const path of ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/']) {
+  for (const path of ['/', '/about/', '/portfolio/', '/qa-lab/', '/contact/', '/privacy/']) {
     const fonts: string[] = [];
     const listen = (r: import('@playwright/test').Request) => /\.woff2?$/.test(r.url()) && fonts.push(r.url());
     page.on('request', listen);
@@ -88,7 +88,7 @@ const READ: Record<string, string[]> = {
   '/': ['.hero__value', '.drum__cap'],
   '/about/': ['.level__lead', '.area__line', '.area__list li', '.facts th', '.facts td', '.story__text p'],
   '/portfolio/': ['.level__lead', '.group__lead', '.group__roles', '.card__summary', '.card__makers'],
-  '/testing/': ['.level__lead', '.step__ask', '.step__list li'],
+  '/qa-lab/': ['.level__lead', '.step__ask', '.step__list li'],
   '/contact/': ['.level__lead', '.msg__list', '.form__label'],
   '/privacy/': ['.level__lead', '.row p'],
 };
@@ -96,7 +96,7 @@ const SHOW: Record<string, string[]> = {
   '/': ['h1', '.flag', '.hero__post', '.drum__num'],
   '/about/': ['h2', '.flag', '.chip', '.button'],
   '/portfolio/': ['h1', '.flag', '.status', '.card__id'],
-  '/testing/': ['h1', '.step__num', '.picker__btn', '.devtools__tab', '.report__score'],
+  '/qa-lab/': ['h1', '.step__num', '.picker__btn', '.devtools__tab', '.report__score'],
   '/contact/': ['h1', '.flag', '.contact__key'],
   '/privacy/': ['h1', '.flag'],
 };
@@ -123,7 +123,7 @@ test('at 1920 no line of reading text runs past 75 characters', { tag: ['@brand'
   await page.setViewportSize({ width: 1920, height: 1080 });
   // (motion off: the cards are at rest, not scaled down by their entrance)
   await page.addInitScript(() => localStorage.setItem('playrun.motion', 'off'));
-  for (const path of ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/']) {
+  for (const path of ['/', '/about/', '/portfolio/', '/qa-lab/', '/contact/', '/privacy/', '/terms/', '/accessibility/']) {
     await page.goto(path);
     await page.evaluate(() => document.fonts.ready);
     const longest = await page.evaluate(() => {

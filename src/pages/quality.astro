@@ -1,13 +1,12 @@
 ---
 /**
- * The Quality page is called Testing now, at /testing/. This address stays as a small page that
- * sends visitors and old links there at once: a script first, the meta refresh where script is off,
- * a link to press. It points search engines at /testing/ (canonical) and is never indexed itself;
- * the sitemap leaves it out (astro.config.mjs).
+ * The Quality page became Testing, and Testing is the QA Lab now, at /qa-lab/. This address stays as a small page that sends visitors and old links to /qa-lab/ at once:
+ * a script first, the meta refresh where script is off, a link to press. It points search engines
+ * at /qa-lab/ (canonical) and is never indexed itself; the sitemap leaves it out (astro.config.mjs).
  */
 import { site } from '../config';
 
-const to = '/testing/';
+const to = '/qa-lab/';
 ---
 
 <!doctype html>
@@ -15,10 +14,10 @@ const to = '/testing/';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Testing | Nicolás Porras</title>
+    <title>QA Lab | Nicolás Porras</title>
     <meta name="robots" content="noindex" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <link rel="canonical" href={`${site.url}/testing/`} />
+    <link rel="canonical" href={`${site.url}/qa-lab/`} />
     <meta http-equiv="refresh" content={`0;url=${to}`} />
     <meta name="theme-color" content={site.themeColor} />
     <style>
@@ -38,9 +37,9 @@ const to = '/testing/';
     </style>
   </head>
   <body>
-    <p>This page is now called Testing. <a href={to}>Go to Testing</a></p>
+    <p><a href={to}>Go to the QA Lab</a></p>
     <script>
-      location.replace('/testing/');
+      location.replace('/qa-lab/');
     </script>
   </body>
 </html>

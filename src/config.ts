@@ -118,7 +118,7 @@ export const nav = [
   { label: 'About', href: '/about/' },
   // (the page keeps its address, /portfolio/; everywhere it is called Games)
   { label: 'Games', href: '/portfolio/' },
-  { label: 'Testing', href: '/testing/' },
+  { label: 'QA Lab', href: '/qa-lab/' },
 ];
 
 // The one action. It appears in the nav, in the hero and at the end of Home, nowhere else.

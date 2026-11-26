@@ -21,7 +21,7 @@ const POLICY = [
   'upgrade-insecure-requests',
   "style-src 'self' 'unsafe-inline'",
 ];
-const PAGES = ['/', '/skills/', '/quality/', '/portfolio/', '/testing/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/404.html', '/services/', '/portfolio/clawpunk/'];
+const PAGES = ['/', '/skills/', '/quality/', '/portfolio/', '/testing/', '/qa-lab/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/', '/404.html', '/services/', '/portfolio/clawpunk/'];
 
 const directives = (csp: string) => new Map(csp.split(';').map((d) => d.trim()).filter(Boolean).map((d) => [d.split(/\s+/)[0], d.split(/\s+/).slice(1)] as const));
 

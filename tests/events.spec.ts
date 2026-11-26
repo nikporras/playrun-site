@@ -25,7 +25,7 @@ test('the clicks that count carry their event names: Get in touch everywhere, Li
   await expect(page.locator('[data-glitch-yes]')).toHaveAttribute('data-umami-event', 'glitch-tracked');
   await expect(page.locator('[data-glitch-no]')).toHaveAttribute('data-umami-event', 'glitch-ignored');
   // every link to the contact page and every email link counts as Get in touch, on every page
-  for (const path of ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/']) {
+  for (const path of ['/', '/about/', '/portfolio/', '/qa-lab/', '/contact/', '/privacy/', '/terms/', '/accessibility/']) {
     const html = await (await request.get(path)).text();
     const links = [...html.matchAll(/<a\b[^>]*href="(\/contact\/|mailto:studio@playrunqa\.com)"[^>]*>/g)]
       .map((m) => m[0])
@@ -50,7 +50,7 @@ test('the clicks that count carry their event names: Get in touch everywhere, Li
   }
   // Testing: each device with its option (the event keeps its old name, so the counts run on);
   // the Run every step button and its event are gone
-  await page.goto('/testing/');
+  await page.goto('/qa-lab/');
   await expect(page.locator('[data-umami-event="quality-run"]')).toHaveCount(0);
   for (const b of await page.locator('[data-picker] [data-device]').all()) {
     await expect(b).toHaveAttribute('data-umami-event', 'quality-device');

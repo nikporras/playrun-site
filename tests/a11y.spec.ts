@@ -17,7 +17,7 @@ const scan = async (page: Page, what: string) => {
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   expect(results.violations, `${what}: ${JSON.stringify(results.violations, null, 2)}`).toEqual([]);
 };
-const PAGES = ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+const PAGES = ['/', '/about/', '/portfolio/', '/qa-lab/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
 
 for (const [width, height] of [
   [1440, 900],
@@ -85,7 +85,7 @@ for (const [width, height] of [
     await expect.poll(mode).toBe('over');
     await scan(page, 'Bug Sweep over');
     // the Testing steps for a phone, with Pocket DevTools
-    await page.goto('/testing/');
+    await page.goto('/qa-lab/');
     await page.getByRole('button', { name: 'iPhone' }).click();
     await expect(page.locator('.devtools')).toBeVisible();
     await scan(page, 'the Testing steps for an iPhone');

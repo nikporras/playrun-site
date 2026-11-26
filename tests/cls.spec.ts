@@ -6,7 +6,7 @@ import { test, expect, type Browser } from '@playwright/test';
  * the text is set in the fallback face first and swapped. Every layout shift until three seconds
  * after load is added up (none follows an input here); over 0.1 fails, with what moved.
  */
-const PAGES = ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+const PAGES = ['/', '/about/', '/portfolio/', '/qa-lab/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
 
 const measure = async (browser: Browser, path: string, width: number, height: number, mobile: boolean) => {
   const context = await browser.newContext({ viewport: { width, height }, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: mobile ? 1.75 : 1 });

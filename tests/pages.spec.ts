@@ -28,7 +28,7 @@ const PAGES = [
       'The Climb 2',
     ],
   },
-  { path: '/testing/', h1: /Let's test this\s*page together/, must: ['Smoke test', 'Responsive', 'Accessibility', 'Links', 'Performance', 'Test report', 'on every push'] },
+  { path: '/qa-lab/', h1: /Inside my\s*QA Lab/, must: ['Smoke test', 'Responsive', 'Accessibility', 'Links', 'Performance', 'Test report', 'on every push'] },
   { path: '/privacy/', h1: /Privacy notice/, must: ['Nicolás Porras (PlayRun)', 'deleted after 24 months', 'ico.org.uk'] },
   { path: '/terms/', h1: /Terms of use/, must: ['not licensed for reuse', 'law of England and Wales', 'Credits and trademarks', 'Pixel Operator by Jayvee Enaguas (CC0)', 'Montserrat by Julieta Ulanovsky and contributors (SIL Open Font License)', 'Game names and logos are trademarks of their respective owners'] },
   { path: '/accessibility/', h1: /Accessibility/, must: ['WCAG', 'reduced motion', 'Report a problem'] },
@@ -297,7 +297,7 @@ test('every card has a logo or its icon, the labels and one store button in a ne
 });
 
 test('the trailing-slash address is the one official form: every internal link answers 200 with no redirect, the canonical and og:url match it, the sitemap lists it, and a missing page is still the 404', { tag: ['@pages', '@links'] }, async ({ request, page }) => {
-  const routes = ['/', '/portfolio/', '/testing/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
+  const routes = ['/', '/portfolio/', '/qa-lab/', '/contact/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
   const seen = new Set<string>();
   for (const route of routes) {
     const res = await request.get(route, { maxRedirects: 0 });
@@ -347,7 +347,7 @@ test('the old services and credits addresses send visitors on', { tag: ['@pages'
   expect(sitemap).not.toContain('/credits/');
   await page.goto('/');
   await expect(page.locator('footer').getByRole('link', { name: 'Credits' })).toHaveCount(0);
-  await expect(page.locator('footer').getByRole('link')).toContainText(['Home', 'About', 'Games', 'Testing', 'Contact']);
+  await expect(page.locator('footer').getByRole('link')).toContainText(['Home', 'About', 'Games', 'QA Lab', 'Contact']);
   await expect(page.locator('footer').getByRole('link', { name: 'Skills' })).toHaveCount(0);
   // the page is called Games everywhere a link names it; its address stays /portfolio/
   await expect(page.locator(':is(header, footer, .tabbar) a', { hasText: 'Portfolio' })).toHaveCount(0);
@@ -356,7 +356,7 @@ test('the old services and credits addresses send visitors on', { tag: ['@pages'
 });
 
 test('no controller or headset sprite anywhere, and nothing stands in their place', async ({ page }) => {
-  for (const path of ['/', '/portfolio/', '/contact/', '/testing/', '/terms/']) {
+  for (const path of ['/', '/portfolio/', '/contact/', '/qa-lab/', '/terms/']) {
     await page.goto(path);
     await expect(page.locator('.sprite--controller, .sprite--headset'), path).toHaveCount(0);
     await expect(page.locator('.plat__photo'), path).toHaveCount(0);
@@ -401,7 +401,7 @@ test('the built site is a portfolio, offers no work, links to no repository and 
 });
 
 test('every h1 reads with its words apart in the HTML, as it does on screen (the two-line titles included)', { tag: ['@pages'] }, async ({ page }) => {
-  for (const path of ['/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/']) {
+  for (const path of ['/', '/portfolio/', '/qa-lab/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/']) {
     await page.goto(path);
     const h1 = await page.locator('h1').evaluate((el) => ({ text: (el.textContent ?? '').replace(/\s+/g, ' ').trim(), seen: (el as HTMLElement).innerText.replace(/\s+/g, ' ').trim() }));
     expect(h1.text, `${path}: the h1 in the HTML`).toBe(h1.seen);
@@ -415,7 +415,7 @@ test('every page has its own title and description, the same in the og and Twitt
     '/': ['Nicolás Porras, Game QA Tester in London | PlayRun', 'Game QA portfolio of Nicolás Porras in London: testing console, PC and VR games since 2021, from compliance (CQA) to release, including two QA lead roles.'],
     '/about/': ['About Nicolás Porras, game QA tester in London: skills, platforms and story', 'Nicolás Porras is a game QA tester in London: the five areas he tests, the platforms, headsets and tools he tests with, his story, and quick facts and answers.'],
     '/portfolio/': ["Games I've tested, QA portfolio | Nicolás Porras", "The 20 games Nicolás Porras has tested since 2021, from Cyberpunk 2077 and NBA 2K21 to VR titles at nDreams and Historic VR, with his part in each."],
-    '/testing/': ['Testing: how Nicolás Porras tests a build, live on this site', 'The five checks I run on a game build, live on your device: smoke, responsive, accessibility, links and performance, each with how to check it yourself.'],
+    '/qa-lab/': ['Inside my QA Lab: how Nicolás Porras tests, live on this site', 'How I test, shown on this site: live checks on your device, a test plan for Bug Sweep and two real bug reports from building it.'],
     '/contact/': ['Contact | Nicolás Porras, game QA tester', 'Get in touch with Nicolás Porras, a game QA tester in London, about networking, opportunities, a game QA question or just to say hello.'],
     '/privacy/': ['Privacy notice | Nicolás Porras', ''],
     '/terms/': ['Terms of use | Nicolás Porras', ''],
@@ -476,7 +476,7 @@ test('no line explains the page to itself: the helper lines that read like a tem
 
 test('the footer sits flush with the foot of the screen at the end of every page, short or long, with no gap below it', { tag: ['@viewports'] }, async ({ page }) => {
   test.setTimeout(120_000);
-  const paths = ['/', '/about/', '/portfolio/', '/testing/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
+  const paths = ['/', '/about/', '/portfolio/', '/qa-lab/', '/contact/', '/privacy/', '/terms/', '/accessibility/', '/this-page-is-not-in-the-build/'];
   // (1440x4000: a window taller than the short pages, so the footer has to grow to the bottom)
   for (const [width, height] of [[1920, 1080], [1440, 900], [1440, 4000], [1024, 768], [768, 1024], [375, 812], [300, 640]] as const) {
     await page.setViewportSize({ width, height });
@@ -524,7 +524,7 @@ test('the check count shows on the Testing page only, the number from the suite 
     for (const m of text.matchAll(/(\d[\d,]*)\s+checks\b/g)) seen.push(`${p}: ${m[1]}`);
   }
   for (const m of (await (await request.get('/llms.txt')).text()).matchAll(/(\d[\d,]*)\s+checks\b/g)) seen.push(`/llms.txt: ${m[1]}`);
-  expect(seen.filter((s) => !s.startsWith('/testing/: ')), 'no other page shows a count').toEqual([]);
+  expect(seen.filter((s) => !s.startsWith('/qa-lab/: ')), 'no other page shows a count').toEqual([]);
   expect(seen.length, 'Testing shows the count once').toBe(1);
   for (const s of seen) expect(s.split(': ')[1].replace(/,/g, ''), s).toBe(String(total));
 });

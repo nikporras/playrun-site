@@ -19,7 +19,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('in WebKit the Testing steps run, and Performance passes on first contentful paint or is not measured, never a fail for a missing figure', async ({ page }) => {
-  await page.goto('/testing/');
+  await page.goto('/qa-lab/');
   await expect(page.locator('.step.is-pass, .step.is-fail, .step.is-unmeasured')).toHaveCount(5, { timeout: 20_000 });
   const step = page.locator('#step-performance');
   const detail = (await step.locator('[data-step-result]').textContent()) ?? '';

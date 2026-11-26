@@ -8,7 +8,7 @@ import { test, expect, devices } from '@playwright/test';
 test.use({ ...devices['Pixel 7'], viewport: { width: 390, height: 844 } });
 
 test('a phone picks itself: its steps show, and the panel shows the console, the requests and the timings', async ({ page }) => {
-  await page.goto('/testing/');
+  await page.goto('/qa-lab/');
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
   // (an Android phone: the picker chose it, so its steps show and no computer's)
   await expect(page.locator('[data-picker] [aria-pressed="true"]')).toHaveText('Android');
@@ -41,7 +41,7 @@ test('a phone picks itself: its steps show, and the panel shows the console, the
 for (const width of [300, 375, 390]) {
   test(`at ${width}px no cell of the network table overlaps another, and the script chunks read by their short names`, { tag: ['@viewports', '@a11y'] }, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
-    await page.goto('/testing/');
+    await page.goto('/qa-lab/');
     const table = page.locator('.devtools__table');
     await table.scrollIntoViewIfNeeded();
     await expect.poll(() => page.locator('[data-dev-network] tr').count()).toBeGreaterThan(5);
@@ -81,7 +81,7 @@ for (const width of [300, 375, 390]) {
     // the chunks by their short names, the full address kept
     const files = page.locator('[data-dev-network] td:first-child');
     const shown = await files.evaluateAll((tds) => tds.map((td) => ({ shown: td.querySelector('[aria-hidden="true"]')?.textContent ?? '', full: td.querySelector('.visually-hidden')?.textContent ?? '', title: td.getAttribute('title') ?? '' })));
-    expect(shown.some((f) => f.shown === 'testing.astro'), 'testing.astro by its short name').toBe(true);
+    expect(shown.some((f) => f.shown === 'qa-lab.astro'), 'qa-lab.astro by its short name').toBe(true);
     for (const f of shown) {
       expect(f.shown).not.toMatch(/_astro_type_/);
       expect(f.title).toMatch(/^https?:\/\//);
@@ -96,7 +96,7 @@ for (const width of [300, 375, 390]) {
 }
 
 test('at 390px bug quality-3 is wholly on screen and catchable above the bottom bar, with Pocket DevTools shown', async ({ page }) => {
-  await page.goto('/testing/');
+  await page.goto('/qa-lab/');
   const bug = page.locator('[data-bug="quality-3"]');
   // scrolled until the bug just clears the bar, and at the foot of the page
   for (const where of ['above the bar', 'page end'] as const) {

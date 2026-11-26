@@ -120,11 +120,11 @@ test('About is in the desktop nav, the footer and second in the bottom bar of ph
   await page.goto('/');
   await expect(page.locator('.header__nav').getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about/');
   // the desktop nav and the bottom bar share one order: Home first on desktop only, Contact last on both
-  await expect(page.locator('.header__nav').getByRole('link')).toHaveText(['Home', 'About', 'Games', 'Testing', 'Get in touch']);
+  await expect(page.locator('.header__nav').getByRole('link')).toHaveText(['Home', 'About', 'Games', 'QA Lab', 'Get in touch']);
   await expect(page.locator('footer').getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about/');
   await expect(page.locator('.hero__value').getByRole('link', { name: 'More about me' })).toHaveAttribute('href', '/about/');
   await page.setViewportSize({ width: 375, height: 780 });
-  await expect(page.locator('.tabbar').getByRole('link')).toHaveText(['Home', 'About', 'Games', 'Testing', 'Contact']);
+  await expect(page.locator('.tabbar').getByRole('link')).toHaveText(['Home', 'About', 'Games', 'QA Lab', 'Contact']);
   await expect(page.locator('.tabbar').getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about/');
   await expect(page.locator('footer').getByRole('link', { name: 'About' })).toBeVisible();
 });
@@ -536,7 +536,7 @@ for (const [width, height] of [[375, 812], [390, 844], [1440, 900]] as const) {
 }
 
 test('no link on the site goes to the old Skills page', { tag: ['@links'] }, async ({ page }) => {
-  for (const path of ['/', '/about/', '/portfolio/', '/testing/', '/contact/']) {
+  for (const path of ['/', '/about/', '/portfolio/', '/qa-lab/', '/contact/']) {
     await page.goto(path);
     expect(await page.locator('a[href^="/skills"]').count(), path).toBe(0);
   }

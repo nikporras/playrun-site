@@ -146,7 +146,7 @@ test.describe('Home', () => {
     [360, 780],
     [768, 1024],
   ] as const) {
-    test(`on a phone or a tablet (${width}px) the pages are in a bottom bar: Home, About, Games, Testing, Contact as real links with pixel icons and labels of 16px, none cut off, the current page in green, at least 44px tall with a visible focus; the header keeps the logo, the way home, and has no Menu`, async ({ page }) => {
+    test(`on a phone or a tablet (${width}px) the pages are in a bottom bar: Home, About, Games, QA Lab, Contact as real links with pixel icons and labels of 16px, none cut off, the current page in green, at least 44px tall with a visible focus; the header keeps the logo, the way home, and has no Menu`, async ({ page }) => {
       await page.setViewportSize({ width, height });
       await page.goto('/');
       // on Home, Home is the current item, in green
@@ -160,8 +160,8 @@ test.describe('Home', () => {
       const bar = page.getByRole('navigation', { name: 'Site' });
       await expect(bar).toHaveCount(1);
       const links = bar.getByRole('link');
-      await expect(links).toHaveText(['Home', 'About', 'Games', 'Testing', 'Contact']);
-      expect(await links.evaluateAll((els) => els.map((a) => a.getAttribute('href')))).toEqual(['/', '/about/', '/portfolio/', '/testing/', '/contact/']);
+      await expect(links).toHaveText(['Home', 'About', 'Games', 'QA Lab', 'Contact']);
+      expect(await links.evaluateAll((els) => els.map((a) => a.getAttribute('href')))).toEqual(['/', '/about/', '/portfolio/', '/qa-lab/', '/contact/']);
       await expect(bar.getByRole('link', { name: 'Games' })).toHaveAttribute('aria-current', 'page');
       await expect(bar.locator('[aria-current]')).toHaveCount(1);
       const box = (await bar.boundingBox())!;
@@ -198,9 +198,9 @@ test.describe('Home', () => {
       await expect(links.first()).toBeFocused();
       expect(await links.first().evaluate((a) => getComputedStyle(a).outlineStyle)).not.toBe('none');
       // a real link: Testing loads with Testing marked
-      await bar.getByRole('link', { name: 'Testing' }).click();
-      await expect(page).toHaveURL(/\/testing\/$/);
-      await expect(page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Testing' })).toHaveAttribute('aria-current', 'page');
+      await bar.getByRole('link', { name: 'QA Lab' }).click();
+      await expect(page).toHaveURL(/\/qa-lab\/$/);
+      await expect(page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'QA Lab' })).toHaveAttribute('aria-current', 'page');
     });
   }
 
@@ -230,7 +230,7 @@ test.describe('Home', () => {
       const context = await browser.newContext({ ...options, viewport: { width: 375, height: 780 } });
       const p = await context.newPage();
       await p.goto('/about/');
-      await expect(p.getByRole('navigation', { name: 'Site' }).getByRole('link')).toHaveText(['Home', 'About', 'Games', 'Testing', 'Contact']);
+      await expect(p.getByRole('navigation', { name: 'Site' }).getByRole('link')).toHaveText(['Home', 'About', 'Games', 'QA Lab', 'Contact']);
       // (no ship on the bar, with or without script)
       await expect(p.locator('.hud__runner')).toBeHidden();
       const links = await p.locator('.tabbar__link').evaluateAll((els) => els.map((a) => a.getBoundingClientRect().right));
@@ -1207,7 +1207,7 @@ test.describe('Home', () => {
     await expect(page.locator('.hero button:not([data-bug])')).toHaveCount(0);
     await expect(page.locator('.final').getByRole('link', { name: 'Get in touch' })).toHaveCount(1);
     await expect(page.locator('footer').getByRole('link', { name: 'Get in touch' })).toHaveCount(0);
-    for (const path of ['/portfolio/', '/testing/', '/contact/', '/terms/', '/privacy/']) {
+    for (const path of ['/portfolio/', '/qa-lab/', '/contact/', '/terms/', '/privacy/']) {
       await page.goto(path);
       await expect(page.locator('main').getByRole('link', { name: 'Get in touch' }), path).toHaveCount(0);
     }
@@ -1421,7 +1421,7 @@ test('on a desktop the scoreboard never covers the row of logos, wherever the pa
 // scaled by a fraction (1.25, 1.5) when the two edges round to different device pixels. The field
 // starts under the join's front layer (the same colour), not at its edge, on every page.
 test("no hairline where a level's clouds meet its blue: the field starts under the front layer of the join", { tag: ['@brand'] }, async ({ page }) => {
-  for (const path of ['/', '/portfolio/', '/testing/', '/contact/']) {
+  for (const path of ['/', '/portfolio/', '/qa-lab/', '/contact/']) {
     await page.goto(path);
     const levels = await page.locator('.level.has-join-top').evaluateAll((els) =>
       els.map((el) => {

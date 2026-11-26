@@ -10,7 +10,7 @@ import { test, expect } from '@playwright/test';
 const BUDGETS: Record<string, number> = {
   '/': 250,
   '/portfolio/': 200,
-  '/testing/': 150,
+  '/qa-lab/': 150,
   '/contact/': 150,
   '/about/': 120,
   '/privacy/': 120,

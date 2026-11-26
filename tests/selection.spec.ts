@@ -4,7 +4,7 @@ import { test, expect, type Page } from '@playwright/test';
  * Text can be selected with the mouse on every page: nothing sits over it (link overlays, bugs,
  * the HUD, entrance layers), and the highlight is visible on every field.
  */
-const PAGES = ['/', '/portfolio/', '/contact/', '/testing/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
+const PAGES = ['/', '/portfolio/', '/contact/', '/qa-lab/', '/about/', '/privacy/', '/terms/', '/accessibility/'];
 
 async function settle(page: Page) {
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
@@ -52,7 +52,7 @@ const pick = () => {
  * first drag.
  */
 async function quiet(page: Page, path: string) {
-  if (path !== '/testing/') return;
+  if (path !== '/qa-lab/') return;
   await page.evaluate(() => localStorage.setItem('playrun.motion', 'off'));
   await page.reload();
   await page.mouse.move(640, 300);
