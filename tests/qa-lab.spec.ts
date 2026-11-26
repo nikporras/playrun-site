@@ -523,6 +523,11 @@ test('the test plan for Bug Sweep: every block, the coverage and the results fro
   await expect(items.locator('.tp__name')).toHaveText(shown.map(([name]) => name));
   await expect(items.locator('.tp__count')).toHaveText(shown.map(([, n]) => String(n)));
   expect(shown.reduce((n, [, k]) => n + k, 0)).toBe(total);
+  // the known issue names its ticket, a link to the report further down the page
+  const ticket = items.locator('.tp__name a');
+  await expect(ticket).toHaveText('QA-002');
+  await expect(ticket).toHaveAttribute('href', '#qa-002');
+  await expect(page.locator('#qa-002.ticket')).toHaveCount(1);
   // every test in a closed dropdown, per file, sizes merged into one line
   const more = plan.locator('details[data-tp-coverage]');
   await expect(more).not.toHaveAttribute('open', '');
@@ -553,10 +558,15 @@ test('the test plan for Bug Sweep: every block, the coverage and the results fro
   await expect(plan.locator('dt')).toContainText(['Automated', 'By hand', 'Entry', 'Exit', 'After release']);
   // every table has its header cells
   for (const t of await plan.locator('table').all()) expect(await t.locator('thead th[scope="col"]').count()).toBeGreaterThan(0);
-  // the known issue goes to its ticket
-  await plan.getByRole('link', { name: 'QA-002' }).click();
-  await expect(page).toHaveURL(/#qa-002$/);
-  await expect(page.locator('#qa-002')).toBeInViewport();
+  // the known issue goes to its ticket, from the coverage summary and from Known issues
+  const links = plan.getByRole('link', { name: 'QA-002' });
+  await expect(links).toHaveCount(2);
+  for (const i of [0, 1]) {
+    await page.evaluate(() => { history.replaceState(null, '', location.pathname); window.scrollTo(0, 0); });
+    await links.nth(i).click();
+    await expect(page).toHaveURL(/#qa-002$/);
+    await expect(page.locator('#qa-002')).toBeInViewport();
+  }
 });
 
 test('two bug reports written like real tickets, each with every field, steps, evidence with alt text, the cause and the resolution; then my template', { tag: ['@pages', '@a11y'] }, async ({ page }) => {

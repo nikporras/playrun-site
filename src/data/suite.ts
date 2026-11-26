@@ -218,12 +218,13 @@ const tagged = (tag: string): TaggedCheck[] => {
  * The plain summary of the Bug Sweep checks on the QA Lab: each check carries exactly one of these
  * tags beside @bugsweep, and the counts come from the tags. The words live here; the numbers never.
  */
-const COVERAGE: { tag: string; name: string; line: string }[] = [
+// (a ticket, when given, is shown after the name as a link to its report further down the page)
+const COVERAGE: { tag: string; name: string; ticket?: string; line: string }[] = [
   { tag: 'gameplay', name: 'Gameplay', line: 'Loading, rules, lives, winning, losing and pausing.' },
   { tag: 'controls', name: 'Controls', line: 'Keyboard and touch, and a swipe still scrolls the page.' },
   { tag: 'a11y', name: 'Accessibility', line: 'Axe while playing, paused and over, and play with motion reduced.' },
   { tag: 'events', name: 'Analytics events', line: 'A start, a clear, a game over and the achievement.' },
-  { tag: 'known', name: 'Known issue QA-002', line: 'The glitch stays visual and only ever hits one bug.' },
+  { tag: 'known', name: 'Known issue', ticket: 'QA-002', line: 'The glitch stays visual and only ever hits one bug.' },
 ];
 
 // Checks that differ only by the screen size in their title ("(1440x900)", "at 375px") read as one
