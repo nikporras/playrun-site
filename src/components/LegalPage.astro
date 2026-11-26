@@ -5,6 +5,7 @@
  * <section class="row"> blocks so each page keeps its own words.
  */
 import Base from '../layouts/Base.astro';
+import Breakable from './Breakable.astro';
 import Join from './Join.astro';
 import { contact, legal } from '../config';
 
@@ -50,7 +51,7 @@ const updatedText = new Date(updated).toLocaleDateString('en-GB', { day: 'numeri
       <p class="level__lead" data-enter style="--enter-delay: 80ms">
         {legal.controller}{legal.address ? `, ${legal.address}` : `, ${contact.location}`}.
       </p>
-      <a class="legal__mail" href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="legal-email" data-enter style="--enter-delay: 160ms">{contact.email}</a>
+      <a class="legal__mail" href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="legal-email" data-enter style="--enter-delay: 160ms"><Breakable text={contact.email} /></a>
     </div>
   </section>
 </Base>
@@ -108,7 +109,6 @@ const updatedText = new Date(updated).toLocaleDateString('en-GB', { day: 'numeri
     font-family: var(--font-display);
     font-size: 1.5rem;
     color: var(--pr-navy);
-    overflow-wrap: anywhere;
   }
   @media (max-width: 63.99rem) {
     .legal__head {

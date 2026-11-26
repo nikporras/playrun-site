@@ -1,4 +1,5 @@
 ---
+import Breakable from '../components/Breakable.astro';
 import Base from '../layouts/Base.astro';
 import Bug from '../components/Bug.astro';
 import Join from '../components/Join.astro';
@@ -381,7 +382,7 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
           <tbody>
             {bugSweep.files.map((f) => (
               <tr>
-                <th scope="row"><code>{f.file}</code></th>
+                <th scope="row"><code><Breakable text={f.file} /></code></th>
                 <td class="num">{f.checks.reduce((n, c) => n + c.total, 0)}</td>
                 <td><ul class="tp__list tp__list--tight">{f.checks.map((c) => <li>{c.title}</li>)}</ul></td>
               </tr>
@@ -1115,7 +1116,7 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     }
   }
   @media (max-width: 47.99rem) {
-    /* (the coverage table keeps to the column: fixed widths, the file names free to wrap) */
+    /* (the coverage table keeps to the column: fixed widths, the file names wrap only before a dot) */
     .tp__table[data-tp-coverage] {
       table-layout: fixed;
     }
@@ -1127,11 +1128,6 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     }
     .tp__table[data-tp-coverage] code {
       white-space: normal;
-      overflow-wrap: anywhere;
-    }
-    .tp__table td,
-    .tp__table th {
-      overflow-wrap: anywhere;
     }
     .tp__fields {
       grid-template-columns: minmax(0, 1fr);
@@ -1277,7 +1273,6 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
     font-size: 0.9375rem;
     line-height: 1.5;
     white-space: pre-wrap;
-    overflow-wrap: anywhere;
   }
   @media (max-width: 47.99rem) {
     .ticket {

@@ -5,6 +5,7 @@
  * "Get in touch" lives in the nav, the hero and the end of Home.
  */
 import Icon from '../assets/logo/icon.svg';
+import Breakable from './Breakable.astro';
 import ExternalLink from './ExternalLink.astro';
 import { contact, legalNav, nav, playrun, site, social } from '../config';
 
@@ -19,7 +20,7 @@ const year = new Date().getFullYear();
         <p class="footer__name">{contact.name}</p>
         <p>{playrun.role}, {site.name}. {contact.location}.</p>
         <p class="footer__contact">
-          <a href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="footer-email">{contact.email}</a>
+          <a href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="footer-email"><Breakable text={contact.email} /></a>
           {social.map((s) => (
             <>
               <span class="footer__dot" aria-hidden="true">&middot;</span>
@@ -75,7 +76,6 @@ const year = new Date().getFullYear();
   }
   .footer__who p {
     max-width: none;
-    overflow-wrap: anywhere;
   }
   .footer__who p + p {
     margin-top: 0.2em;

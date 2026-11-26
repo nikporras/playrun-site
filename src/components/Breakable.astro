@@ -1,0 +1,14 @@
+---
+/**
+ * An email address, URL or file name that may wrap on a narrow screen, but only at sensible points:
+ * after "@" or "/", or before a dot (an invisible <wbr> there). Never inside a word, so no rule
+ * like `overflow-wrap: anywhere` is needed around it.
+ */
+interface Props {
+  text: string;
+}
+const { text } = Astro.props;
+const parts = text.split(/(?<=[@/])|(?=\.)/).filter(Boolean);
+---
+
+{parts.map((p, i) => (i === 0 ? p : <><wbr />{p}</>))}

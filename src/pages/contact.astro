@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import Breakable from '../components/Breakable.astro';
 import Bug from '../components/Bug.astro';
 import Join from '../components/Join.astro';
 import PassMark from '../components/PassMark.astro';
@@ -40,7 +41,7 @@ const steps = [
       <ul role="list" class="contact__direct" data-load style="--d: 480ms">
         <li>
           <span class="contact__key">Email</span>
-          <a class="contact__big" href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="contact-email">{contact.email}</a>
+          <a class="contact__big" href={`mailto:${contact.email}`} data-umami-event="get-in-touch" data-umami-event-where="contact-email"><Breakable text={contact.email} /></a>
         </li>
         <li>
           <span class="contact__key">Based in</span>
@@ -186,7 +187,6 @@ const steps = [
     font-size: 2.5rem;
     line-height: 1.1;
     color: var(--ink);
-    overflow-wrap: anywhere;
   }
   a.contact__big {
     text-decoration-color: var(--accent-2);
