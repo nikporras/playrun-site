@@ -11,6 +11,13 @@ html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
 }
+/* (below 64rem the bottom bar is fixed over the page's foot: anything focused or jumped to stops
+   above it, never under it) */
+@media (max-width: 63.99rem) {
+  html {
+    scroll-padding-bottom: calc(var(--hud-h) + 0.5rem);
+  }
+}
 body {
   margin: 0;
   background: var(--bg);

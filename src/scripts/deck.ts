@@ -102,6 +102,18 @@ export function startDeck() {
     requestAnimationFrame(() => scrollTo({ top: y, behavior: 'auto' }));
   };
   addEventListener('hashchange', jump);
+  // Keyboard: focus moving to something in a card brings that card to the top of the pinned
+  // stack, dealt and on screen, with the cards after it still waiting below.
+  deck.addEventListener('focusin', (e) => {
+    if (!on) return;
+    const i = cards.findIndex((c) => c.contains(e.target as Node));
+    if (i < 0) return;
+    // (on the next frame: after the browser's own scroll to the focused element)
+    requestAnimationFrame(() => {
+      const y = top() + (i === 0 ? 0 : (range() * i) / steps);
+      if (Math.abs(scrollY - y) > 2) scrollTo({ top: y, behavior: 'auto' });
+    });
+  });
   apply();
   jump();
 }

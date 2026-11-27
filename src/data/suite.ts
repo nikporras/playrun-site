@@ -59,6 +59,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'games.spec.ts': ['The games', 'The track, the ship, the bug hunt and the achievements by mouse, touch and keyboard, and off under reduced motion.'],
   'home.spec.ts': ['Home', 'Loads clean, the bottom bar on a phone, the curtain, the glitch and its card, the wall, the stats, three widths, axe, the self test.'],
   'indexing.spec.ts': ['Search and AI access', 'robots.txt welcomes the AI crawlers and disallows nothing, the IndexNow key and step, llms.txt and its pages, snippets kept to the content.'],
+  'keyboard.spec.ts': ['Keyboard through the cards', 'Tab reaches every link and button in the About, QA Lab and Games cards, each on screen and on top: never under the bottom bar or a later card in the deck.'],
   'labels.spec.ts': ['Level labels', 'Every level label on every page starts at the same left edge, at three widths.'],
   'links.spec.ts': ['Links', 'Links that leave the site open a new tab and say so. Internal links stay.'],
   'motion.spec.ts': ['The Motion switch', 'Follows your device setting until you choose. Your choice is remembered, and turning Motion on works even when your device asks for less motion.'],
