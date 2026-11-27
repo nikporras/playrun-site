@@ -193,13 +193,13 @@ const countEngines = (s: JsonSuite) => {
 for (const s of report.suites) countEngines(s);
 const byCount = ENGINES.filter(([id]) => perEngine.has(id)).sort(([a], [b]) => perEngine.get(b)! - perEngine.get(a)!);
 if (byCount.length === 0) throw new Error('No checks carry a browser: the QA Lab names where the suite runs.');
-const and = (items: string[]) => (items.length < 2 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
+const listOf = (items: string[]) => (items.length < 2 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
 /** The browser the whole suite runs in ("Chromium"). */
 export const fullBrowser = byCount[0][1];
 /** The browsers that run only targeted checks, in the usual order ("Firefox and WebKit"). */
 export const targetedBrowsers = ENGINES.filter(([id]) => perEngine.has(id) && id !== byCount[0][0]).map(([, name]) => name);
 /** "The full suite runs in Chromium on every push, with targeted checks in Firefox and WebKit, and against the live site every Monday." */
-export const whereLine = `The full suite runs in ${fullBrowser} on every push${targetedBrowsers.length ? `, with targeted checks in ${and(targetedBrowsers)}` : ''}${liveDay ? `, and against the live site every ${liveDay}` : ''}.`;
+export const whereLine = `The full suite runs in ${fullBrowser} on every push${targetedBrowsers.length ? `, with targeted checks in ${listOf(targetedBrowsers)}` : ''}${liveDay ? `, and against the live site every ${liveDay}` : ''}.`;
 
 /** The versions the loop names, read from the files that set them. */
 const workflow = readFileSync(path.join(root, '.github', 'workflows', 'deploy.yml'), 'utf8');
