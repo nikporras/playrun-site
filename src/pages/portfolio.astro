@@ -75,7 +75,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
               <div class="group__about">
                 <ol role="list" class="group__roles">
                   {g.roles.map((r) => (
-                    <li class:list={['group__role', r.lead && 'group__role--lead']}>
+                    <li class="group__role">
                       <span class="group__title">{r.title}</span> <span class="group__dot" aria-hidden="true">&middot;</span> <span class="group__dates">{r.when}</span>
                     </li>
                   ))}
@@ -173,9 +173,8 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     max-width: none;
   }
   /* The roles in a company header: a compact list, oldest at the top, the dates in a column of
-     their own; a pixel marker per role on a thin line, so a post with several roles reads as
-     steps. The lead role stands out: its marker filled, its title in the heavier weight and a
-     LEAD tag beside it. The other titles are in the regular weight. */
+     their own; the same hollow pixel marker per role on a thin line, so a post with several roles
+     reads as steps. Every role looks the same. */
   .group__roles {
     position: relative;
     max-width: none;
@@ -211,30 +210,8 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     border: 2px solid currentColor;
     background: var(--level-bg);
   }
-  .group__role--lead::before {
-    background: currentColor;
-  }
   .group__title {
     font-weight: 400;
-  }
-  .group__role--lead .group__title {
-    font-weight: 600;
-  }
-  /* (the tag is decoration: the title already names the role, so it is left out of the text) */
-  .group__role--lead .group__title::after {
-    content: 'Lead' / '';
-    display: inline-block;
-    margin-left: 0.6em;
-    padding: 0.2em 0.45em 0.1em;
-    background: var(--pr-navy);
-    color: var(--pr-cyan);
-    font-family: var(--font-display);
-    font-size: 1rem;
-    font-weight: 400;
-    letter-spacing: 0.1em;
-    line-height: 1;
-    text-transform: uppercase;
-    vertical-align: 0.15em;
   }
   /* (the dot is for the text only: the dates stand in their own column) */
   .group__dot {
@@ -337,8 +314,7 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     .others__role + .others__role {
       margin-top: 0.5rem;
     }
-    /* each role two lines, the title then the dates; the LEAD tag moves to the dates' line so the
-       title keeps to one line down to 300px */
+    /* each role two lines, the title then the dates */
     .group__role {
       display: block;
       padding: 0.35rem 0 0.35rem 1.25rem;
@@ -356,23 +332,6 @@ const yearOf = (g: (typeof groups)[number]) => Math.min(...g.roles.flatMap((r) =
     }
     .group__dot {
       display: none;
-    }
-    .group__role--lead .group__title::after {
-      content: none;
-    }
-    .group__role--lead .group__dates::after {
-      content: 'Lead' / '';
-      display: inline-block;
-      margin-left: 0.6em;
-      padding: 0.2em 0.45em 0.1em;
-      background: var(--pr-navy);
-      color: var(--pr-cyan);
-      font-family: var(--font-display);
-      font-size: 1rem;
-      letter-spacing: 0.1em;
-      line-height: 1;
-      text-transform: uppercase;
-      vertical-align: 0.1em;
     }
     .group__dates {
       margin-top: 0.1rem;

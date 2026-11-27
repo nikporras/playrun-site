@@ -795,11 +795,11 @@ for (const width of [300, 375, 390, 1440]) {
   });
 }
 
-// The roles stand apart from the description: a list with a marker per role, oldest at the top,
-// the lead role marked (filled marker, heavier title, a LEAD tag), the dates in one column on a
-// desktop; the description under them in the regular weight, with room above it, at AA.
+// The roles stand apart from the description: a list with the same hollow marker per role on a
+// joining line, oldest at the top, every role alike (no tag, one weight, one colour), the dates in
+// one column on a desktop; the description under them in the regular weight, room above it, AA.
 for (const [width, height] of [[1440, 900], [375, 812]] as const) {
-  test(`company headers at ${width}px: roles a marked list apart from the description, the lead role standing out`, { tag: ['@viewports'] }, async ({ browser }) => {
+  test(`company headers at ${width}px: roles a marked list apart from the description, every role alike`, { tag: ['@viewports'] }, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' });
     const page = await context.newPage();
     await page.goto('/portfolio/');
@@ -820,11 +820,12 @@ for (const [width, height] of [[1440, 900], [375, 812]] as const) {
         return {
           name: h.querySelector('.group__name')!.textContent!.trim(),
           tag: list.tagName,
+          line: getComputedStyle(list, '::before').content !== 'none',
           roles: lis.map((li) => ({
-            lead: li.classList.contains('group__role--lead'),
             marker: getComputedStyle(li, '::before').content !== 'none',
             filled: getComputedStyle(li, '::before').backgroundColor === getComputedStyle(li).color,
             weight: getComputedStyle(li.querySelector('.group__title')!).fontWeight,
+            colour: getComputedStyle(li.querySelector('.group__title')!).color,
             tag: getComputedStyle(li.querySelector('.group__title')!, '::after').content + getComputedStyle(li.querySelector('.group__dates')!, '::after').content,
             datesLeft: Math.round(li.querySelector('.group__dates')!.getBoundingClientRect().left),
             top: li.getBoundingClientRect().top,
@@ -842,18 +843,20 @@ for (const [width, height] of [[1440, 900], [375, 812]] as const) {
       expect(h.contrast, `${h.name}: the description at AA`).toBeGreaterThanOrEqual(4.5);
       for (const r of h.roles) {
         expect(r.marker, `${h.name}: a marker per role`).toBe(true);
-        expect(r.filled, `${h.name}: the lead marker filled, the others hollow`).toBe(r.lead);
-        expect(r.weight).toBe(r.lead ? '600' : '400');
-        expect(/Lead/.test(r.tag), `${h.name}: the LEAD tag on the lead role only`).toBe(r.lead);
+        expect(r.filled, `${h.name}: every marker hollow`).toBe(false);
+        expect(r.weight, `${h.name}: one weight`).toBe('400');
+        expect(r.colour, `${h.name}: one colour`).toBe(h.roles[0].colour);
+        expect(r.tag, `${h.name}: no tag`).not.toMatch(/Lead/);
       }
+      if (h.roles.length > 1) expect(h.line, `${h.name}: the line joining the roles`).toBe(true);
       // oldest at the top
       for (let i = 1; i < h.roles.length; i++) expect(h.roles[i].top).toBeGreaterThan(h.roles[i - 1].top);
       // on a desktop the dates stand in one column
       if (width >= 768) expect(new Set(h.roles.map((r) => r.datesLeft)).size, `${h.name}: one column of dates`).toBe(1);
     }
-    // nDreams: three roles, the last (newest) the lead
+    // nDreams: three roles, joined by the line
     const nd = heads.find((h) => h.name === 'nDreams')!;
-    expect(nd.roles.map((r) => r.lead)).toEqual([false, false, true]);
+    expect(nd.roles).toHaveLength(3);
     await context.close();
   });
 }
