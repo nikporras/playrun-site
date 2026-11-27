@@ -1042,9 +1042,10 @@ html:not(.games) .bug {
 .level .deck.is-deck {
   margin-top: calc(var(--block-gap) - var(--s-3));
 }
+/* (pinned in the middle of the screen: --pin-top is half the room the stage leaves, from deck.ts) */
 .deck.is-deck .deck__pin {
   position: sticky;
-  top: 0;
+  top: var(--pin-top, 0px);
   padding-block: var(--s-3);
 }
 .deck.is-deck .deck__stage {

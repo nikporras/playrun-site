@@ -23,7 +23,9 @@ test.describe('The QA Lab deck', () => {
     expect(box.height, 'the stage on show and 0.7 of a screen per further card').toBeGreaterThanOrEqual(pinH + 5 * 630 - 2);
     expect(box.height).toBeLessThanOrEqual(pinH + 5 * 630 + 2);
     expect(await page.locator('.deck__pin').evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
-    const top = await deck.evaluate((el) => el.getBoundingClientRect().top + scrollY);
+    // (the scroll at which the pin catches: the deck's top at the pin's centred top)
+    const pinTop = await page.locator('.deck__pin').evaluate((el) => parseFloat(getComputedStyle(el).top));
+    const top = (await deck.evaluate((el) => el.getBoundingClientRect().top + scrollY)) - pinTop;
     const state = () =>
       cards.evaluateAll((els) =>
         els.map((el) => {
@@ -46,7 +48,7 @@ test.describe('The QA Lab deck', () => {
     expect(s[2].e, 'card three dealt').toBeGreaterThanOrEqual(0.99);
     expect(s[4].e, 'card five still to come').toBeLessThan(0.5);
     expect(s[2].onScreen).toBe(true);
-    expect(await page.locator('.deck__pin').evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(0);
+    expect(await page.locator('.deck__pin').evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(Math.round(pinTop));
     // at the end: all six dealt, each tilted its own few degrees, each a little lower than the last
     await page.evaluate((y) => window.scrollTo(0, y), top + range);
     await expect.poll(async () => (await state()).every((c) => c.e >= 0.99)).toBe(true);
@@ -176,8 +178,11 @@ for (const [width, height] of [[1440, 900], [1920, 1080]] as const) {
       await page.goto(path);
       const deck = page.locator('[data-deck]');
       await expect(deck).toHaveClass(/is-deck/);
-      // (the level head on screen, the deck not yet pinned)
-      await deck.evaluate((el) => window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - 300, behavior: 'instant' }));
+      // (the level head on screen, the deck not yet pinned: its top a little below the pin's centred top)
+      await deck.evaluate((el) => {
+        const pinTop = parseFloat(getComputedStyle(el.querySelector('.deck__pin')!).top) || 0;
+        window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - Math.max(300, pinTop + 40), behavior: 'instant' });
+      });
       await page.waitForTimeout(100);
       // (the stage's top: the cards stand at it, the first one tilted a little round its foot)
       const gap = await deck.evaluate((el) => {
@@ -224,3 +229,46 @@ for (const path of ['/about/', '/qa-lab/']) {
   }
 }
 
+
+// While the deck is pinned its stage sits in the middle of the screen (never stuck to the top), the
+// cards dealing there: at the start, half way and as the last card lands.
+for (const path of ['/about/', '/qa-lab/']) {
+  for (const [width, height] of [[1280, 720], [1440, 900], [1915, 910], [1920, 1080]] as const) {
+    test(`${path} at ${width}x${height}: the pinned stage is centred in the screen while the cards are dealt`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto(path);
+      await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+      await page.evaluate(() => document.fonts.ready);
+      const deck = page.locator('[data-deck]');
+      await expect(deck).toHaveClass(/is-deck/);
+      const g = await deck.evaluate((d) => {
+        const pin = d.querySelector('.deck__pin') as HTMLElement;
+        const pinTop = parseFloat(getComputedStyle(pin).top);
+        return { start: d.getBoundingClientRect().top + scrollY - pinTop, range: (d as HTMLElement).offsetHeight - pin.offsetHeight, pinH: pin.offsetHeight };
+      });
+      for (const k of [0.02, 0.5, 0.98]) {
+        await page.evaluate((y) => window.scrollTo(0, y), g.start + g.range * k);
+        const pin = await page.locator('.deck__pin').evaluate((el) => {
+          const r = el.getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom };
+        });
+        if (g.pinH < height) {
+          // the room above the stage and below it match, to a few pixels
+          expect(Math.abs(pin.top - (height - pin.bottom)), `centred at ${k}`).toBeLessThanOrEqual(3);
+          expect(pin.top, 'not stuck to the top').toBeGreaterThan(8);
+        } else {
+          expect(Math.round(pin.top), 'a stage taller than the screen pins at the top').toBe(0);
+        }
+      }
+      // the last card lands inside the centred stage
+      await page.evaluate((y) => window.scrollTo(0, y), g.start + g.range);
+      await expect.poll(() => page.locator('.deck__card').last().evaluate((el) => parseFloat((el as HTMLElement).style.getPropertyValue('--e') || '0'))).toBeGreaterThanOrEqual(0.99);
+      const card = await page.locator('.deck__card').last().evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom };
+      });
+      expect(card.top).toBeGreaterThanOrEqual(0);
+      expect(card.bottom).toBeLessThanOrEqual(height);
+    });
+  }
+}

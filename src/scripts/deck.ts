@@ -20,16 +20,24 @@ export function startDeck() {
   const steps = cards.length - 1;
   let on = false;
   deck.style.setProperty('--n', String(cards.length));
-  const top = () => deck.getBoundingClientRect().top + scrollY;
+  // (the pinned stage sits centred in the screen: its sticky top, from measure(); zero when the
+  // stage is as tall as the screen or taller)
+  let pinTop = 0;
+  // (the scroll at which the pin catches: the deck's top reaching the pin's centred top)
+  const top = () => deck.getBoundingClientRect().top + scrollY - pinTop;
   // (the scroll the deck stays pinned for: its height less the pinned stage's own)
   const range = () => Math.max(1, deck.offsetHeight - pin.offsetHeight);
   const measure = () => {
     if (!on) {
       deck.style.removeProperty('--pin-h');
+      deck.style.removeProperty('--pin-top');
+      pinTop = 0;
       return;
     }
     stage.style.setProperty('--stage-h', `${Math.max(...cards.map((c) => c.offsetHeight)) + cards.length * 12}px`);
     deck.style.setProperty('--pin-h', `${pin.offsetHeight}px`);
+    pinTop = Math.max(0, Math.round((innerHeight - pin.offsetHeight) / 2));
+    deck.style.setProperty('--pin-top', `${pinTop}px`);
   };
   const scrub = () => {
     if (!on) return;
