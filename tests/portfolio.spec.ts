@@ -755,9 +755,10 @@ test('the Games page has two levels and ends with the list, the join running int
 
 
 // Each role in a company header on a phone: the title on one line, the dates on their own line
-// under it (smaller, lighter), no dot; from 48rem title and dates share a line with the dot.
+// under it (smaller, lighter); from 48rem title and dates share a line, the dates in a column of
+// their own. The dot is there for the text only, never seen.
 for (const width of [300, 375, 390, 1440]) {
-  test(`company headers at ${width}px: each role's title on one line, the dates ${width < 768 ? 'under it, no dot' : 'beside it after the dot'}`, { tag: ['@viewports'] }, async ({ browser }, info) => {
+  test(`company headers at ${width}px: each role's title on one line, the dates ${width < 768 ? 'under it' : 'beside it in their own column'}`, { tag: ['@viewports'] }, async ({ browser }, info) => {
     const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
     const page = await context.newPage();
     await page.goto('/portfolio/');
@@ -773,7 +774,7 @@ for (const width of [300, 375, 390, 1440]) {
         range.selectNodeContents(title);
         const lines = new Set([...range.getClientRects()].filter((r) => r.width > 0.5).map((r) => Math.round(r.top))).size;
         const last = [...range.getClientRects()].pop()!;
-        return { text: title.textContent, lines, lineH, tops: tops.size, datesBelow: dates.top >= last.bottom - 1, dot: li.querySelector('.group__dot')!.getClientRects().length > 0, titleSize: parseFloat(getComputedStyle(title).fontSize), datesSize: parseFloat(getComputedStyle(li.querySelector('.group__dates')!).fontSize) };
+        return { text: title.textContent, lines, lineH, tops: tops.size, datesBelow: dates.top >= last.bottom - 1, dot: (li.querySelector('.group__dot')!.getClientRects()[0]?.width ?? 0) > 1, titleSize: parseFloat(getComputedStyle(title).fontSize), datesSize: parseFloat(getComputedStyle(li.querySelector('.group__dates')!).fontSize) };
       }),
     );
     expect(roles.length).toBeGreaterThan(3);
@@ -787,9 +788,72 @@ for (const width of [300, 375, 390, 1440]) {
       } else {
         expect(r.lines).toBe(1);
         expect(r.datesBelow).toBe(false);
-        expect(r.dot).toBe(true);
+        expect(r.dot).toBe(false);
       }
     }
+    await context.close();
+  });
+}
+
+// The roles stand apart from the description: a list with a marker per role, oldest at the top,
+// the lead role marked (filled marker, heavier title, a LEAD tag), the dates in one column on a
+// desktop; the description under them in the regular weight, with room above it, at AA.
+for (const [width, height] of [[1440, 900], [375, 812]] as const) {
+  test(`company headers at ${width}px: roles a marked list apart from the description, the lead role standing out`, { tag: ['@viewports'] }, async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto('/portfolio/');
+    await page.evaluate(() => document.fonts.ready);
+    const heads = await page.locator('.group__head').evaluateAll((hs) =>
+      hs.map((h) => {
+        const lis = [...h.querySelectorAll<HTMLElement>('.group__role')];
+        const lead = h.querySelector<HTMLElement>('.group__lead')!;
+        const list = h.querySelector<HTMLElement>('.group__roles')!;
+        const rgb = (c: string) => c.match(/[\d.]+/g)!.slice(0, 3).map(Number);
+        const lum = ([r, g, b]: number[]) => {
+          const f = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+          return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+        };
+        const bg = rgb(getComputedStyle(h.closest('.level')!).backgroundColor);
+        const ink = rgb(getComputedStyle(lead).color);
+        const [hi, lo] = [lum(bg), lum(ink)].sort((a, b) => b - a);
+        return {
+          name: h.querySelector('.group__name')!.textContent!.trim(),
+          tag: list.tagName,
+          roles: lis.map((li) => ({
+            lead: li.classList.contains('group__role--lead'),
+            marker: getComputedStyle(li, '::before').content !== 'none',
+            filled: getComputedStyle(li, '::before').backgroundColor === getComputedStyle(li).color,
+            weight: getComputedStyle(li.querySelector('.group__title')!).fontWeight,
+            tag: getComputedStyle(li.querySelector('.group__title')!, '::after').content + getComputedStyle(li.querySelector('.group__dates')!, '::after').content,
+            datesLeft: Math.round(li.querySelector('.group__dates')!.getBoundingClientRect().left),
+            top: li.getBoundingClientRect().top,
+          })),
+          gap: lead.getBoundingClientRect().top - list.getBoundingClientRect().bottom,
+          leadWeight: getComputedStyle(lead).fontWeight,
+          contrast: (hi + 0.05) / (lo + 0.05),
+        };
+      }),
+    );
+    for (const h of heads) {
+      expect(h.tag, `${h.name}: an ordered list`).toBe('OL');
+      expect(h.gap, `${h.name}: room between the roles and the description`).toBeGreaterThanOrEqual(12);
+      expect(h.leadWeight, `${h.name}: the description in the regular weight`).toBe('400');
+      expect(h.contrast, `${h.name}: the description at AA`).toBeGreaterThanOrEqual(4.5);
+      for (const r of h.roles) {
+        expect(r.marker, `${h.name}: a marker per role`).toBe(true);
+        expect(r.filled, `${h.name}: the lead marker filled, the others hollow`).toBe(r.lead);
+        expect(r.weight).toBe(r.lead ? '600' : '400');
+        expect(/Lead/.test(r.tag), `${h.name}: the LEAD tag on the lead role only`).toBe(r.lead);
+      }
+      // oldest at the top
+      for (let i = 1; i < h.roles.length; i++) expect(h.roles[i].top).toBeGreaterThan(h.roles[i - 1].top);
+      // on a desktop the dates stand in one column
+      if (width >= 768) expect(new Set(h.roles.map((r) => r.datesLeft)).size, `${h.name}: one column of dates`).toBe(1);
+    }
+    // nDreams: three roles, the last (newest) the lead
+    const nd = heads.find((h) => h.name === 'nDreams')!;
+    expect(nd.roles.map((r) => r.lead)).toEqual([false, false, true]);
     await context.close();
   });
 }
