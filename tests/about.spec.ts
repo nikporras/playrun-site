@@ -28,9 +28,10 @@ test('the About page: one h1, the two-paragraph intro, What I test, the Kit, My 
   const vr = all.filter((p) => p.vr).length;
   // in the first person, like the rest of the site (machines get the third person, see schema and llms.txt)
   await expect(page.locator('.about__summary')).toHaveText([
-    "I'm a game QA tester in London. I've tested console, PC and VR games since 2021 at Universally Speaking, nDreams, Historic VR, Nexus Studios and Aonic, and I've led QA as Lead Quality Assurance Tester at nDreams and QA Manager at Historic VR. My credits include Cyberpunk 2077, NBA 2K21, Ghostbusters: Rise of the Ghost Lord, Synapse and Lou's Lagoon.",
-    'PlayRun is the name I work under, and playrunqa.com is my portfolio. I built this site myself, and I test it like one of my games: every change runs through an automated test suite before it goes live.',
+    "I've tested console, PC and VR games since 2021, at Universally Speaking, nDreams, Historic VR, Nexus Studios and now Aonic. I went from tester to Lead QA at nDreams in a year, then ran QA as QA Manager at Historic VR. My credits include Cyberpunk 2077, NBA 2K21, Ghostbusters: Rise of the Ghost Lord, Synapse and Lou's Lagoon.",
+    'PlayRun is the name I work under. I built this site myself and test it like one of my games; you can see how in the QA Lab.',
   ]);
+  await expect(page.locator('.about__summary').last().getByRole('link', { name: 'QA Lab', exact: true })).toHaveAttribute('href', '/qa-lab/');
   // every credit named in the summary is a public title
   for (const credit of ['Cyberpunk 2077', 'NBA 2K21', 'Ghostbusters: Rise of the Ghost Lord', 'Synapse', "Lou's Lagoon"]) expect(all.map((p) => p.title)).toContain(credit);
   await expect(page.getByRole('heading', { level: 2 })).toHaveText(['What I test', 'Platforms, tools and languages', 'My story', 'I love playing and making games', 'Quick facts and FAQ']);

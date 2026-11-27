@@ -199,9 +199,15 @@ export const credits = ['Cyberpunk 2077', 'NBA 2K21', 'Ghostbusters: Rise of the
 // The summary, built from the data above, twice: in the third person for machines (the Person in
 // the structured data, llms.txt), and in the first person for the About page, like the rest of
 // the site.
-export const summary = `${contact.name} is a game QA tester based in London. He has tested console, PC and VR games since ${since}, at ${listed(studios)}, and has led QA as ${listed(leadRoles.map((r) => `${r.title} at ${r.at}`))}. His credits include ${listed(credits)}. ${site.name} is the name he works under, and playrunqa.com is his portfolio, a site he built and tests himself.`;
-// (two paragraphs on the About page)
+// (the studios from the first to the current one: "a, b and now c")
+const studiosToNow = `${studios.slice(0, -1).join(', ')} and now ${studios[studios.length - 1]}`;
+// (the career line in his words; the studios of the two lead roles from the data)
+const [firstLead, secondLead] = leadRoles;
+export const summary = `${contact.name} is a game QA tester based in London. He has tested console, PC and VR games since ${since}, at ${listed(studios)}. He went from tester to Lead QA at ${firstLead.at} in a year, then ran QA as ${secondLead.title} at ${secondLead.at}. His credits include ${listed(credits)}. ${site.name} is the name he works under. He built playrunqa.com himself and tests it like one of his games.`;
+/** The QA Lab link in the About intro's second paragraph (the words linked, and where to). */
+export const qaLabLink = { text: 'QA Lab', href: '/qa-lab/' };
+// (two paragraphs on the About page, in plain text; the page links the QA Lab words)
 export const summaryFirstPerson = [
-  `I'm a game QA tester in London. I've tested console, PC and VR games since ${since} at ${listed(studios)}, and I've led QA as ${listed(leadRoles.map((r) => `${r.title} at ${r.at}`))}. My credits include ${listed(credits)}.`,
-  `${site.name} is the name I work under, and playrunqa.com is my portfolio. I built this site myself, and I test it like one of my games: every change runs through an automated test suite before it goes live.`,
+  `I've tested console, PC and VR games since ${since}, at ${studiosToNow}. I went from tester to Lead QA at ${firstLead.at} in a year, then ran QA as ${secondLead.title} at ${secondLead.at}. My credits include ${listed(credits)}.`,
+  `${site.name} is the name I work under. I built this site myself and test it like one of my games; you can see how in the ${qaLabLink.text}.`,
 ];

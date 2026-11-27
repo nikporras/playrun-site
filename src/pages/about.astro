@@ -15,7 +15,7 @@ import Join from '../components/Join.astro';
 import Sprite from '../components/Sprite.astro';
 import Bug from '../components/Bug.astro';
 import Swipe from '../components/Swipe.astro';
-import { contact, education, languages, platforms, shownVR, tools } from '../config';
+import { contact, education, languages, platforms, qaLabLink, shownVR, tools } from '../config';
 import { about } from '../data/about';
 import { areas, iconPath } from '../data/skills';
 
@@ -48,7 +48,10 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
     <div class="level__head">
       <p class="flag" data-nosnippet><span>About</span></p>
       <h1 id="about-title" class="page__title about__title">About {contact.name}</h1>
-      {summaryFirstPerson.map((p) => <p class="about__summary statement">{p}</p>)}
+      {summaryFirstPerson.map((p) => {
+        const [before, after] = p.split(qaLabLink.text);
+        return after === undefined ? <p class="about__summary statement">{p}</p> : <p class="about__summary statement">{before}<a href={qaLabLink.href}>{qaLabLink.text}</a>{after}</p>;
+      })}
     </div>
     <Bug id="about-1" style="right: 8%; top: 4rem" tablet="right: 6%; top: 1.25rem" phone="right: var(--gutter); bottom: calc(var(--join-h) + 0.5rem)" walk="x -2rem" />
     <!-- (the Quick facts level's bug, its id kept, in the strip at the level's foot) -->
