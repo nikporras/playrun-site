@@ -29,7 +29,7 @@ for (const path of PAGES) {
     expect(person.jobTitle).toBe('Game QA Tester');
     expect(person.nationality).toEqual({ '@type': 'Country', name: 'Colombia' });
     // (for machines, the third person)
-    expect(person.description).toBe("Nicolás Porras is a game QA tester based in London. He has tested console, PC and VR games since 2021, at Universally Speaking, nDreams, Historic VR, Nexus Studios and Aonic, and has led QA as Lead Quality Assurance Tester at nDreams and QA Manager at Historic VR. His credits include Cyberpunk 2077, NBA 2K21, Ghostbusters: Rise of the Ghost Lord, Synapse and Lou's Lagoon. PlayRun is the name he works under, and playrunqa.com is his portfolio, a site he built and tests himself.");
+    expect(person.description).toBe("Nicolás Porras is a game QA tester based in London. He has tested console, PC and VR games since 2021, at Universally Speaking, nDreams, Historic VR, Nexus Studios and Aonic. He went from tester to Lead QA at nDreams in a year, then ran QA as QA Manager at Historic VR. His credits include Cyberpunk 2077, NBA 2K21, Ghostbusters: Rise of the Ghost Lord, Synapse and Lou's Lagoon. PlayRun is the name he works under. He built playrunqa.com himself and tests it like one of his games.");
     expect(person.sameAs as string[]).toContain(social.find((s) => s.label === 'LinkedIn')!.href);
     expect(person.knowsLanguage).toEqual(['es', 'en', 'zh', 'pt', 'it']);
     expect(person.knowsAbout as string[]).toEqual(expect.arrayContaining(['Virtual reality testing', 'Meta Quest', 'PlayStation VR2', 'Apple Vision Pro']));
