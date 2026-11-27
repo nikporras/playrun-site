@@ -553,3 +553,45 @@ test('Terms and Accessibility name the games control as it appears on the site, 
   await page.goto('/terms/');
   await expect(page.locator('#dock [data-hud-toggle]')).toHaveText(/^Games (on|off)$/);
 });
+
+// The light levels carry the navy levels' faint grid, in navy. Every bit of text on them keeps AA
+// against the darkest of the field: a grid line.
+for (const path of ['/', '/qa-lab/']) {
+  test(`${path}: the light level shows the faint grid, and its text keeps AA over the grid lines`, { tag: ['@pages', '@a11y'] }, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(path);
+    const level = page.locator('.level--light').first();
+    expect(await level.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(/linear-gradient/);
+    const worst = await level.evaluate((lv) => {
+      const rgba = (c: string) => (c.match(/[\d.]+/g) ?? []).map(Number);
+      const lum = ([r, g, b]: number[]) => {
+        const f = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+      };
+      const ratio = (a: number[], b: number[]) => {
+        const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+        return (hi + 0.05) / (lo + 0.05);
+      };
+      // the field, and the field under a grid line (the line's colour over it at its alpha)
+      const field = rgba(getComputedStyle(lv).backgroundColor);
+      const line = rgba(getComputedStyle(lv).backgroundImage.match(/rgba?\([^)]+\)/)![0]);
+      const a = line[3] ?? 1;
+      const under = field.slice(0, 3).map((v, i) => v * (1 - a) + line[i] * a);
+      let min = Infinity;
+      let who = '';
+      const walker = document.createTreeWalker(lv, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        const el = n.parentElement!;
+        if (!n.textContent!.trim() || !el.getClientRects().length || el.closest('[aria-hidden="true"], .bug, .bug__anchor, .visually-hidden, .join')) continue;
+        // (text on its own fill, a button or a chip, is checked against that fill elsewhere)
+        let own = false;
+        for (let e: HTMLElement | null = el; e && e !== lv; e = e.parentElement) if (rgba(getComputedStyle(e).backgroundColor)[3] !== 0 && getComputedStyle(e).backgroundColor !== 'rgba(0, 0, 0, 0)') own = true;
+        if (own) continue;
+        const r = ratio(rgba(getComputedStyle(el).color), under);
+        if (r < min) [min, who] = [r, n.textContent!.trim().slice(0, 40)];
+      }
+      return { min, who };
+    });
+    expect(worst.min, `the lowest: "${worst.who}"`).toBeGreaterThanOrEqual(4.5);
+  });
+}

@@ -36,6 +36,7 @@
   --field-green-ink: var(--pr-navy);
   --field-2: #16244d; /* the lighter navy of the levels after the first: the light ink is 12:1 on it, green 7.3:1, cyan 7.6:1 */
   --grid-img: linear-gradient(to right, rgb(229 231 234 / 0.045) 1px, transparent 1px), linear-gradient(to bottom, rgb(229 231 234 / 0.045) 1px, transparent 1px); /* the faint pixel grid on the navy fields */
+  --grid-img-light: linear-gradient(to right, rgb(12 21 42 / 0.07) 1px, transparent 1px), linear-gradient(to bottom, rgb(12 21 42 / 0.07) 1px, transparent 1px); /* the same grid on the light fields, in navy */
   --grid-size: 32px;
   --join-h: 9rem; /* the pixel join between two levels: 144px, the art in 8px pixels */
   --rule: color-mix(in srgb, currentColor 24%, transparent); /* the thin divider on every field */

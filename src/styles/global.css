@@ -478,6 +478,9 @@ p + p {
 .level--light {
   --level-bg: var(--field-light);
   color: var(--field-light-ink);
+  /* (the navy levels' faint grid, in navy, so a light level with clouds is not an empty field) */
+  background-image: var(--grid-img-light);
+  background-size: var(--grid-size) var(--grid-size);
 }
 .level--cyan,
 .level--green,
