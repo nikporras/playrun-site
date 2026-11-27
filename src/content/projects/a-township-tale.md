@@ -4,6 +4,7 @@ studio: "Alta"
 platforms: ["Meta Quest", "PC VR"]
 year: 2021
 summary: "A VR crafting RPG where players build and run a medieval township together."
+did: "New features and content updates as they shipped."
 tags: ["CQA", "Functional", "Fix verification"]
 url: "https://www.meta.com/en-gb/experiences/a-township-tale/2913958855307200/"
 store: "Meta Quest"

@@ -1,7 +1,7 @@
 ---
 title: "Londinium: AD 215"
 studio: "Historic VR"
-platforms: ["Steam"]
+platforms: ["PC VR (Steam)"]
 status: "in-development"
 summary: "Roman London in AD 215, rebuilt in VR and on desktop, narrated by the archaeologist Dominic Perring."
 did: "Led QA through development, with the outsourced test team."

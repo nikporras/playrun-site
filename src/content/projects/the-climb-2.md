@@ -4,6 +4,7 @@ studio: "Crytek"
 platforms: ["Meta Quest"]
 year: 2021
 summary: "Crytek's VR climbing sequel: free solo ascents over cities, canyons and alpine peaks."
+did: "New features and content updates as they shipped."
 tags: ["CQA", "Functional", "Fix verification"]
 url: "https://www.meta.com/en-gb/experiences/the-climb-2/2617233878395214/"
 store: "Meta Quest"

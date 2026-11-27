@@ -61,8 +61,8 @@ const logoSizes = (id: string) => {
 const wall = [...FEATURED.flatMap((id) => byPost.filter((p) => p.id === id)), ...byPost.filter((p) => !FEATURED.includes(p.id))];
 
 // The numbers, counted from the data so they stay right as it grows. A VR game is one whose
-// platform line names a headset, or one flagged `vr` (Londinium, whose platform line is Steam
-// alone); the platforms are Skills' list (platforms and stores, then the headsets a public title
+// platform line names a headset, or one flagged `vr` (Londinium carries the flag too, though its
+// platform line now says PC VR); the platforms are Skills' list (platforms and stores, then the headsets a public title
 // names); a lead role is one flagged `lead` in the employers.
 const isVR = (p: (typeof shown)[number]) => p.data.vr || p.data.platforms.some((name) => /VR|Quest/i.test(name));
 // Each stat carries a short caption, shown under it while it is the active row: light, and true.

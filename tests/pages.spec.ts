@@ -240,7 +240,7 @@ test('every card has a logo or its icon, the labels and one store button in a ne
   // unreleased titles list only the platforms with a store page
   const byTitle = Object.fromEntries(cards.map((c) => [c.title, c]));
   expect(byTitle['Pathfinder: Abomination Vaults'].platforms).toBe('PC (Steam)');
-  expect(byTitle['Londinium: AD 215'].platforms).toBe('Steam');
+  expect(byTitle['Londinium: AD 215'].platforms).toBe('PC VR (Steam)');
   expect(byTitle['Vaewolf'].platforms).not.toMatch(/Switch/);
   expect(byTitle['Gang of Frogs'].platforms).toBe('PC (Steam)');
   expect(byTitle['Hello Sunshine'].platforms).toBe('PC (Steam)');
