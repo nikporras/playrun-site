@@ -43,7 +43,7 @@ test('the About page: one h1, the two-paragraph intro, What I test, the Kit, My 
     "Since arriving in London I've worked in games, which have always been my hobby and my passion. Living in all those places is why I speak five languages and why I'm comfortable working with teams from anywhere. Outside work I play a lot of games, I'm always learning something new, and I love music, especially Latin music. Put some on and I'll be dancing.",
   ]);
   // the order: intro, What I test, the Kit, My story, Bug Sweep, the dropdown
-  await expect(page.locator('[data-level] .flag')).toHaveText(['About', 'Level 2 · Skills', 'Level 3 · Kit', 'Level 4 · My story', 'Level 5 · Play', 'Level 6 · Facts and FAQ']);
+  await expect(page.locator('[data-level] .flag')).toHaveText(['About', 'Level 2 · Skills', 'Level 3 · Kits & tools', 'Level 4 · My story', 'Level 5 · Play', 'Level 6 · Facts and FAQ']);
   const tops = await page.locator('.about__summary, #skills, .kit__board, .story__text, [data-sweep], details.faq').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
   // the dropdown starts closed, its whole content in the HTML (search and AI read it), then opens
