@@ -32,7 +32,7 @@ const sweepTargeted = targetedBrowsers.filter((b) => !bugSweep.browsers.includes
 const automatedLine =
   `${listed(bugSweep.browsers)} on every push, at ${testPlan.automatedSizes}` +
   (bugSweep.browsers.includes(fullBrowser) ? `, alongside the full suite.` : '.') +
-  (sweepTargeted.length ? ` ${listed(sweepTargeted)} ${sweepTargeted.length === 1 ? 'runs' : 'run'} targeted checks of other pages, not Bug Sweep.` : '');
+  (sweepTargeted.length ? ` ${listed(sweepTargeted)} ${sweepTargeted.length === 1 ? 'runs' : 'run'} targeted checks, none of them on Bug Sweep.` : '');
 // The report card's icon: a sheet with lines, in the steps' 8x8 pixel style.
 const reportIcon = ['.######.', '.#....#.', '.#.##.#.', '.#....#.', '.#.##.#.', '.#....#.', '.#.##.#.', '.######.'];
 

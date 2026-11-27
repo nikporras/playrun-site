@@ -550,7 +550,7 @@ test('the test plan for Bug Sweep: every block, the coverage and the results fro
   // the plan says which browsers run Bug Sweep and which only run targeted checks elsewhere, so it
   // agrees with the report card's line
   const others = ['Firefox', 'WebKit'].filter((n) => !checks.some((c) => c.projects.includes(n.toLowerCase())));
-  if (others.length) await expect(plan.locator('[data-tp-automated]')).toContainText(`${others.join(' and ')} run targeted checks of other pages, not Bug Sweep.`);
+  if (others.length) await expect(plan.locator('[data-tp-automated]')).toContainText(`${others.join(' and ')} run targeted checks, none of them on Bug Sweep.`);
   await expect(plan.locator('[data-tp-automated]')).not.toContainText('Chromium, Firefox and WebKit');
   // the results: the total from the list; passed and failed from a run (a local build has none)
   await expect(plan.locator('[data-tp-results] tbody td').first()).toHaveText(String(total));
