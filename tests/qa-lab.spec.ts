@@ -491,7 +491,7 @@ const tagged = () => {
 test('the QA Lab has four levels in order: the hero, Live checks, Test plan and Bug reports', { tag: ['@pages'] }, async ({ page }) => {
   await page.goto('/qa-lab/');
   await expect(page.locator('main > section.level')).toHaveCount(4);
-  await expect(page.locator('[data-level] > .level__head .flag')).toHaveText(['QA Lab', 'Level 2 · Live checks', 'Level 3 · Test plan', 'Level 4 · Bug reports']);
+  await expect(page.locator('[data-level] .level__head .flag')).toHaveText(['QA Lab', 'Level 2 · Live checks', 'Level 3 · Test plan', 'Level 4 · Bug reports']);
   await expect(page.locator('main h2.level__title')).toHaveText(['Live checks', 'Test plan: Bug Sweep', 'Bug reports']);
   await expect(page.locator('h1')).toHaveText('Inside my QA Lab');
   // the live checks as they were: the picker, the five steps and the report, Pocket DevTools

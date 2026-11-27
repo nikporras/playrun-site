@@ -169,8 +169,8 @@ test.describe('The QA Lab deck', () => {
   });
 });
 
-// The first card starts close under the level head, at the gap every level head keeps to its
-// content: never centred in a screen-tall stage with a gap above it.
+// The first card starts close under the level head (and the QA Lab's picker), inside the pinned
+// unit: a small, steady gap, never a big one.
 for (const [width, height] of [[1440, 900], [1920, 1080]] as const) {
   for (const path of ['/about/', '/qa-lab/']) {
     test(`${path} at ${width}x${height}: the first card of the deck sits under the level head (and the QA Lab's picker) at the usual gap`, async ({ page }) => {
@@ -186,17 +186,12 @@ for (const [width, height] of [[1440, 900], [1920, 1080]] as const) {
       await page.waitForTimeout(100);
       // (the stage's top: the cards stand at it, the first one tilted a little round its foot)
       const gap = await deck.evaluate((el) => {
-        // (what stands above the deck: the head on About, the device picker on Testing)
-        const above = el.previousElementSibling!.getBoundingClientRect();
+        // (what stands above the cards in the unit: the head on About, the device picker on the QA Lab)
+        const above = (el.querySelector('.picker') ?? el.querySelector('.level__head'))!.getBoundingClientRect();
         return el.querySelector('.deck__stage')!.getBoundingClientRect().top - above.bottom;
       });
-      // the gap another level keeps between its head and its content
-      const usual = await page.evaluate(() => {
-        const body = [...document.querySelectorAll<HTMLElement>('.level .level__body')].find((b) => !b.closest('[data-deck]') && !b.matches('[data-deck]'))!;
-        return body.getBoundingClientRect().top - body.closest('.level')!.querySelector('.level__head')!.getBoundingClientRect().bottom;
-      });
-      expect(gap, 'the gap from the level head to the first card').toBeGreaterThanOrEqual(usual - 8);
-      expect(gap).toBeLessThanOrEqual(usual + 8);
+      expect(gap, 'the gap from the head to the first card').toBeGreaterThanOrEqual(16);
+      expect(gap).toBeLessThanOrEqual(32);
     });
   }
 }
@@ -212,7 +207,8 @@ for (const path of ['/about/', '/qa-lab/']) {
       await page.evaluate(() => document.fonts.ready);
       const deck = page.locator('[data-deck]');
       await expect(deck).toHaveClass(/is-deck/);
-      const g = await deck.evaluate((d) => ({ top: d.getBoundingClientRect().top + scrollY, range: (d as HTMLElement).offsetHeight - (d.querySelector('.deck__pin') as HTMLElement).offsetHeight }));
+      // (top: the scroll at which the pin catches, the deck's top at the pin's top, below the screen's top for a unit taller than the screen)
+      const g = await deck.evaluate((d) => ({ top: d.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(d.querySelector('.deck__pin')!).top), range: (d as HTMLElement).offsetHeight - (d.querySelector('.deck__pin') as HTMLElement).offsetHeight }));
       // just past the last landing
       await page.evaluate((y) => window.scrollTo(0, y), g.top + g.range + 2);
       await expect.poll(() => page.locator('.deck__card').last().evaluate((el) => parseFloat((el as HTMLElement).style.getPropertyValue('--e') || '0'))).toBeGreaterThanOrEqual(0.99);
@@ -230,11 +226,13 @@ for (const path of ['/about/', '/qa-lab/']) {
 }
 
 
-// While the deck is pinned its stage sits in the middle of the screen (never stuck to the top), the
-// cards dealing there: at the start, half way and as the last card lands.
+// While the deck is pinned the level head (with the QA Lab's picker) and the cards are one unit in
+// the middle of the screen, the title over the cards for the whole deal. A unit taller than the
+// screen (the QA Lab at 720px tall) pins with its foot on the screen's foot: the cards and the
+// picker stay whole and only the top of the head goes off the top.
 for (const path of ['/about/', '/qa-lab/']) {
   for (const [width, height] of [[1280, 720], [1440, 900], [1915, 910], [1920, 1080]] as const) {
-    test(`${path} at ${width}x${height}: the pinned stage is centred in the screen while the cards are dealt`, async ({ page }) => {
+    test(`${path} at ${width}x${height}: the head and the cards pin as one unit, centred where it fits, the cards whole`, async ({ page }) => {
       await page.setViewportSize({ width, height });
       await page.goto(path);
       await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
@@ -250,14 +248,21 @@ for (const path of ['/about/', '/qa-lab/']) {
         await page.evaluate((y) => window.scrollTo(0, y), g.start + g.range * k);
         const pin = await page.locator('.deck__pin').evaluate((el) => {
           const r = el.getBoundingClientRect();
-          return { top: r.top, bottom: r.bottom };
+          const title = el.querySelector('.level__title')!.getBoundingClientRect();
+          const stage = el.querySelector('.deck__stage')!.getBoundingClientRect();
+          const picker = el.querySelector('.picker')?.getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom, titleTop: title.top, titleBottom: title.bottom, stageTop: stage.top, stageBottom: stage.bottom, pickerTop: picker?.top ?? null };
         });
-        if (g.pinH < height) {
-          // the room above the stage and below it match, to a few pixels
+        if (g.pinH <= height) {
+          // the room above the unit and below it match, to a few pixels, and the title is on show over the cards
           expect(Math.abs(pin.top - (height - pin.bottom)), `centred at ${k}`).toBeLessThanOrEqual(3);
-          expect(pin.top, 'not stuck to the top').toBeGreaterThan(8);
+          expect(pin.titleTop, `the title on screen at ${k}`).toBeGreaterThanOrEqual(0);
+          expect(pin.titleBottom).toBeLessThanOrEqual(pin.stageTop);
         } else {
-          expect(Math.round(pin.top), 'a stage taller than the screen pins at the top').toBe(0);
+          // taller than the screen: its foot on the screen's foot, the cards and the picker whole
+          expect(Math.abs(pin.bottom - height), `foot on the screen's foot at ${k}`).toBeLessThanOrEqual(2);
+          expect(pin.stageTop).toBeGreaterThanOrEqual(0);
+          if (pin.pickerTop !== null) expect(pin.pickerTop, 'the picker on screen').toBeGreaterThanOrEqual(0);
         }
       }
       // the last card lands inside the centred stage

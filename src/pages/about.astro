@@ -64,13 +64,15 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
        desktop they stand in a column. Each card seen counts towards Read every skill. -->
   <section id="skills" class="level level--blue has-join-bottom skills" data-level="2" aria-labelledby="skills-title">
     <Join kind="terrain" from="var(--field-blue)" to="var(--field-green)" seed="about-kit" />
+    <!-- (the deck: on a desktop with motion the head and the cards pin together as one unit) -->
+    <div class="deck" data-deck>
+      <div class="deck__pin">
     <div class="level__head">
       <p class="flag" data-nosnippet><span>Level 2 &middot; Skills</span></p>
       <h2 id="skills-title" class="level__title">What I test</h2>
       <p class="level__lead">Five areas I cover on every project.</p>
     </div>
-    <Swipe label="The five areas I test" count={areas.length} class="deck level__body" data-deck>
-      <div class="deck__pin">
+    <Swipe label="The five areas I test" count={areas.length} class="level__body">
         <div class="areas deck__stage swipe__track">
           {
             areas.map((a, i) => (
@@ -99,8 +101,9 @@ const TILT = [-2.5, 2, -1.5, 2.5, -2];
             ))
           }
         </div>
-      </div>
     </Swipe>
+      </div>
+    </div>
     <Bug id="skills-1" style="right: 10%; top: 1.5rem" tablet="right: 8%; top: 0.75rem" walk="x -2rem" />
   </section>
 

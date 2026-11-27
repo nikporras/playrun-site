@@ -3,7 +3,8 @@
  * deck pins for a few screens and each card after the first rises from below, tilts its own few
  * degrees and stacks on the last, scrubbed by the scroll through --e (0 to 1) on each card, and
  * transform only. Off on phones, under reduced motion and without script: the cards stay in flow.
- * Markup: [data-deck] > .deck__pin > (the level head, then .deck__stage > .deck__card*), each card
+ * Markup: [data-deck] > .deck__pin > (the level head, the QA Lab's picker, then the swipe with
+ * .deck__stage > .deck__card*), each card
  * with --i (its index) and --tilt (its angle). A jump to a card's id lands where it is dealt.
  */
 import { reducedMotion, onMotionChange } from './motion';
@@ -20,8 +21,9 @@ export function startDeck() {
   const steps = cards.length - 1;
   let on = false;
   deck.style.setProperty('--n', String(cards.length));
-  // (the pinned stage sits centred in the screen: its sticky top, from measure(); zero when the
-  // stage is as tall as the screen or taller)
+  // (the pinned unit, the level head and the stage of cards, sits centred in the screen: its
+  // sticky top, from measure(); a unit taller than the screen pins with its foot on the screen's
+  // foot, so the cards stay whole and only the top of the head goes off the top)
   let pinTop = 0;
   // (the scroll at which the pin catches: the deck's top reaching the pin's centred top)
   const top = () => deck.getBoundingClientRect().top + scrollY - pinTop;
@@ -36,7 +38,8 @@ export function startDeck() {
     }
     stage.style.setProperty('--stage-h', `${Math.max(...cards.map((c) => c.offsetHeight)) + cards.length * 12}px`);
     deck.style.setProperty('--pin-h', `${pin.offsetHeight}px`);
-    pinTop = Math.max(0, Math.round((innerHeight - pin.offsetHeight) / 2));
+    const room = innerHeight - pin.offsetHeight;
+    pinTop = Math.round(room >= 0 ? room / 2 : room);
     deck.style.setProperty('--pin-top', `${pinTop}px`);
   };
   const scrub = () => {

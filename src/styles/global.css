@@ -1035,8 +1035,9 @@ html:not(.games) .bug {
 }
 
 /* The dealt deck (src/scripts/deck.ts): on a desktop with motion the deck is several screens
-   tall and its stage pins for all but the first (the level head sits above the deck and scrolls
-   away, so a card has the whole screen); the cards sit on one stage, at its top. Card 0 lies in place; each
+   tall and its pin (the level head, the QA Lab's picker and the stage of cards, one unit) stays on
+   screen for all but the first, centred where it fits, so the title stays over the cards for the
+   whole deal; the cards sit on one stage, at its top. Card 0 lies in place; each
    next card rises from below the screen as --e goes 0 to 1 with the scroll, landing a little lower
    than the last and tilted its own few degrees. Transform only; the card's own entrance (opacity,
    a transition) is off. Without is-deck the cards stand in flow. */
@@ -1046,17 +1047,20 @@ html:not(.games) .bug {
   height: calc(var(--pin-h, 100vh) + (var(--n, 5) - 1) * 70vh);
   overflow: clip;
 }
-/* (the cards start at the stage's top, so the first one sits under the level head at the usual
-   gap, never centred in a screen-tall stage with a gap above it; the stage's own top padding,
-   their room while pinned, comes off the deck's margin) */
-.level .deck.is-deck {
-  margin-top: calc(var(--block-gap) - var(--s-3));
-}
-/* (pinned in the middle of the screen: --pin-top is half the room the stage leaves, from deck.ts) */
+/* (pinned in the middle of the screen: --pin-top is half the room the unit leaves, from deck.ts;
+   a unit taller than the screen pins with its foot on the screen's foot, so the cards stay whole
+   and only the top of the head slides off; a little room under the cards for their tilt) */
 .deck.is-deck .deck__pin {
   position: sticky;
   top: var(--pin-top, 0px);
-  padding-block: var(--s-3);
+  padding-bottom: var(--s-2);
+}
+/* (tighter inside the pinned unit, so the head and the cards fit one screen more often) */
+.deck.is-deck .level__head {
+  gap: var(--s-2);
+}
+.level .deck.is-deck .level__body {
+  margin-top: var(--s-3);
 }
 .deck.is-deck .deck__stage {
   position: relative;
