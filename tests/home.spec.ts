@@ -824,7 +824,7 @@ test.describe('Home', () => {
 
   // The approved captions, word for word (the year from the data).
   const CAPTIONS = [
-    'Started in 2021. Still finding things.',
+    'Started in 2021. Still finding bugs.',
     'From outsourced QA to in-house teams.',
     "From Cyberpunk 2077 to this year's releases.",
     'Quest to PS VR2. Headset tan included.',

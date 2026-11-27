@@ -67,7 +67,7 @@ const wall = [...FEATURED.flatMap((id) => byPost.filter((p) => p.id === id)), ..
 const isVR = (p: (typeof shown)[number]) => p.data.vr || p.data.platforms.some((name) => /VR|Quest/i.test(name));
 // Each stat carries a short caption, shown under it while it is the active row: light, and true.
 const stats = [
-  { n: new Date().getFullYear() - since, suffix: '+', label: 'years in QA', cap: `Started in ${since}. Still finding things.` },
+  { n: new Date().getFullYear() - since, suffix: '+', label: 'years in QA', cap: `Started in ${since}. Still finding bugs.` },
   { n: new Set(employers.map((e) => e.name)).size, suffix: '', label: 'companies', cap: 'From outsourced QA to in-house teams.' },
   { n: shown.length, suffix: '', label: 'games', cap: "From Cyberpunk 2077 to this year's releases." },
   { n: shown.filter(isVR).length, suffix: '', label: 'VR games', cap: 'Quest to PS VR2. Headset tan included.' },
