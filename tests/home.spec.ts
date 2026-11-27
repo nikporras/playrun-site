@@ -716,7 +716,8 @@ test.describe('Home', () => {
     expect(new Set(names).size).toBe(18);
     expect(names, 'Space Pirate Trainer: its only official logo is an outline, so it stays off the ticker').not.toContain('Space Pirate Trainer');
     expect(names.every((n) => n.length > 0), 'every mark is named').toBe(true);
-    expect(await marks.first().evaluate((el) => getComputedStyle(el).cursor)).toBe('auto');
+    // (not a link: no pointer hand; with motion the row shows it can be grabbed and dragged)
+    expect(await marks.first().evaluate((el) => getComputedStyle(el).cursor)).not.toBe('pointer');
     expect(await seq.locator('.wall__logo').count(), 'official logos').toBeGreaterThanOrEqual(16);
     // no boxes: the logos float on the field
     expect(await page.locator('.ticker__view').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
@@ -768,6 +769,136 @@ test.describe('Home', () => {
     await page.getByRole('button', { name: 'Pause the logos' }).focus();
     await page.keyboard.press('Shift+Tab');
     expect(await page.evaluate(() => !!document.activeElement?.closest('.ticker__view'))).toBe(false);
+  });
+
+  // Drag to scroll: the row's place in its loop (0 to 1), from its transform and its half width.
+  const loopAt = (page: Page) =>
+    page.locator('.ticker__track').evaluate((el) => {
+      const x = new DOMMatrix(getComputedStyle(el).transform).m41;
+      const half = el.scrollWidth / 2;
+      return (((-x / half) % 1) + 1) % 1;
+    });
+  // (the shortest way round the loop from a to b, in loop fractions)
+  const shift = (a: number, b: number) => {
+    let d = b - a;
+    if (d > 0.5) d -= 1;
+    if (d < -0.5) d += 1;
+    return d;
+  };
+
+  test('the logo row drags with a mouse either way, at the pointer pace, swallows the click that ends a drag, and rolls on after release', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    await page.locator('.wall').scrollIntoViewIfNeeded();
+    const view = (await page.locator('.ticker__view').boundingBox())!;
+    const half = await page.locator('.ticker__track').evaluate((el) => el.scrollWidth / 2);
+    const y = view.y + view.height / 2;
+    const cx = view.x + view.width / 2;
+    await expect(page.locator('.ticker__view')).toHaveCSS('cursor', 'grab');
+    await page.evaluate(() => {
+      (window as unknown as { clicks: number }).clicks = 0;
+      document.addEventListener('click', () => (window as unknown as { clicks: number }).clicks++);
+    });
+    // to the right: the row moves right by the drag (back in its loop), held while the button is down
+    await page.mouse.move(cx, y);
+    await page.mouse.down();
+    const a = await loopAt(page);
+    for (let i = 1; i <= 10; i++) await page.mouse.move(cx + i * 30, y);
+    await expect(page.locator('.wall')).toHaveClass(/is-dragging/);
+    const b = await loopAt(page);
+    expect(shift(a, b) * half, 'moved right by the drag').toBeLessThan(-250);
+    expect(shift(a, b) * half).toBeGreaterThan(-320);
+    await page.waitForTimeout(300);
+    expect(Math.abs(shift(b, await loopAt(page))) * half, 'held while the button is down').toBeLessThan(2);
+    await page.mouse.up();
+    expect(await page.evaluate(() => (window as unknown as { clicks: number }).clicks), 'no click from a drag').toBe(0);
+    // it rolls on after release, under the pointer too
+    await expect(page.locator('.wall')).not.toHaveClass(/is-dragging/, { timeout: 3000 });
+    const c = await loopAt(page);
+    await expect.poll(async () => shift(c, await loopAt(page)) * half, { message: 'rolling left again' }).toBeGreaterThan(3);
+    // to the left
+    await page.mouse.move(cx, y);
+    await page.mouse.down();
+    const d = await loopAt(page);
+    for (let i = 1; i <= 10; i++) await page.mouse.move(cx - i * 30, y);
+    expect(shift(d, await loopAt(page)) * half, 'moved left by the drag').toBeGreaterThan(250);
+    await page.mouse.up();
+    // a plain click is still a click
+    await page.waitForTimeout(400);
+    await page.mouse.click(cx, y);
+    expect(await page.evaluate(() => (window as unknown as { clicks: number }).clicks)).toBe(1);
+    // once the pointer has left and comes back, the hover pause holds again
+    await page.mouse.move(10, 10);
+    await expect(page.locator('.wall')).not.toHaveClass(/is-dragging/, { timeout: 3000 });
+    await page.mouse.move(cx, y);
+    const e = await loopAt(page);
+    await page.waitForTimeout(400);
+    expect(Math.abs(shift(e, await loopAt(page))) * half, 'paused under the pointer').toBeLessThan(1);
+    // and the Pause button still pauses it after a drag
+    await page.mouse.move(10, 10);
+    await page.getByRole('button', { name: 'Pause the logos' }).click();
+    await page.mouse.move(10, 10);
+    const f = await loopAt(page);
+    await page.waitForTimeout(400);
+    expect(Math.abs(shift(f, await loopAt(page))) * half, 'paused by the button').toBeLessThan(1);
+  });
+
+  test('the logo row swipes with a finger either way, a vertical swipe still scrolls the page, and it rolls on after', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    await page.locator('.wall').scrollIntoViewIfNeeded();
+    await expect(page.locator('.ticker__view')).toHaveCSS('touch-action', 'pan-y');
+    const cdp = await context.newCDPSession(page);
+    const swipe = async (x0: number, y0: number, dx: number, dy: number) => {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y: y0 }] });
+      for (let i = 1; i <= 12; i++) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x0 + (dx * i) / 12, y: y0 + (dy * i) / 12 }] });
+        await page.waitForTimeout(16);
+      }
+      await page.waitForTimeout(200);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    };
+    const view = (await page.locator('.ticker__view').boundingBox())!;
+    const half = await page.locator('.ticker__track').evaluate((el) => el.scrollWidth / 2);
+    const y = view.y + view.height / 2;
+    // to the right, then to the left (each slow at the end, so no glide)
+    let a = await loopAt(page);
+    await swipe(80, y, 200, 0);
+    expect(shift(a, await loopAt(page)) * half, 'swiped right').toBeLessThan(-120);
+    a = await loopAt(page);
+    await swipe(300, y, -200, 0);
+    expect(shift(a, await loopAt(page)) * half, 'swiped left').toBeGreaterThan(120);
+    // it rolls on after release (a finger leaves no hover)
+    await expect(page.locator('.wall')).not.toHaveClass(/is-dragging/, { timeout: 3000 });
+    const c = await loopAt(page);
+    await expect.poll(async () => shift(c, await loopAt(page)) * half, { message: 'rolling again' }).toBeGreaterThan(3);
+    // a vertical swipe on the row scrolls the page and leaves the row to roll
+    const before = await page.evaluate(() => scrollY);
+    await swipe(180, y, 0, -250);
+    await expect.poll(() => page.evaluate(() => scrollY), { message: 'the page scrolled' }).toBeGreaterThan(before + 100);
+    await expect(page.locator('.wall')).not.toHaveClass(/is-dragging/);
+    await context.close();
+  });
+
+  test('with motion off the logo row does not drag: no grab cursor, nothing moves under a drag', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto('/');
+    await page.locator('.wall').scrollIntoViewIfNeeded();
+    await expect(page.locator('.ticker__view')).not.toHaveCSS('cursor', 'grab');
+    const view = (await page.locator('.ticker__view').boundingBox())!;
+    const first = page.locator('.ticker__seq:not(.ticker__copy) .wall__mark').first();
+    const x = (await first.boundingBox())!.x;
+    await page.mouse.move(view.x + view.width / 2, view.y + view.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(view.x + view.width / 2 + 200, view.y + view.height / 2, { steps: 8 });
+    await page.mouse.up();
+    expect((await first.boundingBox())!.x).toBe(x);
+    await expect(page.locator('.wall')).not.toHaveClass(/is-dragging/);
+    await context.close();
   });
 
   for (const [width, height] of [
