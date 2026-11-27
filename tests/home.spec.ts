@@ -824,9 +824,9 @@ test.describe('Home', () => {
     for (let i = 1; i <= 10; i++) await page.mouse.move(cx - i * 30, y);
     expect(shift(d, await loopAt(page)) * half, 'moved left by the drag').toBeGreaterThan(250);
     await page.mouse.up();
-    // a plain click is still a click
-    await page.waitForTimeout(400);
+    // a plain click is still a click, and a press during the glide stops it and lets the row roll
     await page.mouse.click(cx, y);
+    await expect(page.locator('.wall')).not.toHaveClass(/is-dragging/);
     expect(await page.evaluate(() => (window as unknown as { clicks: number }).clicks)).toBe(1);
     // once the pointer has left and comes back, the hover pause holds again
     await page.mouse.move(10, 10);

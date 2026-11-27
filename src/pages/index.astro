@@ -1494,9 +1494,11 @@ const numberWords = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'
     let lastT = 0;
     let speed = 0; // px per ms, the pointer's pace at release
     let glide = 0;
+    // (a press during a glide stops it where it is and lets the row roll again)
     const stopGlide = () => {
       cancelAnimationFrame(glide);
       glide = 0;
+      tick.classList.remove('is-dragging');
     };
     view.addEventListener('pointerdown', (e) => {
       if (reducedMotion() || e.button !== 0 || id !== -1) return;

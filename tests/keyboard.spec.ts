@@ -75,6 +75,17 @@ test('a folded Games row opens with Enter and Tab reaches its store link, clear 
   await toggle.focus();
   await page.keyboard.press('Enter');
   await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  // (the row has finished opening: its height still for a few frames)
+  const card = page.locator('.card').last();
+  let last = -1;
+  await expect
+    .poll(async () => {
+      const h = await card.evaluate((el) => el.getBoundingClientRect().height);
+      const still = Math.abs(h - last) < 0.5;
+      last = h;
+      return still;
+    })
+    .toBe(true);
   await page.keyboard.press('Tab');
   const link = page.locator('.card').last().locator('a[href]');
   await expect(link).toBeFocused();
