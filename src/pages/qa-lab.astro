@@ -7,7 +7,7 @@ import Swipe from '../components/Swipe.astro';
 import PassMark from '../components/PassMark.astro';
 import CrossMark from '../components/CrossMark.astro';
 import { Image } from 'astro:assets';
-import { browsers, bugSweep, liveDay, suite } from '../data/suite';
+import { bugSweep, fullBrowser, liveDay, suite, targetedBrowsers, whereLine } from '../data/suite';
 import { listed } from '../config';
 import { testPlan, tickets } from '../data/qalab';
 import { bugReportTemplate } from '../data/samples';
@@ -25,7 +25,14 @@ const template = bugReportTemplate(`playrunqa.com, ${deployed ? `deployed ${depl
 // The report card's two lines on the suite, from its data: the checks that passed in the run that
 // deployed the page (a local build has only the list), and where they run.
 const suiteLine = suite.run ? `${suite.checks} checks passed before this page went live.` : `${suite.checks} checks run before this page goes live.`;
-const whereLine = `Run in ${listed(browsers)} on every push${liveDay ? `, and against the live site every ${liveDay}` : ''}.`;
+// (where the suite runs, whereLine, is one sentence from suite.ts, shared with Accessibility and llms.txt)
+// The test plan's Automated line: the browsers Bug Sweep's checks run in, then what the others do,
+// from the same data, so it never reads as more than the report card says.
+const sweepTargeted = targetedBrowsers.filter((b) => !bugSweep.browsers.includes(b));
+const automatedLine =
+  `${listed(bugSweep.browsers)} on every push, at ${testPlan.automatedSizes}` +
+  (bugSweep.browsers.includes(fullBrowser) ? `, alongside the full suite.` : '.') +
+  (sweepTargeted.length ? ` ${listed(sweepTargeted)} ${sweepTargeted.length === 1 ? 'runs' : 'run'} targeted checks of other pages, not Bug Sweep.` : '');
 // The report card's icon: a sheet with lines, in the steps' 8x8 pixel style.
 const reportIcon = ['.######.', '.#....#.', '.#.##.#.', '.#....#.', '.#.##.#.', '.#....#.', '.#.##.#.', '.######.'];
 
@@ -358,7 +365,7 @@ const steps: { id: string; title: string; ask: string; checks: string[]; compute
         <h3 id="tp-platforms" class="tp__title">Platforms and devices</h3>
         <dl class="tp__fields">
           <dt>Automated</dt>
-          <dd data-tp-automated>{listed(bugSweep.browsers)} in CI on every push, at {testPlan.automatedSizes}.</dd>
+          <dd data-tp-automated>{automatedLine}</dd>
           <dt>By hand</dt>
           <dd><ul class="tp__list">{testPlan.byHand.map((t) => <li>{t}</li>)}</ul></dd>
         </dl>

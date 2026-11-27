@@ -180,6 +180,27 @@ const cron = readFileSync(path.join(root, '.github', 'workflows', 'live-check.ym
 const weekday = cron?.trim().split(/\s+/)[4];
 export const liveDay = weekday && /^[0-7]$/.test(weekday) ? DAYS[Number(weekday) % 7] : null;
 
+/**
+ * Where the suite runs, from the same list or report: the full suite is the browser that runs the
+ * most checks (every spec file), the others run only their own targeted files. One sentence for
+ * the report card, the Accessibility page and llms.txt, so no page claims more than the config does.
+ */
+const perEngine = new Map<string, number>();
+const countEngines = (s: JsonSuite) => {
+  for (const spec of s.specs ?? []) for (const t of spec.tests ?? []) if (t.projectName) perEngine.set(t.projectName, (perEngine.get(t.projectName) ?? 0) + 1);
+  for (const c of s.suites ?? []) countEngines(c);
+};
+for (const s of report.suites) countEngines(s);
+const byCount = ENGINES.filter(([id]) => perEngine.has(id)).sort(([a], [b]) => perEngine.get(b)! - perEngine.get(a)!);
+if (byCount.length === 0) throw new Error('No checks carry a browser: the QA Lab names where the suite runs.');
+const and = (items: string[]) => (items.length < 2 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
+/** The browser the whole suite runs in ("Chromium"). */
+export const fullBrowser = byCount[0][1];
+/** The browsers that run only targeted checks, in the usual order ("Firefox and WebKit"). */
+export const targetedBrowsers = ENGINES.filter(([id]) => perEngine.has(id) && id !== byCount[0][0]).map(([, name]) => name);
+/** "The full suite runs in Chromium on every push, with targeted checks in Firefox and WebKit, and against the live site every Monday." */
+export const whereLine = `The full suite runs in ${fullBrowser} on every push${targetedBrowsers.length ? `, with targeted checks in ${and(targetedBrowsers)}` : ''}${liveDay ? `, and against the live site every ${liveDay}` : ''}.`;
+
 /** The versions the loop names, read from the files that set them. */
 const workflow = readFileSync(path.join(root, '.github', 'workflows', 'deploy.yml'), 'utf8');
 export const versions = {

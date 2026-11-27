@@ -45,7 +45,7 @@ test.describe('QA Lab, the live checks', () => {
     // projects and the live check's schedule (.github/workflows/live-check.yml)
     const line = (await page.locator('.report__suite').textContent())!.trim();
     expect(line).toMatch(/^\d+ checks (passed before this page went live|run before this page goes live)\.$/);
-    await expect(page.locator('.report__where')).toHaveText('Run in Chromium, Firefox and WebKit on every push, and against the live site every Monday.');
+    await expect(page.locator('.report__where')).toHaveText('The full suite runs in Chromium on every push, with targeted checks in Firefox and WebKit, and against the live site every Monday.');
   });
 
   test("the steps for a computer are one action each with that browser's keys, and say what to expect; Tab really lands on Skip to content", async ({ page }) => {
@@ -547,6 +547,11 @@ test('the test plan for Bug Sweep: every block, the coverage and the results fro
   await expect(more).not.toContainText('1440x900');
   const names: Record<string, string> = { chromium: 'Chromium', firefox: 'Firefox', webkit: 'WebKit' };
   for (const e of new Set(checks.flatMap((c) => c.projects))) await expect(plan.locator('[data-tp-automated]')).toContainText(names[e]);
+  // the plan says which browsers run Bug Sweep and which only run targeted checks elsewhere, so it
+  // agrees with the report card's line
+  const others = ['Firefox', 'WebKit'].filter((n) => !checks.some((c) => c.projects.includes(n.toLowerCase())));
+  if (others.length) await expect(plan.locator('[data-tp-automated]')).toContainText(`${others.join(' and ')} run targeted checks of other pages, not Bug Sweep.`);
+  await expect(plan.locator('[data-tp-automated]')).not.toContainText('Chromium, Firefox and WebKit');
   // the results: the total from the list; passed and failed from a run (a local build has none)
   await expect(plan.locator('[data-tp-results] tbody td').first()).toHaveText(String(total));
   await expect(plan.locator('[data-tp-results] tbody td').nth(1)).toHaveText(/^(\d+|Not run yet)$/);

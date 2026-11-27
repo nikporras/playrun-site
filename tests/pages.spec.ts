@@ -530,3 +530,13 @@ test('the check count shows on the QA Lab only, the number from the suite data',
   expect(seen.length, 'the QA Lab shows the count once').toBe(1);
   for (const s of seen) expect(s.split(': ')[1].replace(/,/g, ''), s).toBe(String(total));
 });
+
+test('no page claims the whole suite runs in three browsers: Firefox and WebKit run targeted checks only', { tag: ['@pages'] }, async ({ request }) => {
+  const sitemap = await (await request.get('/sitemap-0.xml')).text();
+  const paths = Array.from(sitemap.matchAll(/<loc>([^<]+)<\/loc>/g), (m) => new URL(m[1]).pathname);
+  for (const p of [...paths, '/llms.txt']) {
+    const text = (await (await request.get(p)).text()).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+    expect(text, p).not.toMatch(/(?:Run|runs?) in Chromium, Firefox and WebKit/);
+    for (const m of text.matchAll(/The full suite runs in [^.]+\./g)) expect(m[0], p).toMatch(/^The full suite runs in Chromium on every push, with targeted checks in Firefox and WebKit/);
+  }
+});
