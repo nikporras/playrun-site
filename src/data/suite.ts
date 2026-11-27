@@ -56,7 +56,7 @@ const COPY: Record<string, [title: string, detail: string]> = {
   'credits.spec.ts': ['Credits', 'Every typeface, tool and sprite is credited, and the page passes axe.'],
   'events.spec.ts': ['What the statistics count', 'Each counted click carries its event name, and what a click cannot see is counted by name, never with anything a visitor typed.'],
   'firefox.spec.ts': ['In Firefox', 'Every page loads clean in Firefox, the picker in the QA Lab knows it, and the five steps finish without a fail.'],
-  'games.spec.ts': ['The games', 'The track, the runner, the bug hunt and the achievements by mouse, touch and keyboard, and off under reduced motion.'],
+  'games.spec.ts': ['The games', 'The track, the ship, the bug hunt and the achievements by mouse, touch and keyboard, and off under reduced motion.'],
   'home.spec.ts': ['Home', 'Loads clean, the bottom bar on a phone, the curtain, the glitch and its card, the wall, the stats, three widths, axe, the self test.'],
   'indexing.spec.ts': ['Search and AI access', 'robots.txt welcomes the AI crawlers and disallows nothing, the IndexNow key and step, llms.txt and its pages, snippets kept to the content.'],
   'labels.spec.ts': ['Level labels', 'Every level label on every page starts at the same left edge, at three widths.'],

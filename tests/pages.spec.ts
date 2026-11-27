@@ -540,3 +540,16 @@ test('no page claims the whole suite runs in three browsers: Firefox and WebKit 
     for (const m of text.matchAll(/The full suite runs in [^.]+\./g)) expect(m[0], p).toMatch(/^The full suite runs in Chromium on every push, with targeted checks in Firefox and WebKit/);
   }
 });
+
+test('Terms and Accessibility name the games control as it appears on the site, and describe the ship', { tag: ['@pages'] }, async ({ page }) => {
+  for (const p of ['/terms/', '/accessibility/']) {
+    await page.goto(p);
+    const text = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
+    expect(text, p).toContain('with the Games button on the scoreboard');
+    expect(text, p).toContain('The ship that moves down the track at the left edge as you scroll (on desktops only)');
+    expect(text, p).not.toMatch(/\brunner\b|HUD button|HUD bar/i);
+  }
+  // the button carries that name
+  await page.goto('/terms/');
+  await expect(page.locator('#dock [data-hud-toggle]')).toHaveText(/^Games (on|off)$/);
+});
