@@ -4,7 +4,7 @@ import Breakable from '../components/Breakable.astro';
 import Bug from '../components/Bug.astro';
 import Join from '../components/Join.astro';
 import PassMark from '../components/PassMark.astro';
-import PixelTile from '../components/PixelTile.astro';
+import Sprite from '../components/Sprite.astro';
 import { contact, contactEndpoint } from '../config';
 
 // With script, the form posts a JSON string to the Apps Script endpoint. Without script it opens
@@ -66,8 +66,9 @@ const steps = [
         <ul role="list" class="msg__list" data-enter style="--enter-delay: 80ms">
           {reasons.map((r) => <li>{r}</li>)}
         </ul>
-        <div class="msg__photo" data-enter="place">
-          <PixelTile name="bug" tone="navy" />
+        <!-- the site's pixel ship on the field itself, no tile behind it -->
+        <div class="msg__photo msg__ship" data-enter="place" aria-hidden="true">
+          <Sprite name="ship" />
         </div>
       </div>
       <form
@@ -262,6 +263,21 @@ const steps = [
   }
   .msg__photo {
     aspect-ratio: 4 / 3;
+  }
+  /* (the ship in its brand bands, with a navy outline round its own shape, a third of one of its
+     pixels thick, so the blue nose reads on the blue field, as the rail's ship does) */
+  .msg__ship {
+    display: grid;
+    place-items: center;
+  }
+  .msg__ship :global(.sprite) {
+    width: min(56%, 15rem);
+    height: auto;
+    filter: drop-shadow(3px 0 0 var(--pr-navy)) drop-shadow(-3px 0 0 var(--pr-navy)) drop-shadow(0 3px 0 var(--pr-navy)) drop-shadow(0 -3px 0 var(--pr-navy));
+  }
+  /* (its blue band is the field's own colour here: the lifted blue keeps the nose in sight) */
+  .msg__ship :global(.px-blue) {
+    fill: var(--pr-blue-ink);
   }
   .form {
     background: var(--bg);

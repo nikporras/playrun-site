@@ -243,3 +243,15 @@ test.describe('Contact, when things go slowly or twice', () => {
     expect(posts).toBe(0);
   });
 });
+
+test('the Write to me level shows the pixel ship on the field, with no tile behind it and no bug', { tag: ['@pages'] }, async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/contact/');
+  const box = page.locator('.msg__ship');
+  await expect(box).toHaveAttribute('aria-hidden', 'true');
+  await expect(box.locator('svg.sprite')).toHaveCount(1);
+  await expect(page.locator('.msg__intro .pixtile')).toHaveCount(0);
+  // (nothing painted behind it: the level's own field shows)
+  expect(await box.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+  expect(await box.locator('svg.sprite').evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(120);
+});
