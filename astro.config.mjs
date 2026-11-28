@@ -1,7 +1,7 @@
 // @ts-check
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
@@ -46,6 +46,26 @@ const redirectTwins = {
     'astro:build:done': ({ dir }) => {
       const out = fileURLToPath(dir);
       for (const from of Object.keys(redirects)) copyFileSync(`${out}${from.slice(1)}/index.html`, `${out}${from.slice(1)}.html`);
+    },
+  },
+};
+
+// Addresses from an early version of the site (/about.html and so on) are small redirect pages in
+// src/pages (about.html.astro). Astro builds each as a folder (about.html/index.html); GitHub Pages
+// must find a file at that address, so the folder becomes the file. Runs before csp-first, which
+// then treats it like any other page.
+const legacyPages = ['about', 'privacy', 'terms', 'portfolio'];
+const legacyFiles = {
+  name: 'legacy-files',
+  hooks: {
+    /** @param {{ dir: URL }} options */
+    'astro:build:done': ({ dir }) => {
+      const out = fileURLToPath(dir);
+      for (const name of legacyPages) {
+        const html = readFileSync(`${out}${name}.html/index.html`, 'utf8');
+        rmSync(`${out}${name}.html`, { recursive: true });
+        writeFileSync(`${out}${name}.html`, html);
+      }
     },
   },
 };
@@ -123,6 +143,7 @@ export default defineConfig({
   redirects,
   integrations: [
     redirectTwins,
+    legacyFiles,
     cspFirst,
     sitemap({
       // Each page's date: the last commit that touched its source (Home, the Portfolio and About
@@ -132,11 +153,11 @@ export default defineConfig({
         if (date) item.lastmod = date;
         return item;
       },
-      // Redirect pages are not pages (Skills' included), and llms.txt is for machines; the
-      // addresses in the map carry the trailing slash.
+      // Redirect pages are not pages (Skills' and the early .html addresses included), and llms.txt
+      // is for machines; the addresses in the map carry the trailing slash.
       filter: (page) => {
         const path = new URL(page).pathname.replace(/\/$/, '');
-        return !/^\/portfolio\/./.test(path) && !['/services', '/skills', '/quality', '/testing', '/credits', '/llms.txt'].includes(path);
+        return !/^\/portfolio\/./.test(path) && !path.endsWith('.html') && !['/services', '/skills', '/quality', '/testing', '/credits', '/llms.txt'].includes(path);
       },
     }),
   ],

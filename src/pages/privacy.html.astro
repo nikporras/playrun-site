@@ -1,0 +1,47 @@
+---
+/**
+ * /privacy.html is an address from an early version of the site (Google still asks for it). It
+ * stays as a small page that sends visitors and old links to /privacy/ at once: a script first, the meta
+ * refresh where script is off, a link to press. It points search engines at /privacy/ (canonical) and is
+ * never indexed itself. Astro builds it as a folder; the legacyFiles hook in astro.config.mjs turns
+ * it into the file /privacy.html, and the sitemap leaves it out.
+ */
+import { site } from '../config';
+
+const to = '/privacy/';
+---
+
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy | Nicolás Porras</title>
+    <meta name="robots" content="noindex" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <link rel="canonical" href={`${site.url}/privacy/`} />
+    <meta http-equiv="refresh" content={`0;url=${to}`} />
+    <meta name="theme-color" content={site.themeColor} />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 1.25rem;
+        background: #0c152a;
+        color: #e5e7ea;
+        font: 1.125rem/1.5 system-ui, sans-serif;
+      }
+      a {
+        color: #56bdda;
+      }
+    </style>
+  </head>
+  <body>
+    <p><a href={to}>Go to Privacy</a></p>
+    <script>
+      location.replace('/privacy/');
+    </script>
+  </body>
+</html>

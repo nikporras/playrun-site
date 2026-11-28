@@ -355,6 +355,36 @@ test('the old services and credits addresses send visitors on', { tag: ['@pages'
   expect(await page.locator('footer').getByRole('link', { name: 'Home' }).count(), 'Home once in the footer').toBe(1);
 });
 
+// Addresses from an early version of the site that Google still asks for. Each is a file (not a
+// folder) so GitHub Pages answers the .html address itself, like /skills/ in every other way.
+const LEGACY = [
+  ['/about.html', '/about/', 'Go to About'],
+  ['/privacy.html', '/privacy/', 'Go to Privacy'],
+  ['/terms.html', '/terms/', 'Go to Terms'],
+  ['/portfolio.html', '/portfolio/', 'Go to Games'],
+] as const;
+for (const [old, to, link] of LEGACY) {
+  test(`${old} is a silent redirect page to ${to}: script and meta refresh, a canonical to ${to}, never indexed, out of the sitemap`, { tag: ['@pages', '@links'] }, async ({ request, page }) => {
+    expect(statSync(join('dist', old.slice(1))).isFile(), `${old} is a file in the build`).toBe(true);
+    const res = await request.get(old, { maxRedirects: 0 });
+    expect(res.status()).toBe(200);
+    const html = await res.text();
+    const esc = to.replace(/\//g, '\\/');
+    expect(html).toMatch(new RegExp(`<meta http-equiv="refresh" content="0;url=${esc}">`));
+    expect(html).toContain(`<link rel="canonical" href="https://playrunqa.com${to}">`);
+    expect(html).toContain('<meta name="robots" content="noindex">');
+    expect(html).toContain('<meta name="referrer" content="strict-origin-when-cross-origin">');
+    expect(html).toMatch(new RegExp(`<script[^>]*>location\\.replace\\(['\`"]${esc}['\`"]\\);?<\\/script>`));
+    expect(html).toMatch(new RegExp(`<a href="${esc}"[^>]*>${link}<\\/a>`));
+    const sitemap = await (await request.get('/sitemap-0.xml')).text();
+    expect(sitemap).not.toContain('.html');
+    expect(sitemap).toContain(`https://playrunqa.com${to}`);
+    await page.goto(old);
+    await expect(page).toHaveURL(new RegExp(`${esc}$`));
+    await expect(page.locator('meta[name="robots"][content="noindex"]')).toHaveCount(0);
+  });
+}
+
 test('no controller or headset sprite anywhere, and nothing stands in their place', async ({ page }) => {
   for (const path of ['/', '/portfolio/', '/contact/', '/qa-lab/', '/terms/']) {
     await page.goto(path);
